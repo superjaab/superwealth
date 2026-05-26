@@ -48,34 +48,57 @@ module.exports = async function handler(req, res) {
 
       let json;
       try { json = await resp.json(); }
-      catch(je) { lastError = `Engine${engine}: JSON parse error`; continue; }
-
-      // debug: log full response
-      console.log(`[OCR Engine${engine}] ExitCode:${json.OCRExitCode} Errored:${json.IsErroredOnProcessing} Results:${json.ParsedResults?.length}`);
-
-      // error จาก OCR.space
-      if (json.IsErroredOnProcessing || json.OCRExitCode === 6) {
-        const errMsg = Array.isArray(json.ErrorMessage)
-          ? json.ErrorMessage.join(', ')
-          : (json.ErrorMessage || json.ErrorDetails || 'OCR processing failed');
-        lastError = `Engine${engine}: ${errMsg}`;
+      catch(je) {
+        // OCR.space อาจ return HTML error page แทน JSON (เช่น 429 rate limit)
+        const raw = await resp.text().catch(() => '');
+        lastError = `Engine${engine}: JSON parse error (HTTP ${resp.status}) ${raw.slice(0,80)}`;
+        console.error(`[OCR Engine${engine}] Non-JSON response HTTP ${resp.status}:`, raw.slice(0,200));
         continue;
       }
 
-      // OCRExitCode 3 = partially success, 2 = fatal error
-      if (json.OCRExitCode === 2) {
-        lastError = `Engine${engine}: Fatal error (key อาจไม่ถูกต้อง)`;
+      // debug: log full response
+      console.log(`[OCR Engine${engine}] HTTP:${resp.status} ExitCode:${json.OCRExitCode} Errored:${json.IsErroredOnProcessing} Results:${json.ParsedResults?.length}`);
+
+      // ─ handle response รูปแบบผิดปกติ (rate-limit, auth error ฯลฯ)
+      // OCR.space บางครั้ง return {"error":...} หรือ {"message":...} โดยไม่มี OCRExitCode
+      if (json.OCRExitCode === undefined && !Array.isArray(json.ParsedResults)) {
+        const hint = (Array.isArray(json.ErrorMessage) ? json.ErrorMessage.join(', ') : json.ErrorMessage)
+                  || json.error || json.message || JSON.stringify(json).slice(0, 120);
+        lastError = `Engine${engine}: ${hint}`;
+        console.error(`[OCR Engine${engine}] Unexpected response format:`, JSON.stringify(json).slice(0,300));
+        continue;
+      }
+
+      // ─ error จาก OCR.space (รองรับ boolean true และ string "True"/"true")
+      const isErrored = json.IsErroredOnProcessing === true
+                     || String(json.IsErroredOnProcessing).toLowerCase() === 'true';
+      const exitCode  = typeof json.OCRExitCode === 'string' ? parseInt(json.OCRExitCode) : json.OCRExitCode;
+
+      if (isErrored || exitCode === 6 || exitCode === 99) {
+        const errMsg = Array.isArray(json.ErrorMessage)
+          ? json.ErrorMessage.join(', ')
+          : (json.ErrorMessage || json.ErrorDetails || `ExitCode=${exitCode}`);
+        lastError = `Engine${engine}: ${errMsg}`;
+        console.error(`[OCR Engine${engine}] API error:`, errMsg);
+        continue;
+      }
+
+      // OCRExitCode 2 = fatal error (wrong API key ฯลฯ)
+      if (exitCode === 2) {
+        lastError = `Engine${engine}: Fatal error (key อาจไม่ถูกต้อง, ExitCode=2)`;
         continue;
       }
 
       const result = json.ParsedResults?.[0];
       if (!result) {
-        lastError = `Engine${engine}: ไม่มี ParsedResults (ExitCode=${json.OCRExitCode})`;
+        lastError = `Engine${engine}: ไม่มี ParsedResults (ExitCode=${exitCode})`;
         continue;
       }
 
-      if (result.FileParseExitCode !== 1) {
-        lastError = `Engine${engine}: ${result.ErrorMessage || 'FileParseExitCode=' + result.FileParseExitCode}`;
+      const fileExitCode = typeof result.FileParseExitCode === 'string'
+        ? parseInt(result.FileParseExitCode) : result.FileParseExitCode;
+      if (fileExitCode !== 1) {
+        lastError = `Engine${engine}: ${result.ErrorMessage || 'FileParseExitCode=' + fileExitCode}`;
         continue;
       }
 
