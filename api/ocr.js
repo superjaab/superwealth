@@ -222,13 +222,24 @@ function parseOCR(text) {
   const cargo = text.match(/(?:ชื่อสินค้า|สินค้า|Product\s*Name)[^\n:]{0,5}[:\s]+([^\n]{3,50})/i);
   if (cargo) r.cargoList = cargo[1].trim();
 
-  // ชื่อบริษัท / ลูกค้า — ค้นหาจาก keyword ก่อน
-  const custKeyword = text.match(/(?:ชื่อผู้ซื้อ|ชื่อลูกค้า|ชื่อคู่ค้า|Customer\s*Name)[^\n:]{0,5}[:\s]+(?:\[[\d\s]+\]\s*)?([^\n]{3,50})/i);
+  // ชื่อบริษัท / ลูกค้า / คู่ค้า
+  // 1) ค้นจาก keyword "ชื่อคู่ค้า / ชื่อลูกค้า / Customer Name" — รองรับค่าอยู่บรรทัดถัดไปด้วย
+  const custKeyword = text.match(/(?:ชื่อผู้ซื้อ|ชื่อลูกค้า|ชื่อคู่ค้า|Customer\s*Name)[^\n:]{0,5}[:\s]+([\s\S]{0,5}?)([^\n]{3,60})/i);
   if (custKeyword) {
-    r.customerName = custKeyword[1].replace(/\[.*?\]/g, '').trim();
-  } else {
-    const cust = text.match(/(?:บริษัท|ร้าน|หจก\.?)[^\n]{2,40}(?:จำกัด|จก\.)?/);
+    const val = (custKeyword[2] || custKeyword[1] || '').replace(/\[.*?\]/g, '').trim();
+    if (val.length >= 3) r.customerName = val;
+  }
+  // 2) fallback: หาชื่อนิติบุคคลทุกรูปแบบ (บจก./บริษัท/หจก./ห้างฯ/ร้าน)
+  if (!r.customerName) {
+    const cust = text.match(/(?:บริษัท|บจก\.?|ห้างหุ้นส่วน|หจก\.?|ร้าน)[^\n]{2,50}(?:จำกัด|จก\.)?/);
     if (cust) r.customerName = cust[0].trim();
+  }
+  // 3) fallback: บรรทัดแรกของเอกสารที่ดูเหมือนชื่อบริษัท (มี บจก/บริษัท/หจก นำหน้า)
+  if (!r.customerName) {
+    const firstMatch = text.split('\n')
+      .map(l => l.trim())
+      .find(l => l.length >= 5 && /^(?:บจก|บริษัท|หจก|ห้าง|ร้าน)/.test(l));
+    if (firstMatch) r.customerName = firstMatch;
   }
 
   return r;

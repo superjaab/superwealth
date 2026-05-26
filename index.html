@@ -335,7 +335,7 @@
 <header class="app-header">
   <span style="font-size:1.5rem">🚛</span>
   <h1>ระบบขนส่งรถบรรทุก</h1>
-  <span class="version">v2.2 | 27/05/2026 00:11</span>
+  <span class="version">v2.3 | 27/05/2026 01:25</span>
 </header>
 
 <nav class="tab-nav">
@@ -928,27 +928,39 @@ async function autoOCRAndFill(idx, formKey) {
 function autoFillFields(formKey, parsed) {
   if (!parsed) return;
   let filled = 0;
-  const set = (id, val) => { const el = document.getElementById(id); if (el && !el.value && val) { el.value = val; filled++; } };
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el && val !== undefined && val !== null && val !== '' && !el.value) {
+      el.value = val; filled++;
+    }
+  };
+
+  // ── ฟิลด์ที่มีทุก form (map ตาม key) ──
+  const dateMap   = { truck:'t-jobDate',      income:'i-incomeDate',  expense:'e-expenseDate'  };
+  const amtMap    = { truck:'t-freightCost',   income:'i-amount',      expense:'e-amount'       };
+  const plateMap  = { truck:'t-plateNumber',   income:null,            expense:'e-plateNumber'  };
+  set(dateMap[formKey],  parsed.date);
+  set(amtMap[formKey],   parsed.amount);
+  set(plateMap[formKey], parsed.plateNumber);
+
+  // ── ฟิลด์เฉพาะ form ──
   if (formKey === 'truck') {
-    set('t-plateNumber',  parsed.plateNumber);
-    set('t-jobDate',      parsed.date);
     set('t-cargoWeight',  parsed.cargoWeight);
     set('t-driverPhone',  parsed.driverPhone);
-    set('t-freightCost',  parsed.amount);
     set('t-customerName', parsed.customerName);
+    set('t-cargoList',    parsed.cargoList);
   } else if (formKey === 'income') {
-    set('i-incomeDate',   parsed.date);
     set('i-docNumber',    parsed.docNumber);
     set('i-customerName', parsed.customerName);
-    set('i-amount',       parsed.amount);
+    set('i-incomeItem',   parsed.cargoList);
   } else if (formKey === 'expense') {
-    set('e-expenseDate',  parsed.date);
-    set('e-amount',       parsed.amount);
-    set('e-plateNumber',  parsed.plateNumber);
-    set('e-vendor',       parsed.vendor);
+    // vendor = ชื่อบริษัทที่จ่ายให้ → ใช้ customerName จากใบเสร็จ/ใบชั่ง
+    set('e-vendor',        parsed.vendor || parsed.customerName);
+    set('e-expenseDetail', parsed.cargoList);
   }
+
   if (filled > 0) showToast(`✅ เติมข้อมูลอัตโนมัติ ${filled} ช่องแล้ว`, 'success');
-  else showToast('อ่านภาพได้ แต่ไม่พบข้อมูลที่จะเติมลงฟอร์ม', 'warning');
+  else showToast('อ่านภาพได้ แต่ไม่พบข้อมูลที่จะเติม (ลอง scroll ดูข้อความ OCR)', 'warning');
 }
 
 function renderPreview(formKey) {
@@ -1006,28 +1018,35 @@ function closeOCRPanel(formKey) { document.getElementById(formKey+'-ocr-panel').
 function fillFormFromOCR(formKey) {
   const parsed = state[formKey].ocrParsed;
   if (!parsed) { showToast('ยังไม่มีข้อมูล OCR', 'warning'); return; }
+  // ใช้ logic เดียวกับ autoFillFields แต่ override ช่องที่มีข้อมูลอยู่แล้วด้วย
   let filled = 0;
-  const set = (id, val) => { const el = document.getElementById(id); if (el && !el.value && val) { el.value = val; filled++; } };
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el && val !== undefined && val !== null && val !== '') {
+      el.value = val; filled++;
+    }
+  };
+  const dateMap  = { truck:'t-jobDate',     income:'i-incomeDate',  expense:'e-expenseDate' };
+  const amtMap   = { truck:'t-freightCost', income:'i-amount',      expense:'e-amount'      };
+  const plateMap = { truck:'t-plateNumber', income:null,            expense:'e-plateNumber' };
+  set(dateMap[formKey],  parsed.date);
+  set(amtMap[formKey],   parsed.amount);
+  set(plateMap[formKey], parsed.plateNumber);
   if (formKey === 'truck') {
-    set('t-plateNumber',  parsed.plateNumber);
-    set('t-jobDate',      parsed.date);
     set('t-cargoWeight',  parsed.cargoWeight);
     set('t-driverPhone',  parsed.driverPhone);
-    set('t-freightCost',  parsed.amount);
     set('t-customerName', parsed.customerName);
+    set('t-cargoList',    parsed.cargoList);
   } else if (formKey === 'income') {
-    set('i-incomeDate',   parsed.date);
     set('i-docNumber',    parsed.docNumber);
     set('i-customerName', parsed.customerName);
-    set('i-amount',       parsed.amount);
+    set('i-incomeItem',   parsed.cargoList);
   } else if (formKey === 'expense') {
-    set('e-expenseDate',  parsed.date);
-    set('e-amount',       parsed.amount);
-    set('e-plateNumber',  parsed.plateNumber);
-    set('e-vendor',       parsed.vendor);
+    set('e-vendor',        parsed.vendor || parsed.customerName);
+    set('e-expenseDetail', parsed.cargoList);
   }
-  if (filled > 0) { showToast(`เติมข้อมูลลงฟอร์ม ${filled} ช่องแล้ว`, 'success'); closeOCRPanel(formKey); }
-  else showToast('ไม่พบข้อมูลที่จะเติมลงฟอร์ม', 'warning');
+  if (filled > 0) { showToast(`✅ เติมข้อมูลลงฟอร์ม ${filled} ช่องแล้ว`, 'success'); closeOCRPanel(formKey); }
+  else showToast('ไม่พบข้อมูลที่จะเติม — ลองตรวจ OCR text ด้านบน', 'warning');
 }
 
 // ─── SUBMIT (fetch → /api/upload-images + /api/save) ──────
