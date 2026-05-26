@@ -320,6 +320,51 @@
     .parsed-value { font-size: 0.9rem; font-weight: 700; color: var(--text); }
     @media (max-width: 380px) { .parsed-data-grid { grid-template-columns: 1fr; } }
 
+    /* ─── SUMMARY TAB ─── */
+    .summary-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;
+    }
+    .sum-card {
+      background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow);
+      padding: 14px 12px; text-align: center; border-top: 4px solid var(--gray2);
+    }
+    .sum-card.green  { border-top-color: var(--green); }
+    .sum-card.red    { border-top-color: var(--red); }
+    .sum-card.blue   { border-top-color: var(--blue); }
+    .sum-card.orange { border-top-color: var(--orange); }
+    .sum-label {
+      font-size: 0.72rem; font-weight: 600; color: var(--gray3);
+      text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px;
+    }
+    .sum-value {
+      font-size: 1.3rem; font-weight: 800; color: var(--text); line-height: 1.1;
+    }
+    .sum-value.green  { color: var(--green); }
+    .sum-value.red    { color: var(--red); }
+    .sum-value.blue   { color: var(--blue); }
+    .sum-value.orange { color: var(--orange); }
+    .sum-sub { font-size: 0.7rem; color: var(--gray3); margin-top: 3px; }
+    .sum-empty {
+      text-align: center; padding: 32px 16px; color: var(--gray3);
+      font-size: 0.88rem; line-height: 1.8;
+    }
+    .sum-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .sum-table th {
+      background: var(--gray1); padding: 8px 10px; text-align: left;
+      font-size: 0.75rem; color: var(--gray4); border-bottom: 1.5px solid var(--gray2);
+    }
+    .sum-table td { padding: 8px 10px; border-bottom: 1px solid var(--gray1); }
+    .sum-table tr:last-child td { border-bottom: none; }
+    .sum-badge {
+      display: inline-block; padding: 2px 10px; border-radius: 12px;
+      font-size: 0.72rem; font-weight: 600;
+    }
+    .sum-badge.wait    { background: #FFF9C4; color: #F57F17; }
+    .sum-badge.driving { background: #FFF3E0; color: var(--orange); }
+    .sum-badge.done    { background: #E8F5E9; color: var(--green); }
+    .sum-badge.cancel  { background: #FFEBEE; color: var(--red); }
+    .chart-wrap { position: relative; margin: 0 auto; }
+
     @media (min-width: 600px) {
       .tab-nav { position: static; border-top: none; border-bottom: 2px solid var(--gray2); box-shadow: none; }
       .tab-btn { flex-direction: row; padding: 14px 20px; font-size: 0.88rem; gap: 8px; }
@@ -329,13 +374,14 @@
       #toast { bottom: 20px; }
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
 <header class="app-header">
   <span style="font-size:1.5rem">🚛</span>
   <h1>ระบบขนส่งรถบรรทุก</h1>
-  <span class="version">v2.4 | 27/05/2026 02:57</span>
+  <span class="version">v2.5 | 27/05/2026 03:09</span>
 </header>
 
 <nav class="tab-nav">
@@ -353,6 +399,9 @@
   </button>
   <button class="tab-btn" onclick="switchTab('ocr', this)">
     <span class="icon">🔍</span><span>อ่านภาพ</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('summary', this); initSummaryOnce()">
+    <span class="icon">📊</span><span>สรุปผล</span>
   </button>
 </nav>
 
@@ -470,14 +519,18 @@
 
     <div class="card">
       <div class="card-title green">📄 ข้อมูลรายรับ</div>
-      <div class="form-row-2">
+      <div class="form-row-3">
         <div class="form-row">
           <label>วันที่ <span class="req">*</span></label>
           <input type="date" id="i-incomeDate" required>
         </div>
         <div class="form-row">
+          <label>เวลา</label>
+          <input type="time" id="i-incomeTime">
+        </div>
+        <div class="form-row">
           <label>เลขที่เอกสาร</label>
-          <input type="text" id="i-docNumber" placeholder="INV-2026-001" maxlength="50">
+          <input type="text" id="i-docNumber" placeholder="INV-001" maxlength="50">
         </div>
       </div>
       <div class="form-row">
@@ -533,10 +586,14 @@
 
     <div class="card">
       <div class="card-title red">🧾 ข้อมูลรายจ่าย</div>
-      <div class="form-row-2">
+      <div class="form-row-3">
         <div class="form-row">
           <label>วันที่ <span class="req">*</span></label>
           <input type="date" id="e-expenseDate" required>
+        </div>
+        <div class="form-row">
+          <label>เวลา</label>
+          <input type="time" id="e-expenseTime">
         </div>
         <div class="form-row">
           <label>หมวดรายจ่าย <span class="req">*</span></label>
@@ -712,6 +769,79 @@
 
 </div>
 
+<!-- ══ TAB 6: สรุปผล ══ -->
+<div class="tab-panel" id="tab-summary">
+
+  <!-- Date range picker -->
+  <div class="card">
+    <div class="card-title">📅 เลือกช่วงเวลา</div>
+    <div class="form-row-2">
+      <div class="form-row">
+        <label>จากวันที่</label>
+        <input type="date" id="sum-dateFrom">
+      </div>
+      <div class="form-row">
+        <label>ถึงวันที่</label>
+        <input type="date" id="sum-dateTo">
+      </div>
+    </div>
+    <button type="button" class="btn btn-primary btn-block" onclick="loadSummary()" style="padding:13px">
+      🔄 โหลดข้อมูลสรุป
+    </button>
+  </div>
+
+  <!-- Summary cards -->
+  <div class="summary-grid" id="sum-cards">
+    <div class="sum-card green">
+      <div class="sum-label">รายรับรวม</div>
+      <div class="sum-value green" id="sum-total-income">-</div>
+      <div class="sum-sub" id="sum-income-count">-</div>
+    </div>
+    <div class="sum-card red">
+      <div class="sum-label">รายจ่ายรวม</div>
+      <div class="sum-value red" id="sum-total-expense">-</div>
+      <div class="sum-sub" id="sum-expense-count">-</div>
+    </div>
+    <div class="sum-card blue">
+      <div class="sum-label">กำไรสุทธิ</div>
+      <div class="sum-value blue" id="sum-profit">-</div>
+      <div class="sum-sub" id="sum-profit-sub">-</div>
+    </div>
+    <div class="sum-card orange">
+      <div class="sum-label">งานรถ</div>
+      <div class="sum-value orange" id="sum-truck-count">-</div>
+      <div class="sum-sub" id="sum-truck-sub">-</div>
+    </div>
+  </div>
+
+  <!-- Bar chart: monthly income vs expense -->
+  <div class="card" id="sum-bar-card" style="display:none">
+    <div class="card-title">📊 รายรับ-รายจ่าย รายเดือน</div>
+    <div class="chart-wrap"><canvas id="sum-chart-bar" height="200"></canvas></div>
+  </div>
+
+  <!-- Doughnut chart: expense by category -->
+  <div class="card" id="sum-doughnut-card" style="display:none">
+    <div class="card-title">🍩 สัดส่วนรายจ่ายตามหมวด</div>
+    <div class="chart-wrap" style="max-width:280px"><canvas id="sum-chart-doughnut"></canvas></div>
+  </div>
+
+  <!-- Truck job breakdown -->
+  <div class="card" id="sum-truck-card" style="display:none">
+    <div class="card-title">🚚 สรุปสถานะงานรถ</div>
+    <table class="sum-table" id="sum-truck-table">
+      <thead><tr><th>สถานะ</th><th style="text-align:right">จำนวน</th><th style="text-align:right">ค่าขนส่งรวม</th></tr></thead>
+      <tbody id="sum-truck-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- Placeholder when not yet loaded -->
+  <div id="sum-placeholder" class="card">
+    <div class="sum-empty">📊 กด <b>โหลดข้อมูลสรุป</b> เพื่อดูสถิติรายรับ-รายจ่ายและกราฟ</div>
+  </div>
+
+</div>
+
 <!-- Loading -->
 <div id="loading-overlay" class="hidden">
   <div class="spinner"></div>
@@ -750,8 +880,9 @@ function setDefaultDates() {
   ['t-jobDate','i-incomeDate','e-expenseDate'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = today;
   });
-  const timeEl = document.getElementById('t-jobTime');
-  if (timeEl) timeEl.value = now;
+  ['t-jobTime','i-incomeTime','e-expenseTime'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = now;
+  });
 }
 
 // ─── TAB ──────────────────────────────────
@@ -1141,7 +1272,8 @@ function collectFormData(formKey) {
     if (!g('i-incomeItem'))   { showToast('กรุณากรอกรายการรายรับ', 'warning');  return null; }
     if (!g('i-amount'))       { showToast('กรุณากรอกจำนวนเงิน', 'warning');     return null; }
     return {
-      incomeDate: g('i-incomeDate'), docNumber: g('i-docNumber'),
+      incomeDate: g('i-incomeDate'), incomeTime: g('i-incomeTime'),
+      docNumber: g('i-docNumber'),
       customerName: g('i-customerName'), incomeItem: g('i-incomeItem'),
       amount: g('i-amount'), paymentMethod: g('i-paymentMethod'), remark: g('i-remark')
     };
@@ -1151,7 +1283,8 @@ function collectFormData(formKey) {
     if (!g('e-category'))    { showToast('กรุณาเลือกหมวดรายจ่าย', 'warning'); return null; }
     if (!g('e-amount'))      { showToast('กรุณากรอกจำนวนเงิน', 'warning');     return null; }
     return {
-      expenseDate: g('e-expenseDate'), category: g('e-category'),
+      expenseDate: g('e-expenseDate'), expenseTime: g('e-expenseTime'),
+      category: g('e-category'),
       plateNumber: g('e-plateNumber'), vendor: g('e-vendor'),
       expenseDetail: g('e-expenseDetail'), amount: g('e-amount'),
       paymentMethod: g('e-paymentMethod'), remark: g('e-remark')
@@ -1389,6 +1522,231 @@ document.addEventListener('paste', e => {
   }
   if (files.length) { ocrTabAddFiles(files); showToast('วางภาพจาก Clipboard แล้ว', 'success'); }
 });
+
+// ─── SUMMARY TAB ──────────────────────────────────────────────────────────────
+let _barChart = null;
+let _doughnutChart = null;
+let _summaryInited = false;
+
+function initSummaryOnce() {
+  if (_summaryInited) return;
+  _summaryInited = true;
+  // ตั้งค่าช่วงวันที่เริ่มต้น: เดือนปัจจุบัน
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const lastDay = new Date(y, now.getMonth() + 1, 0).getDate();
+  document.getElementById('sum-dateFrom').value = `${y}-${m}-01`;
+  document.getElementById('sum-dateTo').value   = `${y}-${m}-${lastDay}`;
+}
+
+async function loadSummary() {
+  const dateFrom = document.getElementById('sum-dateFrom').value;
+  const dateTo   = document.getElementById('sum-dateTo').value;
+  if (!dateFrom || !dateTo) { showToast('กรุณาเลือกช่วงวันที่', 'warning'); return; }
+  if (dateFrom > dateTo)    { showToast('วันที่เริ่มต้นต้องไม่เกินวันที่สิ้นสุด', 'warning'); return; }
+
+  showLoading('กำลังโหลดข้อมูลสรุป...');
+  try {
+    const params = new URLSearchParams({ type: 'all', dateFrom, dateTo });
+    const res = await fetch(`/api/get-data?${params}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    hideLoading();
+    if (!json.success) { showToast('โหลดไม่สำเร็จ: ' + json.error, 'error'); return; }
+    renderSummary(json.data, dateFrom, dateTo);
+    document.getElementById('sum-placeholder').style.display = 'none';
+  } catch (e) {
+    hideLoading();
+    showToast('เกิดข้อผิดพลาด: ' + e.message, 'error');
+  }
+}
+
+function renderSummary(data, dateFrom, dateTo) {
+  const income  = data.income  || [];
+  const expense = data.expense || [];
+  const truck   = data.truck   || [];
+
+  // ── คำนวณยอดรวม ──
+  const totalIncome  = income.reduce((s, r)  => s + (parseFloat(r.amount)       || 0), 0);
+  const totalExpense = expense.reduce((s, r) => s + (parseFloat(r.amount)       || 0), 0);
+  const totalFreight = truck.reduce((s, r)   => s + (parseFloat(r.freightCost)  || 0), 0);
+  const profit       = totalIncome - totalExpense;
+
+  const fmt = n => n.toLocaleString('th-TH', { maximumFractionDigits: 2 });
+
+  // ── Summary cards ──
+  document.getElementById('sum-total-income').textContent  = '฿' + fmt(totalIncome);
+  document.getElementById('sum-income-count').textContent  = `${income.length} รายการ`;
+  document.getElementById('sum-total-expense').textContent = '฿' + fmt(totalExpense);
+  document.getElementById('sum-expense-count').textContent = `${expense.length} รายการ`;
+
+  const profitEl    = document.getElementById('sum-profit');
+  const profitSubEl = document.getElementById('sum-profit-sub');
+  profitEl.textContent    = (profit >= 0 ? '+' : '') + '฿' + fmt(profit);
+  profitEl.className      = 'sum-value ' + (profit >= 0 ? 'green' : 'red');
+  profitSubEl.textContent = profit >= 0 ? 'กำไร' : 'ขาดทุน';
+
+  document.getElementById('sum-truck-count').textContent = truck.length + ' งาน';
+  document.getElementById('sum-truck-sub').textContent   = '฿' + fmt(totalFreight);
+
+  // ── Bar chart: income vs expense by month ──
+  renderBarChart(income, expense, dateFrom, dateTo);
+
+  // ── Doughnut: expense by category ──
+  if (expense.length > 0) {
+    renderDoughnutChart(expense);
+    document.getElementById('sum-doughnut-card').style.display = 'block';
+  } else {
+    document.getElementById('sum-doughnut-card').style.display = 'none';
+  }
+
+  // ── Truck job status breakdown ──
+  if (truck.length > 0) {
+    renderTruckTable(truck);
+    document.getElementById('sum-truck-card').style.display = 'block';
+  } else {
+    document.getElementById('sum-truck-card').style.display = 'none';
+  }
+}
+
+function renderBarChart(income, expense, dateFrom, dateTo) {
+  // สร้าง labels เดือนระหว่าง dateFrom ถึง dateTo
+  const months = [];
+  const d = new Date(dateFrom.slice(0,7) + '-01');
+  const end = new Date(dateTo.slice(0,7) + '-01');
+  while (d <= end) {
+    months.push(d.toISOString().slice(0,7)); // YYYY-MM
+    d.setMonth(d.getMonth() + 1);
+  }
+
+  const incomeByMonth  = {};
+  const expenseByMonth = {};
+  months.forEach(m => { incomeByMonth[m] = 0; expenseByMonth[m] = 0; });
+
+  income.forEach(r => {
+    const m = (r.incomeDate || '').slice(0, 7);
+    if (incomeByMonth[m] !== undefined) incomeByMonth[m] += parseFloat(r.amount) || 0;
+  });
+  expense.forEach(r => {
+    const m = (r.expenseDate || '').slice(0, 7);
+    if (expenseByMonth[m] !== undefined) expenseByMonth[m] += parseFloat(r.amount) || 0;
+  });
+
+  const thMonths = months.map(m => {
+    const [y, mo] = m.split('-');
+    const thY = parseInt(y) + 543;
+    const moNames = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    return moNames[parseInt(mo) - 1] + ' ' + thY;
+  });
+
+  if (_barChart) { _barChart.destroy(); _barChart = null; }
+  const ctx = document.getElementById('sum-chart-bar').getContext('2d');
+  _barChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: thMonths,
+      datasets: [
+        {
+          label: 'รายรับ',
+          data: months.map(m => incomeByMonth[m]),
+          backgroundColor: 'rgba(46,125,50,0.75)',
+          borderRadius: 4
+        },
+        {
+          label: 'รายจ่าย',
+          data: months.map(m => expenseByMonth[m]),
+          backgroundColor: 'rgba(198,40,40,0.75)',
+          borderRadius: 4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'top', labels: { font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            label: ctx => '฿' + ctx.raw.toLocaleString('th-TH', { maximumFractionDigits: 0 })
+          }
+        }
+      },
+      scales: {
+        y: {
+          ticks: {
+            callback: v => '฿' + (v / 1000).toFixed(0) + 'K',
+            font: { size: 10 }
+          }
+        },
+        x: { ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+  document.getElementById('sum-bar-card').style.display = 'block';
+}
+
+function renderDoughnutChart(expense) {
+  const catMap = {};
+  expense.forEach(r => {
+    const cat = r.category || 'อื่นๆ';
+    catMap[cat] = (catMap[cat] || 0) + (parseFloat(r.amount) || 0);
+  });
+  const labels = Object.keys(catMap);
+  const values = labels.map(k => catMap[k]);
+  const colors = ['#1565C0','#C62828','#E65100','#2E7D32','#6A1B9A','#00838F','#F57F17','#37474F'];
+
+  if (_doughnutChart) { _doughnutChart.destroy(); _doughnutChart = null; }
+  const ctx = document.getElementById('sum-chart-doughnut').getContext('2d');
+  _doughnutChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: colors.slice(0, labels.length),
+        borderWidth: 2,
+        borderColor: '#fff'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10 } },
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.label + ': ฿' + ctx.raw.toLocaleString('th-TH', { maximumFractionDigits: 0 })
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderTruckTable(truck) {
+  const statusMap = {
+    'รอโหลด':     { cls: 'wait',    label: '⏳ รอโหลด' },
+    'กำลังขนส่ง': { cls: 'driving', label: '🚚 กำลังขนส่ง' },
+    'ส่งแล้ว':    { cls: 'done',    label: '✅ ส่งแล้ว' },
+    'ยกเลิก':     { cls: 'cancel',  label: '❌ ยกเลิก' }
+  };
+  const grouped = {};
+  truck.forEach(r => {
+    const s = r.jobStatus || 'รอโหลด';
+    if (!grouped[s]) grouped[s] = { count: 0, freight: 0 };
+    grouped[s].count++;
+    grouped[s].freight += parseFloat(r.freightCost) || 0;
+  });
+  const fmt = n => '฿' + n.toLocaleString('th-TH', { maximumFractionDigits: 0 });
+  const tbody = document.getElementById('sum-truck-tbody');
+  tbody.innerHTML = Object.entries(grouped).map(([s, v]) => {
+    const info = statusMap[s] || { cls: 'wait', label: s };
+    return `<tr>
+      <td><span class="sum-badge ${info.cls}">${info.label}</span></td>
+      <td style="text-align:right;font-weight:700">${v.count}</td>
+      <td style="text-align:right;color:var(--green);font-weight:700">${fmt(v.freight)}</td>
+    </tr>`;
+  }).join('');
+}
 </script>
 
 </body>

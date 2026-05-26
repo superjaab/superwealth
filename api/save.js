@@ -62,12 +62,12 @@ module.exports = async function handler(req, res) {
       sheetName = 'Income';
       color     = '#2E7D32';
       headers   = [
-        'timestamp','incomeDate','docNumber','customerName','incomeItem',
+        'timestamp','incomeDate','incomeTime','docNumber','customerName','incomeItem',
         'amount','paymentMethod','remark','imageUrls','ocrText','userAgent','rowId'
       ];
       row = [
         now,
-        data.incomeDate    || '', data.docNumber    || '',
+        data.incomeDate    || '', data.incomeTime   || '', data.docNumber    || '',
         data.customerName  || '', data.incomeItem   || '',
         Number(data.amount)|| 0,
         data.paymentMethod || 'เงินสด',
@@ -80,13 +80,13 @@ module.exports = async function handler(req, res) {
       sheetName = 'Expense';
       color     = '#B71C1C';
       headers   = [
-        'timestamp','expenseDate','category','plateNumber','vendor',
+        'timestamp','expenseDate','expenseTime','category','plateNumber','vendor',
         'expenseDetail','amount','paymentMethod','remark',
         'imageUrls','ocrText','userAgent','rowId'
       ];
       row = [
         now,
-        data.expenseDate   || '', data.category      || '',
+        data.expenseDate   || '', data.expenseTime   || '', data.category      || '',
         data.plateNumber   || '', data.vendor         || '',
         data.expenseDetail || '',
         Number(data.amount)|| 0,
