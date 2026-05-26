@@ -335,7 +335,7 @@
 <header class="app-header">
   <span style="font-size:1.5rem">🚛</span>
   <h1>ระบบขนส่งรถบรรทุก</h1>
-  <span class="version">v2.3 | 27/05/2026 01:25</span>
+  <span class="version">v2.4 | 27/05/2026 02:57</span>
 </header>
 
 <nav class="tab-nav">
@@ -928,17 +928,29 @@ async function autoOCRAndFill(idx, formKey) {
 function autoFillFields(formKey, parsed) {
   if (!parsed) return;
   let filled = 0;
+
+  // set text/number/date — เติมเฉพาะช่องว่าง
   const set = (id, val) => {
     const el = document.getElementById(id);
     if (el && val !== undefined && val !== null && val !== '' && !el.value) {
       el.value = val; filled++;
     }
   };
+  // setSelect — เติม select ถ้า option นั้นมีอยู่จริง (แม้ว่าจะมีค่า default อยู่แล้ว)
+  const setSelect = (id, val) => {
+    if (!val) return;
+    const el = document.getElementById(id);
+    if (!el) return;
+    const prev = el.value;
+    el.value = val;
+    if (el.value === val) filled++;   // browser ยืนยันว่า option มีอยู่
+    else el.value = prev;             // rollback ถ้า option ไม่ตรง
+  };
 
-  // ── ฟิลด์ที่มีทุก form (map ตาม key) ──
-  const dateMap   = { truck:'t-jobDate',      income:'i-incomeDate',  expense:'e-expenseDate'  };
-  const amtMap    = { truck:'t-freightCost',   income:'i-amount',      expense:'e-amount'       };
-  const plateMap  = { truck:'t-plateNumber',   income:null,            expense:'e-plateNumber'  };
+  // ── ฟิลด์ร่วม ──
+  const dateMap  = { truck:'t-jobDate',     income:'i-incomeDate',  expense:'e-expenseDate' };
+  const amtMap   = { truck:'t-freightCost', income:'i-amount',      expense:'e-amount'      };
+  const plateMap = { truck:'t-plateNumber', income:null,            expense:'e-plateNumber' };
   set(dateMap[formKey],  parsed.date);
   set(amtMap[formKey],   parsed.amount);
   set(plateMap[formKey], parsed.plateNumber);
@@ -952,15 +964,21 @@ function autoFillFields(formKey, parsed) {
   } else if (formKey === 'income') {
     set('i-docNumber',    parsed.docNumber);
     set('i-customerName', parsed.customerName);
-    set('i-incomeItem',   parsed.cargoList);
+    // รายการรายรับ: ใช้ incomeItem (smart detect) หรือ cargoList
+    set('i-incomeItem',   parsed.incomeItem || parsed.cargoList);
+    // วิธีรับเงิน: detect จาก OCR
+    setSelect('i-paymentMethod', parsed.paymentMethod);
   } else if (formKey === 'expense') {
-    // vendor = ชื่อบริษัทที่จ่ายให้ → ใช้ customerName จากใบเสร็จ/ใบชั่ง
     set('e-vendor',        parsed.vendor || parsed.customerName);
-    set('e-expenseDetail', parsed.cargoList);
+    set('e-expenseDetail', parsed.cargoList || parsed.incomeItem);
+    // หมวดรายจ่าย: detect จาก OCR (สำคัญมาก — required field)
+    setSelect('e-category',      parsed.expenseCategory);
+    // วิธีจ่ายเงิน: detect จาก OCR
+    setSelect('e-paymentMethod', parsed.paymentMethod);
   }
 
   if (filled > 0) showToast(`✅ เติมข้อมูลอัตโนมัติ ${filled} ช่องแล้ว`, 'success');
-  else showToast('อ่านภาพได้ แต่ไม่พบข้อมูลที่จะเติม (ลอง scroll ดูข้อความ OCR)', 'warning');
+  else showToast('อ่านภาพได้ แต่ไม่พบข้อมูลที่จะเติม — ลอง scroll ดูข้อความ OCR', 'warning');
 }
 
 function renderPreview(formKey) {
@@ -1018,20 +1036,29 @@ function closeOCRPanel(formKey) { document.getElementById(formKey+'-ocr-panel').
 function fillFormFromOCR(formKey) {
   const parsed = state[formKey].ocrParsed;
   if (!parsed) { showToast('ยังไม่มีข้อมูล OCR', 'warning'); return; }
-  // ใช้ logic เดียวกับ autoFillFields แต่ override ช่องที่มีข้อมูลอยู่แล้วด้วย
+  // override ทุกช่องที่มีข้อมูล (แม้ field จะมีค่าอยู่แล้ว)
   let filled = 0;
   const set = (id, val) => {
     const el = document.getElementById(id);
-    if (el && val !== undefined && val !== null && val !== '') {
-      el.value = val; filled++;
-    }
+    if (el && val !== undefined && val !== null && val !== '') { el.value = val; filled++; }
   };
+  const setSelect = (id, val) => {
+    if (!val) return;
+    const el = document.getElementById(id);
+    if (!el) return;
+    const prev = el.value;
+    el.value = val;
+    if (el.value === val) filled++;
+    else el.value = prev;
+  };
+
   const dateMap  = { truck:'t-jobDate',     income:'i-incomeDate',  expense:'e-expenseDate' };
   const amtMap   = { truck:'t-freightCost', income:'i-amount',      expense:'e-amount'      };
   const plateMap = { truck:'t-plateNumber', income:null,            expense:'e-plateNumber' };
   set(dateMap[formKey],  parsed.date);
   set(amtMap[formKey],   parsed.amount);
   set(plateMap[formKey], parsed.plateNumber);
+
   if (formKey === 'truck') {
     set('t-cargoWeight',  parsed.cargoWeight);
     set('t-driverPhone',  parsed.driverPhone);
@@ -1040,11 +1067,15 @@ function fillFormFromOCR(formKey) {
   } else if (formKey === 'income') {
     set('i-docNumber',    parsed.docNumber);
     set('i-customerName', parsed.customerName);
-    set('i-incomeItem',   parsed.cargoList);
+    set('i-incomeItem',   parsed.incomeItem || parsed.cargoList);
+    setSelect('i-paymentMethod', parsed.paymentMethod);
   } else if (formKey === 'expense') {
     set('e-vendor',        parsed.vendor || parsed.customerName);
-    set('e-expenseDetail', parsed.cargoList);
+    set('e-expenseDetail', parsed.cargoList || parsed.incomeItem);
+    setSelect('e-category',      parsed.expenseCategory);
+    setSelect('e-paymentMethod', parsed.paymentMethod);
   }
+
   if (filled > 0) { showToast(`✅ เติมข้อมูลลงฟอร์ม ${filled} ช่องแล้ว`, 'success'); closeOCRPanel(formKey); }
   else showToast('ไม่พบข้อมูลที่จะเติม — ลองตรวจ OCR text ด้านบน', 'warning');
 }

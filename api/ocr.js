@@ -242,5 +242,29 @@ function parseOCR(text) {
     if (firstMatch) r.customerName = firstMatch;
   }
 
+  // ── วิธีชำระเงิน — detect จากข้อความ ──
+  if      (/โอนเงิน|รับโอน|โอน|PromptPay|พร้อมเพย์|QR|transfer/i.test(text)) r.paymentMethod = 'โอน';
+  else if (/เงินสด|cash/i.test(text))                                          r.paymentMethod = 'เงินสด';
+  else if (/เช็ค|cheque|check/i.test(text))                                    r.paymentMethod = 'เช็ค';
+
+  // ── หมวดรายจ่าย — detect สำหรับใบเสร็จ ──
+  if      (/น้ำมัน|ดีเซล|เบนซิน|ปั๊ม|fuel|diesel|petrol|gasoline/i.test(text))  r.expenseCategory = 'ค่าน้ำมัน';
+  else if (/ซ่อม|repair|maintenance|อู่|ช่างรถ/i.test(text))                     r.expenseCategory = 'ค่าซ่อม';
+  else if (/อะไหล่|spare|part|ยางรถ|แบตเตอรี่|battery/i.test(text))             r.expenseCategory = 'ค่าอะไหล่';
+  else if (/ค่าแรง|แรงงาน|labour|labor/i.test(text))                             r.expenseCategory = 'ค่าแรง';
+  else if (/ทางด่วน|expressway|toll|ด่าน/i.test(text))                           r.expenseCategory = 'ค่าทางด่วน';
+  else if (/อาหาร|food|ร้านอาหาร|ร้านข้าว/i.test(text))                         r.expenseCategory = 'ค่าอาหาร';
+
+  // ── รายการรายรับ — smart detect สำหรับสลิป/ใบเสร็จ ──
+  if (r.cargoList) {
+    r.incomeItem = r.cargoList;
+  } else if (/ค่าขนส่ง|freight|shipping|ขนส่ง/i.test(text)) {
+    r.incomeItem = 'ค่าขนส่ง';
+  } else if (/ค่าบริการ|service fee|service/i.test(text)) {
+    r.incomeItem = 'ค่าบริการ';
+  } else if (/โอนเงิน|สลิป|transfer|รับโอน/i.test(text)) {
+    r.incomeItem = 'ค่าขนส่ง';  // สลิปโอนเงิน default = ค่าขนส่ง
+  }
+
   return r;
 }
