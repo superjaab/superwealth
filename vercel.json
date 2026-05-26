@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "functions": {
+    "api/upload-images.js": { "maxDuration": 30 },
+    "api/save.js":          { "maxDuration": 30 },
+    "api/ocr.js":           { "maxDuration": 20 }
+  }
+}

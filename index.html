@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ระบบขนส่งรถบรรทุก</title>
+  <style>
+    /* ─── RESET & BASE ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue:    #1565C0;
+      --blue-lt: #1976D2;
+      --blue-dk: #0D47A1;
+      --green:   #2E7D32;
+      --green-lt:#388E3C;
+      --red:     #C62828;
+      --red-lt:  #D32F2F;
+      --orange:  #E65100;
+      --gray1:   #F5F5F5;
+      --gray2:   #E0E0E0;
+      --gray3:   #9E9E9E;
+      --gray4:   #616161;
+      --text:    #212121;
+      --white:   #FFFFFF;
+      --shadow:  0 2px 8px rgba(0,0,0,0.12);
+      --radius:  12px;
+      --radius-sm: 8px;
+    }
+    html { font-size: 16px; }
+    body {
+      font-family: 'Segoe UI', 'Noto Sans Thai', Arial, sans-serif;
+      background: #ECEFF1;
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+
+    /* ─── HEADER ─── */
+    .app-header {
+      background: linear-gradient(135deg, var(--blue-dk), var(--blue-lt));
+      color: var(--white);
+      padding: 14px 16px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .app-header h1 { font-size: 1.15rem; font-weight: 700; letter-spacing: 0.3px; }
+    .app-header .version { font-size: 0.7rem; opacity: 0.7; margin-left: auto; }
+
+    /* ─── TAB NAV ─── */
+    .tab-nav {
+      display: flex;
+      background: var(--white);
+      border-top: 2px solid var(--gray2);
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 100;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+    }
+    .tab-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 10px 4px 8px;
+      font-size: 0.72rem;
+      color: var(--gray3);
+      cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      transition: color 0.2s, background 0.2s;
+      font-family: inherit;
+    }
+    .tab-btn .icon { font-size: 1.4rem; line-height: 1; }
+    .tab-btn.active { color: var(--blue); }
+    .tab-btn:active { background: var(--gray1); }
+
+    /* ─── TAB PANELS ─── */
+    .tab-panel { display: none; padding: 14px 12px 16px; max-width: 700px; margin: 0 auto; }
+    .tab-panel.active { display: block; }
+
+    /* ─── CARD ─── */
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .card-title {
+      font-size: 0.85rem; font-weight: 700; color: var(--blue);
+      margin-bottom: 12px; padding-bottom: 8px;
+      border-bottom: 2px solid var(--gray1);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .card-title.green { color: var(--green); border-color: #E8F5E9; }
+    .card-title.red   { color: var(--red);   border-color: #FFEBEE; }
+
+    /* ─── FORM ─── */
+    .form-row   { margin-bottom: 12px; }
+    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--gray4); margin-bottom: 5px; }
+    label .req { color: var(--red); margin-left: 2px; }
+    input[type=text], input[type=number], input[type=date],
+    input[type=time], input[type=tel], textarea, select {
+      width: 100%; padding: 10px 12px;
+      border: 1.5px solid var(--gray2); border-radius: var(--radius-sm);
+      font-size: 0.9rem; font-family: inherit; color: var(--text); background: var(--white);
+      outline: none; transition: border-color 0.2s, box-shadow 0.2s; -webkit-appearance: none;
+    }
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--blue); box-shadow: 0 0 0 3px rgba(21,101,192,0.12);
+    }
+    textarea { resize: vertical; min-height: 72px; }
+    select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239E9E9E' d='M6 8L0 0h12z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+
+    /* Status chips */
+    .status-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+    .status-chip {
+      padding: 6px 14px; border-radius: 20px; border: 1.5px solid var(--gray2);
+      font-size: 0.8rem; cursor: pointer; transition: all 0.2s;
+      background: var(--white); font-family: inherit; white-space: nowrap;
+    }
+    .status-chip:hover { border-color: var(--blue); color: var(--blue); }
+    .status-chip.selected { background: var(--blue); color: var(--white); border-color: var(--blue); }
+    .status-chip.yellow.selected  { background: #F57F17; border-color: #F57F17; }
+    .status-chip.orange.selected  { background: var(--orange); border-color: var(--orange); }
+    .status-chip.green2.selected  { background: var(--green); border-color: var(--green); }
+    .status-chip.redchip.selected { background: var(--red); border-color: var(--red); }
+
+    /* ─── UPLOAD AREA ─── */
+    .upload-zone {
+      border: 2px dashed var(--gray2); border-radius: var(--radius);
+      padding: 18px 12px; text-align: center; cursor: pointer;
+      transition: border-color 0.2s, background 0.2s; background: var(--gray1);
+    }
+    .upload-zone:hover, .upload-zone.dragover { border-color: var(--blue); background: #E3F2FD; }
+    .upload-zone .upload-icon { font-size: 2.2rem; margin-bottom: 6px; }
+    .upload-zone p { font-size: 0.82rem; color: var(--gray3); line-height: 1.5; }
+    .upload-zone input[type=file] { display: none; }
+    .upload-btns { display: flex; gap: 8px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
+    .btn-upload-action {
+      padding: 8px 14px; border-radius: 20px; border: 1.5px solid var(--blue);
+      color: var(--blue); background: var(--white); font-size: 0.8rem;
+      cursor: pointer; font-family: inherit; transition: all 0.2s;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .btn-upload-action:hover { background: var(--blue); color: var(--white); }
+
+    .preview-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+      gap: 8px; margin-top: 12px;
+    }
+    .preview-item {
+      position: relative; aspect-ratio: 1; border-radius: var(--radius-sm);
+      overflow: hidden; background: var(--gray1); border: 1px solid var(--gray2);
+    }
+    .preview-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .preview-item .remove-btn {
+      position: absolute; top: 3px; right: 3px;
+      width: 22px; height: 22px; background: rgba(0,0,0,0.6); color: white;
+      border: none; border-radius: 50%; font-size: 0.85rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; line-height: 1;
+    }
+    .preview-item .ocr-btn-img {
+      position: absolute; bottom: 3px; right: 3px;
+      background: var(--blue); color: white; border: none;
+      border-radius: 4px; font-size: 0.6rem; padding: 2px 5px;
+      cursor: pointer; font-family: inherit;
+    }
+    .upload-status { font-size: 0.78rem; color: var(--gray3); margin-top: 6px; text-align: center; }
+
+    /* ─── OCR PANEL ─── */
+    .ocr-panel {
+      background: #FFF9C4; border: 1px solid #F9A825;
+      border-radius: var(--radius); padding: 12px; margin-top: 10px; display: none;
+    }
+    .ocr-panel.visible { display: block; }
+    .ocr-panel-title { font-size: 0.82rem; font-weight: 700; color: #E65100; margin-bottom: 8px; }
+    .ocr-text-box {
+      background: var(--white); border: 1px solid #F9A825; border-radius: var(--radius-sm);
+      padding: 10px; font-size: 0.8rem; line-height: 1.6;
+      max-height: 150px; overflow-y: auto; white-space: pre-wrap; margin-bottom: 8px;
+    }
+    .ocr-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* ─── BUTTONS ─── */
+    .btn {
+      padding: 12px 20px; border: none; border-radius: 8px;
+      font-size: 0.92rem; font-weight: 600; cursor: pointer; font-family: inherit;
+      transition: all 0.2s; display: inline-flex; align-items: center;
+      justify-content: center; gap: 6px;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: var(--blue); color: var(--white); box-shadow: 0 3px 8px rgba(21,101,192,0.35); }
+    .btn-primary:hover { background: var(--blue-dk); }
+    .btn-primary.green { background: var(--green); box-shadow: 0 3px 8px rgba(46,125,50,0.35); }
+    .btn-primary.green:hover { background: #1B5E20; }
+    .btn-primary.red { background: var(--red); box-shadow: 0 3px 8px rgba(198,40,40,0.35); }
+    .btn-primary.red:hover { background: #B71C1C; }
+    .btn-secondary { background: var(--gray1); color: var(--gray4); border: 1.5px solid var(--gray2); }
+    .btn-secondary:hover { background: var(--gray2); }
+    .btn-small { padding: 7px 14px; font-size: 0.8rem; border-radius: 6px; }
+    .btn-fill-form { background: #7B1FA2; color: white; box-shadow: 0 2px 6px rgba(123,31,162,0.4); }
+    .btn-block { width: 100%; }
+    .submit-row { margin-top: 8px; }
+    .hint { font-size: 0.73rem; color: var(--gray3); margin-top: 4px; }
+
+    /* ─── LOADING ─── */
+    #loading-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 1000;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 14px;
+    }
+    #loading-overlay.hidden { display: none; }
+    .spinner {
+      width: 44px; height: 44px; border: 4px solid rgba(255,255,255,0.3);
+      border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loading-text {
+      color: white; font-size: 0.95rem; font-weight: 600;
+      background: rgba(0,0,0,0.4); padding: 6px 16px; border-radius: 20px;
+    }
+
+    /* ─── TOAST ─── */
+    #toast {
+      position: fixed; bottom: 82px; left: 50%;
+      transform: translateX(-50%) translateY(0);
+      background: #323232; color: white; padding: 12px 22px;
+      border-radius: 24px; font-size: 0.88rem; font-weight: 500;
+      z-index: 999; max-width: 90vw; text-align: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3); transition: opacity 0.4s, transform 0.4s;
+    }
+    #toast.hidden { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(20px); }
+    #toast.success { background: var(--green); }
+    #toast.error   { background: var(--red); }
+    #toast.warning { background: #F57F17; }
+
+    /* ─── GPS ─── */
+    #tab-gps { padding: 0; }
+    .gps-login-wrap { padding: 20px 16px 24px; max-width: 420px; margin: 0 auto; }
+    .gps-brand {
+      text-align: center; padding: 24px 16px 18px;
+      background: linear-gradient(150deg,#0D47A1,#1976D2);
+      border-radius: 14px; color: white; margin-bottom: 16px;
+    }
+    .gps-brand .brand-icon { font-size: 2.6rem; display: block; margin-bottom: 6px; }
+    .gps-brand h2   { font-size: 1.1rem; font-weight: 700; }
+    .gps-brand span { font-size: 0.78rem; opacity: 0.8; }
+    .gps-login-card {
+      background: var(--white); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 20px 18px; margin-bottom: 12px;
+    }
+    .gps-login-card h3 { font-size: 0.9rem; font-weight: 700; color: var(--blue); margin-bottom: 14px; }
+    .gps-login-err {
+      border-radius: 8px; padding: 10px 12px; font-size: 0.8rem;
+      margin-bottom: 10px; display: none; line-height: 1.5;
+    }
+    .gps-login-err.err-normal { background: #FFEBEE; color: var(--red); }
+    .gps-login-err.err-many   { background: #FFF3E0; color: #E65100; }
+    .btn-gps-err-action {
+      margin-top: 8px; width: 100%; padding: 8px; border-radius: 6px;
+      border: 1.5px solid #E65100; color: #E65100; background: white;
+      font-family: inherit; font-size: 0.8rem; cursor: pointer;
+    }
+    .btn-gps-login {
+      width: 100%; padding: 13px;
+      background: linear-gradient(135deg, #1565C0, #0288D1);
+      color: white; border: none; border-radius: 8px;
+      font-size: 0.95rem; font-weight: 700; font-family: inherit; cursor: pointer;
+      box-shadow: 0 3px 12px rgba(21,101,192,0.35); transition: all 0.2s; margin-top: 4px;
+    }
+    .btn-gps-login:hover { box-shadow: 0 5px 16px rgba(21,101,192,0.45); }
+    .gps-hint { font-size: 0.73rem; color: var(--gray3); text-align: center; margin-top: 10px; line-height: 1.5; }
+    .gps-connected-bar {
+      display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+      background: var(--white); border-bottom: 1px solid var(--gray2); font-size: 0.8rem;
+    }
+    .gps-dot-live {
+      width: 8px; height: 8px; border-radius: 50%; background: #4CAF50;
+      flex-shrink: 0; box-shadow: 0 0 6px #4CAF50; animation: livepulse 1.4s infinite;
+    }
+    @keyframes livepulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+    .gps-user-label { font-weight: 600; color: var(--blue); flex: 1; }
+    .btn-gps-logout {
+      padding: 5px 12px; border-radius: 6px; border: 1.5px solid var(--gray2);
+      background: var(--white); font-family: inherit; font-size: 0.75rem; color: var(--gray4); cursor: pointer;
+    }
+    .btn-gps-newtab {
+      padding: 5px 12px; border-radius: 6px; border: 1.5px solid var(--blue);
+      color: var(--blue); background: var(--white); font-family: inherit;
+      font-size: 0.75rem; cursor: pointer;
+    }
+    #gps-main-iframe {
+      width: 100%; border: none; display: block;
+      height: calc(100dvh - 112px); min-height: 400px;
+    }
+
+    /* ─── OCR TAB – PARSED DATA ─── */
+    .ocr-result-text {
+      background: var(--white); border: 1.5px solid var(--gray2);
+      border-radius: var(--radius-sm); padding: 12px;
+      font-size: 0.82rem; line-height: 1.75;
+      min-height: 100px; max-height: 380px; overflow-y: auto;
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .parsed-data-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;
+    }
+    .parsed-item {
+      background: var(--gray1); border-radius: var(--radius-sm);
+      padding: 8px 10px; display: flex; flex-direction: column; gap: 2px;
+      border: 1px solid var(--gray2);
+    }
+    .parsed-label { font-size: 0.68rem; font-weight: 700; color: var(--gray3); text-transform: uppercase; letter-spacing: 0.3px; }
+    .parsed-value { font-size: 0.9rem; font-weight: 700; color: var(--text); }
+    @media (max-width: 380px) { .parsed-data-grid { grid-template-columns: 1fr; } }
+
+    @media (min-width: 600px) {
+      .tab-nav { position: static; border-top: none; border-bottom: 2px solid var(--gray2); box-shadow: none; }
+      .tab-btn { flex-direction: row; padding: 14px 20px; font-size: 0.88rem; gap: 8px; }
+      .tab-btn .icon { font-size: 1.1rem; }
+      body { padding-bottom: 0; }
+      .tab-panel { padding: 20px 16px; }
+      #toast { bottom: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="app-header">
+  <span style="font-size:1.5rem">🚛</span>
+  <h1>ระบบขนส่งรถบรรทุก</h1>
+  <span class="version">v2.1 | 26/05/2026 22:43</span>
+</header>
+
+<nav class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('truck', this)">
+    <span class="icon">🚚</span><span>บันทึกรถ</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('income', this)">
+    <span class="icon">💰</span><span>รายรับ</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('expense', this)">
+    <span class="icon">💸</span><span>รายจ่าย</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('gps', this)">
+    <span class="icon">📡</span><span>GPS</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('ocr', this)">
+    <span class="icon">🔍</span><span>อ่านภาพ</span>
+  </button>
+</nav>
+
+<!-- ══ TAB 1: บันทึกรถบรรทุก ══ -->
+<div class="tab-panel active" id="tab-truck">
+  <form id="form-truck" onsubmit="return false">
+
+    <div class="card">
+      <div class="card-title">📋 ข้อมูลงาน</div>
+      <div class="form-row-2">
+        <div class="form-row">
+          <label>วันที่ <span class="req">*</span></label>
+          <input type="date" id="t-jobDate" required>
+        </div>
+        <div class="form-row">
+          <label>เวลา</label>
+          <input type="time" id="t-jobTime">
+        </div>
+      </div>
+      <div class="form-row">
+        <label>สถานะงาน <span class="req">*</span></label>
+        <div class="status-group">
+          <button type="button" class="status-chip yellow"   data-val="รอโหลด"      onclick="selectStatus('t-status',this)">⏳ รอโหลด</button>
+          <button type="button" class="status-chip orange"   data-val="กำลังขนส่ง"  onclick="selectStatus('t-status',this)">🚚 กำลังขนส่ง</button>
+          <button type="button" class="status-chip green2"   data-val="ส่งแล้ว"     onclick="selectStatus('t-status',this)">✅ ส่งแล้ว</button>
+          <button type="button" class="status-chip redchip"  data-val="ยกเลิก"      onclick="selectStatus('t-status',this)">❌ ยกเลิก</button>
+        </div>
+        <input type="hidden" id="t-status" value="รอโหลด">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🚛 รถและคนขับ</div>
+      <div class="form-row-2">
+        <div class="form-row">
+          <label>ทะเบียนรถ <span class="req">*</span></label>
+          <input type="text" id="t-plateNumber" placeholder="กข-1234" maxlength="20">
+        </div>
+        <div class="form-row">
+          <label>เบอร์โทรคนขับ</label>
+          <input type="tel" id="t-driverPhone" placeholder="081-234-5678" maxlength="20">
+        </div>
+      </div>
+      <div class="form-row">
+        <label>ชื่อคนขับ</label>
+        <input type="text" id="t-driverName" placeholder="ชื่อ-นามสกุล" maxlength="100">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📍 เส้นทางและลูกค้า</div>
+      <div class="form-row-2">
+        <div class="form-row">
+          <label>ต้นทาง</label>
+          <input type="text" id="t-origin" placeholder="จังหวัด/สถานที่" maxlength="100">
+        </div>
+        <div class="form-row">
+          <label>ปลายทาง</label>
+          <input type="text" id="t-destination" placeholder="จังหวัด/สถานที่" maxlength="100">
+        </div>
+      </div>
+      <div class="form-row">
+        <label>ชื่อลูกค้า</label>
+        <input type="text" id="t-customerName" placeholder="บริษัท/ร้าน/ชื่อบุคคล" maxlength="150">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📦 ข้อมูลสินค้า</div>
+      <div class="form-row">
+        <label>รายการสินค้า</label>
+        <input type="text" id="t-cargoList" placeholder="ประเภทสินค้า" maxlength="200">
+      </div>
+      <div class="form-row-3">
+        <div class="form-row">
+          <label>น้ำหนัก (กก.)</label>
+          <input type="number" id="t-cargoWeight" placeholder="0" min="0" step="0.1">
+        </div>
+        <div class="form-row">
+          <label>จำนวนเที่ยว</label>
+          <input type="number" id="t-tripCount" placeholder="1" min="1" value="1">
+        </div>
+        <div class="form-row">
+          <label>ค่าขนส่ง (บาท)</label>
+          <input type="number" id="t-freightCost" placeholder="0" min="0">
+        </div>
+      </div>
+      <div class="form-row">
+        <label>หมายเหตุ</label>
+        <textarea id="t-remark" placeholder="หมายเหตุเพิ่มเติม..." rows="2"></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📷 แนบภาพ</div>
+      <div id="truck-upload-area"></div>
+    </div>
+
+    <div class="submit-row">
+      <button type="button" class="btn btn-primary btn-block" onclick="submitForm('truck')" style="padding:15px">
+        💾 บันทึกข้อมูลรถบรรทุก
+      </button>
+    </div>
+    <div style="margin-top:8px">
+      <button type="button" class="btn btn-secondary btn-block btn-small" onclick="resetForm('truck')">
+        🗑 ล้างข้อมูล
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- ══ TAB 2: รายรับ ══ -->
+<div class="tab-panel" id="tab-income">
+  <form id="form-income" onsubmit="return false">
+
+    <div class="card">
+      <div class="card-title green">📄 ข้อมูลรายรับ</div>
+      <div class="form-row-2">
+        <div class="form-row">
+          <label>วันที่ <span class="req">*</span></label>
+          <input type="date" id="i-incomeDate" required>
+        </div>
+        <div class="form-row">
+          <label>เลขที่เอกสาร</label>
+          <input type="text" id="i-docNumber" placeholder="INV-2026-001" maxlength="50">
+        </div>
+      </div>
+      <div class="form-row">
+        <label>ลูกค้า <span class="req">*</span></label>
+        <input type="text" id="i-customerName" placeholder="ชื่อลูกค้า/บริษัท" maxlength="150">
+      </div>
+      <div class="form-row">
+        <label>รายการรายรับ <span class="req">*</span></label>
+        <input type="text" id="i-incomeItem" placeholder="ค่าขนส่ง, ค่าบริการ..." maxlength="200">
+      </div>
+      <div class="form-row-2">
+        <div class="form-row">
+          <label>จำนวนเงิน (บาท) <span class="req">*</span></label>
+          <input type="number" id="i-amount" placeholder="0.00" min="0" step="0.01" required>
+        </div>
+        <div class="form-row">
+          <label>วิธีรับเงิน</label>
+          <select id="i-paymentMethod">
+            <option value="เงินสด">💵 เงินสด</option>
+            <option value="โอน">📲 โอน</option>
+            <option value="เช็ค">📝 เช็ค</option>
+            <option value="อื่นๆ">🔄 อื่นๆ</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>หมายเหตุ</label>
+        <textarea id="i-remark" placeholder="หมายเหตุ..." rows="2"></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title green">📷 แนบสลิป/ใบเสร็จ</div>
+      <div id="income-upload-area"></div>
+    </div>
+
+    <div class="submit-row">
+      <button type="button" class="btn btn-primary green btn-block" onclick="submitForm('income')" style="padding:15px">
+        💾 บันทึกรายรับ
+      </button>
+    </div>
+    <div style="margin-top:8px">
+      <button type="button" class="btn btn-secondary btn-block btn-small" onclick="resetForm('income')">
+        🗑 ล้างข้อมูล
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- ══ TAB 3: รายจ่าย ══ -->
+<div class="tab-panel" id="tab-expense">
+  <form id="form-expense" onsubmit="return false">
+
+    <div class="card">
+      <div class="card-title red">🧾 ข้อมูลรายจ่าย</div>
+      <div class="form-row-2">
+        <div class="form-row">
+          <label>วันที่ <span class="req">*</span></label>
+          <input type="date" id="e-expenseDate" required>
+        </div>
+        <div class="form-row">
+          <label>หมวดรายจ่าย <span class="req">*</span></label>
+          <select id="e-category" required>
+            <option value="">-- เลือก --</option>
+            <option value="ค่าน้ำมัน">⛽ ค่าน้ำมัน</option>
+            <option value="ค่าซ่อม">🔧 ค่าซ่อม</option>
+            <option value="ค่าอะไหล่">⚙️ ค่าอะไหล่</option>
+            <option value="ค่าแรง">👷 ค่าแรง</option>
+            <option value="ค่าทางด่วน">🛣 ค่าทางด่วน</option>
+            <option value="ค่าอาหาร">🍱 ค่าอาหาร</option>
+            <option value="อื่นๆ">📌 อื่นๆ</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row">
+          <label>ทะเบียนรถที่เกี่ยวข้อง</label>
+          <input type="text" id="e-plateNumber" placeholder="กข-1234" maxlength="20">
+        </div>
+        <div class="form-row">
+          <label>ร้านค้า/ผู้รับเงิน</label>
+          <input type="text" id="e-vendor" placeholder="ชื่อร้านค้า" maxlength="150">
+        </div>
+      </div>
+      <div class="form-row">
+        <label>รายละเอียดรายจ่าย</label>
+        <textarea id="e-expenseDetail" placeholder="รายละเอียด..." rows="2"></textarea>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row">
+          <label>จำนวนเงิน (บาท) <span class="req">*</span></label>
+          <input type="number" id="e-amount" placeholder="0.00" min="0" step="0.01" required>
+        </div>
+        <div class="form-row">
+          <label>วิธีจ่ายเงิน</label>
+          <select id="e-paymentMethod">
+            <option value="เงินสด">💵 เงินสด</option>
+            <option value="โอน">📲 โอน</option>
+            <option value="เช็ค">📝 เช็ค</option>
+            <option value="อื่นๆ">🔄 อื่นๆ</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>หมายเหตุ</label>
+        <textarea id="e-remark" placeholder="หมายเหตุ..." rows="2"></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title red">📷 แนบใบเสร็จ/สลิป</div>
+      <div id="expense-upload-area"></div>
+    </div>
+
+    <div class="submit-row">
+      <button type="button" class="btn btn-primary red btn-block" onclick="submitForm('expense')" style="padding:15px">
+        💾 บันทึกรายจ่าย
+      </button>
+    </div>
+    <div style="margin-top:8px">
+      <button type="button" class="btn btn-secondary btn-block btn-small" onclick="resetForm('expense')">
+        🗑 ล้างข้อมูล
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- ══ TAB 4: GPS ══ -->
+<div class="tab-panel" id="tab-gps">
+
+  <div id="gps-login-view">
+    <div class="gps-login-wrap">
+      <div class="gps-brand">
+        <span class="brand-icon">📡</span>
+        <h2>GPS ติดตามรถ</h2>
+        <span>OneTrack Smart — Onelink Technology</span>
+      </div>
+      <div class="gps-login-card">
+        <h3>🔐 เข้าสู่ระบบ OneTrack</h3>
+        <div class="gps-login-err" id="gps-err"></div>
+        <div id="gps-many-hint" style="display:none">
+          <button type="button" class="btn-gps-err-action"
+                  onclick="window.open('https://onetracksmart.onelink.co.th/onetrack.smart.new/login.jsp','_blank')">
+            🔓 เปิด OneTrack เพื่อ Logout session เก่า แล้วกลับมา Login ใหม่
+          </button>
+        </div>
+        <div class="form-row">
+          <label>Username</label>
+          <input type="text" id="gps-user" placeholder="กรอก username" autocomplete="username" maxlength="50">
+        </div>
+        <div class="form-row">
+          <label>Password</label>
+          <input type="password" id="gps-pass" placeholder="กรอก password" autocomplete="current-password" maxlength="50"
+                 onkeydown="if(event.key==='Enter') doGPSLogin()">
+        </div>
+        <button type="button" class="btn-gps-login" onclick="doGPSLogin()">
+          🗺️ เข้าสู่ระบบและดูแผนที่
+        </button>
+        <p class="gps-hint">
+          รหัสเดียวกับที่ใช้ login บน onetracksmart.onelink.co.th<br>
+          ⚠️ ระบบส่งผ่าน API เท่านั้น ไม่เก็บรหัสผ่าน
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div id="gps-map-view" style="display:none">
+    <div class="gps-connected-bar">
+      <span class="gps-dot-live"></span>
+      <span class="gps-user-label">📡 <span id="gps-username-label"></span></span>
+      <button type="button" class="btn-gps-newtab" onclick="openGPSNewTab()">↗ แท็บใหม่</button>
+      <button type="button" class="btn-gps-logout" onclick="doGPSLogout()">ออก</button>
+    </div>
+    <iframe id="gps-main-iframe" src="about:blank" title="OneTrack GPS" allow="geolocation *"></iframe>
+  </div>
+
+</div>
+
+<!-- ══ TAB 5: อ่านตัวหนังสือจากภาพ ══ -->
+<div class="tab-panel" id="tab-ocr">
+
+  <div class="card">
+    <div class="card-title">🔍 อ่านตัวหนังสือจากภาพ (OCR)</div>
+    <p class="hint" style="margin-bottom:14px">อัปโหลดภาพใบเสร็จ / ใบชั่งน้ำหนัก / สลิปโอนเงิน แล้วระบบจะอ่านข้อความให้อัตโนมัติ · รองรับ JPG, PNG, HEIC</p>
+
+    <!-- Upload zone -->
+    <div id="ocr-tab-zone" class="upload-zone"
+         ondragover="event.preventDefault(); document.getElementById('ocr-tab-zone').classList.add('dragover')"
+         ondragleave="document.getElementById('ocr-tab-zone').classList.remove('dragover')"
+         ondrop="ocrTabDrop(event)">
+      <div class="upload-icon">🖼</div>
+      <p>ลากไฟล์มาวางที่นี่ หรือกดปุ่มด้านล่าง<br>ขนาดสูงสุด 4MB ต่อภาพ</p>
+      <div class="upload-btns">
+        <label class="btn-upload-action" for="ocr-tab-file">
+          🖼 เลือกจากอัลบั้ม
+          <input type="file" id="ocr-tab-file" accept="image/*" multiple onchange="ocrTabInput(event)">
+        </label>
+        <label class="btn-upload-action" for="ocr-tab-camera">
+          📷 ถ่ายภาพ
+          <input type="file" id="ocr-tab-camera" accept="image/*" capture="environment" onchange="ocrTabInput(event)">
+        </label>
+      </div>
+      <p class="hint" style="margin-top:8px">หรือวางภาพจาก Clipboard ด้วย Ctrl+V</p>
+    </div>
+
+    <!-- Preview grid -->
+    <div id="ocr-tab-preview" class="preview-grid" style="margin-top:10px"></div>
+    <div id="ocr-tab-status" class="upload-status"></div>
+
+    <!-- Action buttons -->
+    <div id="ocr-tab-btns" style="display:none;gap:10px;margin-top:14px;flex-wrap:wrap">
+      <button type="button" class="btn btn-primary" onclick="runOCRTab()">🔍 อ่านภาพ</button>
+      <button type="button" class="btn btn-secondary" onclick="clearOCRTab()">🗑 ล้างทั้งหมด</button>
+    </div>
+  </div>
+
+  <!-- Result card -->
+  <div class="card" id="ocr-tab-result" style="display:none">
+    <div class="card-title">📄 ข้อความที่อ่านได้</div>
+    <div id="ocr-tab-text" class="ocr-result-text"></div>
+    <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+      <button type="button" class="btn btn-primary btn-small" onclick="copyOCRTabText()">📋 คัดลอกข้อความ</button>
+      <button type="button" class="btn btn-secondary btn-small" onclick="clearOCRTab()">🗑 ล้าง</button>
+    </div>
+
+    <!-- Parsed structured data -->
+    <div id="ocr-tab-parsed" style="display:none;margin-top:18px">
+      <div style="font-size:.82rem;font-weight:700;color:var(--green);margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid #E8F5E9">📊 ข้อมูลที่แยกได้จากภาพ</div>
+      <div id="ocr-tab-parsed-grid" class="parsed-data-grid"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Loading -->
+<div id="loading-overlay" class="hidden">
+  <div class="spinner"></div>
+  <div id="loading-text">กำลังดำเนินการ...</div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="hidden"></div>
+
+<!-- ═══════════════════════════════════════
+     JAVASCRIPT  (Vercel — ใช้ fetch() แทน google.script.run)
+════════════════════════════════════════ -->
+<script>
+// ─── STATE ───────────────────────────────
+const state = {
+  truck:   { images: [], ocrText: '', ocrParsed: null },
+  income:  { images: [], ocrText: '', ocrParsed: null },
+  expense: { images: [], ocrText: '', ocrParsed: null }
+};
+const MAX_FILE_SIZE = 4 * 1024 * 1024;   // 4 MB (Vercel body limit ~4.5 MB)
+const ALLOWED_TYPES = ['image/jpeg','image/jpg','image/png','image/gif','image/webp','image/heic','image/heif'];
+let gpsSession = { id: '', url: '', user: '' };
+
+// ─── INIT ─────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  setDefaultDates();
+  buildUploadArea('truck',   'truck-upload-area');
+  buildUploadArea('income',  'income-upload-area');
+  buildUploadArea('expense', 'expense-upload-area');
+  document.querySelector('.status-chip[data-val="รอโหลด"]').classList.add('selected');
+});
+
+function setDefaultDates() {
+  const today = new Date().toISOString().slice(0, 10);
+  const now   = new Date().toTimeString().slice(0, 5);
+  ['t-jobDate','i-incomeDate','e-expenseDate'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = today;
+  });
+  const timeEl = document.getElementById('t-jobTime');
+  if (timeEl) timeEl.value = now;
+}
+
+// ─── TAB ──────────────────────────────────
+function switchTab(tab, btnEl) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  btnEl.classList.add('active');
+}
+
+// ─── STATUS CHIP ─────────────────────────
+function selectStatus(hiddenId, chipEl) {
+  chipEl.parentElement.querySelectorAll('.status-chip').forEach(c => c.classList.remove('selected'));
+  chipEl.classList.add('selected');
+  document.getElementById(hiddenId).value = chipEl.dataset.val;
+}
+
+// ─── GPS LOGIN (fetch → /api/login-onetrack) ──────────────
+async function doGPSLogin() {
+  const user = document.getElementById('gps-user').value.trim();
+  const pass = document.getElementById('gps-pass').value;
+  if (!user || !pass) { showGPSErr('กรุณากรอก Username และ Password'); return; }
+  document.getElementById('gps-err').style.display = 'none';
+  showLoading('กำลัง Login OneTrack...');
+  try {
+    const result = await api('/api/login-onetrack', { user, pass });
+    hideLoading();
+    if (result.success) {
+      gpsSession = { id: result.sessionId, url: result.url, user };
+      document.getElementById('gps-pass').value = '';
+      showGPSMap(result.url, user);
+    } else {
+      showGPSErr(result.error || 'Login ไม่สำเร็จ');
+    }
+  } catch (e) {
+    hideLoading();
+    showGPSErr('เกิดข้อผิดพลาด: ' + e.message);
+  }
+}
+
+function showGPSMap(url, user) {
+  document.getElementById('gps-login-view').style.display = 'none';
+  document.getElementById('gps-map-view').style.display   = 'block';
+  document.getElementById('gps-username-label').textContent = user;
+  document.getElementById('gps-main-iframe').src = url;
+  showToast('Login สำเร็จ กำลังโหลดแผนที่ GPS...', 'success');
+}
+
+function doGPSLogout() {
+  gpsSession = { id: '', url: '', user: '' };
+  document.getElementById('gps-main-iframe').src = 'about:blank';
+  document.getElementById('gps-map-view').style.display   = 'none';
+  document.getElementById('gps-login-view').style.display = 'block';
+  document.getElementById('gps-user').value = '';
+  document.getElementById('gps-pass').value = '';
+}
+
+function openGPSNewTab() {
+  window.open(
+    gpsSession.url || 'https://onetracksmart.onelink.co.th/onetrack.smart.new/login.jsp',
+    '_blank', 'noopener,noreferrer'
+  );
+}
+
+function showGPSErr(msg) {
+  const el     = document.getElementById('gps-err');
+  const manyEl = document.getElementById('gps-many-hint');
+  if (msg === 'MANY_CONNECTION') {
+    el.className = 'gps-login-err err-many';
+    el.innerHTML = '⚠️ <b>มี session ค้างอยู่!</b><br>บัญชีนี้ login อยู่ที่อื่นแล้ว ต้อง Logout session เก่าก่อน';
+    manyEl.style.display = 'block';
+  } else {
+    el.className = 'gps-login-err err-normal';
+    el.textContent = '❌ ' + msg;
+    manyEl.style.display = 'none';
+  }
+  el.style.display = 'block';
+}
+
+// ─── BUILD UPLOAD AREA ────────────────────
+function buildUploadArea(formKey, containerId) {
+  document.getElementById(containerId).innerHTML = `
+    <div class="upload-zone" id="${formKey}-zone"
+         ondragover="handleDragOver(event,'${formKey}')"
+         ondragleave="handleDragLeave(event,'${formKey}')"
+         ondrop="handleDrop(event,'${formKey}')">
+      <div class="upload-icon">📁</div>
+      <p>ลากไฟล์มาวางที่นี่ หรือกดปุ่มด้านล่าง<br>รองรับ JPG, PNG, HEIC ขนาดสูงสุด 4MB/ไฟล์</p>
+      <div class="upload-btns">
+        <label class="btn-upload-action" for="${formKey}-file-input">
+          🖼 เลือกจากอัลบั้ม
+          <input type="file" id="${formKey}-file-input" accept="image/*" multiple
+                 onchange="handleFileInput(event,'${formKey}')">
+        </label>
+        <label class="btn-upload-action" for="${formKey}-camera-input">
+          📷 ถ่ายภาพ
+          <input type="file" id="${formKey}-camera-input" accept="image/*" capture="environment"
+                 onchange="handleFileInput(event,'${formKey}')">
+        </label>
+      </div>
+      <p class="hint" style="margin-top:8px">หรือวางภาพจาก Clipboard ด้วย Ctrl+V</p>
+    </div>
+    <div class="upload-status" id="${formKey}-upload-status"></div>
+    <div class="preview-grid"  id="${formKey}-preview-grid"></div>
+    <div class="ocr-panel"     id="${formKey}-ocr-panel">
+      <div class="ocr-panel-title">🔍 ผลการอ่านข้อความจากภาพ (OCR)</div>
+      <div class="ocr-text-box" id="${formKey}-ocr-text"></div>
+      <div class="ocr-actions">
+        <button type="button" class="btn btn-small btn-fill-form" onclick="fillFormFromOCR('${formKey}')">✏️ เติมข้อมูลลงฟอร์ม</button>
+        <button type="button" class="btn btn-small btn-secondary" onclick="closeOCRPanel('${formKey}')">✕ ปิด</button>
+      </div>
+    </div>`;
+
+  document.addEventListener('paste', e => {
+    const activeTab = document.querySelector('.tab-panel.active');
+    if (!activeTab || activeTab.id.replace('tab-', '') !== formKey) return;
+    const files = [];
+    for (const item of (e.clipboardData?.items || [])) {
+      if (item.kind === 'file' && ALLOWED_TYPES.includes(item.type)) files.push(item.getAsFile());
+    }
+    if (files.length) { addFiles(files, formKey); showToast('วางภาพจาก Clipboard แล้ว', 'success'); }
+  });
+}
+
+// ─── FILE HANDLING ────────────────────────
+function handleFileInput(e, formKey) { addFiles([...e.target.files], formKey); e.target.value = ''; }
+function handleDragOver(e, formKey)  { e.preventDefault(); document.getElementById(formKey+'-zone').classList.add('dragover'); }
+function handleDragLeave(e, formKey) { document.getElementById(formKey+'-zone').classList.remove('dragover'); }
+function handleDrop(e, formKey) {
+  e.preventDefault();
+  document.getElementById(formKey+'-zone').classList.remove('dragover');
+  addFiles([...e.dataTransfer.files].filter(f => ALLOWED_TYPES.includes(f.type)), formKey);
+}
+
+function addFiles(files, formKey) {
+  const startIdx = state[formKey].images.length;
+  for (const file of files) {
+    if (!ALLOWED_TYPES.includes(file.type)) { showToast('ไม่รองรับ: '+file.name, 'error'); continue; }
+    if (file.size > MAX_FILE_SIZE) { showToast(file.name+' ใหญ่เกิน 4MB', 'error'); continue; }
+    state[formKey].images.push({ file, previewUrl: null });
+    renderPreview(formKey);
+  }
+  // OCR อัตโนมัติเฉพาะรูปแรกที่เพิ่มใหม่ (ไม่รัน 4 ครั้งพร้อมกัน)
+  if (state[formKey].images.length > startIdx) {
+    autoOCRAndFill(startIdx, formKey);
+  }
+}
+
+async function autoOCRAndFill(idx, formKey) {
+  const item = state[formKey].images[idx];
+  if (!item) return;
+  showLoading('🔍 กำลังอ่านข้อความจากภาพ...');
+  try {
+    const { base64, mimeType } = await fileToJpegBase64(item.file);
+    const result = await api('/api/ocr', { base64, mimeType });
+    hideLoading();
+    if (result.success) {
+      state[formKey].ocrText   = result.text;
+      state[formKey].ocrParsed = result.parsed;
+      // แสดง raw text ใน panel
+      document.getElementById(formKey+'-ocr-text').textContent = result.text;
+      document.getElementById(formKey+'-ocr-panel').classList.add('visible');
+      // กรอกฟอร์มอัตโนมัติ (เฉพาะช่องที่ยังว่าง)
+      autoFillFields(formKey, result.parsed);
+    } else {
+      showToast('อ่านภาพไม่ได้: ' + (result.error || 'ไม่พบข้อความ'), 'warning');
+    }
+  } catch (e) {
+    hideLoading();
+    showToast('OCR: ' + e.message, 'warning');
+  }
+}
+
+function autoFillFields(formKey, parsed) {
+  if (!parsed) return;
+  let filled = 0;
+  const set = (id, val) => { const el = document.getElementById(id); if (el && !el.value && val) { el.value = val; filled++; } };
+  if (formKey === 'truck') {
+    set('t-plateNumber',  parsed.plateNumber);
+    set('t-jobDate',      parsed.date);
+    set('t-cargoWeight',  parsed.cargoWeight);
+    set('t-driverPhone',  parsed.driverPhone);
+    set('t-freightCost',  parsed.amount);
+    set('t-customerName', parsed.customerName);
+  } else if (formKey === 'income') {
+    set('i-incomeDate',   parsed.date);
+    set('i-docNumber',    parsed.docNumber);
+    set('i-customerName', parsed.customerName);
+    set('i-amount',       parsed.amount);
+  } else if (formKey === 'expense') {
+    set('e-expenseDate',  parsed.date);
+    set('e-amount',       parsed.amount);
+    set('e-plateNumber',  parsed.plateNumber);
+    set('e-vendor',       parsed.vendor);
+  }
+  if (filled > 0) showToast(`✅ เติมข้อมูลอัตโนมัติ ${filled} ช่องแล้ว`, 'success');
+  else showToast('อ่านภาพได้ แต่ไม่พบข้อมูลที่จะเติมลงฟอร์ม', 'warning');
+}
+
+function renderPreview(formKey) {
+  const grid = document.getElementById(formKey+'-preview-grid');
+  const imgs = state[formKey].images;
+  grid.innerHTML = '';
+  imgs.forEach((item, idx) => {
+    if (!item.previewUrl) {
+      const reader = new FileReader();
+      reader.onload = e => { item.previewUrl = e.target.result; renderPreview(formKey); };
+      reader.readAsDataURL(item.file);
+      return;
+    }
+    const div = document.createElement('div');
+    div.className = 'preview-item';
+    div.innerHTML = `
+      <img src="${item.previewUrl}" alt="ภาพ ${idx+1}" loading="lazy">
+      <button type="button" class="remove-btn" onclick="removeImage(${idx},'${formKey}')">✕</button>
+      <button type="button" class="ocr-btn-img" onclick="runOCR(${idx},'${formKey}')">OCR</button>`;
+    grid.appendChild(div);
+  });
+  const status = document.getElementById(formKey+'-upload-status');
+  status.textContent = imgs.length > 0 ? `เลือกแล้ว ${imgs.length} ภาพ` : '';
+}
+
+function removeImage(idx, formKey) { state[formKey].images.splice(idx, 1); renderPreview(formKey); }
+
+// ─── OCR (fetch → /api/ocr) ──────────────
+async function runOCR(idx, formKey) {
+  const item = state[formKey].images[idx];
+  if (!item) return;
+  showLoading('กำลังอ่านข้อความจากภาพ...');
+  try {
+    const { base64, mimeType } = await fileToJpegBase64(item.file);
+    const result = await api('/api/ocr', { base64, mimeType });
+    hideLoading();
+    if (result.success) {
+      state[formKey].ocrText   = result.text;
+      state[formKey].ocrParsed = result.parsed;
+      const panel = document.getElementById(formKey+'-ocr-panel');
+      document.getElementById(formKey+'-ocr-text').textContent = result.text;
+      panel.classList.add('visible');
+      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else {
+      showToast('OCR ล้มเหลว: ' + result.error, 'error');
+    }
+  } catch (e) {
+    hideLoading();
+    showToast('เกิดข้อผิดพลาด OCR: ' + e.message, 'error');
+  }
+}
+
+function closeOCRPanel(formKey) { document.getElementById(formKey+'-ocr-panel').classList.remove('visible'); }
+
+function fillFormFromOCR(formKey) {
+  const parsed = state[formKey].ocrParsed;
+  if (!parsed) { showToast('ยังไม่มีข้อมูล OCR', 'warning'); return; }
+  let filled = 0;
+  const set = (id, val) => { const el = document.getElementById(id); if (el && !el.value && val) { el.value = val; filled++; } };
+  if (formKey === 'truck') {
+    set('t-plateNumber',  parsed.plateNumber);
+    set('t-jobDate',      parsed.date);
+    set('t-cargoWeight',  parsed.cargoWeight);
+    set('t-driverPhone',  parsed.driverPhone);
+    set('t-freightCost',  parsed.amount);
+    set('t-customerName', parsed.customerName);
+  } else if (formKey === 'income') {
+    set('i-incomeDate',   parsed.date);
+    set('i-docNumber',    parsed.docNumber);
+    set('i-customerName', parsed.customerName);
+    set('i-amount',       parsed.amount);
+  } else if (formKey === 'expense') {
+    set('e-expenseDate',  parsed.date);
+    set('e-amount',       parsed.amount);
+    set('e-plateNumber',  parsed.plateNumber);
+    set('e-vendor',       parsed.vendor);
+  }
+  if (filled > 0) { showToast(`เติมข้อมูลลงฟอร์ม ${filled} ช่องแล้ว`, 'success'); closeOCRPanel(formKey); }
+  else showToast('ไม่พบข้อมูลที่จะเติมลงฟอร์ม', 'warning');
+}
+
+// ─── SUBMIT (fetch → /api/upload-images + /api/save) ──────
+async function submitForm(formKey) {
+  const data = collectFormData(formKey);
+  if (!data) return;
+  showLoading('กำลังอัปโหลดภาพ...');
+  try {
+    // Step 1: upload images
+    const imageUrls = await uploadAllImages(formKey);
+    data.imageUrls  = imageUrls;
+    data.ocrText    = state[formKey].ocrText || '';
+    data.userAgent  = navigator.userAgent;
+
+    // Step 2: save to Sheets
+    setLoadingText('กำลังบันทึกข้อมูล...');
+    const result = await api('/api/save', { type: formKey, data });
+    hideLoading();
+    if (result.success) {
+      showToast(result.message + '\nID: ' + result.rowId, 'success');
+      resetForm(formKey);
+    } else {
+      showToast('บันทึกไม่สำเร็จ: ' + result.error, 'error');
+    }
+  } catch (e) {
+    hideLoading();
+    showToast('เกิดข้อผิดพลาด: ' + e.message, 'error');
+  }
+}
+
+async function uploadAllImages(formKey) {
+  const imgs = state[formKey].images;
+  if (imgs.length === 0) return [];
+  const imagePayloads = await Promise.all(imgs.map(async item => ({
+    base64:   await fileToBase64(item.file),
+    mimeType: item.file.type,
+    filename: `${formKey}-${Date.now()}-${Math.random().toString(36).substr(2,4).toUpperCase()}.${item.file.name.split('.').pop()||'jpg'}`
+  })));
+  const result = await api('/api/upload-images', { images: imagePayloads });
+  if (!result.success) throw new Error(result.error);
+  return result.urls.map(u => u.url).filter(Boolean);
+}
+
+// ─── COLLECT FORM DATA ────────────────────
+function collectFormData(formKey) {
+  const g = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  if (formKey === 'truck') {
+    if (!g('t-plateNumber')) { showToast('กรุณากรอกทะเบียนรถ', 'warning'); return null; }
+    if (!g('t-jobDate'))     { showToast('กรุณาเลือกวันที่', 'warning');   return null; }
+    return {
+      jobDate: g('t-jobDate'), jobTime: g('t-jobTime'),
+      plateNumber: g('t-plateNumber'), driverName: g('t-driverName'), driverPhone: g('t-driverPhone'),
+      origin: g('t-origin'), destination: g('t-destination'), customerName: g('t-customerName'),
+      cargoList: g('t-cargoList'), cargoWeight: g('t-cargoWeight'), tripCount: g('t-tripCount'),
+      freightCost: g('t-freightCost'), jobStatus: g('t-status') || 'รอโหลด', remark: g('t-remark')
+    };
+  }
+  if (formKey === 'income') {
+    if (!g('i-incomeDate'))   { showToast('กรุณาเลือกวันที่', 'warning');       return null; }
+    if (!g('i-customerName')) { showToast('กรุณากรอกชื่อลูกค้า', 'warning');    return null; }
+    if (!g('i-incomeItem'))   { showToast('กรุณากรอกรายการรายรับ', 'warning');  return null; }
+    if (!g('i-amount'))       { showToast('กรุณากรอกจำนวนเงิน', 'warning');     return null; }
+    return {
+      incomeDate: g('i-incomeDate'), docNumber: g('i-docNumber'),
+      customerName: g('i-customerName'), incomeItem: g('i-incomeItem'),
+      amount: g('i-amount'), paymentMethod: g('i-paymentMethod'), remark: g('i-remark')
+    };
+  }
+  if (formKey === 'expense') {
+    if (!g('e-expenseDate')) { showToast('กรุณาเลือกวันที่', 'warning');        return null; }
+    if (!g('e-category'))    { showToast('กรุณาเลือกหมวดรายจ่าย', 'warning'); return null; }
+    if (!g('e-amount'))      { showToast('กรุณากรอกจำนวนเงิน', 'warning');     return null; }
+    return {
+      expenseDate: g('e-expenseDate'), category: g('e-category'),
+      plateNumber: g('e-plateNumber'), vendor: g('e-vendor'),
+      expenseDetail: g('e-expenseDetail'), amount: g('e-amount'),
+      paymentMethod: g('e-paymentMethod'), remark: g('e-remark')
+    };
+  }
+}
+
+// ─── RESET FORM ───────────────────────────
+function resetForm(formKey) {
+  document.getElementById('form-' + formKey).reset();
+  state[formKey] = { images: [], ocrText: '', ocrParsed: null };
+  setDefaultDates();
+  renderPreview(formKey);
+  closeOCRPanel(formKey);
+  if (formKey === 'truck') {
+    document.getElementById('t-status').value = 'รอโหลด';
+    document.querySelectorAll('.status-chip').forEach(c => c.classList.remove('selected'));
+    document.querySelector('.status-chip[data-val="รอโหลด"]').classList.add('selected');
+    document.getElementById('t-tripCount').value = '1';
+  }
+  showToast('ล้างข้อมูลแล้ว', 'success');
+}
+
+// ─── HELPERS ─────────────────────────────
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = e => resolve(e.target.result.split(',')[1]);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+// แปลงรูปเป็น JPEG + บีบอัด/ย่อขนาด ก่อนส่ง OCR
+// OCR.space free tier รับได้แค่ ~1MB
+async function fileToJpegBase64(file) {
+  const MAX_PX   = 1600; // ความกว้าง/สูงสูงสุด
+  const QUALITY  = 0.82; // คุณภาพ JPEG
+
+  try {
+    const bitmap = await createImageBitmap(file);
+    let { width, height } = bitmap;
+
+    // ย่อขนาดถ้าใหญ่เกิน
+    if (width > MAX_PX || height > MAX_PX) {
+      const scale = MAX_PX / Math.max(width, height);
+      width  = Math.round(width  * scale);
+      height = Math.round(height * scale);
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width  = width;
+    canvas.height = height;
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, width, height);
+
+    return await new Promise(resolve => {
+      canvas.toBlob(blob => {
+        const r = new FileReader();
+        r.onload = e => resolve({ base64: e.target.result.split(',')[1], mimeType: 'image/jpeg' });
+        r.readAsDataURL(blob);
+      }, 'image/jpeg', QUALITY);
+    });
+  } catch {
+    // fallback: ใช้ FileReader ปกติ
+    return { base64: await fileToBase64(file), mimeType: 'image/jpeg' };
+  }
+}
+
+async function api(url, body) {
+  const res = await fetch(url, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+function showLoading(text)   { document.getElementById('loading-text').textContent = text || 'กำลังดำเนินการ...'; document.getElementById('loading-overlay').classList.remove('hidden'); }
+function setLoadingText(txt) { document.getElementById('loading-text').textContent = txt; }
+function hideLoading()       { document.getElementById('loading-overlay').classList.add('hidden'); }
+
+let _toastTimer;
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = type || '';
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.add('hidden'), 3500);
+}
+
+// ─── OCR STANDALONE TAB ────────────────────────────────
+let ocrTabFiles = [];
+
+function ocrTabInput(e) {
+  ocrTabAddFiles([...e.target.files]);
+  e.target.value = '';
+}
+function ocrTabDrop(e) {
+  e.preventDefault();
+  document.getElementById('ocr-tab-zone').classList.remove('dragover');
+  ocrTabAddFiles([...e.dataTransfer.files].filter(f => ALLOWED_TYPES.includes(f.type)));
+}
+function ocrTabAddFiles(files) {
+  let added = 0;
+  for (const f of files) {
+    if (!ALLOWED_TYPES.includes(f.type)) { showToast('ไม่รองรับ: ' + f.name, 'error'); continue; }
+    if (f.size > MAX_FILE_SIZE)          { showToast(f.name + ' ใหญ่เกิน 4MB', 'error'); continue; }
+    ocrTabFiles.push(f);
+    added++;
+  }
+  ocrTabRenderPreview();
+  if (added > 0) {
+    document.getElementById('ocr-tab-btns').style.display = 'flex';
+    runOCRTab(); // อ่านอัตโนมัติทันที
+  }
+}
+function ocrTabRenderPreview() {
+  const grid = document.getElementById('ocr-tab-preview');
+  grid.innerHTML = '';
+  ocrTabFiles.forEach((f, idx) => {
+    const url = URL.createObjectURL(f);
+    const div = document.createElement('div');
+    div.className = 'preview-item';
+    div.innerHTML = `
+      <img src="${url}" alt="ภาพ ${idx + 1}" loading="lazy">
+      <button type="button" class="remove-btn" onclick="ocrTabRemove(${idx})">✕</button>
+      <button type="button" class="ocr-btn-img" onclick="runOCRTabIdx(${idx})">OCR</button>`;
+    grid.appendChild(div);
+  });
+  const status = document.getElementById('ocr-tab-status');
+  status.textContent = ocrTabFiles.length > 0 ? `เลือกแล้ว ${ocrTabFiles.length} ภาพ` : '';
+  if (ocrTabFiles.length === 0) {
+    document.getElementById('ocr-tab-btns').style.display   = 'none';
+    document.getElementById('ocr-tab-result').style.display = 'none';
+  }
+}
+function ocrTabRemove(idx) {
+  ocrTabFiles.splice(idx, 1);
+  ocrTabRenderPreview();
+}
+
+async function runOCRTabIdx(idx) {
+  const f = ocrTabFiles[idx];
+  if (!f) return;
+  showLoading('🔍 กำลังอ่านข้อความจากภาพ...');
+  try {
+    const { base64, mimeType } = await fileToJpegBase64(f);
+    const result = await api('/api/ocr', { base64, mimeType });
+    hideLoading();
+    if (result.success) {
+      renderOCRTabResult(result);
+    } else {
+      showToast('อ่านภาพไม่ได้: ' + (result.error || 'ไม่พบข้อความ'), 'warning');
+    }
+  } catch (e) {
+    hideLoading();
+    showToast('OCR: ' + e.message, 'error');
+  }
+}
+async function runOCRTab() {
+  if (ocrTabFiles.length === 0) { showToast('กรุณาเพิ่มภาพก่อน', 'warning'); return; }
+  await runOCRTabIdx(0);
+}
+
+function renderOCRTabResult(result) {
+  document.getElementById('ocr-tab-text').textContent = result.text || '';
+  const card = document.getElementById('ocr-tab-result');
+  card.style.display = 'block';
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  // แสดงข้อมูลที่แยกได้
+  const parsed = result.parsed || {};
+  const labels = {
+    plateNumber:  'ทะเบียนรถ',
+    date:         'วันที่',
+    amount:       'ยอดเงิน (บาท)',
+    cargoWeight:  'น้ำหนักบรรทุก',
+    driverPhone:  'เบอร์โทร',
+    docNumber:    'เลขที่เอกสาร',
+    cargoList:    'ชื่อสินค้า',
+    customerName: 'ชื่อลูกค้า / บริษัท'
+  };
+  const entries = Object.entries(parsed).filter(([, v]) => v !== undefined && v !== null && v !== '');
+  const parsedSection = document.getElementById('ocr-tab-parsed');
+  if (entries.length > 0) {
+    document.getElementById('ocr-tab-parsed-grid').innerHTML = entries.map(([k, v]) =>
+      `<div class="parsed-item">
+        <span class="parsed-label">${labels[k] || k}</span>
+        <span class="parsed-value">${v}</span>
+      </div>`
+    ).join('');
+    parsedSection.style.display = 'block';
+  } else {
+    parsedSection.style.display = 'none';
+  }
+}
+
+function copyOCRTabText() {
+  const text = document.getElementById('ocr-tab-text').textContent;
+  if (!text) { showToast('ไม่มีข้อความ', 'warning'); return; }
+  navigator.clipboard.writeText(text)
+    .then(() => showToast('📋 คัดลอกข้อความแล้ว!', 'success'))
+    .catch(() => {
+      // Fallback for older browsers
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast('📋 คัดลอกข้อความแล้ว!', 'success');
+    });
+}
+
+function clearOCRTab() {
+  ocrTabFiles = [];
+  ocrTabRenderPreview();
+  document.getElementById('ocr-tab-result').style.display = 'none';
+  document.getElementById('ocr-tab-btns').style.display   = 'none';
+  document.getElementById('ocr-tab-file').value   = '';
+  document.getElementById('ocr-tab-camera').value = '';
+}
+
+// Clipboard paste สำหรับแท็บ OCR
+document.addEventListener('paste', e => {
+  const activeTab = document.querySelector('.tab-panel.active');
+  if (!activeTab || activeTab.id !== 'tab-ocr') return;
+  const files = [];
+  for (const item of (e.clipboardData?.items || [])) {
+    if (item.kind === 'file' && ALLOWED_TYPES.includes(item.type)) files.push(item.getAsFile());
+  }
+  if (files.length) { ocrTabAddFiles(files); showToast('วางภาพจาก Clipboard แล้ว', 'success'); }
+});
+</script>
+
+</body>
+</html>
