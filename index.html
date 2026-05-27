@@ -528,7 +528,7 @@
     <button class="tab-btn" onclick="switchTab('gps',this)"><span class="icon">📡</span>GPS</button>
     <button class="tab-btn" onclick="switchTab('ocr',this)"><span class="icon">🔍</span>อ่านภาพ</button>
   </nav>
-  <div class="sb-footer"><span class="version">v3.9 | 28/05/2026 01:15</span></div>
+  <div class="sb-footer"><span class="version">v4.0 | 28/05/2026 02:10</span></div>
 </aside>
 
 <!-- Mobile overlay -->
@@ -539,7 +539,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version">v3.9 | 28/05/2026 01:15</span>
+  <span class="version">v4.0 | 28/05/2026 02:10</span>
 </header>
 <main id="main-content">
 
@@ -838,7 +838,7 @@
 <!-- ══ TAB: ปฏิทินเที่ยวรถ ══ -->
 <div class="tab-panel" id="tab-calendar">
   <style>
-    #cal-wrap { max-width:960px; margin:0 auto; padding:16px 12px 32px }
+    #cal-wrap { max-width:1100px; margin:0 auto; padding:16px 12px 32px }
     .cal-toolbar { display:flex; align-items:center; gap:8px; margin-bottom:14px; flex-wrap:wrap }
     .cal-month-nav { display:flex; align-items:center; gap:6px; background:white; border:1px solid #e2e8f0; border-radius:10px; padding:4px }
     .cal-nav-btn { background:#f1f5f9; border:none; border-radius:6px; width:32px; height:32px; cursor:pointer; font-size:1rem; color:#475569; font-family:inherit }
@@ -846,6 +846,7 @@
     .cal-month-label { font-weight:800; font-size:.95rem; color:#1e293b; padding:0 12px; min-width:140px; text-align:center }
     .cal-today-btn { background:#3b82f6; color:white; border:none; border-radius:8px; padding:8px 14px; font-weight:700; font-size:.78rem; cursor:pointer; font-family:inherit }
     .cal-today-btn:hover { background:#2563eb }
+    .cal-plate-filter { background:white; border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-family:inherit; font-size:.82rem; color:#1e293b; min-width:160px; cursor:pointer }
     .cal-legend { display:flex; gap:10px; flex-wrap:wrap; margin-left:auto; font-size:.7rem; color:#64748b }
     .cal-leg-item { display:flex; align-items:center; gap:5px }
     .cal-leg-dot { width:10px; height:10px; border-radius:50% }
@@ -854,28 +855,56 @@
     .cal-weekdays { display:grid; grid-template-columns:repeat(7,1fr); background:#f8fafc; border-bottom:1px solid #e2e8f0 }
     .cal-weekday { padding:10px 6px; text-align:center; font-size:.72rem; font-weight:800; color:#475569 }
     .cal-weekday.sun { color:#dc2626 } .cal-weekday.sat { color:#3b82f6 }
-    .cal-days { display:grid; grid-template-columns:repeat(7,1fr); grid-auto-rows:minmax(95px,auto) }
-    .cal-day { border-right:1px solid #f1f5f9; border-bottom:1px solid #f1f5f9; padding:6px 5px; cursor:pointer; position:relative; min-height:95px; display:flex; flex-direction:column; gap:3px; transition:background .12s }
-    .cal-day:nth-child(7n) { border-right:none }
-    .cal-day:hover { background:#f8fafc }
-    .cal-day.other-month { background:#fafafa; color:#cbd5e1 }
-    .cal-day.today { background:#dbeafe }
-    .cal-day.today .cal-day-num { background:#3b82f6; color:white; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-weight:800 }
-    .cal-day.sun .cal-day-num { color:#dc2626 } .cal-day.sat .cal-day-num { color:#3b82f6 }
-    .cal-day-num { font-size:.78rem; font-weight:700; color:#334155; padding:2px 4px }
-    .cal-events { display:flex; flex-direction:column; gap:2px; overflow:hidden }
-    .cal-evt { font-size:.62rem; padding:2px 5px; border-radius:3px; color:white; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.3 }
-    .cal-evt.s-wait    { background:#f59e0b }  /* รอโหลด */
-    .cal-evt.s-driving { background:#3b82f6 }  /* กำลังขนส่ง */
-    .cal-evt.s-done    { background:#10b981 }  /* ส่งแล้ว */
-    .cal-evt.s-cancel  { background:#94a3b8 }  /* ยกเลิก */
-    .cal-evt-more { font-size:.6rem; color:#64748b; font-weight:700; padding:2px 5px }
+
+    /* Week row container */
+    .cal-week { border-bottom:1px solid #f1f5f9; position:relative }
+    .cal-week:last-child { border-bottom:none }
+    /* Day-number row */
+    .cal-week-nums { display:grid; grid-template-columns:repeat(7,1fr) }
+    .cal-daycell { border-right:1px solid #f1f5f9; padding:6px 5px 2px; cursor:pointer; min-height:28px; transition:background .12s }
+    .cal-daycell:nth-child(7n) { border-right:none }
+    .cal-daycell:hover { background:#f8fafc }
+    .cal-daycell.other-month .cal-day-num { color:#cbd5e1 }
+    .cal-daycell.today { background:#dbeafe }
+    .cal-day-num { font-size:.78rem; font-weight:700; color:#334155; display:inline-block }
+    .cal-daycell.today .cal-day-num { background:#3b82f6; color:white; border-radius:50%; width:22px; height:22px; line-height:22px; text-align:center; font-weight:800 }
+    .cal-daycell.sun .cal-day-num { color:#dc2626 } .cal-daycell.sat .cal-day-num { color:#3b82f6 }
+
+    /* Event rows (grid same 7 cols, multiple rows) */
+    .cal-week-events { display:grid; grid-template-columns:repeat(7,1fr); grid-auto-rows:22px; gap:2px; padding:2px 3px 6px 3px; min-height:60px }
+    .cal-evt-bar {
+      font-size:.66rem; padding:3px 7px; color:white; font-weight:600;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      line-height:1.3; cursor:pointer; display:flex; align-items:center; gap:4px;
+      transition:filter .12s, transform .12s;
+      margin:0 1px;
+    }
+    .cal-evt-bar:hover { filter:brightness(1.1); transform:translateY(-1px) }
+    /* Status-based colors */
+    .cal-evt-bar.s-wait    { background:#f59e0b }
+    .cal-evt-bar.s-driving { background:#3b82f6 }
+    .cal-evt-bar.s-done    { background:#10b981 }
+    .cal-evt-bar.s-cancel  { background:#94a3b8 }
+    /* Bar shape based on continuation */
+    .cal-evt-bar.span-start  { border-radius:4px 0 0 4px; box-shadow:inset 4px 0 0 rgba(0,0,0,.25) }
+    .cal-evt-bar.span-middle { border-radius:0; margin:0 -1px }
+    .cal-evt-bar.span-end    { border-radius:0 4px 4px 0; box-shadow:inset -4px 0 0 rgba(0,0,0,.25) }
+    .cal-evt-bar.span-single { border-radius:4px }
+    .cal-evt-bar .ico { font-size:.78rem; line-height:1 }
+    .cal-evt-more {
+      grid-column:1/-1; font-size:.62rem; color:#64748b; font-weight:700;
+      padding:2px 6px; text-align:center; background:#f8fafc; border-radius:3px;
+      cursor:pointer; margin:1px;
+    }
+    .cal-evt-more:hover { background:#e2e8f0 }
 
     @media (max-width:640px) {
-      .cal-day { min-height:70px; padding:4px 3px }
+      .cal-daycell { padding:4px 3px 2px; min-height:24px }
       .cal-day-num { font-size:.7rem }
-      .cal-evt { font-size:.55rem; padding:1px 3px }
+      .cal-evt-bar { font-size:.55rem; padding:2px 4px }
+      .cal-week-events { grid-auto-rows:18px; min-height:40px }
       .cal-month-label { font-size:.85rem; min-width:110px }
+      .cal-plate-filter { min-width:130px; font-size:.75rem }
     }
 
     /* Modal for day details */
@@ -912,6 +941,9 @@
         <button class="cal-nav-btn" onclick="calNav(1)" title="เดือนถัดไป">▶</button>
       </div>
       <button class="cal-today-btn" onclick="calGoToday()">📅 วันนี้</button>
+      <select id="cal-plate-filter" class="cal-plate-filter" onchange="calChangePlate(this.value)">
+        <option value="">🚚 ทุกทะเบียน</option>
+      </select>
       <div class="cal-legend">
         <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#f59e0b"></span>รอโหลด</div>
         <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#3b82f6"></span>กำลังขนส่ง</div>
@@ -931,7 +963,7 @@
         <div class="cal-weekday">ศ</div>
         <div class="cal-weekday sat">ส</div>
       </div>
-      <div class="cal-days" id="cal-days"></div>
+      <div id="cal-weeks"></div>
     </div>
   </div>
 
@@ -2938,9 +2970,11 @@ function confirmTires() {
 // ─── CALENDAR TAB ─────────────────────────────────────────────────────────────
 const CAL_TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
                        'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const CAL_MAX_ROWS_PER_WEEK = 4;   // visible event rows per week
 let _calYear  = null;
 let _calMonth = null;     // 0-11
-let _calTrips = [];       // cached truck records
+let _calTrips = [];       // cached truck records (raw from sheet)
+let _calPlate = '';       // plate filter ('' = all)
 let _calInited = false;
 
 function initCalendar() {
@@ -2964,17 +2998,31 @@ function calGoToday() {
   _calMonth = today.getMonth();
   renderCalendar();
 }
+function calChangePlate(plate) {
+  _calPlate = plate || '';
+  renderCalendar();
+}
 async function loadCalTrips() {
-  document.getElementById('cal-days').innerHTML = '<div style="grid-column:1/-1;padding:40px;text-align:center;color:#94a3b8">⏳ กำลังโหลดข้อมูลเที่ยวรถ...</div>';
+  document.getElementById('cal-weeks').innerHTML = '<div style="padding:40px;text-align:center;color:#94a3b8">⏳ กำลังโหลดข้อมูลเที่ยวรถ...</div>';
   try {
     const res  = await fetch('/api/get-data?type=truck');
     const json = await res.json();
     if (!json.success) throw new Error(json.error || 'load failed');
     _calTrips = ((json.data || {}).truck) || [];
+    _refreshPlateFilterOptions();
     renderCalendar();
   } catch (e) {
-    document.getElementById('cal-days').innerHTML = '<div style="grid-column:1/-1;padding:40px;text-align:center;color:#dc2626">❌ โหลดข้อมูลไม่สำเร็จ: ' + e.message + '</div>';
+    document.getElementById('cal-weeks').innerHTML = '<div style="padding:40px;text-align:center;color:#dc2626">❌ โหลดข้อมูลไม่สำเร็จ: ' + e.message + '</div>';
   }
+}
+function _refreshPlateFilterOptions() {
+  const plates = Array.from(new Set(_calTrips.map(t => (t.plateNumber||'').trim()).filter(p => p))).sort();
+  const sel = document.getElementById('cal-plate-filter');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">🚚 ทุกทะเบียน (' + _calTrips.length + ' เที่ยว)</option>' +
+    plates.map(p => `<option value="${escHtml(p)}">${escHtml(p)}</option>`).join('');
+  if (cur && plates.includes(cur)) sel.value = cur;
 }
 function _calStatusClass(s) {
   if (s === 'ส่งแล้ว')     return 's-done';
@@ -2982,108 +3030,231 @@ function _calStatusClass(s) {
   if (s === 'ยกเลิก')      return 's-cancel';
   return 's-wait';
 }
-function _calDateKey(y, m, d) {
-  return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+function escHtml(s) {
+  return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
-function _parseTripDates(t) {
-  // Returns array of date strings (YYYY-MM-DD) this trip appears on
-  const dates = [];
-  const j = (t.jobDate || '').trim();
-  const p = (t.pickupDate || '').trim();
-  const d = (t.deliveryDate || '').trim();
-  if (j) dates.push({ date: j.slice(0,10), kind: 'job' });
-  if (p && p !== j) dates.push({ date: p.slice(0,10), kind: 'pickup' });
-  if (d && d !== j && d !== p) dates.push({ date: d.slice(0,10), kind: 'delivery' });
-  return dates;
+// Date utility — convert "YYYY-MM-DD" → number of days since epoch (UTC midnight)
+function _calDateNum(s) {
+  if (!s) return null;
+  const [y,m,d] = s.slice(0,10).split('-').map(Number);
+  if (!y || !m || !d) return null;
+  return Math.floor(Date.UTC(y, m-1, d) / 86400000);
 }
+function _numToDateKey(n) {
+  const dt = new Date(n * 86400000);
+  return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth()+1).padStart(2,'0')}-${String(dt.getUTCDate()).padStart(2,'0')}`;
+}
+// Compute trip span: returns {startNum, endNum} where each is days-since-epoch
+function _getTripSpan(t) {
+  const j = _calDateNum(t.jobDate);
+  const p = _calDateNum(t.pickupDate);
+  const d = _calDateNum(t.deliveryDate);
+  const all = [j,p,d].filter(x => x !== null);
+  if (all.length === 0) return null;
+  return { startNum: Math.min(...all), endNum: Math.max(...all) };
+}
+
 function renderCalendar() {
   document.getElementById('cal-month-label').textContent =
     `${CAL_TH_MONTHS[_calMonth]} ${_calYear + 543}`;
 
-  // Group trips by date
-  const byDate = {};
-  _calTrips.forEach(t => {
-    const ds = _parseTripDates(t);
-    ds.forEach(({date, kind}) => {
-      if (!byDate[date]) byDate[date] = [];
-      byDate[date].push({ trip: t, kind });
-    });
-  });
+  // Apply plate filter
+  const trips = _calPlate ? _calTrips.filter(t => (t.plateNumber||'') === _calPlate) : _calTrips;
 
-  // Build the calendar grid
+  // Determine the visible date range (6 weeks max)
   const firstDay = new Date(_calYear, _calMonth, 1);
-  const startDow = firstDay.getDay(); // 0=Sun
-  const lastDay  = new Date(_calYear, _calMonth + 1, 0).getDate();
-  const prevLast = new Date(_calYear, _calMonth, 0).getDate();
+  const startDow = firstDay.getDay();
+  const gridStart = new Date(_calYear, _calMonth, 1 - startDow);  // Sunday before/on 1st
+  const lastDay   = new Date(_calYear, _calMonth + 1, 0).getDate();
+  const totalCells = Math.ceil((startDow + lastDay) / 7) * 7;
+  const gridStartNum = Math.floor(Date.UTC(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate()) / 86400000);
+  const numWeeks = totalCells / 7;
 
   const today = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Bangkok'}));
-  const todayKey = _calDateKey(today.getFullYear(), today.getMonth(), today.getDate());
+  const todayNum = Math.floor(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()) / 86400000);
 
   let html = '';
-  // Previous month tail
-  for (let i = startDow - 1; i >= 0; i--) {
-    const d = prevLast - i;
-    html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
-  }
-  // Current month
-  for (let d = 1; d <= lastDay; d++) {
-    const key = _calDateKey(_calYear, _calMonth, d);
-    const dow = new Date(_calYear, _calMonth, d).getDay();
-    const evts = byDate[key] || [];
-    const isToday = key === todayKey;
-    const sunCls = dow === 0 ? ' sun' : (dow === 6 ? ' sat' : '');
-    const todayCls = isToday ? ' today' : '';
-    let evHtml = '';
-    const maxShow = 3;
-    evts.slice(0, maxShow).forEach(({trip, kind}) => {
-      const cls = _calStatusClass(trip.jobStatus);
-      const prefix = kind === 'pickup' ? '📥 ' : (kind === 'delivery' ? '📤 ' : '');
-      const txt = prefix + (trip.plateNumber || '?') + (trip.customerName ? ' • ' + trip.customerName : '');
-      evHtml += `<div class="cal-evt ${cls}" title="${escHtml(txt)}">${escHtml(txt)}</div>`;
-    });
-    if (evts.length > maxShow) {
-      evHtml += `<div class="cal-evt-more">+ ${evts.length - maxShow} เพิ่ม</div>`;
+
+  for (let w = 0; w < numWeeks; w++) {
+    const weekStartNum = gridStartNum + w * 7;
+    const weekEndNum   = weekStartNum + 6;
+
+    // 1) Day cells row
+    let numsHtml = '';
+    for (let c = 0; c < 7; c++) {
+      const dayNum = weekStartNum + c;
+      const dt = new Date(dayNum * 86400000);
+      const y = dt.getUTCFullYear(), m = dt.getUTCMonth(), d = dt.getUTCDate();
+      const dow = (weekStartNum + c) % 7; // not reliable timezone-wise, use date object
+      const realDow = new Date(y, m, d).getDay();
+      const otherMonth = (m !== _calMonth || y !== _calYear);
+      const isToday = dayNum === todayNum;
+      const sunCls = realDow === 0 ? ' sun' : (realDow === 6 ? ' sat' : '');
+      const cls = `cal-daycell${otherMonth ? ' other-month' : ''}${isToday ? ' today' : ''}${sunCls}`;
+      const dateKey = _numToDateKey(dayNum);
+      numsHtml += `<div class="${cls}" onclick="openCalDay('${dateKey}')"><span class="cal-day-num">${d}</span></div>`;
     }
-    html += `<div class="cal-day${sunCls}${todayCls}" onclick="openCalDay('${key}')">
-      <div class="cal-day-num">${d}</div>
-      <div class="cal-events">${evHtml}</div>
+
+    // 2) Collect events that overlap this week
+    const weekEvents = [];
+    trips.forEach(t => {
+      const span = _getTripSpan(t);
+      if (!span) return;
+      if (span.endNum < weekStartNum || span.startNum > weekEndNum) return;
+      const segStart = Math.max(span.startNum, weekStartNum);
+      const segEnd   = Math.min(span.endNum, weekEndNum);
+      weekEvents.push({
+        trip: t,
+        segStart,
+        segEnd,
+        isContinuedLeft:  span.startNum < weekStartNum,
+        isContinuedRight: span.endNum   > weekEndNum,
+        isMultiDay: span.startNum !== span.endNum
+      });
+    });
+
+    // 3) Sort by start date, then by length desc
+    weekEvents.sort((a,b) => {
+      if (a.segStart !== b.segStart) return a.segStart - b.segStart;
+      return (b.segEnd - b.segStart) - (a.segEnd - a.segStart);
+    });
+
+    // 4) Assign each event to a row (avoid overlap)
+    const rows = [];  // rows[i] = [{segStart, segEnd}, ...]
+    weekEvents.forEach(ev => {
+      let assigned = false;
+      for (let r = 0; r < rows.length; r++) {
+        const conflict = rows[r].some(e => !(ev.segEnd < e.segStart || ev.segStart > e.segEnd));
+        if (!conflict) { rows[r].push(ev); ev.row = r; assigned = true; break; }
+      }
+      if (!assigned) { rows.push([ev]); ev.row = rows.length - 1; }
+    });
+
+    // 5) Render events as grid-positioned bars
+    let evtsHtml = '';
+    const overflowByCol = [0,0,0,0,0,0,0];
+    weekEvents.forEach(ev => {
+      if (ev.row >= CAL_MAX_ROWS_PER_WEEK) {
+        // Mark overflow for each column it covers
+        const colStart = ev.segStart - weekStartNum;
+        const colEnd   = ev.segEnd - weekStartNum;
+        for (let c = colStart; c <= colEnd; c++) overflowByCol[c]++;
+        return;
+      }
+      const colStart = ev.segStart - weekStartNum + 1;   // 1-based for CSS grid
+      const colSpan  = ev.segEnd - ev.segStart + 1;
+      const t = ev.trip;
+      const cls = _calStatusClass(t.jobStatus);
+
+      // Span position class
+      let posCls;
+      if (ev.isMultiDay) {
+        if (ev.isContinuedLeft && ev.isContinuedRight) posCls = 'span-middle';
+        else if (ev.isContinuedLeft)                   posCls = 'span-end';
+        else if (ev.isContinuedRight)                  posCls = 'span-start';
+        else if (colSpan === 1)                        posCls = 'span-single';
+        else                                            posCls = 'span-single';  // both ends in this week → full bar
+      } else {
+        posCls = 'span-single';
+      }
+
+      // Build label
+      let icon = '';
+      if (!ev.isContinuedLeft && ev.isMultiDay)  icon = '📥 ';
+      else if (!ev.isContinuedRight && ev.isMultiDay) icon = '📤 ';
+
+      let labelParts = [];
+      if (!_calPlate) labelParts.push(t.plateNumber || '?');
+      if (t.customerName) labelParts.push(t.customerName);
+      if (_calPlate && (t.origin || t.destination)) labelParts.push((t.origin||'?') + '→' + (t.destination||'?'));
+      const label = icon + labelParts.join(' • ');
+
+      // Tooltip
+      const tip = [
+        t.plateNumber || '?',
+        t.customerName ? '🏢 ' + t.customerName : '',
+        t.driverName ? '👤 ' + t.driverName : '',
+        (t.origin || t.destination) ? '📍 ' + (t.origin||'-') + ' → ' + (t.destination||'-') : '',
+        t.cargoList ? '📦 ' + t.cargoList : '',
+        t.freightCost ? '💰 ' + t.freightCost + '฿' : '',
+        ev.isMultiDay ? '📥 ' + (t.pickupDate||t.jobDate||'') + ' → 📤 ' + (t.deliveryDate||t.jobDate||'') : ''
+      ].filter(x => x).join('\n');
+
+      // Click → open day modal of the segment's start day
+      const clickDate = _numToDateKey(ev.segStart);
+      evtsHtml += `<div class="cal-evt-bar ${cls} ${posCls}"
+        style="grid-column:${colStart} / span ${colSpan}; grid-row:${ev.row + 1}"
+        title="${escHtml(tip)}"
+        onclick="event.stopPropagation();openCalDay('${clickDate}')">${escHtml(label)}</div>`;
+    });
+
+    // Add overflow indicators per column
+    overflowByCol.forEach((n, c) => {
+      if (n > 0) {
+        evtsHtml += `<div class="cal-evt-more"
+          style="grid-column:${c+1}; grid-row:${CAL_MAX_ROWS_PER_WEEK + 1}"
+          onclick="event.stopPropagation();openCalDay('${_numToDateKey(weekStartNum + c)}')">+ ${n} เพิ่ม</div>`;
+      }
+    });
+
+    // Calc min event-rows height to allocate
+    const usedRows = Math.min(rows.length, CAL_MAX_ROWS_PER_WEEK);
+    const hasOverflow = overflowByCol.some(n => n > 0);
+    const totalRows = usedRows + (hasOverflow ? 1 : 0);
+    const minHeight = Math.max(40, totalRows * 24 + 8);
+
+    html += `<div class="cal-week">
+      <div class="cal-week-nums">${numsHtml}</div>
+      <div class="cal-week-events" style="min-height:${minHeight}px">${evtsHtml}</div>
     </div>`;
   }
-  // Next month head
-  const totalCells = startDow + lastDay;
-  const nextNeeded = (7 - totalCells % 7) % 7;
-  for (let d = 1; d <= nextNeeded; d++) {
-    html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
-  }
-  document.getElementById('cal-days').innerHTML = html;
+
+  document.getElementById('cal-weeks').innerHTML = html;
 }
-function escHtml(s) {
-  return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
+
 function openCalDay(dateKey) {
-  // Find all trips on this date
+  // Apply plate filter to lookups
+  const tripsAll = _calPlate ? _calTrips.filter(t => (t.plateNumber||'') === _calPlate) : _calTrips;
+  const targetNum = _calDateNum(dateKey);
+
+  // Find all trips whose span covers this date
   const matches = [];
-  _calTrips.forEach(t => {
-    const ds = _parseTripDates(t);
-    ds.forEach(({date, kind}) => {
-      if (date === dateKey) matches.push({ trip: t, kind });
-    });
+  tripsAll.forEach(t => {
+    const span = _getTripSpan(t);
+    if (!span) return;
+    if (targetNum < span.startNum || targetNum > span.endNum) return;
+    // Determine which kind of date this is
+    const isPickup   = _calDateNum(t.pickupDate)   === targetNum;
+    const isDelivery = _calDateNum(t.deliveryDate) === targetNum;
+    const isJob      = _calDateNum(t.jobDate)      === targetNum;
+    let kind = 'transit';
+    if (isPickup)        kind = 'pickup';
+    else if (isDelivery) kind = 'delivery';
+    else if (isJob)      kind = 'job';
+    matches.push({ trip: t, kind, span });
   });
 
   const [y, m, d] = dateKey.split('-').map(Number);
   const dateObj = new Date(y, m-1, d);
   const dowTh = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'][dateObj.getDay()];
   document.getElementById('cal-modal-title').textContent =
-    `📅 วัน${dowTh}ที่ ${d} ${CAL_TH_MONTHS[m-1]} ${y + 543}`;
+    `📅 วัน${dowTh}ที่ ${d} ${CAL_TH_MONTHS[m-1]} ${y + 543}` +
+    (_calPlate ? ` • ${_calPlate}` : '');
 
   const body = document.getElementById('cal-modal-body');
   if (matches.length === 0) {
     body.innerHTML = '<div class="cal-empty">📭 ไม่มีเที่ยวรถในวันนี้</div>';
   } else {
-    body.innerHTML = matches.map(({trip, kind}) => {
+    body.innerHTML = matches.map(({trip, kind, span}) => {
       const cls = _calStatusClass(trip.jobStatus);
-      const kindLabel = kind === 'pickup' ? '📥 เข้ารับสินค้า' : (kind === 'delivery' ? '📤 ส่งสินค้า' : '🚚 เที่ยวรถ');
+      const kindLabel = kind === 'pickup' ? '📥 เข้ารับสินค้า'
+                     : kind === 'delivery' ? '📤 ส่งสินค้า'
+                     : kind === 'transit' ? '🚚 อยู่ระหว่างขนส่ง'
+                     : '🚚 เที่ยวรถ';
       const time = trip.jobTime ? ' • ' + trip.jobTime : '';
+      const spanLabel = (span.startNum !== span.endNum)
+        ? `<div class="cal-trip-row" style="color:#3b82f6;font-weight:600">📅 ${_numToDateKey(span.startNum)} → ${_numToDateKey(span.endNum)} (${span.endNum - span.startNum + 1} วัน)</div>`
+        : '';
       return `
         <div class="cal-trip-card ${cls}">
           <div class="cal-trip-head">
@@ -3091,6 +3262,7 @@ function openCalDay(dateKey) {
             <span class="cal-trip-badge ${cls}">${escHtml(trip.jobStatus || 'รอโหลด')}</span>
             <span style="font-size:.7rem;color:#64748b">${kindLabel}${time}</span>
           </div>
+          ${spanLabel}
           ${trip.customerName ? `<div class="cal-trip-row">🏢 <b>ลูกค้า:</b> ${escHtml(trip.customerName)}</div>` : ''}
           ${trip.driverName   ? `<div class="cal-trip-row">👤 <b>คนขับ:</b> ${escHtml(trip.driverName)}${trip.driverPhone ? ' (' + escHtml(trip.driverPhone) + ')' : ''}</div>` : ''}
           ${(trip.origin || trip.destination) ? `<div class="cal-trip-row">📍 <b>เส้นทาง:</b> ${escHtml(trip.origin||'-')} → ${escHtml(trip.destination||'-')}</div>` : ''}
