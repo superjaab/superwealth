@@ -496,6 +496,102 @@
 
     /* ── Nav scrollbar hide (no longer needed but safe to keep) ── */
     .tab-nav { display:none; }
+
+    /* ════ AUTOCOMPLETE COMPONENT ════ */
+    .ac-wrap { position:relative; }
+    .ac-dd {
+      position:absolute; top:calc(100% + 2px); left:0; right:0;
+      background:white; border:1.5px solid #1565C0; border-radius:8px;
+      max-height:240px; overflow-y:auto;
+      box-shadow:0 8px 24px rgba(0,0,0,.18);
+      z-index:200; display:none;
+    }
+    .ac-dd.open { display:block; }
+    .ac-opt {
+      padding:9px 12px; cursor:pointer; font-size:.85rem; color:#1e293b;
+      border-bottom:1px solid #f1f5f9; transition:background .1s;
+    }
+    .ac-opt:last-child { border-bottom:none }
+    .ac-opt:hover, .ac-opt.hl { background:#e0f2fe; color:#1565C0; font-weight:600; }
+    .ac-opt-sub { font-size:.68rem; color:#94a3b8; margin-top:2px; font-weight:400; }
+    .ac-opt-empty { padding:14px; text-align:center; color:#94a3b8; font-size:.78rem; }
+    .ac-opt-add { color:#1565C0; font-weight:700; background:#f0f9ff; border-top:2px dashed #93c5fd; }
+
+    /* ════ IMAGE ZOOM MODAL ════ */
+    #img-zoom-modal {
+      display:none; position:fixed; inset:0; background:rgba(0,0,0,.92);
+      z-index:500; align-items:center; justify-content:center;
+      padding:20px; cursor:zoom-out;
+    }
+    #img-zoom-modal.open { display:flex; }
+    #img-zoom-modal img {
+      max-width:100%; max-height:100%; object-fit:contain;
+      border-radius:8px; box-shadow:0 0 60px rgba(255,255,255,.1);
+    }
+    #img-zoom-close {
+      position:absolute; top:16px; right:16px;
+      background:rgba(255,255,255,.15); border:none; color:white;
+      width:42px; height:42px; border-radius:50%; cursor:pointer;
+      font-size:1.3rem; backdrop-filter:blur(8px);
+    }
+    #img-zoom-counter {
+      position:absolute; bottom:20px; left:50%; transform:translateX(-50%);
+      background:rgba(0,0,0,.5); color:white; padding:6px 14px;
+      border-radius:20px; font-size:.78rem; font-weight:700;
+    }
+    .img-zoom-nav {
+      position:absolute; top:50%; transform:translateY(-50%);
+      background:rgba(255,255,255,.15); border:none; color:white;
+      width:46px; height:46px; border-radius:50%; cursor:pointer;
+      font-size:1.5rem; backdrop-filter:blur(8px);
+    }
+    .img-zoom-nav.prev { left:16px; }
+    .img-zoom-nav.next { right:16px; }
+    .img-zoom-nav:disabled { opacity:.3; cursor:not-allowed; }
+
+    /* Record card image thumbnails */
+    .rc-imgs { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap }
+    .rc-imgs img {
+      width:62px; height:62px; object-fit:cover; border-radius:6px;
+      cursor:zoom-in; border:1.5px solid #e2e8f0;
+      transition:transform .12s, border-color .12s;
+    }
+    .rc-imgs img:hover { transform:scale(1.05); border-color:#1565C0 }
+    .rc-imgs-more {
+      width:62px; height:62px; border-radius:6px; background:#f1f5f9;
+      display:flex; align-items:center; justify-content:center;
+      color:#475569; font-weight:700; font-size:.8rem; cursor:pointer;
+      border:1.5px dashed #cbd5e1;
+    }
+
+    /* Notification bell */
+    .header-bell {
+      position:relative; background:#f1f5f9; border:none; border-radius:8px;
+      width:36px; height:36px; cursor:pointer; font-size:1rem; color:#475569;
+      transition:background .12s;
+    }
+    .header-bell:hover { background:#e2e8f0 }
+    .header-bell .bell-badge {
+      position:absolute; top:-2px; right:-2px;
+      background:#ef4444; color:white; font-size:.62rem; font-weight:700;
+      min-width:16px; height:16px; border-radius:10px; padding:0 4px;
+      display:flex; align-items:center; justify-content:center;
+      border:2px solid white;
+    }
+    #bell-dropdown {
+      position:absolute; top:calc(100% + 6px); right:0;
+      width:340px; max-width:calc(100vw - 24px); max-height:70vh; overflow-y:auto;
+      background:white; border-radius:12px; box-shadow:0 12px 36px rgba(0,0,0,.18);
+      border:1px solid #e2e8f0; z-index:150; display:none;
+    }
+    #bell-dropdown.open { display:block }
+    .bell-dd-head { padding:12px 14px; border-bottom:1px solid #e2e8f0; font-weight:800; font-size:.85rem; color:#1e293b }
+    .bell-dd-empty { padding:30px 16px; text-align:center; color:#94a3b8; font-size:.82rem }
+    .bell-item { padding:10px 14px; border-bottom:1px solid #f1f5f9; font-size:.78rem; line-height:1.5 }
+    .bell-item:last-child { border-bottom:none }
+    .bell-item.lv-danger  { background:#fef2f2; border-left:3px solid #dc2626 }
+    .bell-item.lv-warning { background:#fffbeb; border-left:3px solid #f59e0b }
+    .bell-item.lv-info    { background:#eff6ff; border-left:3px solid #3b82f6 }
   </style>
 </head>
 <body>
@@ -522,9 +618,8 @@
     <div class="sb-section">ปฏิบัติการ</div>
     <button class="tab-btn" onclick="switchTab('maintenance',this)"><span class="icon">🔧</span>ซ่อมบำรุง</button>
     <button class="tab-btn" onclick="switchTab('fuel',this)"><span class="icon">⛽</span>น้ำมัน</button>
-    <button class="tab-btn" onclick="switchTab('invoice',this)"><span class="icon">📋</span>ใบแจ้งหนี้</button>
+    <button class="tab-btn" onclick="switchTab('invoice',this)"><span class="icon">🧾</span>ใบเสร็จรับเงิน</button>
     <div class="sb-section">เครื่องมือ</div>
-    <button class="tab-btn" onclick="switchTab('alert',this);loadAlerts()"><span class="icon">🔔</span>แจ้งเตือน</button>
     <button class="tab-btn" onclick="switchTab('gps',this)"><span class="icon">📡</span>GPS</button>
     <button class="tab-btn" onclick="switchTab('ocr',this)"><span class="icon">🔍</span>อ่านภาพ</button>
   </nav>
@@ -539,7 +634,16 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version">v4.1 | 28/05/2026 02:30</span>
+  <span class="version" style="margin-left:auto">v4.2 | 28/05/2026 04:00</span>
+  <div style="position:relative;margin-left:10px">
+    <button class="header-bell" onclick="toggleBell(event)" title="แจ้งเตือน">
+      🔔<span class="bell-badge" id="bell-badge" style="display:none">0</span>
+    </button>
+    <div id="bell-dropdown">
+      <div class="bell-dd-head">🔔 การแจ้งเตือน</div>
+      <div id="bell-dropdown-body"><div class="bell-dd-empty">⏳ กำลังโหลด...</div></div>
+    </div>
+  </div>
 </header>
 <main id="main-content">
 
@@ -553,55 +657,40 @@
   <form id="form-truck" onsubmit="return false">
 
     <div class="card">
-      <div class="card-title">📋 ข้อมูลงาน</div>
+      <div class="card-title">📅 วันที่และสถานะ</div>
       <div class="form-row-2">
         <div class="form-row">
-          <label>วันที่งาน <span class="req">*</span></label>
-          <input type="date" id="t-jobDate" required>
-        </div>
-        <div class="form-row">
-          <label>เวลา</label>
-          <input type="time" id="t-jobTime">
-        </div>
-      </div>
-      <div class="form-row-2">
-        <div class="form-row">
-          <label>📥 วันเข้ารับสินค้า</label>
-          <input type="date" id="t-pickupDate">
+          <label>📥 วันเข้ารับสินค้า <span class="req">*</span></label>
+          <input type="date" id="t-pickupDate" required>
         </div>
         <div class="form-row">
           <label>📤 วันส่งสินค้า</label>
           <input type="date" id="t-deliveryDate">
         </div>
       </div>
-      <div class="form-row">
-        <label>สถานะงาน <span class="req">*</span></label>
-        <div class="status-group">
-          <button type="button" class="status-chip yellow"   data-val="รอโหลด"      onclick="selectStatus('t-status',this)">⏳ รอโหลด</button>
-          <button type="button" class="status-chip orange"   data-val="กำลังขนส่ง"  onclick="selectStatus('t-status',this)">🚚 กำลังขนส่ง</button>
-          <button type="button" class="status-chip green2"   data-val="ส่งแล้ว"     onclick="selectStatus('t-status',this)">✅ ส่งแล้ว</button>
-          <button type="button" class="status-chip redchip"  data-val="ยกเลิก"      onclick="selectStatus('t-status',this)">❌ ยกเลิก</button>
-        </div>
-        <input type="hidden" id="t-status" value="รอโหลด">
-      </div>
+      <input type="hidden" id="t-status" value="รอโหลด">
+      <!-- ซ่อน jobDate / jobTime (auto = pickupDate) -->
+      <input type="hidden" id="t-jobDate">
+      <input type="hidden" id="t-jobTime">
     </div>
 
     <div class="card">
       <div class="card-title">🚛 รถและคนขับ</div>
+      <div class="form-row">
+        <label>ทะเบียนรถ <span class="req">*</span></label>
+        <input type="text" id="t-plateNumber" placeholder="กข-1234 (พิมพ์เพื่อค้นหา)" maxlength="20" autocomplete="off">
+      </div>
       <div class="form-row-2">
         <div class="form-row">
-          <label>ทะเบียนรถ <span class="req">*</span></label>
-          <input type="text" id="t-plateNumber" placeholder="กข-1234" list="plate-dl" maxlength="20">
+          <label>ชื่อคนขับ</label>
+          <input type="text" id="t-driverName" placeholder="ชื่อ-นามสกุล" maxlength="100" autocomplete="off">
         </div>
         <div class="form-row">
           <label>เบอร์โทรคนขับ</label>
           <input type="tel" id="t-driverPhone" placeholder="081-234-5678" maxlength="20">
         </div>
       </div>
-      <div class="form-row">
-        <label>ชื่อคนขับ</label>
-        <input type="text" id="t-driverName" placeholder="ชื่อ-นามสกุล" maxlength="100">
-      </div>
+      <p class="hint" style="font-size:.7rem;color:#94a3b8;margin-top:-4px">💡 เลือกทะเบียนจากรายการ ระบบจะเติมชื่อคนขับ + เบอร์โทรอัตโนมัติ</p>
     </div>
 
     <div class="card">
@@ -609,16 +698,16 @@
       <div class="form-row-2">
         <div class="form-row">
           <label>ต้นทาง</label>
-          <input type="text" id="t-origin" placeholder="พิมพ์เพื่อค้นหาจังหวัด..." maxlength="100" list="province-dl" autocomplete="off">
+          <input type="text" id="t-origin" placeholder="พิมพ์เพื่อค้นหาจังหวัด..." maxlength="100" autocomplete="off">
         </div>
         <div class="form-row">
           <label>ปลายทาง</label>
-          <input type="text" id="t-destination" placeholder="พิมพ์เพื่อค้นหาจังหวัด..." maxlength="100" list="province-dl" autocomplete="off">
+          <input type="text" id="t-destination" placeholder="พิมพ์เพื่อค้นหาจังหวัด..." maxlength="100" autocomplete="off">
         </div>
       </div>
       <div class="form-row">
         <label>ชื่อลูกค้า</label>
-        <input type="text" id="t-customerName" placeholder="บริษัท/ร้าน/ชื่อบุคคล" list="cust-dl" maxlength="150">
+        <input type="text" id="t-customerName" placeholder="พิมพ์เพื่อค้นหาลูกค้า..." maxlength="150" autocomplete="off">
       </div>
     </div>
 
@@ -626,22 +715,20 @@
       <div class="card-title">📦 ข้อมูลสินค้า</div>
       <div class="form-row">
         <label>รายการสินค้า</label>
-        <input type="text" id="t-cargoList" placeholder="ประเภทสินค้า" maxlength="200">
+        <input type="text" id="t-cargoList" placeholder="พิมพ์เพื่อค้นหา หรือเพิ่มสินค้าใหม่..." maxlength="200" autocomplete="off">
       </div>
-      <div class="form-row-3">
+      <div class="form-row-2">
         <div class="form-row">
           <label>น้ำหนัก (กก.)</label>
           <input type="number" id="t-cargoWeight" placeholder="0" min="0" step="0.1">
-        </div>
-        <div class="form-row">
-          <label>จำนวนเที่ยว</label>
-          <input type="number" id="t-tripCount" placeholder="1" min="1" value="1">
         </div>
         <div class="form-row">
           <label>ค่าขนส่ง (บาท)</label>
           <input type="number" id="t-freightCost" placeholder="0" min="0">
         </div>
       </div>
+      <!-- ซ่อน tripCount (default = 1) -->
+      <input type="hidden" id="t-tripCount" value="1">
       <div class="form-row">
         <label>หมายเหตุ</label>
         <textarea id="t-remark" placeholder="หมายเหตุเพิ่มเติม..." rows="2"></textarea>
@@ -771,7 +858,8 @@
           <select id="e-category" required>
             <option value="">-- เลือก --</option>
             <option value="ค่าน้ำมัน">⛽ ค่าน้ำมัน</option>
-            <option value="ค่าซ่อม">🔧 ค่าซ่อม</option>
+            <option value="ซ่อมบำรุง">🔧 ซ่อมบำรุง</option>
+            <option value="ค่าซ่อม">🔩 ค่าซ่อม</option>
             <option value="ค่าอะไหล่">⚙️ ค่าอะไหล่</option>
             <option value="ค่ายาง">🔄 ค่ายาง</option>
             <option value="ค่าแรง">👷 ค่าแรง</option>
@@ -1388,15 +1476,15 @@
   <div id="fuel-list-view" style="display:none"><div id="fuel-list" class="list-loading">กด "ประวัติเติมน้ำมัน" เพื่อโหลด</div></div>
 </div>
 
-<!-- ══ TAB 9: ใบแจ้งหนี้ ══ -->
+<!-- ══ TAB 9: ใบเสร็จรับเงิน ══ -->
 <div class="tab-panel" id="tab-invoice">
   <div class="inner-nav">
-    <button class="inner-btn active" onclick="innerTab('invoice','form',this)">➕ สร้างใบแจ้งหนี้</button>
-    <button class="inner-btn" onclick="innerTab('invoice','list',this)">📋 รายการ Invoice</button>
+    <button class="inner-btn active" onclick="innerTab('invoice','form',this)">➕ สร้างใบเสร็จ</button>
+    <button class="inner-btn" onclick="innerTab('invoice','list',this)">📋 รายการใบเสร็จ</button>
   </div>
   <div id="invoice-form-view">
     <div class="card">
-      <div class="card-title" style="color:#006064">📋 ข้อมูลใบแจ้งหนี้</div>
+      <div class="card-title" style="color:#006064">🧾 ข้อมูลใบเสร็จรับเงิน</div>
       <div class="form-row-3">
         <div class="form-row"><label>เลขที่ <span class="req">*</span></label><input type="text" id="inv-number" placeholder="INV-202605-0001" maxlength="30"></div>
         <div class="form-row"><label>วันที่ <span class="req">*</span></label><input type="date" id="inv-date"></div>
@@ -1770,6 +1858,15 @@
 <!-- Toast -->
 <div id="toast" class="hidden"></div>
 
+<!-- ══ IMAGE ZOOM MODAL ══ -->
+<div id="img-zoom-modal" onclick="closeImgZoom()">
+  <button id="img-zoom-close" onclick="event.stopPropagation();closeImgZoom()">✕</button>
+  <button class="img-zoom-nav prev" id="img-zoom-prev" onclick="event.stopPropagation();imgZoomNav(-1)">‹</button>
+  <img id="img-zoom-img" src="" alt="zoom" onclick="event.stopPropagation()">
+  <button class="img-zoom-nav next" id="img-zoom-next" onclick="event.stopPropagation();imgZoomNav(1)">›</button>
+  <div id="img-zoom-counter">1 / 1</div>
+</div>
+
 <!-- ═══════════════════════════════════════
      JAVASCRIPT  (Vercel — ใช้ fetch() แทน google.script.run)
 ════════════════════════════════════════ -->
@@ -1793,15 +1890,329 @@ window.addEventListener('DOMContentLoaded', () => {
   buildUploadArea('income',      'income-upload-area');
   buildUploadArea('expense',     'expense-upload-area');
   buildUploadArea('maintenance', 'maint-upload-area');
-  document.querySelector('.status-chip[data-val="รอโหลด"]').classList.add('selected');
   renderInvRows();
   genInvNum();
+  // Custom autocompletes
+  initAllAutocompletes();
+  // Load master data (vehicles, customers, truck history for autofill)
+  loadMasterData();
+  // Image zoom keyboard
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeImgZoom();
+    else if (e.key === 'ArrowLeft')  imgZoomNav(-1);
+    else if (e.key === 'ArrowRight') imgZoomNav(1);
+  });
+  // Bell dropdown: close on outside click
+  document.addEventListener('click', e => {
+    const dd = document.getElementById('bell-dropdown');
+    if (!dd || !dd.classList.contains('open')) return;
+    if (!e.target.closest('#bell-dropdown') && !e.target.closest('.header-bell')) {
+      dd.classList.remove('open');
+    }
+  });
 });
+
+// ════════════════════════════════════════════════════════════════
+// CUSTOM AUTOCOMPLETE COMPONENT
+// ════════════════════════════════════════════════════════════════
+const _acStore = {};
+
+function acAttach(inputId, getOptsFunc, onSelectFunc) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  // Wrap if not wrapped
+  let wrap = input.parentElement;
+  if (!wrap.classList.contains('ac-wrap')) {
+    wrap = document.createElement('div');
+    wrap.className = 'ac-wrap';
+    input.parentNode.insertBefore(wrap, input);
+    wrap.appendChild(input);
+  }
+  // Add dropdown
+  let dd = wrap.querySelector('.ac-dd');
+  if (!dd) { dd = document.createElement('div'); dd.className = 'ac-dd'; wrap.appendChild(dd); }
+  // Remove native datalist
+  input.removeAttribute('list');
+  input.setAttribute('autocomplete', 'off');
+
+  _acStore[inputId] = { input, dd, getOpts: getOptsFunc, onSel: onSelectFunc };
+
+  input.addEventListener('focus', () => acRender(inputId));
+  input.addEventListener('input', () => acRender(inputId));
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Escape') dd.classList.remove('open');
+    if (e.key === 'Enter')  dd.classList.remove('open');
+  });
+  input.addEventListener('blur', () => setTimeout(() => dd.classList.remove('open'), 180));
+}
+
+function acRender(inputId) {
+  const a = _acStore[inputId]; if (!a) return;
+  const q = (a.input.value || '').toLowerCase().trim();
+  const opts = a.getOpts() || [];
+  let filtered = opts;
+  if (q) {
+    filtered = opts.filter(o => {
+      const text = typeof o === 'string' ? o : (o.label || o.value || '');
+      const sub  = typeof o === 'object' ? (o.sub || '') : '';
+      return text.toLowerCase().includes(q) || sub.toLowerCase().includes(q);
+    });
+  }
+  filtered = filtered.slice(0, 100);
+  if (filtered.length === 0) {
+    a.dd.innerHTML = '<div class="ac-opt-empty">ไม่พบในรายการ — ข้อความที่พิมพ์จะถูกใช้</div>';
+  } else {
+    a.dd.innerHTML = filtered.map(o => {
+      const val = typeof o === 'string' ? o : (o.value || o.label);
+      const lbl = typeof o === 'string' ? o : (o.label || o.value);
+      const sub = typeof o === 'object' ? (o.sub || '') : '';
+      const v = String(val).replace(/"/g,'&quot;');
+      return `<div class="ac-opt" data-v="${v}">${escHtml(lbl)}${sub ? `<div class="ac-opt-sub">${escHtml(sub)}</div>` : ''}</div>`;
+    }).join('');
+    a.dd.querySelectorAll('.ac-opt').forEach(el => {
+      el.addEventListener('mousedown', e => {
+        e.preventDefault();
+        const v = el.dataset.v;
+        a.input.value = v;
+        a.dd.classList.remove('open');
+        if (a.onSel) a.onSel(v);
+      });
+    });
+  }
+  a.dd.classList.add('open');
+}
+
+// ════════════════════════════════════════════════════════════════
+// MASTER DATA — provinces, vehicles, customers, cargo history
+// ════════════════════════════════════════════════════════════════
+const TH_PROVINCES_LIST = [
+  'กรุงเทพมหานคร','นนทบุรี','ปทุมธานี','สมุทรปราการ','นครปฐม','สมุทรสาคร','สมุทรสงคราม',
+  'พระนครศรีอยุธยา','อ่างทอง','ลพบุรี','สิงห์บุรี','ชัยนาท','สระบุรี','สุพรรณบุรี',
+  'ชลบุรี','ระยอง','จันทบุรี','ตราด','ฉะเชิงเทรา','ปราจีนบุรี','สระแก้ว','นครนายก',
+  'กาญจนบุรี','ราชบุรี','เพชรบุรี','ประจวบคีรีขันธ์','ตาก',
+  'เชียงใหม่','เชียงราย','ลำพูน','ลำปาง','แม่ฮ่องสอน','น่าน','พะเยา','แพร่','อุตรดิตถ์',
+  'พิษณุโลก','สุโขทัย','เพชรบูรณ์','พิจิตร','กำแพงเพชร','นครสวรรค์','อุทัยธานี',
+  'ขอนแก่น','มหาสารคาม','ร้อยเอ็ด','กาฬสินธุ์','หนองคาย','เลย','หนองบัวลำภู','อุดรธานี',
+  'บึงกาฬ','สกลนคร','นครพนม','มุกดาหาร','ชัยภูมิ','นครราชสีมา','บุรีรัมย์','สุรินทร์',
+  'ศรีสะเกษ','อุบลราชธานี','ยโสธร','อำนาจเจริญ',
+  'ชุมพร','ระนอง','สุราษฎร์ธานี','พังงา','ภูเก็ต','กระบี่','นครศรีธรรมราช','ตรัง',
+  'พัทลุง','สตูล','สงขลา','ปัตตานี','ยะลา','นราธิวาส'
+];
+const _master = {
+  vehicles: [],        // [{plateNumber, brand, model, vehicleType, ...}]
+  customers: [],       // [{name, contactName, phone, ...}]
+  truckHistory: [],    // recent truck records (for cargo + plate→driver autofill)
+  cargoSaved: JSON.parse(localStorage.getItem('cargo_saved') || '[]')
+};
+
+async function loadMasterData() {
+  try {
+    const [vehRes, custRes, truckRes] = await Promise.all([
+      fetch('/api/get-data?type=vehicle').then(r => r.json()).catch(() => ({})),
+      fetch('/api/get-data?type=customer').then(r => r.json()).catch(() => ({})),
+      fetch('/api/get-data?type=truck').then(r => r.json()).catch(() => ({}))
+    ]);
+    _master.vehicles     = ((vehRes.data || {}).vehicle) || [];
+    _master.customers    = ((custRes.data || {}).customer) || [];
+    _master.truckHistory = ((truckRes.data || {}).truck) || [];
+    // Populate plate-dl + cust-dl datalists for places still using them
+    const plateDl = document.getElementById('plate-dl');
+    if (plateDl) plateDl.innerHTML = _master.vehicles.map(v => `<option value="${escAttr(v.plateNumber||'')}">`).join('');
+    const custDl = document.getElementById('cust-dl');
+    if (custDl) custDl.innerHTML = _master.customers.map(c => `<option value="${escAttr(c.name||'')}">`).join('');
+  } catch (e) { console.warn('Master data load failed:', e); }
+}
+function escAttr(s) { return String(s||'').replace(/"/g, '&quot;'); }
+
+function getProvinceOpts() { return TH_PROVINCES_LIST; }
+function getPlateOpts() {
+  const set = new Set();
+  _master.vehicles.forEach(v => { if (v.plateNumber) set.add(v.plateNumber); });
+  _master.truckHistory.forEach(t => { if (t.plateNumber) set.add(t.plateNumber); });
+  return Array.from(set).sort().map(p => {
+    const v = _master.vehicles.find(x => x.plateNumber === p);
+    const sub = v ? [v.brand, v.model, v.vehicleType].filter(x => x).join(' ') : '';
+    return { value: p, label: p, sub };
+  });
+}
+function getCustomerOpts() {
+  const set = new Map();
+  _master.customers.forEach(c => { if (c.name) set.set(c.name, c); });
+  _master.truckHistory.forEach(t => { if (t.customerName && !set.has(t.customerName)) set.set(t.customerName, null); });
+  return Array.from(set.entries()).sort().map(([name, c]) => {
+    const sub = c ? [c.contactName, c.phone].filter(x => x).join(' • ') : '';
+    return { value: name, label: name, sub };
+  });
+}
+function getCargoOpts() {
+  const set = new Set();
+  _master.cargoSaved.forEach(c => set.add(c));
+  _master.truckHistory.forEach(t => { if (t.cargoList) set.add(t.cargoList); });
+  return Array.from(set).sort();
+}
+function saveCargoIfNew(name) {
+  if (!name) return;
+  if (!_master.cargoSaved.includes(name)) {
+    _master.cargoSaved.push(name);
+    localStorage.setItem('cargo_saved', JSON.stringify(_master.cargoSaved));
+  }
+}
+
+// Auto-fill driver name + phone when plate selected (from latest truck record)
+function onPlateSelected(plate) {
+  if (!plate) return;
+  const driverField = document.getElementById('t-driverName');
+  const phoneField  = document.getElementById('t-driverPhone');
+  // Look up latest truck record for this plate
+  const latest = [..._master.truckHistory]
+    .reverse()
+    .find(t => (t.plateNumber||'') === plate && (t.driverName || t.driverPhone));
+  if (latest) {
+    if (driverField && !driverField.value && latest.driverName)  driverField.value = latest.driverName;
+    if (phoneField  && !phoneField.value  && latest.driverPhone) phoneField.value  = latest.driverPhone;
+    if (latest.driverName) showToast(`👤 เติมคนขับ "${latest.driverName}" อัตโนมัติ`, 'success');
+  }
+}
+
+function initAllAutocompletes() {
+  // Truck form
+  acAttach('t-plateNumber',  getPlateOpts,    onPlateSelected);
+  acAttach('t-customerName', getCustomerOpts, null);
+  acAttach('t-cargoList',    getCargoOpts,    saveCargoIfNew);
+  acAttach('t-origin',       getProvinceOpts, null);
+  acAttach('t-destination',  getProvinceOpts, null);
+  // Income / Expense / Maintenance / Fuel — customer & plate fields
+  acAttach('i-customerName', getCustomerOpts, null);
+  acAttach('e-plateNumber',  getPlateOpts,    null);
+  acAttach('mnt-plate',      getPlateOpts,    null);
+  acAttach('fuel-plate',     getPlateOpts,    null);
+  acAttach('inv-customer',   getCustomerOpts, null);
+}
+
+// ════════════════════════════════════════════════════════════════
+// IMAGE ZOOM MODAL
+// ════════════════════════════════════════════════════════════════
+let _zoomImages = [];
+let _zoomIndex = 0;
+function openImgZoom(urls, startIdx) {
+  _zoomImages = Array.isArray(urls) ? urls : [urls];
+  _zoomIndex  = startIdx || 0;
+  _updateZoomImg();
+  document.getElementById('img-zoom-modal').classList.add('open');
+}
+function closeImgZoom() {
+  document.getElementById('img-zoom-modal').classList.remove('open');
+}
+function imgZoomNav(delta) {
+  _zoomIndex = (_zoomIndex + delta + _zoomImages.length) % _zoomImages.length;
+  _updateZoomImg();
+}
+function _updateZoomImg() {
+  const img = document.getElementById('img-zoom-img');
+  const counter = document.getElementById('img-zoom-counter');
+  const prev = document.getElementById('img-zoom-prev');
+  const next = document.getElementById('img-zoom-next');
+  if (img) img.src = _zoomImages[_zoomIndex] || '';
+  if (counter) counter.textContent = `${_zoomIndex + 1} / ${_zoomImages.length}`;
+  const single = _zoomImages.length <= 1;
+  if (prev) prev.style.display = single ? 'none' : '';
+  if (next) next.style.display = single ? 'none' : '';
+  if (counter) counter.style.display = single ? 'none' : '';
+}
+
+function renderImgThumbs(urls) {
+  // Parse url field (could be JSON, comma-separated, or array)
+  let list = [];
+  if (Array.isArray(urls)) list = urls;
+  else if (typeof urls === 'string' && urls.trim()) {
+    if (urls.trim().startsWith('[')) {
+      try { list = JSON.parse(urls); } catch { list = urls.split(/[,;\n]/).map(s=>s.trim()).filter(s=>s); }
+    } else {
+      list = urls.split(/[,;\n]/).map(s=>s.trim()).filter(s=>s);
+    }
+  }
+  if (list.length === 0) return '';
+  const showCount = Math.min(list.length, 4);
+  const more = list.length - showCount;
+  const arr = list.slice(0, showCount).map((u,i) =>
+    `<img src="${escAttr(u)}" alt="img" onclick='openImgZoom(${JSON.stringify(list)},${i})'>`).join('');
+  const moreHtml = more > 0 ? `<div class="rc-imgs-more" onclick='openImgZoom(${JSON.stringify(list)},${showCount})'>+${more}</div>` : '';
+  return `<div class="rc-imgs">${arr}${moreHtml}</div>`;
+}
+
+// ════════════════════════════════════════════════════════════════
+// NOTIFICATION BELL
+// ════════════════════════════════════════════════════════════════
+let _bellLoaded = false;
+function toggleBell(e) {
+  if (e) e.stopPropagation();
+  const dd = document.getElementById('bell-dropdown');
+  if (!dd) return;
+  const isOpen = dd.classList.toggle('open');
+  if (isOpen && !_bellLoaded) { loadBellAlerts(); _bellLoaded = true; }
+}
+async function loadBellAlerts() {
+  const body = document.getElementById('bell-dropdown-body');
+  if (!body) return;
+  body.innerHTML = '<div class="bell-dd-empty">⏳ กำลังโหลด...</div>';
+  try {
+    // Fetch vehicles, drivers, invoices for expiry/overdue checks
+    const [v,d,i] = await Promise.all([
+      fetch('/api/get-data?type=vehicle').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/get-data?type=driver').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/get-data?type=invoice').then(r=>r.json()).catch(()=>({}))
+    ]);
+    const today = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Bangkok'}));
+    const alerts = [];
+    const addAlert = (level, icon, text) => alerts.push({ level, icon, text });
+    const checkDate = (dateStr, label, dangerDays=7, warnDays=30) => {
+      if (!dateStr) return;
+      const dt = new Date(dateStr);
+      if (isNaN(dt)) return;
+      const diff = Math.floor((dt - today) / 86400000);
+      if (diff < 0)              addAlert('danger', '🚨', `${label} หมดอายุแล้ว ${-diff} วัน (${dateStr})`);
+      else if (diff <= dangerDays) addAlert('danger', '⚠️', `${label} จะหมดอายุใน ${diff} วัน (${dateStr})`);
+      else if (diff <= warnDays)   addAlert('warning', '⏰', `${label} จะหมดอายุใน ${diff} วัน (${dateStr})`);
+    };
+    ((v.data||{}).vehicle||[]).forEach(x => {
+      const p = x.plateNumber || '?';
+      checkDate(x.regExpiry,        `🚛 ${p} - ภาษีรถ`);
+      checkDate(x.prbExpiry,        `🚛 ${p} - พ.ร.บ.`);
+      checkDate(x.insuranceExpiry,  `🚛 ${p} - ประกันภัย`);
+      checkDate(x.inspectionExpiry, `🚛 ${p} - ตรวจสภาพ`);
+    });
+    ((d.data||{}).driver||[]).forEach(x => {
+      if (x.licExpiry || x['lic-exp']) checkDate(x.licExpiry || x['lic-exp'], `👤 ${x.name||'?'} - ใบขับขี่`);
+    });
+    ((i.data||{}).invoice||[]).forEach(x => {
+      if ((x.status||x.invoiceStatus) === 'รอชำระ' && (x.dueDate||x.invoiceDue)) {
+        const dt = new Date(x.dueDate||x.invoiceDue);
+        if (!isNaN(dt) && dt < today) {
+          addAlert('danger','💰',`ใบเสร็จ ${x.invoiceNumber||x.number||''} เกินกำหนดชำระแล้ว`);
+        }
+      }
+    });
+    // Update badge
+    const badge = document.getElementById('bell-badge');
+    if (badge) {
+      if (alerts.length > 0) { badge.style.display = 'flex'; badge.textContent = alerts.length; }
+      else badge.style.display = 'none';
+    }
+    if (alerts.length === 0) {
+      body.innerHTML = '<div class="bell-dd-empty">✅ ไม่มีรายการแจ้งเตือน</div>';
+    } else {
+      body.innerHTML = alerts.slice(0, 50).map(a =>
+        `<div class="bell-item lv-${a.level}">${a.icon} ${escHtml(a.text)}</div>`).join('');
+    }
+  } catch (e) {
+    body.innerHTML = '<div class="bell-dd-empty">❌ โหลดไม่สำเร็จ: ' + escHtml(e.message) + '</div>';
+  }
+}
 
 function setDefaultDates() {
   const today = new Date().toISOString().slice(0, 10);
   const now   = new Date().toTimeString().slice(0, 5);
-  ['t-jobDate','i-incomeDate','e-expenseDate','mnt-date','fuel-date','inv-date'].forEach(id => {
+  ['t-jobDate','t-pickupDate','i-incomeDate','e-expenseDate','mnt-date','fuel-date','inv-date'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = today;
   });
   ['t-jobTime','i-incomeTime','e-expenseTime','fuel-time'].forEach(id => {
@@ -1813,7 +2224,7 @@ function setDefaultDates() {
 const PAGE_NAMES = {
   truck:'บันทึกรถบรรทุก', income:'รายรับ', expense:'รายจ่าย',
   vehicle:'ทะเบียนรถ', driver:'คนขับ', customer:'ลูกค้า',
-  maintenance:'ซ่อมบำรุง', fuel:'น้ำมัน', invoice:'ใบแจ้งหนี้',
+  maintenance:'ซ่อมบำรุง', fuel:'น้ำมัน', invoice:'ใบเสร็จรับเงิน',
   summary:'สรุปผล', calendar:'ปฏิทินเที่ยวรถ', alert:'แจ้งเตือน', gps:'GPS', ocr:'อ่านภาพ'
 };
 function switchTab(tab, btnEl) {
@@ -2167,13 +2578,15 @@ function collectFormData(formKey) {
   const g = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
   if (formKey === 'truck') {
     if (!g('t-plateNumber')) { showToast('กรุณากรอกทะเบียนรถ', 'warning'); return null; }
-    if (!g('t-jobDate'))     { showToast('กรุณาเลือกวันที่', 'warning');   return null; }
+    if (!g('t-pickupDate'))  { showToast('กรุณาเลือกวันเข้ารับสินค้า', 'warning'); return null; }
+    // jobDate ใช้ pickupDate (backward compat กับ Google Sheets)
+    const pickupDate = g('t-pickupDate');
     return {
-      jobDate: g('t-jobDate'), jobTime: g('t-jobTime'),
-      pickupDate: g('t-pickupDate'), deliveryDate: g('t-deliveryDate'),
+      jobDate: pickupDate, jobTime: g('t-jobTime'),
+      pickupDate, deliveryDate: g('t-deliveryDate'),
       plateNumber: g('t-plateNumber'), driverName: g('t-driverName'), driverPhone: g('t-driverPhone'),
       origin: g('t-origin'), destination: g('t-destination'), customerName: g('t-customerName'),
-      cargoList: g('t-cargoList'), cargoWeight: g('t-cargoWeight'), tripCount: g('t-tripCount'),
+      cargoList: g('t-cargoList'), cargoWeight: g('t-cargoWeight'), tripCount: g('t-tripCount') || '1',
       freightCost: g('t-freightCost'), jobStatus: g('t-status') || 'รอโหลด', remark: g('t-remark')
     };
   }
@@ -2211,10 +2624,8 @@ function resetForm(formKey) {
   renderPreview(formKey);
   closeOCRPanel(formKey);
   if (formKey === 'truck') {
-    document.getElementById('t-status').value = 'รอโหลด';
-    document.querySelectorAll('.status-chip').forEach(c => c.classList.remove('selected'));
-    document.querySelector('.status-chip[data-val="รอโหลด"]').classList.add('selected');
-    document.getElementById('t-tripCount').value = '1';
+    const st = document.getElementById('t-status'); if (st) st.value = 'รอโหลด';
+    const tc = document.getElementById('t-tripCount'); if (tc) tc.value = '1';
   }
   showToast('ล้างข้อมูลแล้ว', 'success');
 }
@@ -2696,7 +3107,7 @@ function genInvNum() {
   el.value = `INV-${y}${m}-${String(seq).padStart(4,'0')}`;
 }
 function submitInvoice() {
-  if (!gv('inv-number'))   { showToast('กรุณากรอกเลขที่ใบแจ้งหนี้','warning'); return; }
+  if (!gv('inv-number'))   { showToast('กรุณากรอกเลขที่ใบเสร็จ','warning'); return; }
   if (!gv('inv-date'))     { showToast('กรุณาเลือกวันที่','warning'); return; }
   if (!gv('inv-customer')) { showToast('กรุณากรอกชื่อลูกค้า','warning'); return; }
   const sub = invRows.reduce((s,r)=>s+(r.total||0),0);
@@ -2749,7 +3160,7 @@ function printInvoice() {
         <div style="font-size:12px;color:#64748b;margin-top:2px">ระบบขนส่งรถบรรทุก · Transport Management</div>
       </div>
       <div style="text-align:right">
-        <div style="font-size:26px;font-weight:900;color:#1d4ed8;letter-spacing:-1px">ใบแจ้งหนี้</div>
+        <div style="font-size:26px;font-weight:900;color:#1d4ed8;letter-spacing:-1px">ใบเสร็จรับเงิน</div>
         <div style="font-size:11px;color:#94a3b8;font-weight:600;letter-spacing:1px">INVOICE</div>
       </div>
     </div>
@@ -2761,7 +3172,7 @@ function printInvoice() {
       </div>
       <div style="text-align:right">
         <table style="margin-left:auto;font-size:13px;border-collapse:collapse">
-          <tr><td style="color:#64748b;padding:2px 8px 2px 0">เลขที่ใบแจ้งหนี้</td><td style="font-weight:700;color:#1d4ed8">${gv('inv-number')}</td></tr>
+          <tr><td style="color:#64748b;padding:2px 8px 2px 0">เลขที่ใบเสร็จ</td><td style="font-weight:700;color:#1d4ed8">${gv('inv-number')}</td></tr>
           <tr><td style="color:#64748b;padding:2px 8px 2px 0">วันที่ออก</td><td style="font-weight:600">${fmtDate(gv('inv-date'))}</td></tr>
           ${gv('inv-due')?`<tr><td style="color:#64748b;padding:2px 8px 2px 0">ครบกำหนดชำระ</td><td style="font-weight:600;color:#dc2626">${fmtDate(gv('inv-due'))}</td></tr>`:''}
         </table>
@@ -2908,7 +3319,9 @@ function renderTruckList(items) {
         ${r.cargoList ? `<span>📦 ${r.cargoList}${r.cargoWeight?' ('+r.cargoWeight+' ตัน)':''}</span>` : ''}
         ${r.tripCount ? `<span>🔁 ${r.tripCount} เที่ยว</span>` : ''}
         ${r.notes ? `<span style="color:#9E9E9E">📝 ${r.notes}</span>` : ''}
+        ${r.remark && !r.notes ? `<span style="color:#9E9E9E">📝 ${r.remark}</span>` : ''}
       </div>
+      ${renderImgThumbs(r.imageUrls)}
     </div>`;
   }).join('');
 }
@@ -2922,6 +3335,7 @@ function renderIncomeList(items) {
         <span style="padding:2px 8px;border-radius:10px;background:#E8F5E9;color:${payColor[r.paymentMethod]||'#2E7D32'};font-weight:600;font-size:.72rem">${r.paymentMethod||'เงินสด'}</span>
         ${r.docNumber?`<span style="color:#9E9E9E">#${r.docNumber}</span>`:''}
       </div>
+      ${renderImgThumbs(r.imageUrls)}
     </div>`).join('');
 }
 
@@ -2936,6 +3350,7 @@ function renderExpenseList(items) {
         ${r.plateNumber?`<span>🚛 ${r.plateNumber}</span>`:''}
         ${r.vendor?`<span>🏪 ${r.vendor}</span>`:''}
       </div>
+      ${renderImgThumbs(r.imageUrls)}
     </div>`).join('');
 }
 
