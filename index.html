@@ -701,7 +701,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v6.4 | 28/05/2026 08:20</span>
+  <span class="version" style="margin-left:auto">v6.5 | 28/05/2026 08:40</span>
   <div style="position:relative;margin-left:10px">
     <button class="header-bell" onclick="toggleBell(event)" title="แจ้งเตือน">
       🔔<span class="bell-badge" id="bell-badge" style="display:none">0</span>
@@ -884,8 +884,8 @@
         <div class="form-row">
           <label>วิธีรับเงิน</label>
           <select id="i-paymentMethod">
+            <option value="เงินโอน" selected>📲 เงินโอน</option>
             <option value="เงินสด">💵 เงินสด</option>
-            <option value="เงินโอน">📲 เงินโอน</option>
             <option value="โอน QR">📱 โอน QR</option>
             <option value="เช็ค">📝 เช็ค</option>
             <option value="บัตรเครดิต">💳 บัตรเครดิต</option>
@@ -994,8 +994,8 @@
         <div class="form-row">
           <label>วิธีจ่ายเงิน</label>
           <select id="e-paymentMethod">
+            <option value="เงินโอน" selected>📲 เงินโอน</option>
             <option value="เงินสด">💵 เงินสด</option>
-            <option value="เงินโอน">📲 เงินโอน</option>
             <option value="โอน QR">📱 โอน QR</option>
             <option value="เช็ค">📝 เช็ค</option>
             <option value="บัตรเครดิต">💳 บัตรเครดิต</option>
@@ -1626,7 +1626,7 @@
         <div class="form-row"><label>เลขไมล์ปัจจุบัน</label><input type="number" id="fuel-km" placeholder="0" min="0"></div>
         <div class="form-row"><label>ปั๊มน้ำมัน/สถานี</label><input type="text" id="fuel-station" maxlength="100"></div>
         <div class="form-row"><label>วิธีชำระ</label>
-          <select id="fuel-pay"><option value="เงินสด">💵 เงินสด</option><option value="เงินโอน">📲 เงินโอน</option><option value="โอน QR">📱 โอน QR</option><option value="บัตรเครดิต">💳 บัตรเครดิต</option><option value="อื่นๆ">🔄 อื่นๆ</option></select>
+          <select id="fuel-pay"><option value="เงินโอน" selected>📲 เงินโอน</option><option value="เงินสด">💵 เงินสด</option><option value="โอน QR">📱 โอน QR</option><option value="บัตรเครดิต">💳 บัตรเครดิต</option><option value="อื่นๆ">🔄 อื่นๆ</option></select>
         </div>
       </div>
       <div class="form-row"><label>หมายเหตุ</label><input type="text" id="fuel-notes" maxlength="200"></div>
@@ -2775,10 +2775,12 @@ function autoFillFields(formKey, parsed) {
   };
 
   // ── ฟิลด์ร่วม ──
-  const dateMap  = { truck:'t-jobDate',     income:'i-incomeDate',  expense:'e-expenseDate' };
+  const dateMap  = { truck:'t-pickupDate',  income:'i-incomeDate',  expense:'e-expenseDate' };
+  const timeMap  = { truck:'t-jobTime',     income:'i-incomeTime',  expense:'e-expenseTime' };
   const amtMap   = { truck:'t-freightCost', income:'i-amount',      expense:'e-amount'      };
   const plateMap = { truck:'t-plateNumber', income:null,            expense:'e-plateNumber' };
   set(dateMap[formKey],  parsed.date);
+  set(timeMap[formKey],  parsed.time);
   set(amtMap[formKey],   parsed.amount);
   set(plateMap[formKey], parsed.plateNumber);
 
@@ -2849,6 +2851,8 @@ async function runOCR(idx, formKey) {
       document.getElementById(formKey+'-ocr-text').textContent = result.text;
       panel.classList.add('visible');
       panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      // Auto-fill form fields from OCR (date, time, amount, ...)
+      fillFormFromOCR(formKey);
     } else {
       showToast('OCR ล้มเหลว: ' + result.error, 'error');
     }
@@ -2879,10 +2883,12 @@ function fillFormFromOCR(formKey) {
     else el.value = prev;
   };
 
-  const dateMap  = { truck:'t-jobDate',     income:'i-incomeDate',  expense:'e-expenseDate' };
+  const dateMap  = { truck:'t-pickupDate',  income:'i-incomeDate',  expense:'e-expenseDate' };
+  const timeMap  = { truck:'t-jobTime',     income:'i-incomeTime',  expense:'e-expenseTime' };
   const amtMap   = { truck:'t-freightCost', income:'i-amount',      expense:'e-amount'      };
   const plateMap = { truck:'t-plateNumber', income:null,            expense:'e-plateNumber' };
   set(dateMap[formKey],  parsed.date);
+  set(timeMap[formKey],  parsed.time);
   set(amtMap[formKey],   parsed.amount);
   set(plateMap[formKey], parsed.plateNumber);
 

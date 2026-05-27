@@ -173,6 +173,25 @@ function parseOCR(text) {
     }
   }
 
+  // เวลา — รองรับ HH:MM และ HH.MM (รูปแบบไทย "22.43 น." ก็รับ)
+  const timePatterns = [
+    /(?:เวลา|Time)[^\d]{0,5}(\d{1,2})[:.](\d{2})/i,        // "เวลา 22:43" หรือ "Time: 22:43"
+    /(\d{1,2})[:.](\d{2})\s*น\.?/,                          // "22:43 น." หรือ "22.43 น"
+    /(?:\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})\s+(\d{1,2}):(\d{2})/,  // "01/05/26 14:30"
+    /^\s*(\d{1,2}):(\d{2})(?::\d{2})?\s*$/m                 // บรรทัดที่มีแค่ "14:30" (เช่น สลิป)
+  ];
+  for (const p of timePatterns) {
+    const m = text.match(p);
+    if (m) {
+      const hh = String(m[1]).padStart(2, '0');
+      const mm = String(m[2]).padStart(2, '0');
+      if (+hh >= 0 && +hh <= 23 && +mm >= 0 && +mm <= 59) {
+        r.time = `${hh}:${mm}`;
+        break;
+      }
+    }
+  }
+
   // ยอดเงิน — รองรับหลายรูปแบบ: สลิปโอนเงิน, ใบเสร็จ, Invoice
   const amtPatterns = [
     // keyword + ตัวเลข (อาจมีช่องว่าง/ขึ้นบรรทัดใหม่ระหว่างกัน)
@@ -243,7 +262,8 @@ function parseOCR(text) {
   }
 
   // ── วิธีชำระเงิน — detect จากข้อความ ──
-  if      (/โอนเงิน|รับโอน|โอน|PromptPay|พร้อมเพย์|QR|transfer/i.test(text)) r.paymentMethod = 'โอน';
+  if      (/QR|พร้อมเพย์|PromptPay/i.test(text))                              r.paymentMethod = 'โอน QR';
+  else if (/โอนเงิน|รับโอน|โอน|transfer/i.test(text))                          r.paymentMethod = 'เงินโอน';
   else if (/เงินสด|cash/i.test(text))                                          r.paymentMethod = 'เงินสด';
   else if (/เช็ค|cheque|check/i.test(text))                                    r.paymentMethod = 'เช็ค';
 
