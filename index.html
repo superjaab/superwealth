@@ -528,7 +528,7 @@
     <button class="tab-btn" onclick="switchTab('gps',this)"><span class="icon">📡</span>GPS</button>
     <button class="tab-btn" onclick="switchTab('ocr',this)"><span class="icon">🔍</span>อ่านภาพ</button>
   </nav>
-  <div class="sb-footer"><span class="version">v4.0 | 28/05/2026 02:10</span></div>
+  <div class="sb-footer"><span class="version">v4.1 | 28/05/2026 02:30</span></div>
 </aside>
 
 <!-- Mobile overlay -->
@@ -539,12 +539,17 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version">v4.0 | 28/05/2026 02:10</span>
+  <span class="version">v4.1 | 28/05/2026 02:30</span>
 </header>
 <main id="main-content">
 
 <!-- ══ TAB 1: บันทึกรถบรรทุก ══ -->
 <div class="tab-panel active" id="tab-truck">
+  <div class="inner-nav">
+    <button class="inner-btn active" onclick="innerTab('truck','form',this)">➕ บันทึกเที่ยวรถ</button>
+    <button class="inner-btn" onclick="innerTab('truck','list',this)">📋 รายการเที่ยวรถ</button>
+  </div>
+  <div id="truck-form-view">
   <form id="form-truck" onsubmit="return false">
 
     <div class="card">
@@ -659,6 +664,10 @@
       </button>
     </div>
   </form>
+  </div><!-- /truck-form-view -->
+  <div id="truck-list-view" style="display:none">
+    <div id="truck-list" class="list-loading">กด "รายการเที่ยวรถ" เพื่อโหลด</div>
+  </div>
 </div>
 
 <!-- ══ TAB 2: รายรับ ══ -->
@@ -2439,6 +2448,7 @@ function innerTab(key, view, btnEl) {
   btnEl.classList.add('active');
   // auto-load list when switching to it
   const loaders = {
+    truck:       ()=>loadList('truck','truck-list',renderTruckList),
     income:      ()=>loadList('income','inc-list',renderIncomeList),
     expense:     ()=>loadList('expense','exp-list',renderExpenseList),
     vehicle:     ()=>loadList('vehicle','veh-list',renderVehicleList),
@@ -2869,6 +2879,40 @@ function renderAlerts(el, vehicles, drivers, invoices) {
 }
 
 // ─── RENDER INCOME LIST ────────────────────────────────────────────────────────
+// ─── RENDER TRUCK JOB LIST ────────────────────────────────────────────────────
+function renderTruckList(items) {
+  const statusInfo = {
+    'รอโหลด':     { color:'#F57F17', bg:'#FFF8E1', icon:'⏳' },
+    'กำลังขนส่ง': { color:'#1565C0', bg:'#E3F2FD', icon:'🚚' },
+    'ส่งแล้ว':    { color:'#2E7D32', bg:'#E8F5E9', icon:'✅' },
+    'ยกเลิก':     { color:'#9E9E9E', bg:'#F5F5F5', icon:'❌' }
+  };
+  return [...items].reverse().map(r=>{
+    const s = statusInfo[r.jobStatus] || statusInfo['รอโหลด'];
+    const hasSpan = r.pickupDate && r.deliveryDate && r.pickupDate !== r.deliveryDate;
+    const dateLabel = hasSpan
+      ? `📥 ${fmtDate(r.pickupDate)} → 📤 ${fmtDate(r.deliveryDate)}`
+      : `📅 ${fmtDate(r.jobDate||r.pickupDate||r.deliveryDate)}${r.jobTime?' '+r.jobTime:''}`;
+    return `
+    <div class="record-card" style="border-left-color:${s.color}">
+      <div class="rc-title" style="color:${s.color};display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        🚛 ${r.plateNumber||'-'}
+        <span style="padding:2px 10px;border-radius:10px;background:${s.bg};color:${s.color};font-weight:700;font-size:.7rem">${s.icon} ${r.jobStatus||'รอโหลด'}</span>
+        ${r.freightCost?`<span style="margin-left:auto;color:#2E7D32;font-weight:700;font-size:.85rem">${fmtBaht(r.freightCost)}</span>`:''}
+      </div>
+      <div class="rc-sub" style="display:flex;flex-direction:column;gap:3px">
+        <span>${dateLabel}</span>
+        ${r.customerName ? `<span>🏢 ${r.customerName}</span>` : ''}
+        ${(r.origin||r.destination) ? `<span>📍 ${r.origin||'-'} → ${r.destination||'-'}</span>` : ''}
+        ${r.driverName ? `<span>👤 ${r.driverName}${r.driverPhone?' • '+r.driverPhone:''}</span>` : ''}
+        ${r.cargoList ? `<span>📦 ${r.cargoList}${r.cargoWeight?' ('+r.cargoWeight+' ตัน)':''}</span>` : ''}
+        ${r.tripCount ? `<span>🔁 ${r.tripCount} เที่ยว</span>` : ''}
+        ${r.notes ? `<span style="color:#9E9E9E">📝 ${r.notes}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
 function renderIncomeList(items) {
   const payColor={'เงินสด':'#2E7D32','เงินโอน':'#1565C0','โอน QR':'#0288D1','เช็ค':'#6A1B9A','บัตรเครดิต':'#E65100'};
   return [...items].reverse().map(r=>`
