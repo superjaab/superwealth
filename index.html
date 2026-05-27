@@ -527,7 +527,7 @@
     <button class="tab-btn" onclick="switchTab('gps',this)"><span class="icon">📡</span>GPS</button>
     <button class="tab-btn" onclick="switchTab('ocr',this)"><span class="icon">🔍</span>อ่านภาพ</button>
   </nav>
-  <div class="sb-footer"><span class="version">v3.5 | 27/05/2026 23:50</span></div>
+  <div class="sb-footer"><span class="version">v3.6 | 28/05/2026 00:05</span></div>
 </aside>
 
 <!-- Mobile overlay -->
@@ -538,7 +538,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version">v3.5 | 27/05/2026 23:50</span>
+  <span class="version">v3.6 | 28/05/2026 00:05</span>
 </header>
 <main id="main-content">
 
@@ -824,9 +824,9 @@
   <div id="expense-list-view" style="display:none"><div id="exp-list" class="list-loading">กด "รายการรายจ่าย" เพื่อโหลด</div></div>
 </div>
 
-<!-- ══ TAB 4: GPS (Embedded OneTrack via iframe) ══ -->
+<!-- ══ TAB 4: GPS (iframe preview + big login button) ══ -->
 <div class="tab-panel" id="tab-gps">
-  <!-- Top control bar -->
+  <!-- Top bar -->
   <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#1e293b;border-bottom:1px solid #334155;color:white;font-size:.82rem">
     <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e;animation:gps-pulse 1.5s infinite"></span>
     <span style="font-weight:700">📡 OneTrack Smart GPS</span>
@@ -835,26 +835,35 @@
             style="background:#334155;border:none;color:#cbd5e1;padding:5px 10px;border-radius:6px;font-size:.75rem;cursor:pointer;font-family:inherit">
       🔄 รีโหลด
     </button>
-    <button type="button" onclick="openGPSNewTab()"
-            style="background:#3b82f6;border:none;color:white;padding:5px 10px;border-radius:6px;font-size:.75rem;cursor:pointer;font-family:inherit">
-      ↗ เปิดแท็บใหม่
-    </button>
   </div>
-  <!-- Embedded OneTrack login + full app -->
-  <iframe id="gps-main-iframe"
-          src="https://onetracksmart.onelink.co.th/onetrack.smart.new/login.jsp"
-          title="OneTrack Smart GPS"
-          allow="geolocation *; fullscreen *"
-          style="width:100%;border:none;display:block;height:calc(100dvh - 96px);min-height:480px;background:white"
-          onload="hideGPSBlockWarn()"></iframe>
-  <!-- Fallback warning (shown if iframe blocked by X-Frame-Options) -->
-  <div id="gps-block-warn" style="display:none;padding:20px;text-align:center;background:#fef3c7;border-top:2px solid #f59e0b">
-    <div style="font-size:.95rem;font-weight:700;color:#92400e;margin-bottom:8px">⚠️ OneTrack ไม่อนุญาตให้ฝัง iframe</div>
-    <div style="font-size:.82rem;color:#78350f;margin-bottom:12px">เว็บ OneTrack มีการป้องกัน X-Frame-Options กรุณากดปุ่มเปิดแท็บใหม่แทน</div>
+
+  <!-- BIG LOGIN BUTTON CARD -->
+  <div style="padding:16px 14px;background:linear-gradient(135deg,#0f172a,#1e293b);border-bottom:1px solid #334155">
     <button type="button" onclick="openGPSNewTab()"
-            style="background:#3b82f6;border:none;color:white;padding:10px 20px;border-radius:8px;font-size:.85rem;font-weight:700;cursor:pointer">
-      ↗ เปิด OneTrack ในแท็บใหม่
+            style="width:100%;padding:18px 16px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border:none;border-radius:12px;color:white;font-weight:800;font-size:1.05rem;cursor:pointer;font-family:inherit;box-shadow:0 6px 24px rgba(59,130,246,.5);display:flex;align-items:center;justify-content:center;gap:10px;letter-spacing:.5px;transition:transform .15s">
+      <span style="font-size:1.6rem">🔓</span>
+      <div style="text-align:left;line-height:1.2">
+        <div>เข้าสู่ระบบ OneTrack GPS</div>
+        <div style="font-size:.7rem;font-weight:500;opacity:.9;margin-top:2px">↗ เปิดในแท็บใหม่ • ใช้งานได้เต็มรูปแบบ</div>
+      </div>
     </button>
+    <!-- Info banner -->
+    <div style="margin-top:10px;padding:10px 12px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:8px;font-size:.72rem;color:#fbbf24;line-height:1.5">
+      <span style="font-weight:700">💡 ทำไมต้องเปิดแท็บใหม่?</span><br>
+      Browser ป้องกัน third-party cookie ในหน้าฝัง (iframe) ทำให้ Login ค้างซ้ำๆ — เปิดแท็บใหม่ Login ปกติ แล้วกลับมาดู preview ด้านล่างได้
+    </div>
+  </div>
+
+  <!-- iframe preview of OneTrack -->
+  <div style="position:relative">
+    <div style="position:absolute;top:8px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.85);color:#fbbf24;padding:4px 10px;border-radius:20px;font-size:.65rem;font-weight:700;z-index:5;border:1px solid rgba(251,191,36,.3);pointer-events:none">
+      👁 พรีวิวเท่านั้น — Login ผ่านปุ่มด้านบน
+    </div>
+    <iframe id="gps-main-iframe"
+            src="https://onetracksmart.onelink.co.th/onetrack.smart.new/login.jsp"
+            title="OneTrack Smart GPS"
+            allow="geolocation *; fullscreen *"
+            style="width:100%;border:none;display:block;height:calc(100dvh - 240px);min-height:380px;background:white"></iframe>
   </div>
 </div>
 <style>
