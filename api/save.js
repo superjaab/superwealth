@@ -1,12 +1,13 @@
 /**
  * POST /api/save
  * Body: { type, data }
- * Supports: truck | income | expense | vehicle | driver | customer | maintenance | fuel | invoice
- * → { success, rowId, message }
+ * Writes a row to Google Sheets by COLUMN NAME (resilient to header reordering).
  */
 const { google } = require('googleapis');
 
 // ─── Sheet configs ──────────────────────────────────────────
+// Each config returns a data OBJECT (key = column name). The save handler
+// maps it to a row aligned with the sheet's ACTUAL header order.
 const CONFIGS = {
   truck: {
     name: 'TruckJobs', color: '#1565C0', prefix: 'TRUCK',
@@ -14,26 +15,35 @@ const CONFIGS = {
       'origin','destination','customerName','cargoList','cargoWeight','tripCount',
       'freightCost','jobStatus','remark','imageUrls','ocrText','userAgent','rowId',
       'pickupDate','deliveryDate','tripRound','paymentStatus'],
-    row: (d, now, id) => [
-      now, d.jobDate||'', d.jobTime||'', d.plateNumber||'', d.driverName||'', d.driverPhone||'',
-      d.origin||'', d.destination||'', d.customerName||'', d.cargoList||'',
-      +d.cargoWeight||0, +d.tripCount||1, +d.freightCost||0,
-      d.jobStatus||'รอโหลด', d.remark||'',
-      JSON.stringify(d.imageUrls||[]), d.ocrText||'', d.userAgent||'', id,
-      d.pickupDate||'', d.deliveryDate||'', +d.tripRound||0, d.paymentStatus||'ค้างจ่าย'
-    ]
+    data: (d, now, id) => ({
+      timestamp: now,
+      jobDate: d.jobDate||'', jobTime: d.jobTime||'',
+      plateNumber: d.plateNumber||'', driverName: d.driverName||'', driverPhone: d.driverPhone||'',
+      origin: d.origin||'', destination: d.destination||'',
+      customerName: d.customerName||'', cargoList: d.cargoList||'',
+      cargoWeight: +d.cargoWeight||0, tripCount: +d.tripCount||1, freightCost: +d.freightCost||0,
+      jobStatus: d.jobStatus||'รอโหลด', remark: d.remark||'',
+      imageUrls: JSON.stringify(d.imageUrls||[]), ocrText: d.ocrText||'', userAgent: d.userAgent||'',
+      rowId: id,
+      pickupDate: d.pickupDate||'', deliveryDate: d.deliveryDate||'',
+      tripRound: +d.tripRound||0, paymentStatus: d.paymentStatus||'ค้างจ่าย'
+    })
   },
   income: {
     name: 'Income', color: '#2E7D32', prefix: 'INC',
     headers: ['timestamp','incomeDate','incomeTime','docNumber','customerName',
       'incomeItem','amount','paymentMethod','remark','imageUrls','ocrText','userAgent','rowId',
       'linkedTripRowId','linkedTripRound'],
-    row: (d, now, id) => [
-      now, d.incomeDate||'', d.incomeTime||'', d.docNumber||'', d.customerName||'',
-      d.incomeItem||'', +d.amount||0, d.paymentMethod||'เงินสด',
-      d.remark||'', JSON.stringify(d.imageUrls||[]), d.ocrText||'', d.userAgent||'', id,
-      d.linkedTripRowId||'', +d.linkedTripRound||0
-    ]
+    data: (d, now, id) => ({
+      timestamp: now,
+      incomeDate: d.incomeDate||'', incomeTime: d.incomeTime||'',
+      docNumber: d.docNumber||'', customerName: d.customerName||'',
+      incomeItem: d.incomeItem||'', amount: +d.amount||0,
+      paymentMethod: d.paymentMethod||'เงินสด', remark: d.remark||'',
+      imageUrls: JSON.stringify(d.imageUrls||[]), ocrText: d.ocrText||'', userAgent: d.userAgent||'',
+      rowId: id,
+      linkedTripRowId: d.linkedTripRowId||'', linkedTripRound: +d.linkedTripRound||0
+    })
   },
   expense: {
     name: 'Expense', color: '#B71C1C', prefix: 'EXP',
@@ -41,12 +51,17 @@ const CONFIGS = {
       'vendor','expenseDetail','amount','paymentMethod','remark',
       'imageUrls','ocrText','userAgent','rowId',
       'linkedTripRowId','linkedTripRound'],
-    row: (d, now, id) => [
-      now, d.expenseDate||'', d.expenseTime||'', d.category||'', d.plateNumber||'',
-      d.vendor||'', d.expenseDetail||'', +d.amount||0, d.paymentMethod||'เงินสด',
-      d.remark||'', JSON.stringify(d.imageUrls||[]), d.ocrText||'', d.userAgent||'', id,
-      d.linkedTripRowId||'', +d.linkedTripRound||0
-    ]
+    data: (d, now, id) => ({
+      timestamp: now,
+      expenseDate: d.expenseDate||'', expenseTime: d.expenseTime||'',
+      category: d.category||'', plateNumber: d.plateNumber||'',
+      vendor: d.vendor||'', expenseDetail: d.expenseDetail||'',
+      amount: +d.amount||0, paymentMethod: d.paymentMethod||'เงินสด',
+      remark: d.remark||'',
+      imageUrls: JSON.stringify(d.imageUrls||[]), ocrText: d.ocrText||'', userAgent: d.userAgent||'',
+      rowId: id,
+      linkedTripRowId: d.linkedTripRowId||'', linkedTripRound: +d.linkedTripRound||0
+    })
   },
   vehicle: {
     name: 'Vehicles', color: '#0D47A1', prefix: 'VEH',
@@ -54,71 +69,91 @@ const CONFIGS = {
       'loadCapacity','color','chassisNo','regExpiry','prbExpiry',
       'insuranceExpiry','inspectionExpiry','notes','rowId',
       'assignedDriver','assignedDriverPhone'],
-    row: (d, now, id) => [
-      now, d.plateNumber||'', d.vehicleType||'', d.brand||'', d.model||'',
-      d.year||'', d.loadCapacity||'', d.color||'', d.chassisNo||'',
-      d.regExpiry||'', d.prbExpiry||'', d.insuranceExpiry||'', d.inspectionExpiry||'',
-      d.notes||'', id,
-      d.assignedDriver||'', d.assignedDriverPhone||''
-    ]
+    data: (d, now, id) => ({
+      timestamp: now,
+      plateNumber: d.plateNumber||'', vehicleType: d.vehicleType||'',
+      brand: d.brand||'', model: d.model||'',
+      year: d.year||'', loadCapacity: d.loadCapacity||'',
+      color: d.color||'', chassisNo: d.chassisNo||'',
+      regExpiry: d.regExpiry||'', prbExpiry: d.prbExpiry||'',
+      insuranceExpiry: d.insuranceExpiry||'', inspectionExpiry: d.inspectionExpiry||'',
+      notes: d.notes||'', rowId: id,
+      assignedDriver: d.assignedDriver||'', assignedDriverPhone: d.assignedDriverPhone||''
+    })
   },
   driver: {
     name: 'Drivers', color: '#1B5E20', prefix: 'DRV',
     headers: ['timestamp','driverName','driverPhone','idCard','licenseType',
       'licenseNumber','licenseExpiry','address','emergencyContact',
       'emergencyPhone','status','notes','rowId'],
-    row: (d, now, id) => [
-      now, d.driverName||'', d.driverPhone||'', d.idCard||'',
-      d.licenseType||'', d.licenseNumber||'', d.licenseExpiry||'',
-      d.address||'', d.emergencyContact||'', d.emergencyPhone||'',
-      d.status||'ทำงาน', d.notes||'', id
-    ]
+    data: (d, now, id) => ({
+      timestamp: now,
+      driverName: d.driverName||'', driverPhone: d.driverPhone||'',
+      idCard: d.idCard||'', licenseType: d.licenseType||'',
+      licenseNumber: d.licenseNumber||'', licenseExpiry: d.licenseExpiry||'',
+      address: d.address||'', emergencyContact: d.emergencyContact||'',
+      emergencyPhone: d.emergencyPhone||'',
+      status: d.status||'ทำงาน', notes: d.notes||'', rowId: id
+    })
   },
   customer: {
     name: 'Customers', color: '#4A148C', prefix: 'CUST',
     headers: ['timestamp','customerName','contactName','phone','email',
       'address','taxId','paymentTerms','notes','rowId','cargoItems'],
-    row: (d, now, id) => [
-      now, d.customerName||'', d.contactName||'', d.phone||'',
-      d.email||'', d.address||'', d.taxId||'',
-      d.paymentTerms||'เงินสด', d.notes||'', id, d.cargoItems||''
-    ]
+    data: (d, now, id) => ({
+      timestamp: now,
+      customerName: d.customerName||'', contactName: d.contactName||'',
+      phone: d.phone||'', email: d.email||'',
+      address: d.address||'', taxId: d.taxId||'',
+      paymentTerms: d.paymentTerms||'เงินสด', notes: d.notes||'',
+      rowId: id, cargoItems: d.cargoItems||''
+    })
   },
   maintenance: {
     name: 'Maintenance', color: '#E65100', prefix: 'MNT',
     headers: ['timestamp','maintenanceDate','plateNumber','maintenanceType',
       'description','cost','vendor','odometerKm','nextDueDate',
       'notes','imageUrls','userAgent','rowId'],
-    row: (d, now, id) => [
-      now, d.maintenanceDate||'', d.plateNumber||'', d.maintenanceType||'',
-      d.description||'', +d.cost||0, d.vendor||'', d.odometerKm||'',
-      d.nextDueDate||'', d.notes||'',
-      JSON.stringify(d.imageUrls||[]), d.userAgent||'', id
-    ]
+    data: (d, now, id) => ({
+      timestamp: now,
+      maintenanceDate: d.maintenanceDate||'', plateNumber: d.plateNumber||'',
+      maintenanceType: d.maintenanceType||'', description: d.description||'',
+      cost: +d.cost||0, vendor: d.vendor||'',
+      odometerKm: d.odometerKm||'', nextDueDate: d.nextDueDate||'',
+      notes: d.notes||'',
+      imageUrls: JSON.stringify(d.imageUrls||[]), userAgent: d.userAgent||'',
+      rowId: id
+    })
   },
   fuel: {
     name: 'FuelLog', color: '#F57F17', prefix: 'FUEL',
     headers: ['timestamp','fuelDate','fuelTime','plateNumber','liters',
       'pricePerLiter','totalCost','odometerKm','fuelStation',
       'paymentMethod','notes','rowId'],
-    row: (d, now, id) => [
-      now, d.fuelDate||'', d.fuelTime||'', d.plateNumber||'',
-      +d.liters||0, +d.pricePerLiter||0, +d.totalCost||0,
-      d.odometerKm||'', d.fuelStation||'', d.paymentMethod||'เงินสด',
-      d.notes||'', id
-    ]
+    data: (d, now, id) => ({
+      timestamp: now,
+      fuelDate: d.fuelDate||'', fuelTime: d.fuelTime||'',
+      plateNumber: d.plateNumber||'',
+      liters: +d.liters||0, pricePerLiter: +d.pricePerLiter||0, totalCost: +d.totalCost||0,
+      odometerKm: d.odometerKm||'', fuelStation: d.fuelStation||'',
+      paymentMethod: d.paymentMethod||'เงินสด',
+      notes: d.notes||'', rowId: id
+    })
   },
   invoice: {
     name: 'Invoices', color: '#006064', prefix: 'INV',
     headers: ['timestamp','invoiceDate','invoiceNumber','customerName',
       'items','subtotal','vatAmount','total','dueDate',
       'status','notes','rowId'],
-    row: (d, now, id) => [
-      now, d.invoiceDate||'', d.invoiceNumber||'', d.customerName||'',
-      typeof d.items==='string' ? d.items : JSON.stringify(d.items||[]),
-      +d.subtotal||0, +d.vatAmount||0, +d.total||0,
-      d.dueDate||'', d.status||'รอชำระ', d.notes||'', id
-    ]
+    data: (d, now, id) => ({
+      timestamp: now,
+      invoiceDate: d.invoiceDate||'', invoiceNumber: d.invoiceNumber||'',
+      customerName: d.customerName||'',
+      items: typeof d.items==='string' ? d.items : JSON.stringify(d.items||[]),
+      subtotal: +d.subtotal||0, vatAmount: +d.vatAmount||0, total: +d.total||0,
+      dueDate: d.dueDate||'', status: d.status||'รอชำระ',
+      notes: d.notes||'', rowId: id
+    })
   }
 };
 
@@ -127,7 +162,7 @@ const MSG = {
   expense:'บันทึกรายจ่ายสำเร็จ', vehicle:'บันทึกข้อมูลรถสำเร็จ',
   driver:'บันทึกข้อมูลคนขับสำเร็จ', customer:'บันทึกข้อมูลลูกค้าสำเร็จ',
   maintenance:'บันทึกการซ่อมบำรุงสำเร็จ', fuel:'บันทึกข้อมูลน้ำมันสำเร็จ',
-  invoice:'บันทึกใบแจ้งหนี้สำเร็จ'
+  invoice:'บันทึกใบเสร็จสำเร็จ'
 };
 
 module.exports = async function handler(req, res) {
@@ -151,10 +186,19 @@ module.exports = async function handler(req, res) {
     const sheets = google.sheets({ version:'v4', auth });
     const rowId  = genId(cfg.prefix);
     const now    = new Date().toISOString();
-    const row    = cfg.row(data, now, rowId);
 
     await ensureSheet(sheets, sheetId, cfg.name, cfg.headers, cfg.color);
-    await syncHeaders(sheets, sheetId, cfg.name, cfg.headers);
+
+    // 1) Sync headers — ensure all expected columns exist (won't reorder existing)
+    const actualHeaders = await syncHeaders(sheets, sheetId, cfg.name, cfg.headers);
+    // 2) Build data OBJECT (key = column name)
+    const dataObj = cfg.data(data, now, rowId);
+    // 3) Build row aligned with ACTUAL headers in the sheet
+    const row = actualHeaders.map(h => {
+      const v = dataObj[h];
+      return v !== undefined && v !== null ? v : '';
+    });
+
     await sheets.spreadsheets.values.append({
       spreadsheetId: sheetId,
       range: `${cfg.name}!A:A`,
@@ -181,25 +225,28 @@ function genId(prefix) {
   return `${prefix}-${d}-${Math.random().toString(36).substr(2,4).toUpperCase()}`;
 }
 
-// If current header row is missing newly-added columns, extend it.
+// Ensure every expected column exists in the sheet's header row (appended at the end).
+// Returns the actual (now-synced) headers array.
 async function syncHeaders(sheets, spreadsheetId, sheetName, expectedHeaders) {
   try {
     const resp = await sheets.spreadsheets.values.get({
       spreadsheetId, range: `${sheetName}!1:1`
     });
-    const current = (resp.data.values || [[]])[0];
-    if (current.length >= expectedHeaders.length) return;
-    // Extend (preserve existing headers, append missing)
-    const merged = [...current];
-    for (let i = current.length; i < expectedHeaders.length; i++) {
-      merged.push(expectedHeaders[i]);
+    let current = (resp.data.values || [[]])[0] || [];
+    // Find missing expected headers
+    const missing = expectedHeaders.filter(h => !current.includes(h));
+    if (missing.length > 0) {
+      current = [...current, ...missing];
+      await sheets.spreadsheets.values.update({
+        spreadsheetId, range: `${sheetName}!A1`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [current] }
+      });
     }
-    await sheets.spreadsheets.values.update({
-      spreadsheetId, range: `${sheetName}!A1`,
-      valueInputOption: 'RAW',
-      requestBody: { values: [merged] }
-    });
-  } catch (e) { /* non-fatal */ }
+    return current;
+  } catch (e) {
+    return expectedHeaders; // fallback
+  }
 }
 
 async function ensureSheet(sheets, spreadsheetId, sheetName, headers, hexColor) {

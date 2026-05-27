@@ -1,95 +1,128 @@
 /**
  * POST /api/update
  * Body: { type, rowId, data }
- * Finds the row in the sheet where 'rowId' matches and rewrites it.
- * → { success, message }
+ * Writes by COLUMN NAME (resilient to header reordering).
  */
 const { google } = require('googleapis');
 
-// Re-use the same CONFIGS structure as save.js
+// Same as save.js — each type has a `data` function returning {column: value} object.
 const CONFIGS = {
   truck: {
     name: 'TruckJobs',
-    row: (d, ts, id) => [
-      ts, d.jobDate||'', d.jobTime||'', d.plateNumber||'', d.driverName||'', d.driverPhone||'',
-      d.origin||'', d.destination||'', d.customerName||'', d.cargoList||'',
-      +d.cargoWeight||0, +d.tripCount||1, +d.freightCost||0,
-      d.jobStatus||'รอโหลด', d.remark||'',
-      JSON.stringify(d.imageUrls||[]), d.ocrText||'', d.userAgent||'', id,
-      d.pickupDate||'', d.deliveryDate||'', +d.tripRound||0, d.paymentStatus||'ค้างจ่าย'
-    ]
+    data: (d, ts, id) => ({
+      timestamp: ts,
+      jobDate: d.jobDate||'', jobTime: d.jobTime||'',
+      plateNumber: d.plateNumber||'', driverName: d.driverName||'', driverPhone: d.driverPhone||'',
+      origin: d.origin||'', destination: d.destination||'',
+      customerName: d.customerName||'', cargoList: d.cargoList||'',
+      cargoWeight: +d.cargoWeight||0, tripCount: +d.tripCount||1, freightCost: +d.freightCost||0,
+      jobStatus: d.jobStatus||'รอโหลด', remark: d.remark||'',
+      imageUrls: JSON.stringify(d.imageUrls||[]), ocrText: d.ocrText||'', userAgent: d.userAgent||'',
+      rowId: id,
+      pickupDate: d.pickupDate||'', deliveryDate: d.deliveryDate||'',
+      tripRound: +d.tripRound||0, paymentStatus: d.paymentStatus||'ค้างจ่าย'
+    })
   },
   income: {
     name: 'Income',
-    row: (d, ts, id) => [
-      ts, d.incomeDate||'', d.incomeTime||'', d.docNumber||'', d.customerName||'',
-      d.incomeItem||'', +d.amount||0, d.paymentMethod||'เงินสด',
-      d.remark||'', JSON.stringify(d.imageUrls||[]), d.ocrText||'', d.userAgent||'', id,
-      d.linkedTripRowId||'', +d.linkedTripRound||0
-    ]
+    data: (d, ts, id) => ({
+      timestamp: ts,
+      incomeDate: d.incomeDate||'', incomeTime: d.incomeTime||'',
+      docNumber: d.docNumber||'', customerName: d.customerName||'',
+      incomeItem: d.incomeItem||'', amount: +d.amount||0,
+      paymentMethod: d.paymentMethod||'เงินสด', remark: d.remark||'',
+      imageUrls: JSON.stringify(d.imageUrls||[]), ocrText: d.ocrText||'', userAgent: d.userAgent||'',
+      rowId: id,
+      linkedTripRowId: d.linkedTripRowId||'', linkedTripRound: +d.linkedTripRound||0
+    })
   },
   expense: {
     name: 'Expense',
-    row: (d, ts, id) => [
-      ts, d.expenseDate||'', d.expenseTime||'', d.category||'', d.plateNumber||'',
-      d.vendor||'', d.expenseDetail||'', +d.amount||0, d.paymentMethod||'เงินสด',
-      d.remark||'', JSON.stringify(d.imageUrls||[]), d.ocrText||'', d.userAgent||'', id,
-      d.linkedTripRowId||'', +d.linkedTripRound||0
-    ]
+    data: (d, ts, id) => ({
+      timestamp: ts,
+      expenseDate: d.expenseDate||'', expenseTime: d.expenseTime||'',
+      category: d.category||'', plateNumber: d.plateNumber||'',
+      vendor: d.vendor||'', expenseDetail: d.expenseDetail||'',
+      amount: +d.amount||0, paymentMethod: d.paymentMethod||'เงินสด',
+      remark: d.remark||'',
+      imageUrls: JSON.stringify(d.imageUrls||[]), ocrText: d.ocrText||'', userAgent: d.userAgent||'',
+      rowId: id,
+      linkedTripRowId: d.linkedTripRowId||'', linkedTripRound: +d.linkedTripRound||0
+    })
   },
   vehicle: {
     name: 'Vehicles',
-    row: (d, ts, id) => [
-      ts, d.plateNumber||'', d.vehicleType||'', d.brand||'', d.model||'',
-      d.year||'', d.loadCapacity||'', d.color||'', d.chassisNo||'',
-      d.regExpiry||'', d.prbExpiry||'', d.insuranceExpiry||'', d.inspectionExpiry||'',
-      d.notes||'', id,
-      d.assignedDriver||'', d.assignedDriverPhone||''
-    ]
+    data: (d, ts, id) => ({
+      timestamp: ts,
+      plateNumber: d.plateNumber||'', vehicleType: d.vehicleType||'',
+      brand: d.brand||'', model: d.model||'',
+      year: d.year||'', loadCapacity: d.loadCapacity||'',
+      color: d.color||'', chassisNo: d.chassisNo||'',
+      regExpiry: d.regExpiry||'', prbExpiry: d.prbExpiry||'',
+      insuranceExpiry: d.insuranceExpiry||'', inspectionExpiry: d.inspectionExpiry||'',
+      notes: d.notes||'', rowId: id,
+      assignedDriver: d.assignedDriver||'', assignedDriverPhone: d.assignedDriverPhone||''
+    })
   },
   driver: {
     name: 'Drivers',
-    row: (d, ts, id) => [
-      ts, d.driverName||'', d.driverPhone||'', d.idCard||'',
-      d.licenseType||'', d.licenseNumber||'', d.licenseExpiry||'',
-      d.address||'', d.emergencyContact||'', d.emergencyPhone||'',
-      d.status||'ทำงาน', d.notes||'', id
-    ]
+    data: (d, ts, id) => ({
+      timestamp: ts,
+      driverName: d.driverName||'', driverPhone: d.driverPhone||'',
+      idCard: d.idCard||'', licenseType: d.licenseType||'',
+      licenseNumber: d.licenseNumber||'', licenseExpiry: d.licenseExpiry||'',
+      address: d.address||'', emergencyContact: d.emergencyContact||'',
+      emergencyPhone: d.emergencyPhone||'',
+      status: d.status||'ทำงาน', notes: d.notes||'', rowId: id
+    })
   },
   customer: {
     name: 'Customers',
-    row: (d, ts, id) => [
-      ts, d.customerName||'', d.contactName||'', d.phone||'',
-      d.email||'', d.address||'', d.taxId||'',
-      d.paymentTerms||'เงินสด', d.notes||'', id, d.cargoItems||''
-    ]
+    data: (d, ts, id) => ({
+      timestamp: ts,
+      customerName: d.customerName||'', contactName: d.contactName||'',
+      phone: d.phone||'', email: d.email||'',
+      address: d.address||'', taxId: d.taxId||'',
+      paymentTerms: d.paymentTerms||'เงินสด', notes: d.notes||'',
+      rowId: id, cargoItems: d.cargoItems||''
+    })
   },
   maintenance: {
     name: 'Maintenance',
-    row: (d, ts, id) => [
-      ts, d.maintenanceDate||'', d.plateNumber||'', d.maintenanceType||'',
-      d.description||'', +d.cost||0, d.vendor||'', d.odometerKm||'',
-      d.nextDueDate||'', d.notes||'',
-      JSON.stringify(d.imageUrls||[]), d.userAgent||'', id
-    ]
+    data: (d, ts, id) => ({
+      timestamp: ts,
+      maintenanceDate: d.maintenanceDate||'', plateNumber: d.plateNumber||'',
+      maintenanceType: d.maintenanceType||'', description: d.description||'',
+      cost: +d.cost||0, vendor: d.vendor||'',
+      odometerKm: d.odometerKm||'', nextDueDate: d.nextDueDate||'',
+      notes: d.notes||'',
+      imageUrls: JSON.stringify(d.imageUrls||[]), userAgent: d.userAgent||'',
+      rowId: id
+    })
   },
   fuel: {
     name: 'FuelLog',
-    row: (d, ts, id) => [
-      ts, d.fuelDate||'', d.fuelTime||'', d.plateNumber||'',
-      +d.liters||0, +d.pricePerLiter||0, +d.totalCost||0,
-      d.odometerKm||'', d.fuelStation||'', d.paymentMethod||'เงินสด',
-      d.notes||'', id
-    ]
+    data: (d, ts, id) => ({
+      timestamp: ts,
+      fuelDate: d.fuelDate||'', fuelTime: d.fuelTime||'',
+      plateNumber: d.plateNumber||'',
+      liters: +d.liters||0, pricePerLiter: +d.pricePerLiter||0, totalCost: +d.totalCost||0,
+      odometerKm: d.odometerKm||'', fuelStation: d.fuelStation||'',
+      paymentMethod: d.paymentMethod||'เงินสด',
+      notes: d.notes||'', rowId: id
+    })
   },
   invoice: {
     name: 'Invoices',
-    row: (d, ts, id) => [
-      ts, d.invoiceDate||'', d.invoiceNumber||'', d.customerName||'',
-      typeof d.items==='string' ? d.items : JSON.stringify(d.items||[]),
-      +d.subtotal||0, +d.vatAmount||0, +d.total||0,
-      d.dueDate||'', d.status||'รอชำระ', d.notes||'', id
-    ]
+    data: (d, ts, id) => ({
+      timestamp: ts,
+      invoiceDate: d.invoiceDate||'', invoiceNumber: d.invoiceNumber||'',
+      customerName: d.customerName||'',
+      items: typeof d.items==='string' ? d.items : JSON.stringify(d.items||[]),
+      subtotal: +d.subtotal||0, vatAmount: +d.vatAmount||0, total: +d.total||0,
+      dueDate: d.dueDate||'', status: d.status||'รอชำระ',
+      notes: d.notes||'', rowId: id
+    })
   }
 };
 
@@ -114,10 +147,8 @@ module.exports = async function handler(req, res) {
     const auth   = getAuth(['https://www.googleapis.com/auth/spreadsheets']);
     const sheets = google.sheets({ version:'v4', auth });
 
-    // Read all rows to find the matching rowId
     const resp = await sheets.spreadsheets.values.get({
-      spreadsheetId: sheetId,
-      range: `${cfg.name}!A:Z`
+      spreadsheetId: sheetId, range: `${cfg.name}!A:Z`
     });
     const rows = resp.data.values || [];
     if (rows.length < 2) return res.status(404).json({ success:false, error:'No data in sheet' });
@@ -128,11 +159,9 @@ module.exports = async function handler(req, res) {
 
     const target = String(rowId || '').trim();
     let foundIdx = -1;
-    // Strategy 1: look in declared rowId column
     for (let i = 1; i < rows.length; i++) {
       if (String(rows[i][rowIdIdx] || '').trim() === target) { foundIdx = i; break; }
     }
-    // Strategy 2 (fallback): search ALL columns — handles columns drift / wrong sheet schema
     if (foundIdx < 0) {
       for (let i = 1; i < rows.length; i++) {
         if ((rows[i] || []).some(v => String(v||'').trim() === target)) { foundIdx = i; break; }
@@ -140,11 +169,19 @@ module.exports = async function handler(req, res) {
     }
     if (foundIdx < 0) return res.status(404).json({ success:false, error:'rowId not found: ' + target });
 
-    // Preserve original timestamp (column 0)
-    const origTimestamp = rows[foundIdx][0] || new Date().toISOString();
-    const newRow = cfg.row(data, origTimestamp, rowId);
+    // Preserve original timestamp (look up by header name, not position 0)
+    const tsIdx = headers.indexOf('timestamp');
+    const origTimestamp = (tsIdx >= 0 ? rows[foundIdx][tsIdx] : rows[foundIdx][0]) || new Date().toISOString();
 
-    // Update — sheet is 1-based, foundIdx is 0-based (where 0 = header row)
+    // Build new row by HEADER NAME (so any column order works)
+    const dataObj = cfg.data(data, origTimestamp, rowId);
+    const newRow = headers.map(h => {
+      const v = dataObj[h];
+      // If field is missing from dataObj, preserve original value to avoid wiping
+      if (v === undefined) return rows[foundIdx][headers.indexOf(h)] || '';
+      return v !== null ? v : '';
+    });
+
     const sheetRowNum = foundIdx + 1;
     const lastCol = colLetter(newRow.length);
     await sheets.spreadsheets.values.update({
