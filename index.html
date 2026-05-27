@@ -528,7 +528,7 @@
     <button class="tab-btn" onclick="switchTab('gps',this)"><span class="icon">📡</span>GPS</button>
     <button class="tab-btn" onclick="switchTab('ocr',this)"><span class="icon">🔍</span>อ่านภาพ</button>
   </nav>
-  <div class="sb-footer"><span class="version">v3.9 | 28/05/2026 01:00</span></div>
+  <div class="sb-footer"><span class="version">v3.9 | 28/05/2026 01:15</span></div>
 </aside>
 
 <!-- Mobile overlay -->
@@ -539,7 +539,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version">v3.9 | 28/05/2026 01:00</span>
+  <span class="version">v3.9 | 28/05/2026 01:15</span>
 </header>
 <main id="main-content">
 
@@ -2967,8 +2967,10 @@ function calGoToday() {
 async function loadCalTrips() {
   document.getElementById('cal-days').innerHTML = '<div style="grid-column:1/-1;padding:40px;text-align:center;color:#94a3b8">⏳ กำลังโหลดข้อมูลเที่ยวรถ...</div>';
   try {
-    const result = await api('/api/get-data', { sheet: 'truck' });
-    _calTrips = (result.data || []);
+    const res  = await fetch('/api/get-data?type=truck');
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'load failed');
+    _calTrips = ((json.data || {}).truck) || [];
     renderCalendar();
   } catch (e) {
     document.getElementById('cal-days').innerHTML = '<div style="grid-column:1/-1;padding:40px;text-align:center;color:#dc2626">❌ โหลดข้อมูลไม่สำเร็จ: ' + e.message + '</div>';
