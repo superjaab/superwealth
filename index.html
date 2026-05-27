@@ -701,7 +701,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v6.6 | 28/05/2026 09:00</span>
+  <span class="version" style="margin-left:auto">v6.7 | 28/05/2026 09:20</span>
   <div style="position:relative;margin-left:10px">
     <button class="header-bell" onclick="toggleBell(event)" title="แจ้งเตือน">
       🔔<span class="bell-badge" id="bell-badge" style="display:none">0</span>
@@ -1397,11 +1397,11 @@
     <div class="chart-wrap" style="max-width:280px"><canvas id="sum-chart-doughnut"></canvas></div>
   </div>
 
-  <!-- Truck job breakdown -->
+  <!-- Truck trips breakdown -->
   <div class="card" id="sum-truck-card" style="display:none">
-    <div class="card-title">🚚 สรุปสถานะงานรถ</div>
+    <div class="card-title">🚚 สรุปรายเที่ยวรถ</div>
     <table class="sum-table" id="sum-truck-table">
-      <thead><tr><th>สถานะ</th><th style="text-align:right">จำนวน</th><th style="text-align:right">ค่าขนส่งรวม</th></tr></thead>
+      <thead><tr><th>รอบเที่ยว / งาน</th><th style="text-align:center">สถานะ</th><th style="text-align:right">ค่าขนส่ง</th></tr></thead>
       <tbody id="sum-truck-tbody"></tbody>
     </table>
   </div>
@@ -4984,30 +4984,60 @@ function renderDoughnutChart(expense) {
 }
 
 function renderTruckTable(truck) {
-  // Use auto-derived status (2 categories only: กำลังขนส่ง / ส่งแล้ว)
   const statusMap = {
     'กำลังขนส่ง': { cls: 'driving', label: '🔵 กำลังขนส่ง' },
     'ส่งแล้ว':    { cls: 'done',    label: '🟢 ส่งแล้ว' }
   };
-  const grouped = { 'กำลังขนส่ง': {count:0, freight:0}, 'ส่งแล้ว': {count:0, freight:0} };
-  truck.forEach(r => {
-    const s = _autoTripStatus(r);
-    if (!grouped[s]) grouped[s] = { count: 0, freight: 0 };
-    grouped[s].count++;
-    grouped[s].freight += parseFloat(r.freightCost) || 0;
-  });
-  const fmt = n => '฿' + n.toLocaleString('th-TH', { maximumFractionDigits: 0 });
+  const fmt = n => '฿' + (n||0).toLocaleString('th-TH', { maximumFractionDigits: 0 });
   const tbody = document.getElementById('sum-truck-tbody');
-  tbody.innerHTML = Object.entries(grouped)
-    .filter(([s, v]) => v.count > 0)
-    .map(([s, v]) => {
-      const info = statusMap[s] || { cls: 'driving', label: s };
-      return `<tr>
-        <td><span class="sum-badge ${info.cls}">${info.label}</span></td>
-        <td style="text-align:right;font-weight:700">${v.count}</td>
-        <td style="text-align:right;color:var(--green);font-weight:700">${fmt(v.freight)}</td>
-      </tr>`;
-    }).join('');
+
+  // Sort by tripRound DESC (latest first)
+  const sorted = [...truck].sort((a, b) => {
+    const ar = parseInt(a.tripRound) || 0;
+    const br = parseInt(b.tripRound) || 0;
+    if (br !== ar) return br - ar;
+    return (b.timestamp || '').localeCompare(a.timestamp || '');
+  });
+
+  // Each trip = 1 row showing round + dates + plate/customer + status + freight
+  let rowsHtml = sorted.map(r => {
+    const status = _autoTripStatus(r);
+    const info   = statusMap[status] || { cls: 'driving', label: status };
+    const round  = r.tripRound ? `#${r.tripRound}` : '—';
+    const dates  = (r.deliveryDate && r.deliveryDate !== r.pickupDate)
+      ? `${fmtDate(r.pickupDate)} → ${fmtDate(r.deliveryDate)}`
+      : fmtDate(r.pickupDate || r.jobDate);
+    const job = [r.plateNumber, r.customerName].filter(x => x).join(' • ') || '-';
+    const paid = (r.paymentStatus || 'ค้างจ่าย') === 'จ่ายแล้ว';
+    const payBadge = paid
+      ? '<span style="font-size:.65rem;padding:1px 6px;border-radius:8px;background:#E8F5E9;color:#2E7D32;font-weight:700">จ่ายแล้ว</span>'
+      : '<span style="font-size:.65rem;padding:1px 6px;border-radius:8px;background:#FEE2E2;color:#B91C1C;font-weight:700">ค้างจ่าย</span>';
+    return `<tr>
+      <td>
+        <div style="font-weight:800;color:#0f172a">รอบ ${round}</div>
+        <div style="font-size:.72rem;color:#64748b;margin-top:2px">${dates}</div>
+        <div style="font-size:.72rem;color:#475569;margin-top:2px">${job}</div>
+      </td>
+      <td style="text-align:center"><span class="sum-badge ${info.cls}">${info.label}</span></td>
+      <td style="text-align:right">
+        <div style="font-weight:800;color:var(--green)">${fmt(parseFloat(r.freightCost))}</div>
+        <div style="margin-top:3px">${payBadge}</div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Totals row
+  const totalFreight = truck.reduce((s, r) => s + (parseFloat(r.freightCost)||0), 0);
+  const totalCount = truck.length;
+  const countDrv = truck.filter(r => _autoTripStatus(r) === 'กำลังขนส่ง').length;
+  const countDone = totalCount - countDrv;
+  rowsHtml += `<tr style="background:#f8fafc;font-weight:700">
+    <td style="font-weight:800;color:#0f172a">📊 รวม ${totalCount} เที่ยว</td>
+    <td style="text-align:center;font-size:.74rem;color:#64748b">🔵${countDrv} • 🟢${countDone}</td>
+    <td style="text-align:right;color:var(--green);font-weight:800;font-size:.95rem">${fmt(totalFreight)}</td>
+  </tr>`;
+
+  tbody.innerHTML = rowsHtml;
 }
 </script>
 
