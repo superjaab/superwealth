@@ -13,24 +13,26 @@ const CONFIGS = {
     headers: ['timestamp','jobDate','jobTime','plateNumber','driverName','driverPhone',
       'origin','destination','customerName','cargoList','cargoWeight','tripCount',
       'freightCost','jobStatus','remark','imageUrls','ocrText','userAgent','rowId',
-      'pickupDate','deliveryDate'],
+      'pickupDate','deliveryDate','tripRound','paymentStatus'],
     row: (d, now, id) => [
       now, d.jobDate||'', d.jobTime||'', d.plateNumber||'', d.driverName||'', d.driverPhone||'',
       d.origin||'', d.destination||'', d.customerName||'', d.cargoList||'',
       +d.cargoWeight||0, +d.tripCount||1, +d.freightCost||0,
       d.jobStatus||'รอโหลด', d.remark||'',
       JSON.stringify(d.imageUrls||[]), d.ocrText||'', d.userAgent||'', id,
-      d.pickupDate||'', d.deliveryDate||''
+      d.pickupDate||'', d.deliveryDate||'', +d.tripRound||0, d.paymentStatus||'ค้างจ่าย'
     ]
   },
   income: {
     name: 'Income', color: '#2E7D32', prefix: 'INC',
     headers: ['timestamp','incomeDate','incomeTime','docNumber','customerName',
-      'incomeItem','amount','paymentMethod','remark','imageUrls','ocrText','userAgent','rowId'],
+      'incomeItem','amount','paymentMethod','remark','imageUrls','ocrText','userAgent','rowId',
+      'linkedTripRowId','linkedTripRound'],
     row: (d, now, id) => [
       now, d.incomeDate||'', d.incomeTime||'', d.docNumber||'', d.customerName||'',
       d.incomeItem||'', +d.amount||0, d.paymentMethod||'เงินสด',
-      d.remark||'', JSON.stringify(d.imageUrls||[]), d.ocrText||'', d.userAgent||'', id
+      d.remark||'', JSON.stringify(d.imageUrls||[]), d.ocrText||'', d.userAgent||'', id,
+      d.linkedTripRowId||'', +d.linkedTripRound||0
     ]
   },
   expense: {

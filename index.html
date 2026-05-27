@@ -701,7 +701,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v5.0 | 28/05/2026 04:10</span>
+  <span class="version" style="margin-left:auto">v5.1 | 28/05/2026 04:40</span>
   <div style="position:relative;margin-left:10px">
     <button class="header-bell" onclick="toggleBell(event)" title="แจ้งเตือน">
       🔔<span class="bell-badge" id="bell-badge" style="display:none">0</span>
@@ -724,7 +724,11 @@
   <form id="form-truck" onsubmit="return false">
 
     <div class="card">
-      <div class="card-title">📅 วันที่และสถานะ</div>
+      <div class="card-title">📅 วันที่และรอบเที่ยว</div>
+      <div class="form-row">
+        <label>🔢 รอบเที่ยว # <span style="font-size:.7rem;color:#94a3b8;font-weight:400">(ระบบรันเลขให้อัตโนมัติ)</span></label>
+        <input type="number" id="t-tripRound" readonly style="background:#f1f5f9;font-weight:800;color:#1565C0;font-size:1.05rem">
+      </div>
       <div class="form-row-2">
         <div class="form-row">
           <label>📥 วันเข้ารับสินค้า <span class="req">*</span></label>
@@ -736,7 +740,6 @@
         </div>
       </div>
       <input type="hidden" id="t-status" value="รอโหลด">
-      <!-- ซ่อน jobDate / jobTime (auto = pickupDate) -->
       <input type="hidden" id="t-jobDate">
       <input type="hidden" id="t-jobTime">
     </div>
@@ -794,7 +797,13 @@
           <input type="number" id="t-freightCost" placeholder="0" min="0">
         </div>
       </div>
-      <!-- ซ่อน tripCount (default = 1) -->
+      <div class="form-row">
+        <label>💰 สถานะชำระเงิน</label>
+        <select id="t-paymentStatus">
+          <option value="ค้างจ่าย" selected>⚠️ ค้างจ่าย</option>
+          <option value="จ่ายแล้ว">✅ จ่ายแล้ว</option>
+        </select>
+      </div>
       <input type="hidden" id="t-tripCount" value="1">
       <div class="form-row">
         <label>หมายเหตุ</label>
@@ -850,8 +859,15 @@
         </div>
       </div>
       <div class="form-row">
+        <label>📋 ลิงก์รอบเที่ยวรถ <span style="font-size:.7rem;color:#94a3b8;font-weight:400">(ถ้ารายรับนี้คือค่าเที่ยวรถ)</span></label>
+        <select id="i-linkedTrip" onchange="onLinkedTripChange()" style="background:#fafafa">
+          <option value="">— ไม่ลิงก์รอบเที่ยว —</option>
+        </select>
+        <p class="hint" style="font-size:.7rem;color:#94a3b8;margin-top:4px">💡 เลือกรอบที่ยังค้างจ่าย → บันทึกแล้วระบบจะอัปเดตรอบนั้นเป็น "จ่ายแล้ว" อัตโนมัติ</p>
+      </div>
+      <div class="form-row">
         <label>ลูกค้า <span class="req">*</span></label>
-        <input type="text" id="i-customerName" placeholder="ชื่อลูกค้า/บริษัท" list="cust-dl" maxlength="150">
+        <input type="text" id="i-customerName" placeholder="ชื่อลูกค้า/บริษัท" maxlength="150" autocomplete="off">
       </div>
       <div class="form-row">
         <label>รายการรายรับ <span class="req">*</span></label>
@@ -2042,7 +2058,10 @@ window.addEventListener('DOMContentLoaded', () => {
   // Custom autocompletes
   initAllAutocompletes();
   // Load master data (vehicles, customers, truck history for autofill)
-  loadMasterData();
+  loadMasterData().then(() => {
+    setTripRoundField();
+    populateLinkedTripsDropdown();
+  });
   // Image zoom keyboard
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') closeImgZoom();
@@ -2235,6 +2254,52 @@ function saveCargoIfNew(name) {
     _master.cargoSaved.push(name);
     localStorage.setItem('cargo_saved', JSON.stringify(_master.cargoSaved));
   }
+}
+
+// ─── TRIP ROUND # AUTO-INCREMENT ───
+function _nextTripRound() {
+  const max = (_master.truckHistory || []).reduce((m, t) => {
+    const n = parseInt(t.tripRound) || 0;
+    return Math.max(m, n);
+  }, 0);
+  return max + 1;
+}
+function setTripRoundField() {
+  const el = document.getElementById('t-tripRound');
+  if (el && !el.value && !_editingMode.truck) el.value = _nextTripRound();
+}
+
+// ─── INCOME — LINKED TRIP DROPDOWN ───
+function populateLinkedTripsDropdown() {
+  const sel = document.getElementById('i-linkedTrip');
+  if (!sel) return;
+  const currentVal = sel.value;
+  // Only show ค้างจ่าย trips (latest first)
+  const unpaid = (_master.truckHistory || [])
+    .filter(t => t.rowId && (t.paymentStatus || 'ค้างจ่าย') === 'ค้างจ่าย' && t.tripRound)
+    .sort((a,b) => (+b.tripRound||0) - (+a.tripRound||0));
+  sel.innerHTML = '<option value="">— ไม่ลิงก์รอบเที่ยว —</option>' + unpaid.map(t => {
+    const dates = (t.deliveryDate && t.deliveryDate !== t.pickupDate)
+      ? `${fmtDate(t.pickupDate)} → ${fmtDate(t.deliveryDate)}`
+      : fmtDate(t.pickupDate || t.jobDate);
+    const cust = t.customerName ? ` • ${t.customerName}` : '';
+    const amt  = t.freightCost ? ` (฿${(+t.freightCost).toLocaleString('en-US')})` : '';
+    return `<option value="${escAttr(t.rowId)}" data-round="${t.tripRound}" data-amount="${t.freightCost||''}" data-customer="${escAttr(t.customerName||'')}">รอบ #${t.tripRound} • ${escAttr(t.plateNumber||'')} • ${escAttr(dates)}${escAttr(cust)}${amt}</option>`;
+  }).join('');
+  if (currentVal) sel.value = currentVal;
+}
+function onLinkedTripChange() {
+  const sel = document.getElementById('i-linkedTrip');
+  if (!sel) return;
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt || !opt.value) return;
+  const amount = opt.dataset.amount;
+  const customer = opt.dataset.customer;
+  const amtField = document.getElementById('i-amount');
+  const custField = document.getElementById('i-customerName');
+  if (amtField && !amtField.value && amount)  amtField.value = amount;
+  if (custField && !custField.value && customer) custField.value = customer;
+  showToast(`📋 ลิงก์รอบ #${opt.dataset.round} แล้ว → กดบันทึก จะอัปเดตเป็น "จ่ายแล้ว" อัตโนมัติ`, 'info');
 }
 
 // Auto-fill driver name + phone when plate selected.
@@ -2451,7 +2516,9 @@ function switchTab(tab, btnEl) {
   const title = document.getElementById('page-title');
   if (title) title.textContent = PAGE_NAMES[tab] || tab;
   if (tab === 'invoice') { genInvNum(); renderInvRows(); }
-  closeSidebar(); // auto-close on mobile
+  if (tab === 'truck' && !_editingMode.truck) setTripRoundField();
+  if (tab === 'income') populateLinkedTripsDropdown();
+  closeSidebar();
 }
 
 // ─── SIDEBAR TOGGLE ───────────────────────
@@ -2770,6 +2837,16 @@ async function submitForm(formKey) {
     hideLoading();
     if (result.success) {
       showToast('✅ ' + (result.message || 'บันทึกสำเร็จ'), 'success');
+      // SIDE EFFECT: if income linked to a trip → mark trip as "จ่ายแล้ว"
+      if (formKey === 'income' && data.linkedTripRowId) {
+        try {
+          const trip = (_master.truckHistory||[]).find(t => t.rowId === data.linkedTripRowId);
+          if (trip) {
+            await api('/api/update', { type:'truck', rowId: trip.rowId, data: { ...trip, paymentStatus:'จ่ายแล้ว' }});
+            showToast(`✅ อัปเดตรอบ #${trip.tripRound} เป็น "จ่ายแล้ว" แล้ว`, 'success');
+          }
+        } catch(e) { console.warn('Trip payment update failed:', e); }
+      }
       resetForm(formKey, true);  // silent — don't overwrite success toast
     } else {
       showToast('บันทึกไม่สำเร็จ: ' + result.error, 'error');
@@ -2798,7 +2875,6 @@ function collectFormData(formKey) {
   const g = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
   if (formKey === 'truck') {
     if (!g('t-plateNumber')) { showToast('กรุณาเลือกทะเบียนรถ', 'warning'); return null; }
-    // Plate must exist in vehicle master data
     const plate = g('t-plateNumber');
     const exists = (_master.vehicles||[]).some(v => (v.plateNumber||'').trim() === plate);
     if (!exists) {
@@ -2806,7 +2882,6 @@ function collectFormData(formKey) {
       return null;
     }
     if (!g('t-pickupDate'))  { showToast('กรุณาเลือกวันเข้ารับสินค้า', 'warning'); return null; }
-    // jobDate ใช้ pickupDate (backward compat กับ Google Sheets)
     const pickupDate = g('t-pickupDate');
     return {
       jobDate: pickupDate, jobTime: g('t-jobTime'),
@@ -2814,7 +2889,9 @@ function collectFormData(formKey) {
       plateNumber: g('t-plateNumber'), driverName: g('t-driverName'), driverPhone: g('t-driverPhone'),
       origin: g('t-origin'), destination: g('t-destination'), customerName: g('t-customerName'),
       cargoList: g('t-cargoList'), cargoWeight: g('t-cargoWeight'), tripCount: g('t-tripCount') || '1',
-      freightCost: g('t-freightCost'), jobStatus: g('t-status') || 'รอโหลด', remark: g('t-remark')
+      freightCost: g('t-freightCost'), jobStatus: g('t-status') || 'รอโหลด', remark: g('t-remark'),
+      tripRound: g('t-tripRound') || _nextTripRound(),
+      paymentStatus: g('t-paymentStatus') || 'ค้างจ่าย'
     };
   }
   if (formKey === 'income') {
@@ -2822,11 +2899,16 @@ function collectFormData(formKey) {
     if (!g('i-customerName')) { showToast('กรุณากรอกชื่อลูกค้า', 'warning');    return null; }
     if (!g('i-incomeItem'))   { showToast('กรุณากรอกรายการรายรับ', 'warning');  return null; }
     if (!g('i-amount'))       { showToast('กรุณากรอกจำนวนเงิน', 'warning');     return null; }
+    const linkedSel  = document.getElementById('i-linkedTrip');
+    const linkedOpt  = linkedSel && linkedSel.options[linkedSel.selectedIndex];
+    const linkedRound = (linkedOpt && linkedOpt.dataset.round) ? +linkedOpt.dataset.round : 0;
     return {
       incomeDate: g('i-incomeDate'), incomeTime: g('i-incomeTime'),
       docNumber: g('i-docNumber'),
       customerName: g('i-customerName'), incomeItem: g('i-incomeItem'),
-      amount: g('i-amount'), paymentMethod: g('i-paymentMethod'), remark: g('i-remark')
+      amount: g('i-amount'), paymentMethod: g('i-paymentMethod'), remark: g('i-remark'),
+      linkedTripRowId: g('i-linkedTrip'),
+      linkedTripRound: linkedRound
     };
   }
   if (formKey === 'expense') {
@@ -2913,12 +2995,13 @@ const _PREFILL_MAP = {
     plateNumber:'t-plateNumber', driverName:'t-driverName', driverPhone:'t-driverPhone',
     origin:'t-origin', destination:'t-destination', customerName:'t-customerName',
     cargoList:'t-cargoList', cargoWeight:'t-cargoWeight', freightCost:'t-freightCost',
-    jobStatus:'t-status', remark:'t-remark', tripCount:'t-tripCount'
+    jobStatus:'t-status', remark:'t-remark', tripCount:'t-tripCount',
+    tripRound:'t-tripRound', paymentStatus:'t-paymentStatus'
   },
   income: {
     incomeDate:'i-incomeDate', incomeTime:'i-incomeTime', docNumber:'i-docNumber',
     customerName:'i-customerName', incomeItem:'i-incomeItem', amount:'i-amount',
-    paymentMethod:'i-paymentMethod', remark:'i-remark'
+    paymentMethod:'i-paymentMethod', remark:'i-remark', linkedTripRowId:'i-linkedTrip'
   },
   expense: {
     expenseDate:'e-expenseDate', expenseTime:'e-expenseTime', category:'e-category',
@@ -3837,11 +3920,17 @@ function renderTruckList(items) {
       : (r.pickupDate ? `📥 ${fmtDate(r.pickupDate)}` :
          r.deliveryDate ? `📤 ${fmtDate(r.deliveryDate)}` :
          `📅 ${fmtDate(r.jobDate)}${r.jobTime?' '+r.jobTime:''}`);
+    const paid = (r.paymentStatus || 'ค้างจ่าย') === 'จ่ายแล้ว';
+    const payHtml = paid
+      ? `<span style="padding:2px 8px;border-radius:10px;background:#E8F5E9;color:#2E7D32;font-weight:700;font-size:.7rem">💰 จ่ายแล้ว</span>`
+      : `<span style="padding:2px 8px;border-radius:10px;background:#FEE2E2;color:#B91C1C;font-weight:700;font-size:.7rem">⚠️ ค้างจ่าย</span>`;
     return `
     <div class="record-card" style="border-left-color:${s.color}">
       <div class="rc-title" style="color:${s.color};display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        ${r.tripRound?`<span style="background:#0f172a;color:white;padding:2px 9px;border-radius:6px;font-size:.75rem;font-weight:800">#${r.tripRound}</span>`:''}
         🚛 ${r.plateNumber||'-'}
         <span style="padding:2px 10px;border-radius:10px;background:${s.bg};color:${s.color};font-weight:700;font-size:.7rem">${s.icon} ${auto}</span>
+        ${payHtml}
         ${r.freightCost?`<span style="margin-left:auto;color:#2E7D32;font-weight:700;font-size:.85rem">${fmtBaht(r.freightCost)}</span>`:''}
       </div>
       <div class="rc-sub" style="display:flex;flex-direction:column;gap:3px">
@@ -4322,7 +4411,13 @@ function _buildMonthGridWeeks(_calYear, _calMonth, trips) {
       if (!_calPlate) labelParts.push(t.plateNumber || '?');
       if (t.origin || t.destination) labelParts.push((t.origin||'?') + '→' + (t.destination||'?'));
       else if (t.customerName) labelParts.push(t.customerName);
+      if (t.tripRound) labelParts.unshift(`#${t.tripRound}`);
       const label = `${stDot} ${datePart} • ${labelParts.join(' ')}`;
+      // Payment badge (ค้างจ่าย = red, จ่ายแล้ว = subtle white)
+      const isPaid = (t.paymentStatus || 'ค้างจ่าย') === 'จ่ายแล้ว';
+      const payBadge = isPaid
+        ? `<span style="background:rgba(255,255,255,.25);padding:0 5px;border-radius:3px;font-size:.6rem;font-weight:700;margin-left:4px">จ่ายแล้ว</span>`
+        : `<span style="background:#fee2e2;color:#b91c1c;padding:1px 6px;border-radius:3px;font-size:.6rem;font-weight:800;margin-left:4px">ค้างจ่าย</span>`;
 
       // Tooltip
       const tip = [
@@ -4341,7 +4436,7 @@ function _buildMonthGridWeeks(_calYear, _calMonth, trips) {
       evtsHtml += `<div class="cal-evt-bar ${cls} ${posCls}"
         style="background:${bg};grid-column:${colStart} / span ${colSpan}; grid-row:${ev.row + 1}"
         title="${escHtml(tip)}"
-        onclick="event.stopPropagation();openCalDay('${clickDate}')">${escHtml(label)}</div>`;
+        onclick="event.stopPropagation();openCalDay('${clickDate}')">${escHtml(label)}${payBadge}</div>`;
     });
 
     // Add overflow indicators per column

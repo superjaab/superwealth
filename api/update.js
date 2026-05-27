@@ -16,7 +16,7 @@ const CONFIGS = {
       +d.cargoWeight||0, +d.tripCount||1, +d.freightCost||0,
       d.jobStatus||'รอโหลด', d.remark||'',
       JSON.stringify(d.imageUrls||[]), d.ocrText||'', d.userAgent||'', id,
-      d.pickupDate||'', d.deliveryDate||''
+      d.pickupDate||'', d.deliveryDate||'', +d.tripRound||0, d.paymentStatus||'ค้างจ่าย'
     ]
   },
   income: {
@@ -24,7 +24,8 @@ const CONFIGS = {
     row: (d, ts, id) => [
       ts, d.incomeDate||'', d.incomeTime||'', d.docNumber||'', d.customerName||'',
       d.incomeItem||'', +d.amount||0, d.paymentMethod||'เงินสด',
-      d.remark||'', JSON.stringify(d.imageUrls||[]), d.ocrText||'', d.userAgent||'', id
+      d.remark||'', JSON.stringify(d.imageUrls||[]), d.ocrText||'', d.userAgent||'', id,
+      d.linkedTripRowId||'', +d.linkedTripRound||0
     ]
   },
   expense: {
