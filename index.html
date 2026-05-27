@@ -434,30 +434,113 @@
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ─── LAYOUT OVERRIDE (v3.1 Sidebar) ─── */
+    body { font-family:'Noto Sans Thai','Segoe UI',sans-serif; padding-bottom:0 !important; overflow:hidden; height:100dvh; background:#f1f5f9; }
+    #app-shell { display:flex; height:100dvh; overflow:hidden; }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      width:220px; background:#0f172a; display:flex; flex-direction:column;
+      flex-shrink:0; transition:transform .25s; z-index:50;
+    }
+    .sb-logo { display:flex; align-items:center; gap:10px; padding:18px 16px 14px; border-bottom:1px solid rgba(255,255,255,.07); }
+    .sb-logo-icon { width:38px; height:38px; background:linear-gradient(135deg,#3b82f6,#1d4ed8); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0; }
+    .sb-brand { font-size:.9rem; font-weight:700; color:#f1f5f9; }
+    .sb-sub   { font-size:.68rem; color:#64748b; }
+    .sb-nav   { flex:1; padding:10px 10px; overflow-y:auto; }
+    .sb-section { font-size:.65rem; font-weight:700; color:#475569; letter-spacing:.8px; text-transform:uppercase; padding:10px 6px 4px; }
+    .sb-footer { padding:12px 16px; border-top:1px solid rgba(255,255,255,.07); }
+
+    /* ── Sidebar nav buttons (override old .tab-btn) ── */
+    .tab-btn { display:flex; align-items:center; gap:9px; width:100%; padding:8px 10px; border-radius:8px; font-size:.82rem; color:#94a3b8; border:none; background:transparent; cursor:pointer; text-align:left; transition:all .15s; font-family:inherit; margin-bottom:1px; }
+    .tab-btn:hover { background:rgba(255,255,255,.07); color:#e2e8f0; }
+    .tab-btn.active { background:#2563eb; color:white; }
+    .tab-btn .icon { font-size:1rem; width:20px; text-align:center; flex-shrink:0; }
+
+    /* ── Mobile sidebar ── */
+    #sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:40; }
+    #sidebar-overlay.show { display:block; }
+    @media (max-width:768px) {
+      #sidebar { position:fixed; top:0; left:0; bottom:0; transform:translateX(-100%); }
+      #sidebar.open { transform:translateX(0); }
+      #hamburger { display:flex !important; }
+    }
+
+    /* ── Main wrapper ── */
+    #main-wrapper { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; }
+
+    /* ── Top header (override) ── */
+    .app-header {
+      background:white; color:#1e293b; padding:12px 20px;
+      display:flex; align-items:center; gap:12px;
+      border-bottom:1px solid #e2e8f0; position:sticky; top:0; z-index:30;
+      box-shadow:0 1px 3px rgba(0,0,0,.06);
+    }
+    .app-header h1 { font-size:.95rem; font-weight:700; color:#1e293b; flex:1; }
+    .app-header .version { font-size:.68rem; color:#94a3b8; white-space:nowrap; }
+    #hamburger { display:none; background:none; border:none; cursor:pointer; font-size:1.2rem; color:#475569; padding:4px; border-radius:6px; align-items:center; }
+    #hamburger:hover { background:#f1f5f9; }
+
+    /* ── Main scrollable content ── */
+    #main-content { flex:1; overflow-y:auto; background:#f1f5f9; }
+
+    /* ── Tab panels (override padding/max-width) ── */
+    .tab-panel { display:none; padding:18px 16px 24px; max-width:760px; margin:0 auto; }
+    .tab-panel.active { display:block; }
+    #tab-gps { padding:0; max-width:100%; }
+
+    /* ── Toast fix (was 82px for bottom nav) ── */
+    #toast { bottom:20px !important; }
+
+    /* ── Nav scrollbar hide (no longer needed but safe to keep) ── */
+    .tab-nav { display:none; }
+  </style>
 </head>
 <body>
+<div id="app-shell">
 
+<!-- ══ SIDEBAR ══ -->
+<aside id="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-icon">🚛</div>
+    <div><div class="sb-brand">SuperWealth</div><div class="sb-sub">ระบบขนส่งรถบรรทุก</div></div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section">ภาพรวม</div>
+    <button class="tab-btn" onclick="switchTab('summary',this);initSummaryOnce()"><span class="icon">📊</span>สรุปผล</button>
+    <div class="sb-section">บันทึกรายการ</div>
+    <button class="tab-btn active" onclick="switchTab('truck',this)"><span class="icon">🚚</span>บันทึกรถ</button>
+    <button class="tab-btn" onclick="switchTab('income',this)"><span class="icon">💰</span>รายรับ</button>
+    <button class="tab-btn" onclick="switchTab('expense',this)"><span class="icon">💸</span>รายจ่าย</button>
+    <div class="sb-section">ข้อมูลหลัก</div>
+    <button class="tab-btn" onclick="switchTab('vehicle',this)"><span class="icon">🚛</span>ทะเบียนรถ</button>
+    <button class="tab-btn" onclick="switchTab('driver',this)"><span class="icon">👤</span>คนขับ</button>
+    <button class="tab-btn" onclick="switchTab('customer',this)"><span class="icon">🏢</span>ลูกค้า</button>
+    <div class="sb-section">ปฏิบัติการ</div>
+    <button class="tab-btn" onclick="switchTab('maintenance',this)"><span class="icon">🔧</span>ซ่อมบำรุง</button>
+    <button class="tab-btn" onclick="switchTab('fuel',this)"><span class="icon">⛽</span>น้ำมัน</button>
+    <button class="tab-btn" onclick="switchTab('invoice',this)"><span class="icon">📋</span>ใบแจ้งหนี้</button>
+    <div class="sb-section">เครื่องมือ</div>
+    <button class="tab-btn" onclick="switchTab('alert',this);loadAlerts()"><span class="icon">🔔</span>แจ้งเตือน</button>
+    <button class="tab-btn" onclick="switchTab('gps',this)"><span class="icon">📡</span>GPS</button>
+    <button class="tab-btn" onclick="switchTab('ocr',this)"><span class="icon">🔍</span>อ่านภาพ</button>
+  </nav>
+  <div class="sb-footer"><span class="version">v3.0 | 27/05/2026 15:32</span></div>
+</aside>
+
+<!-- Mobile overlay -->
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- ══ MAIN WRAPPER ══ -->
+<div id="main-wrapper">
 <header class="app-header">
-  <span style="font-size:1.5rem">🚛</span>
-  <h1>ระบบขนส่งรถบรรทุก</h1>
+  <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
+  <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version">v3.0 | 27/05/2026 15:32</span>
 </header>
-
-<nav class="tab-nav">
-  <button class="tab-btn active" onclick="switchTab('truck',this)"><span class="icon">🚚</span><span>บันทึกรถ</span></button>
-  <button class="tab-btn" onclick="switchTab('income',this)"><span class="icon">💰</span><span>รายรับ</span></button>
-  <button class="tab-btn" onclick="switchTab('expense',this)"><span class="icon">💸</span><span>รายจ่าย</span></button>
-  <button class="tab-btn" onclick="switchTab('vehicle',this)"><span class="icon">🚛</span><span>ทะเบียนรถ</span></button>
-  <button class="tab-btn" onclick="switchTab('driver',this)"><span class="icon">👤</span><span>คนขับ</span></button>
-  <button class="tab-btn" onclick="switchTab('customer',this)"><span class="icon">🏢</span><span>ลูกค้า</span></button>
-  <button class="tab-btn" onclick="switchTab('maintenance',this)"><span class="icon">🔧</span><span>ซ่อมบำรุง</span></button>
-  <button class="tab-btn" onclick="switchTab('fuel',this)"><span class="icon">⛽</span><span>น้ำมัน</span></button>
-  <button class="tab-btn" onclick="switchTab('invoice',this)"><span class="icon">📋</span><span>Invoice</span></button>
-  <button class="tab-btn" onclick="switchTab('summary',this);initSummaryOnce()"><span class="icon">📊</span><span>สรุปผล</span></button>
-  <button class="tab-btn" onclick="switchTab('alert',this);loadAlerts()"><span class="icon">🔔</span><span>แจ้งเตือน</span></button>
-  <button class="tab-btn" onclick="switchTab('gps',this)"><span class="icon">📡</span><span>GPS</span></button>
-  <button class="tab-btn" onclick="switchTab('ocr',this)"><span class="icon">🔍</span><span>อ่านภาพ</span></button>
-</nav>
+<main id="main-content">
 
 <!-- ══ TAB 1: บันทึกรถบรรทุก ══ -->
 <div class="tab-panel active" id="tab-truck">
@@ -1149,6 +1232,10 @@
   </div>
 </div>
 
+</main><!-- /main-content -->
+</div><!-- /main-wrapper -->
+</div><!-- /app-shell -->
+
 <!-- Invoice print overlay -->
 <div id="invoice-print-overlay"></div>
 
@@ -1205,12 +1292,33 @@ function setDefaultDates() {
 }
 
 // ─── TAB ──────────────────────────────────
+const PAGE_NAMES = {
+  truck:'บันทึกรถบรรทุก', income:'รายรับ', expense:'รายจ่าย',
+  vehicle:'ทะเบียนรถ', driver:'คนขับ', customer:'ลูกค้า',
+  maintenance:'ซ่อมบำรุง', fuel:'น้ำมัน', invoice:'ใบแจ้งหนี้',
+  summary:'สรุปผล', alert:'แจ้งเตือน', gps:'GPS', ocr:'อ่านภาพ'
+};
 function switchTab(tab, btnEl) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
   btnEl.classList.add('active');
+  const title = document.getElementById('page-title');
+  if (title) title.textContent = PAGE_NAMES[tab] || tab;
   if (tab === 'invoice') { genInvNum(); renderInvRows(); }
+  closeSidebar(); // auto-close on mobile
+}
+
+// ─── SIDEBAR TOGGLE ───────────────────────
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  sb.classList.toggle('open');
+  ov.classList.toggle('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('show');
 }
 
 // ─── STATUS CHIP ─────────────────────────
