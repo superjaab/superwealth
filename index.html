@@ -701,7 +701,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v5.7 | 28/05/2026 06:15</span>
+  <span class="version" style="margin-left:auto">v5.8 | 28/05/2026 06:30</span>
   <div style="position:relative;margin-left:10px">
     <button class="header-bell" onclick="toggleBell(event)" title="แจ้งเตือน">
       🔔<span class="bell-badge" id="bell-badge" style="display:none">0</span>
@@ -4049,33 +4049,85 @@ function renderTruckList(items) {
 }
 
 function renderIncomeList(items) {
-  const payColor={'เงินสด':'#2E7D32','เงินโอน':'#1565C0','โอน QR':'#0288D1','เช็ค':'#6A1B9A','บัตรเครดิต':'#E65100'};
-  return [...items].reverse().map(r=>`
+  return [...items].reverse().map(r => {
+    // Resolve linked trip (if any) — for round number + pickup/delivery dates
+    const trip = r.linkedTripRowId
+      ? (_master.truckHistory || []).find(t => t.rowId === r.linkedTripRowId)
+      : null;
+    const tripRound = (trip && trip.tripRound) || r.linkedTripRound || null;
+    // Date label: prefer linked trip range if span; else fallback to incomeDate
+    let dateLabel;
+    if (trip && trip.pickupDate && trip.deliveryDate && trip.pickupDate !== trip.deliveryDate) {
+      dateLabel = `📥 ${fmtDate(trip.pickupDate)} → 📤 ${fmtDate(trip.deliveryDate)}`;
+    } else if (trip && (trip.pickupDate || trip.jobDate)) {
+      dateLabel = `📅 ${fmtDate(trip.pickupDate || trip.jobDate)}`;
+    } else {
+      dateLabel = `📅 ${fmtDate(r.incomeDate)}${r.incomeTime ? ' ' + r.incomeTime : ''}`;
+    }
+    const amount = parseFloat(r.amount) || 0;
+    return `
     <div class="record-card" style="border-left-color:#2E7D32">
-      <div class="rc-title" style="color:#2E7D32">💰 ${fmtBaht(r.amount)} <span style="font-size:.72rem;font-weight:400;color:#616161">— ${r.incomeItem||''}</span></div>
-      <div class="rc-sub"><span>📅 ${fmtDate(r.incomeDate)}</span><span>🏢 ${r.customerName||'-'}</span>
-        <span style="padding:2px 8px;border-radius:10px;background:#E8F5E9;color:${payColor[r.paymentMethod]||'#2E7D32'};font-weight:600;font-size:.72rem">${r.paymentMethod||'เงินสด'}</span>
-        ${r.docNumber?`<span style="color:#9E9E9E">#${r.docNumber}</span>`:''}
+      <!-- HEADER: round (if linked) + date | amount -->
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;padding-bottom:8px;border-bottom:1.5px dashed #e2e8f0">
+        ${tripRound
+          ? `<span style="background:linear-gradient(135deg,#0f172a,#1e293b);color:white;padding:5px 14px;border-radius:8px;font-size:.9rem;font-weight:800;letter-spacing:.3px;white-space:nowrap">🔢 รอบเที่ยว #${tripRound}</span>`
+          : ''}
+        <span style="font-size:.78rem;color:#475569;font-weight:600">${dateLabel}</span>
+        <span style="margin-left:auto;color:#2E7D32;font-weight:800;font-size:1rem">${fmtBaht(amount)}</span>
+      </div>
+      <!-- Sub info — left aligned -->
+      <div class="rc-sub" style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;margin-top:6px">
+        ${r.customerName ? `<span>🏢 ${r.customerName}</span>` : ''}
+        ${r.incomeItem ? `<span>📋 ${r.incomeItem}</span>` : ''}
+        ${r.paymentMethod ? `<span>💵 ${r.paymentMethod}</span>` : ''}
+        ${r.docNumber ? `<span style="color:#9E9E9E">📄 ${r.docNumber}</span>` : ''}
+        ${r.remark ? `<span style="color:#9E9E9E">📝 ${r.remark}</span>` : ''}
       </div>
       ${renderImgThumbs(r.imageUrls)}
-      ${renderRecActions('income', r.rowId, `${fmtBaht(r.amount)} - ${r.customerName||''}`)}
-    </div>`).join('');
+      ${renderRecActions('income', r.rowId, `${fmtBaht(amount)} - ${r.customerName||''}`)}
+    </div>`;
+  }).join('');
 }
 
 // ─── RENDER EXPENSE LIST ───────────────────────────────────────────────────────
 function renderExpenseList(items) {
-  const catColor={'ค่าน้ำมัน':'#F57F17','ค่าซ่อม':'#E65100','ค่ายาง':'#C62828','ประกันภัยรถ':'#1565C0','ประกันสินค้า':'#6A1B9A','ค่าบริการ GPS':'#0288D1'};
-  return [...items].reverse().map(r=>`
+  return [...items].reverse().map(r => {
+    const trip = r.linkedTripRowId
+      ? (_master.truckHistory || []).find(t => t.rowId === r.linkedTripRowId)
+      : null;
+    const tripRound = (trip && trip.tripRound) || r.linkedTripRound || null;
+    let dateLabel;
+    if (trip && trip.pickupDate && trip.deliveryDate && trip.pickupDate !== trip.deliveryDate) {
+      dateLabel = `📥 ${fmtDate(trip.pickupDate)} → 📤 ${fmtDate(trip.deliveryDate)}`;
+    } else if (trip && (trip.pickupDate || trip.jobDate)) {
+      dateLabel = `📅 ${fmtDate(trip.pickupDate || trip.jobDate)}`;
+    } else {
+      dateLabel = `📅 ${fmtDate(r.expenseDate)}${r.expenseTime ? ' ' + r.expenseTime : ''}`;
+    }
+    const amount = parseFloat(r.amount) || 0;
+    return `
     <div class="record-card" style="border-left-color:#C62828">
-      <div class="rc-title" style="color:#C62828">💸 ${fmtBaht(r.amount)} <span style="font-size:.72rem;font-weight:400;color:#616161">— ${r.expenseDetail||r.category||''}</span></div>
-      <div class="rc-sub"><span>📅 ${fmtDate(r.expenseDate)}</span>
-        <span style="padding:2px 8px;border-radius:10px;background:#FFEBEE;color:${catColor[r.category]||'#C62828'};font-weight:600;font-size:.72rem">${r.category||'อื่นๆ'}</span>
-        ${r.plateNumber?`<span>🚛 ${r.plateNumber}</span>`:''}
-        ${r.vendor?`<span>🏪 ${r.vendor}</span>`:''}
+      <!-- HEADER -->
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;padding-bottom:8px;border-bottom:1.5px dashed #e2e8f0">
+        ${tripRound
+          ? `<span style="background:linear-gradient(135deg,#0f172a,#1e293b);color:white;padding:5px 14px;border-radius:8px;font-size:.9rem;font-weight:800;letter-spacing:.3px;white-space:nowrap">🔢 รอบเที่ยว #${tripRound}</span>`
+          : ''}
+        <span style="font-size:.78rem;color:#475569;font-weight:600">${dateLabel}</span>
+        <span style="margin-left:auto;color:#C62828;font-weight:800;font-size:1rem">${fmtBaht(amount)}</span>
+      </div>
+      <!-- Sub info -->
+      <div class="rc-sub" style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;margin-top:6px">
+        ${r.category ? `<span style="padding:3px 12px;border-radius:10px;background:#FFEBEE;color:#B91C1C;font-weight:700;font-size:.72rem;display:inline-block">${r.category}</span>` : ''}
+        ${r.plateNumber ? `<span>🚛 ${r.plateNumber}</span>` : ''}
+        ${r.vendor ? `<span>👤 ${r.vendor}</span>` : ''}
+        ${r.expenseDetail ? `<span>📋 ${r.expenseDetail}</span>` : ''}
+        ${r.paymentMethod ? `<span>💵 ${r.paymentMethod}</span>` : ''}
+        ${r.remark ? `<span style="color:#9E9E9E">📝 ${r.remark}</span>` : ''}
       </div>
       ${renderImgThumbs(r.imageUrls)}
-      ${renderRecActions('expense', r.rowId, `${fmtBaht(r.amount)} - ${r.category||''}`)}
-    </div>`).join('');
+      ${renderRecActions('expense', r.rowId, `${fmtBaht(amount)} - ${r.category||''}`)}
+    </div>`;
+  }).join('');
 }
 
 // ─── MAINTENANCE TYPE CHANGE ────────────────────────────────────────────────────
