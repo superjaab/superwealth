@@ -527,7 +527,7 @@
     <button class="tab-btn" onclick="switchTab('gps',this)"><span class="icon">📡</span>GPS</button>
     <button class="tab-btn" onclick="switchTab('ocr',this)"><span class="icon">🔍</span>อ่านภาพ</button>
   </nav>
-  <div class="sb-footer"><span class="version">v3.4 | 27/05/2026 23:30</span></div>
+  <div class="sb-footer"><span class="version">v3.5 | 27/05/2026 23:50</span></div>
 </aside>
 
 <!-- Mobile overlay -->
@@ -538,7 +538,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version">v3.4 | 27/05/2026 23:30</span>
+  <span class="version">v3.5 | 27/05/2026 23:50</span>
 </header>
 <main id="main-content">
 
@@ -824,56 +824,42 @@
   <div id="expense-list-view" style="display:none"><div id="exp-list" class="list-loading">กด "รายการรายจ่าย" เพื่อโหลด</div></div>
 </div>
 
-<!-- ══ TAB 4: GPS ══ -->
+<!-- ══ TAB 4: GPS (Embedded OneTrack via iframe) ══ -->
 <div class="tab-panel" id="tab-gps">
-
-  <div id="gps-login-view">
-    <div class="gps-login-wrap">
-      <div class="gps-brand">
-        <span class="brand-icon">📡</span>
-        <h2>GPS ติดตามรถ</h2>
-        <span>OneTrack Smart — Onelink Technology</span>
-      </div>
-      <div class="gps-login-card">
-        <h3>🔐 เข้าสู่ระบบ OneTrack</h3>
-        <div class="gps-login-err" id="gps-err"></div>
-        <div id="gps-many-hint" style="display:none">
-          <button type="button" class="btn-gps-err-action"
-                  onclick="window.open('https://onetracksmart.onelink.co.th/onetrack.smart.new/login.jsp','_blank')">
-            🔓 เปิด OneTrack เพื่อ Logout session เก่า แล้วกลับมา Login ใหม่
-          </button>
-        </div>
-        <div class="form-row">
-          <label>Username</label>
-          <input type="text" id="gps-user" placeholder="กรอก username" autocomplete="username" maxlength="50">
-        </div>
-        <div class="form-row">
-          <label>Password</label>
-          <input type="password" id="gps-pass" placeholder="กรอก password" autocomplete="current-password" maxlength="50"
-                 onkeydown="if(event.key==='Enter') doGPSLogin()">
-        </div>
-        <button type="button" class="btn-gps-login" onclick="doGPSLogin()">
-          🗺️ เข้าสู่ระบบและดูแผนที่
-        </button>
-        <p class="gps-hint">
-          รหัสเดียวกับที่ใช้ login บน onetracksmart.onelink.co.th<br>
-          ⚠️ ระบบส่งผ่าน API เท่านั้น ไม่เก็บรหัสผ่าน
-        </p>
-      </div>
-    </div>
+  <!-- Top control bar -->
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#1e293b;border-bottom:1px solid #334155;color:white;font-size:.82rem">
+    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e;animation:gps-pulse 1.5s infinite"></span>
+    <span style="font-weight:700">📡 OneTrack Smart GPS</span>
+    <span style="flex:1"></span>
+    <button type="button" onclick="reloadGPSFrame()"
+            style="background:#334155;border:none;color:#cbd5e1;padding:5px 10px;border-radius:6px;font-size:.75rem;cursor:pointer;font-family:inherit">
+      🔄 รีโหลด
+    </button>
+    <button type="button" onclick="openGPSNewTab()"
+            style="background:#3b82f6;border:none;color:white;padding:5px 10px;border-radius:6px;font-size:.75rem;cursor:pointer;font-family:inherit">
+      ↗ เปิดแท็บใหม่
+    </button>
   </div>
-
-  <div id="gps-map-view" style="display:none">
-    <div class="gps-connected-bar">
-      <span class="gps-dot-live"></span>
-      <span class="gps-user-label">📡 <span id="gps-username-label"></span></span>
-      <button type="button" class="btn-gps-newtab" onclick="openGPSNewTab()">↗ แท็บใหม่</button>
-      <button type="button" class="btn-gps-logout" onclick="doGPSLogout()">ออก</button>
-    </div>
-    <iframe id="gps-main-iframe" src="about:blank" title="OneTrack GPS" allow="geolocation *"></iframe>
+  <!-- Embedded OneTrack login + full app -->
+  <iframe id="gps-main-iframe"
+          src="https://onetracksmart.onelink.co.th/onetrack.smart.new/login.jsp"
+          title="OneTrack Smart GPS"
+          allow="geolocation *; fullscreen *"
+          style="width:100%;border:none;display:block;height:calc(100dvh - 96px);min-height:480px;background:white"
+          onload="hideGPSBlockWarn()"></iframe>
+  <!-- Fallback warning (shown if iframe blocked by X-Frame-Options) -->
+  <div id="gps-block-warn" style="display:none;padding:20px;text-align:center;background:#fef3c7;border-top:2px solid #f59e0b">
+    <div style="font-size:.95rem;font-weight:700;color:#92400e;margin-bottom:8px">⚠️ OneTrack ไม่อนุญาตให้ฝัง iframe</div>
+    <div style="font-size:.82rem;color:#78350f;margin-bottom:12px">เว็บ OneTrack มีการป้องกัน X-Frame-Options กรุณากดปุ่มเปิดแท็บใหม่แทน</div>
+    <button type="button" onclick="openGPSNewTab()"
+            style="background:#3b82f6;border:none;color:white;padding:10px 20px;border-radius:8px;font-size:.85rem;font-weight:700;cursor:pointer">
+      ↗ เปิด OneTrack ในแท็บใหม่
+    </button>
   </div>
-
 </div>
+<style>
+  @keyframes gps-pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+</style>
 
 <!-- ══ TAB 5: อ่านตัวหนังสือจากภาพ ══ -->
 <div class="tab-panel" id="tab-ocr">
@@ -1640,54 +1626,37 @@ function selectStatus(hiddenId, chipEl) {
   document.getElementById(hiddenId).value = chipEl.dataset.val;
 }
 
-// ─── GPS LOGIN (fetch → /api/login-onetrack) ──────────────
-async function doGPSLogin() {
-  const user = document.getElementById('gps-user').value.trim();
-  const pass = document.getElementById('gps-pass').value;
-  if (!user || !pass) { showGPSErr('กรุณากรอก Username และ Password'); return; }
-  document.getElementById('gps-err').style.display = 'none';
-  showLoading('กำลัง Login OneTrack...');
-  try {
-    const result = await api('/api/login-onetrack', { user, pass });
-    hideLoading();
-    if (result.success) {
-      gpsSession = { id: result.sessionId, url: result.url, user };
-      document.getElementById('gps-pass').value = '';
-      showGPSMap(result.url, user);
-    } else {
-      showGPSErr(result.error || 'Login ไม่สำเร็จ');
-    }
-  } catch (e) {
-    hideLoading();
-    showGPSErr('เกิดข้อผิดพลาด: ' + e.message);
-  }
+// ─── GPS (Embedded OneTrack iframe) ──────────────
+const GPS_URL = 'https://onetracksmart.onelink.co.th/onetrack.smart.new/login.jsp';
+function reloadGPSFrame() {
+  const f = document.getElementById('gps-main-iframe');
+  if (f) f.src = GPS_URL + '?t=' + Date.now();
+  hideGPSBlockWarn();
 }
-
-function showGPSMap(url, user) {
-  document.getElementById('gps-login-view').style.display = 'none';
-  document.getElementById('gps-map-view').style.display   = 'block';
-  document.getElementById('gps-username-label').textContent = user;
-  document.getElementById('gps-main-iframe').src = url;
-  showToast('Login สำเร็จ กำลังโหลดแผนที่ GPS...', 'success');
-}
-
-function doGPSLogout() {
-  gpsSession = { id: '', url: '', user: '' };
-  document.getElementById('gps-main-iframe').src = 'about:blank';
-  document.getElementById('gps-map-view').style.display   = 'none';
-  document.getElementById('gps-login-view').style.display = 'block';
-  document.getElementById('gps-user').value = '';
-  document.getElementById('gps-pass').value = '';
-}
-
 function openGPSNewTab() {
-  window.open(
-    gpsSession.url || 'https://onetracksmart.onelink.co.th/onetrack.smart.new/login.jsp',
-    '_blank', 'noopener,noreferrer'
-  );
+  window.open(GPS_URL, '_blank', 'noopener,noreferrer');
 }
+function hideGPSBlockWarn() {
+  const w = document.getElementById('gps-block-warn');
+  if (w) w.style.display = 'none';
+}
+// Detect X-Frame-Options block: if iframe still empty after 5s, show warning
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const f = document.getElementById('gps-main-iframe');
+    if (!f) return;
+    try {
+      // If iframe blocked, accessing contentDocument throws or returns null
+      if (!f.contentDocument && !f.contentWindow.location.href.includes('onelink')) {
+        document.getElementById('gps-block-warn').style.display = 'block';
+      }
+    } catch (e) {
+      // Cross-origin = iframe loaded fine (expected for OneTrack)
+    }
+  }, 5000);
+});
 
-function showGPSErr(msg) {
+function _unused_showGPSErr(msg) {
   const el     = document.getElementById('gps-err');
   const manyEl = document.getElementById('gps-many-hint');
   if (msg === 'MANY_CONNECTION') {
