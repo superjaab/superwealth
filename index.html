@@ -549,6 +549,52 @@
     .img-zoom-nav.next { right:16px; }
     .img-zoom-nav:disabled { opacity:.3; cursor:not-allowed; }
 
+    /* Record card action buttons (Edit / Delete) */
+    .rc-actions { display:flex; gap:6px; margin-top:10px; padding-top:8px; border-top:1px solid #f1f5f9 }
+    .rc-btn {
+      flex:1; padding:7px 10px; border:none; border-radius:6px;
+      font-family:inherit; font-size:.74rem; font-weight:700;
+      cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;
+      transition:background .12s, transform .1s;
+    }
+    .rc-btn:active { transform:scale(.97) }
+    .rc-btn.rc-edit   { background:#fef3c7; color:#92400e; }
+    .rc-btn.rc-edit:hover   { background:#fde68a }
+    .rc-btn.rc-delete { background:#fee2e2; color:#991b1b; }
+    .rc-btn.rc-delete:hover { background:#fecaca }
+
+    /* Edit mode banner (sticky at top of form) */
+    .edit-banner {
+      background:linear-gradient(135deg,#fef3c7,#fde68a);
+      border:1.5px solid #f59e0b; border-radius:10px;
+      padding:10px 14px; margin-bottom:14px;
+      display:flex; align-items:center; gap:10px;
+      font-size:.82rem; color:#78350f; font-weight:700;
+    }
+    .edit-banner button {
+      margin-left:auto; background:white; border:1.5px solid #92400e;
+      color:#92400e; border-radius:6px; padding:5px 12px;
+      font-family:inherit; font-size:.72rem; font-weight:700; cursor:pointer;
+    }
+
+    /* Delete confirmation modal */
+    #del-modal {
+      display:none; position:fixed; inset:0; background:rgba(0,0,0,.55);
+      z-index:400; align-items:center; justify-content:center; padding:20px;
+    }
+    #del-modal.open { display:flex }
+    .del-box {
+      background:white; border-radius:14px; max-width:380px; width:100%;
+      padding:22px; box-shadow:0 20px 50px rgba(0,0,0,.3);
+    }
+    .del-title { font-size:1.05rem; font-weight:800; color:#dc2626; margin-bottom:8px; display:flex; align-items:center; gap:8px }
+    .del-text { font-size:.85rem; color:#475569; line-height:1.6; margin-bottom:16px }
+    .del-text b { color:#0f172a }
+    .del-btns { display:flex; gap:8px }
+    .del-btns button { flex:1; padding:11px; border:none; border-radius:8px; font-family:inherit; font-weight:700; font-size:.85rem; cursor:pointer }
+    .del-cancel { background:#f1f5f9; color:#475569 }
+    .del-confirm { background:#dc2626; color:white }
+
     /* Record card image thumbnails */
     .rc-imgs { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap }
     .rc-imgs img {
@@ -634,7 +680,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v4.2 | 28/05/2026 04:00</span>
+  <span class="version" style="margin-left:auto">v4.3 | 28/05/2026 04:50</span>
   <div style="position:relative;margin-left:10px">
     <button class="header-bell" onclick="toggleBell(event)" title="แจ้งเตือน">
       🔔<span class="bell-badge" id="bell-badge" style="display:none">0</span>
@@ -1858,6 +1904,21 @@
 <!-- Toast -->
 <div id="toast" class="hidden"></div>
 
+<!-- ══ DELETE CONFIRMATION MODAL ══ -->
+<div id="del-modal">
+  <div class="del-box">
+    <div class="del-title">⚠️ ยืนยันการลบข้อมูล</div>
+    <div class="del-text">
+      ต้องการลบ <b id="del-label">รายการนี้</b> ใช่หรือไม่?<br>
+      <span style="color:#dc2626;font-weight:700">ลบแล้วไม่สามารถกู้คืนได้</span>
+    </div>
+    <div class="del-btns">
+      <button class="del-cancel" onclick="closeDelModal()">ยกเลิก</button>
+      <button class="del-confirm" onclick="confirmDel()">🗑 ลบทันที</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ IMAGE ZOOM MODAL ══ -->
 <div id="img-zoom-modal" onclick="closeImgZoom()">
   <button id="img-zoom-close" onclick="event.stopPropagation();closeImgZoom()">✕</button>
@@ -2536,6 +2597,10 @@ function fillFormFromOCR(formKey) {
 async function submitForm(formKey) {
   const data = collectFormData(formKey);
   if (!data) return;
+  // Hook: if editing existing record, route to update instead
+  if (_editingMode[formKey]) {
+    return performEditUpdate(formKey, data);
+  }
   showLoading('กำลังอัปโหลดภาพ...');
   try {
     // Step 1: upload images
@@ -2627,7 +2692,257 @@ function resetForm(formKey) {
     const st = document.getElementById('t-status'); if (st) st.value = 'รอโหลด';
     const tc = document.getElementById('t-tripCount'); if (tc) tc.value = '1';
   }
+  // Clear editing mode if active
+  if (_editingMode[formKey]) {
+    _editingMode[formKey] = null;
+    updateSubmitLabel(formKey, false);
+    const banner = document.getElementById(`edit-banner-${formKey}`);
+    if (banner) banner.remove();
+  }
   showToast('ล้างข้อมูลแล้ว', 'success');
+}
+
+// ════════════════════════════════════════════════════════════════
+// EDIT / DELETE — Record actions
+// ════════════════════════════════════════════════════════════════
+const _listCache = {};       // { truck:[], income:[], ... } populated by loadList
+const _editingMode = {};     // { income:'INC-...', truck:'TRUCK-...' } when in edit mode
+
+// Tab key → list-container id
+const _LIST_CONTAINER = {
+  truck:'truck-list', income:'inc-list', expense:'exp-list',
+  vehicle:'veh-list', driver:'drv-list', customer:'cust-list',
+  maintenance:'mnt-list', fuel:'fuel-list', invoice:'inv-list'
+};
+const _LIST_RENDERER = {
+  truck: 'renderTruckList', income: 'renderIncomeList', expense: 'renderExpenseList',
+  vehicle:'renderVehicleList', driver:'renderDriverList', customer:'renderCustomerList',
+  maintenance:'renderMaintenanceList', fuel:'renderFuelList', invoice:'renderInvoiceList'
+};
+
+// Map record fields → form input IDs (for prefill)
+const _PREFILL_MAP = {
+  truck: {
+    pickupDate:'t-pickupDate', deliveryDate:'t-deliveryDate', jobDate:'t-jobDate', jobTime:'t-jobTime',
+    plateNumber:'t-plateNumber', driverName:'t-driverName', driverPhone:'t-driverPhone',
+    origin:'t-origin', destination:'t-destination', customerName:'t-customerName',
+    cargoList:'t-cargoList', cargoWeight:'t-cargoWeight', freightCost:'t-freightCost',
+    jobStatus:'t-status', remark:'t-remark', tripCount:'t-tripCount'
+  },
+  income: {
+    incomeDate:'i-incomeDate', incomeTime:'i-incomeTime', docNumber:'i-docNumber',
+    customerName:'i-customerName', incomeItem:'i-incomeItem', amount:'i-amount',
+    paymentMethod:'i-paymentMethod', remark:'i-remark'
+  },
+  expense: {
+    expenseDate:'e-expenseDate', expenseTime:'e-expenseTime', category:'e-category',
+    plateNumber:'e-plateNumber', vendor:'e-vendor', expenseDetail:'e-expenseDetail',
+    amount:'e-amount', paymentMethod:'e-paymentMethod', remark:'e-remark'
+  },
+  vehicle: {
+    plateNumber:'v-plate', vehicleType:'v-type', brand:'v-brand', model:'v-model',
+    year:'v-year', loadCapacity:'v-load', color:'v-color', chassisNo:'v-chassis',
+    regExpiry:'v-reg', prbExpiry:'v-prb', insuranceExpiry:'v-ins', inspectionExpiry:'v-inspect',
+    notes:'v-notes'
+  },
+  driver: {
+    driverName:'d-name', driverPhone:'d-phone', idCard:'d-idcard',
+    licenseType:'d-lic-type', licenseNumber:'d-lic-num', licenseExpiry:'d-lic-exp',
+    address:'d-address', emergencyContact:'d-emg-contact', emergencyPhone:'d-emg-phone',
+    status:'d-status', notes:'d-notes'
+  },
+  customer: {
+    customerName:'c-name', contactName:'c-contact', phone:'c-phone', email:'c-email',
+    address:'c-address', taxId:'c-taxid', paymentTerms:'c-terms', notes:'c-notes'
+  },
+  maintenance: {
+    maintenanceDate:'mnt-date', plateNumber:'mnt-plate', maintenanceType:'mnt-type',
+    description:'mnt-desc', cost:'mnt-cost', vendor:'mnt-vendor',
+    odometerKm:'mnt-km', nextDueDate:'mnt-next', notes:'mnt-notes'
+  },
+  fuel: {
+    fuelDate:'fuel-date', fuelTime:'fuel-time', plateNumber:'fuel-plate',
+    liters:'fuel-liters', pricePerLiter:'fuel-ppl', totalCost:'fuel-total',
+    odometerKm:'fuel-km', fuelStation:'fuel-station', paymentMethod:'fuel-pay',
+    notes:'fuel-notes'
+  },
+  invoice: {
+    invoiceDate:'inv-date', invoiceNumber:'inv-number', customerName:'inv-customer',
+    subtotal:'inv-subtotal', vatAmount:'inv-vat', total:'inv-total',
+    dueDate:'inv-due', status:'inv-status', notes:'inv-notes'
+  }
+};
+
+// Click-handlers from record cards
+function onEditClick(type, rowId) {
+  const rec = (_listCache[type] || []).find(r => (r.rowId||'') === rowId);
+  if (!rec) { showToast('ไม่พบข้อมูล (rowId: ' + rowId + ')', 'error'); return; }
+  startEdit(type, rowId, rec);
+}
+function onDeleteClick(type, rowId, label) {
+  openDelModal(type, rowId, label);
+}
+
+function startEdit(type, rowId, record) {
+  // 1) Switch to that record's tab (programmatically click sidebar btn)
+  const tabBtn = Array.from(document.querySelectorAll('.tab-btn'))
+    .find(b => b.getAttribute('onclick')?.includes(`switchTab('${type}'`));
+  if (tabBtn) tabBtn.click();
+  // 2) Switch inner-nav to form view
+  setTimeout(() => {
+    const formBtn = document.querySelector(`#tab-${type} .inner-btn[onclick*="'form'"]`);
+    if (formBtn) formBtn.click();
+    // 3) Prefill form
+    _prefillForm(type, record);
+    // 4) Set edit mode + UI feedback
+    _editingMode[type] = rowId;
+    updateSubmitLabel(type, true);
+    _showEditBanner(type, record);
+    // 5) Scroll to top
+    document.getElementById('main-content')?.scrollTo({top:0, behavior:'smooth'});
+    showToast('🟡 โหมดแก้ไข — ปรับแก้แล้วกด "อัปเดต"', 'info');
+  }, 50);
+}
+
+function _prefillForm(type, record) {
+  const map = _PREFILL_MAP[type];
+  if (!map) return;
+  Object.entries(map).forEach(([dataKey, elId]) => {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    let v = record[dataKey];
+    // Some types have alternative names in sheets
+    if (v === undefined || v === null) v = '';
+    if (typeof v === 'string' && v.startsWith('[')) {
+      // Skip JSON arrays (like imageUrls)
+      return;
+    }
+    el.value = String(v);
+  });
+}
+
+function updateSubmitLabel(type, editing) {
+  // Find main submit button in form
+  const tab = document.getElementById('tab-' + type);
+  if (!tab) return;
+  const btns = tab.querySelectorAll('.btn-primary');
+  btns.forEach(btn => {
+    if (editing) {
+      if (!btn.dataset.origHtml) btn.dataset.origHtml = btn.innerHTML;
+      btn.innerHTML = '💾 อัปเดตข้อมูล';
+      btn.style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
+    } else {
+      if (btn.dataset.origHtml) {
+        btn.innerHTML = btn.dataset.origHtml;
+        delete btn.dataset.origHtml;
+      }
+      btn.style.background = '';
+    }
+  });
+}
+
+function _showEditBanner(type, record) {
+  // Remove any existing banner
+  const old = document.getElementById(`edit-banner-${type}`);
+  if (old) old.remove();
+  // Find form view container
+  const formView = document.getElementById(`${type}-form-view`) || document.getElementById(`tab-${type}`);
+  if (!formView) return;
+  const banner = document.createElement('div');
+  banner.id = `edit-banner-${type}`;
+  banner.className = 'edit-banner';
+  banner.innerHTML = `
+    <span style="font-size:1.2rem">✏️</span>
+    <div>โหมดแก้ไข: <span style="color:#0f172a">${escHtml(record.rowId||'-')}</span></div>
+    <button onclick="cancelEdit('${type}')">ยกเลิก</button>
+  `;
+  formView.insertBefore(banner, formView.firstChild);
+}
+
+function cancelEdit(type) {
+  _editingMode[type] = null;
+  updateSubmitLabel(type, false);
+  const banner = document.getElementById(`edit-banner-${type}`);
+  if (banner) banner.remove();
+  resetForm(type);
+  showToast('ยกเลิกโหมดแก้ไข', 'info');
+}
+
+// Hook submitForm + submitData to detect edit mode
+async function performEditUpdate(type, data) {
+  const rowId = _editingMode[type];
+  showLoading('กำลังอัปเดต...');
+  try {
+    // Upload new images if any (preserve old if no new uploads)
+    if (state[type]) {
+      const newImgs = await uploadAllImages(type);
+      if (newImgs && newImgs.length > 0) data.imageUrls = newImgs;
+    }
+    data.userAgent = navigator.userAgent;
+    const result = await api('/api/update', { type, rowId, data });
+    hideLoading();
+    if (result.success) {
+      showToast(result.message || 'อัปเดตสำเร็จ', 'success');
+      cancelEdit(type);
+      reloadList(type);
+      loadMasterData();  // refresh cached
+    } else {
+      showToast(result.error || 'อัปเดตไม่สำเร็จ', 'error');
+    }
+  } catch (e) {
+    hideLoading();
+    showToast('ผิดพลาด: ' + e.message, 'error');
+  }
+}
+
+function reloadList(type) {
+  const containerId = _LIST_CONTAINER[type];
+  const rendererName = _LIST_RENDERER[type];
+  if (!containerId || !rendererName) return;
+  const renderFn = window[rendererName];
+  if (renderFn) loadList(type, containerId, renderFn);
+}
+
+// ── DELETE MODAL ──
+let _delTarget = null;
+function openDelModal(type, rowId, label) {
+  _delTarget = { type, rowId };
+  document.getElementById('del-label').textContent = label || rowId;
+  document.getElementById('del-modal').classList.add('open');
+}
+function closeDelModal() {
+  _delTarget = null;
+  document.getElementById('del-modal').classList.remove('open');
+}
+async function confirmDel() {
+  if (!_delTarget) return;
+  const { type, rowId } = _delTarget;
+  closeDelModal();
+  showLoading('กำลังลบ...');
+  try {
+    const result = await api('/api/delete', { type, rowId });
+    hideLoading();
+    if (result.success) {
+      showToast('🗑 ลบสำเร็จ', 'success');
+      reloadList(type);
+      loadMasterData();
+    } else {
+      showToast(result.error || 'ลบไม่สำเร็จ', 'error');
+    }
+  } catch (e) {
+    hideLoading();
+    showToast('ผิดพลาด: ' + e.message, 'error');
+  }
+}
+
+// Helper for render functions to add action buttons
+function renderRecActions(type, rowId, label) {
+  if (!rowId) return '';
+  const safe = String(label||'').replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+  return `<div class="rc-actions">
+    <button class="rc-btn rc-edit"   onclick="onEditClick('${type}','${rowId}')">✏️ แก้ไข</button>
+    <button class="rc-btn rc-delete" onclick="onDeleteClick('${type}','${rowId}','${safe}')">🗑 ลบ</button>
+  </div>`;
 }
 
 // ─── HELPERS ─────────────────────────────
@@ -2874,6 +3189,10 @@ function innerTab(key, view, btnEl) {
 
 // ─── GENERIC DATA HELPERS ──────────────────────────────────────────────────
 async function submitData(type, data, resetFn) {
+  // Hook: if editing existing record, route to update instead
+  if (_editingMode[type]) {
+    return performEditUpdate(type, data);
+  }
   showLoading('กำลังบันทึก...');
   try {
     data.userAgent = navigator.userAgent;
@@ -2894,6 +3213,7 @@ async function loadList(type, containerId, renderFn) {
     const res  = await fetch(`/api/get-data?type=${type}`);
     const json = await res.json();
     const items = (json.data||{})[type] || [];
+    _listCache[type] = items;     // cache for edit/delete lookup
     el.innerHTML = items.length ? renderFn(items) : '<p class="list-empty">📭 ยังไม่มีข้อมูล</p>';
     // update registries for datalist
     if (type==='vehicle')  { REG.vehicles=items;  populateDl('plate-dl', items.map(v=>v.plateNumber)); }
@@ -2954,6 +3274,7 @@ function renderVehicleList(items) {
       <div class="rc-title">🚛 ${v.plateNumber} <span style="font-size:.78rem;font-weight:400;color:var(--gray3)">${v.vehicleType||''}</span></div>
       <div class="rc-sub"><span>${v.brand||''} ${v.model||''}</span>${v.year?`<span>ปี ${+v.year+543}</span>`:''}</div>
       <div class="rc-badges">${expiryBadge(v.regExpiry,'ภาษี')}${expiryBadge(v.prbExpiry,'พ.ร.บ.')}${expiryBadge(v.insuranceExpiry,'ประกัน')}${expiryBadge(v.inspectionExpiry,'ตรวจสภาพ')}</div>
+      ${renderRecActions('vehicle', v.rowId, v.plateNumber||'')}
     </div>`).join('');
 }
 
@@ -2975,6 +3296,7 @@ function renderDriverList(items) {
       <div class="rc-title">👤 ${d.driverName} <span style="font-size:.72rem;padding:2px 8px;border-radius:10px;background:${sBg[d.status]||'#F5F5F5'};color:${sFg[d.status]||'#616161'}">${d.status||'ทำงาน'}</span></div>
       <div class="rc-sub"><span>📞 ${d.driverPhone||'-'}</span><span>ใบขับขี่ ${d.licenseType||''} ${d.licenseNumber||''}</span></div>
       <div class="rc-badges">${expiryBadge(d.licenseExpiry,'ใบขับขี่')}</div>
+      ${renderRecActions('driver', d.rowId, d.driverName||'')}
     </div>`).join('');
 }
 
@@ -2994,6 +3316,7 @@ function renderCustomerList(items) {
       <div class="rc-title">🏢 ${c.customerName}</div>
       <div class="rc-sub"><span>${c.contactName||''}</span><span>📞 ${c.phone||'-'}</span><span>${c.paymentTerms||''}</span></div>
       ${c.taxId?`<div class="rc-sub">เลขผู้เสียภาษี: ${c.taxId}</div>`:''}
+      ${renderRecActions('customer', c.rowId, c.customerName||'')}
     </div>`).join('');
 }
 
@@ -3022,6 +3345,8 @@ function renderMaintenanceList(items) {
       <div class="rc-title">🔧 ${m.maintenanceType||'ซ่อมบำรุง'} — ${m.plateNumber||'-'}</div>
       <div class="rc-sub"><span>📅 ${fmtDate(m.maintenanceDate)}</span><span>${fmtBaht(m.cost)}</span><span>${m.vendor||''}</span>${m.odometerKm?`<span>🛣 ${m.odometerKm} กม.</span>`:''}</div>
       ${m.nextDueDate?`<div class="rc-sub" style="margin-top:3px">🔔 นัดต่อไป: ${fmtDate(m.nextDueDate)}</div>`:''}
+      ${renderImgThumbs(m.imageUrls)}
+      ${renderRecActions('maintenance', m.rowId, `${m.maintenanceType||''} - ${m.plateNumber||''}`)}
     </div>`).join('');
 }
 
@@ -3053,6 +3378,7 @@ function renderFuelList(items) {
     <div class="record-card" style="border-left-color:#F57F17">
       <div class="rc-title">⛽ ${f.plateNumber||'-'} — ${fmtDate(f.fuelDate)}</div>
       <div class="rc-sub"><span>${parseFloat(f.liters)||0} ลิตร</span><span>฿${parseFloat(f.pricePerLiter)||0}/ลิตร</span><span>${fmtBaht(f.totalCost)}</span><span>${f.fuelStation||''}</span></div>
+      ${renderRecActions('fuel', f.rowId, `${f.plateNumber||''} - ${fmtDate(f.fuelDate)}`)}
     </div>`).join('');
 }
 
@@ -3135,6 +3461,7 @@ function renderInvoiceList(items) {
       <div class="rc-title">📋 ${inv.invoiceNumber||'-'} <span style="font-size:.72rem;padding:2px 8px;border-radius:10px;background:${sBg[inv.status]||'#F5F5F5'};color:${sFg[inv.status]||'#616161'}">${inv.status||'รอชำระ'}</span></div>
       <div class="rc-sub"><span>📅 ${fmtDate(inv.invoiceDate)}</span><span>🏢 ${inv.customerName||'-'}</span><span style="font-weight:700;color:var(--blue)">${fmtBaht(inv.total)}</span></div>
       ${inv.dueDate?`<div class="rc-sub" style="margin-top:3px">ครบกำหนด: ${fmtDate(inv.dueDate)}</div>`:''}
+      ${renderRecActions('invoice', inv.rowId, inv.invoiceNumber||'')}
     </div>`).join('');
 }
 function printInvoice() {
@@ -3322,6 +3649,7 @@ function renderTruckList(items) {
         ${r.remark && !r.notes ? `<span style="color:#9E9E9E">📝 ${r.remark}</span>` : ''}
       </div>
       ${renderImgThumbs(r.imageUrls)}
+      ${renderRecActions('truck', r.rowId, `${r.plateNumber||''} - ${r.customerName||''}`)}
     </div>`;
   }).join('');
 }
@@ -3336,6 +3664,7 @@ function renderIncomeList(items) {
         ${r.docNumber?`<span style="color:#9E9E9E">#${r.docNumber}</span>`:''}
       </div>
       ${renderImgThumbs(r.imageUrls)}
+      ${renderRecActions('income', r.rowId, `${fmtBaht(r.amount)} - ${r.customerName||''}`)}
     </div>`).join('');
 }
 
@@ -3351,6 +3680,7 @@ function renderExpenseList(items) {
         ${r.vendor?`<span>🏪 ${r.vendor}</span>`:''}
       </div>
       ${renderImgThumbs(r.imageUrls)}
+      ${renderRecActions('expense', r.rowId, `${fmtBaht(r.amount)} - ${r.category||''}`)}
     </div>`).join('');
 }
 

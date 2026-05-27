@@ -47,7 +47,15 @@
       "Bash(ls ~/.claude/projects/ 2>&1 | head -20)",
       "Bash(awk '{print $2}')",
       "Bash(xargs '-I{}' sh -c ' *)",
-      "WebSearch"
+      "WebSearch",
+      "WebFetch(domain:kbtireandautorepair.com)",
+      "WebFetch(domain:jordistireshop.com)",
+      "WebFetch(domain:magnatyres.com)",
+      "WebFetch(domain:tcttire.com)",
+      "WebFetch(domain:commons.wikimedia.org)",
+      "WebFetch(domain:vecfleet.io)",
+      "WebFetch(domain:datadis.com)",
+      "WebFetch(domain:devapi.hinoultimate.com)"
     ]
   }
 }
