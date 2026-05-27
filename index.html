@@ -549,19 +549,40 @@
     .img-zoom-nav.next { right:16px; }
     .img-zoom-nav:disabled { opacity:.3; cursor:not-allowed; }
 
-    /* Record card action buttons (Edit / Delete) */
-    .rc-actions { display:flex; gap:6px; margin-top:10px; padding-top:8px; border-top:1px solid #f1f5f9 }
-    .rc-btn {
-      flex:1; padding:7px 10px; border:none; border-radius:6px;
-      font-family:inherit; font-size:.74rem; font-weight:700;
-      cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;
-      transition:background .12s, transform .1s;
+    /* Record card kebab menu (3-dot) */
+    .record-card { position:relative; padding-right:42px !important; }
+    .rc-kebab {
+      position:absolute; top:8px; right:8px;
+      background:transparent; border:none; cursor:pointer;
+      width:32px; height:32px; border-radius:50%;
+      color:#94a3b8; font-size:1.1rem; font-weight:700;
+      display:flex; align-items:center; justify-content:center;
+      transition:background .12s, color .12s;
+      letter-spacing:1px;
     }
-    .rc-btn:active { transform:scale(.97) }
-    .rc-btn.rc-edit   { background:#fef3c7; color:#92400e; }
-    .rc-btn.rc-edit:hover   { background:#fde68a }
-    .rc-btn.rc-delete { background:#fee2e2; color:#991b1b; }
-    .rc-btn.rc-delete:hover { background:#fecaca }
+    .rc-kebab:hover { background:#f1f5f9; color:#475569; }
+    .rc-kebab:active { transform:scale(.92); }
+
+    .rc-menu {
+      position:absolute; top:42px; right:8px; z-index:50;
+      background:white; border-radius:10px;
+      box-shadow:0 8px 24px rgba(0,0,0,.18);
+      border:1px solid #e2e8f0;
+      min-width:140px; padding:4px;
+      display:none;
+    }
+    .rc-menu.open { display:block; animation:rcMenuIn .12s ease-out; }
+    @keyframes rcMenuIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+    .rc-menu-item {
+      display:flex; align-items:center; gap:8px;
+      padding:9px 12px; border-radius:6px;
+      font-size:.82rem; font-weight:600; color:#1e293b;
+      cursor:pointer; transition:background .1s;
+    }
+    .rc-menu-item:hover { background:#f1f5f9; }
+    .rc-menu-item.danger { color:#dc2626; }
+    .rc-menu-item.danger:hover { background:#fef2f2; }
+    .rc-menu-item .ic { font-size:1rem; }
 
     /* Edit mode banner (sticky at top of form) */
     .edit-banner {
@@ -680,7 +701,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v4.3 | 28/05/2026 04:50</span>
+  <span class="version" style="margin-left:auto">v4.4 | 28/05/2026 05:10</span>
   <div style="position:relative;margin-left:10px">
     <button class="header-bell" onclick="toggleBell(event)" title="แจ้งเตือน">
       🔔<span class="bell-badge" id="bell-badge" style="display:none">0</span>
@@ -2935,15 +2956,32 @@ async function confirmDel() {
   }
 }
 
-// Helper for render functions to add action buttons
+// Helper for render functions — render kebab (3-dot) menu
 function renderRecActions(type, rowId, label) {
   if (!rowId) return '';
   const safe = String(label||'').replace(/'/g,'&#39;').replace(/"/g,'&quot;');
-  return `<div class="rc-actions">
-    <button class="rc-btn rc-edit"   onclick="onEditClick('${type}','${rowId}')">✏️ แก้ไข</button>
-    <button class="rc-btn rc-delete" onclick="onDeleteClick('${type}','${rowId}','${safe}')">🗑 ลบ</button>
-  </div>`;
+  return `<button class="rc-kebab" onclick="toggleKebab(event, this)" aria-label="ตัวเลือก">⋮</button>
+    <div class="rc-menu" onclick="event.stopPropagation()">
+      <div class="rc-menu-item"        onclick="closeAllKebabs();onEditClick('${type}','${rowId}')"><span class="ic">✏️</span>แก้ไข</div>
+      <div class="rc-menu-item danger" onclick="closeAllKebabs();onDeleteClick('${type}','${rowId}','${safe}')"><span class="ic">🗑</span>ลบ</div>
+    </div>`;
 }
+
+function toggleKebab(e, btn) {
+  e.stopPropagation();
+  const menu = btn.nextElementSibling;
+  if (!menu || !menu.classList.contains('rc-menu')) return;
+  const isOpen = menu.classList.contains('open');
+  closeAllKebabs();
+  if (!isOpen) menu.classList.add('open');
+}
+function closeAllKebabs() {
+  document.querySelectorAll('.rc-menu.open').forEach(m => m.classList.remove('open'));
+}
+// Close menu on outside click (registered once)
+document.addEventListener('click', e => {
+  if (!e.target.closest('.rc-menu') && !e.target.closest('.rc-kebab')) closeAllKebabs();
+});
 
 // ─── HELPERS ─────────────────────────────
 function fileToBase64(file) {
