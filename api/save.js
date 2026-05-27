@@ -12,13 +12,15 @@ const CONFIGS = {
     name: 'TruckJobs', color: '#1565C0', prefix: 'TRUCK',
     headers: ['timestamp','jobDate','jobTime','plateNumber','driverName','driverPhone',
       'origin','destination','customerName','cargoList','cargoWeight','tripCount',
-      'freightCost','jobStatus','remark','imageUrls','ocrText','userAgent','rowId'],
+      'freightCost','jobStatus','remark','imageUrls','ocrText','userAgent','rowId',
+      'pickupDate','deliveryDate'],
     row: (d, now, id) => [
       now, d.jobDate||'', d.jobTime||'', d.plateNumber||'', d.driverName||'', d.driverPhone||'',
       d.origin||'', d.destination||'', d.customerName||'', d.cargoList||'',
       +d.cargoWeight||0, +d.tripCount||1, +d.freightCost||0,
       d.jobStatus||'รอโหลด', d.remark||'',
-      JSON.stringify(d.imageUrls||[]), d.ocrText||'', d.userAgent||'', id
+      JSON.stringify(d.imageUrls||[]), d.ocrText||'', d.userAgent||'', id,
+      d.pickupDate||'', d.deliveryDate||''
     ]
   },
   income: {
@@ -46,12 +48,14 @@ const CONFIGS = {
     name: 'Vehicles', color: '#0D47A1', prefix: 'VEH',
     headers: ['timestamp','plateNumber','vehicleType','brand','model','year',
       'loadCapacity','color','chassisNo','regExpiry','prbExpiry',
-      'insuranceExpiry','inspectionExpiry','notes','rowId'],
+      'insuranceExpiry','inspectionExpiry','notes','rowId',
+      'assignedDriver','assignedDriverPhone'],
     row: (d, now, id) => [
       now, d.plateNumber||'', d.vehicleType||'', d.brand||'', d.model||'',
       d.year||'', d.loadCapacity||'', d.color||'', d.chassisNo||'',
       d.regExpiry||'', d.prbExpiry||'', d.insuranceExpiry||'', d.inspectionExpiry||'',
-      d.notes||'', id
+      d.notes||'', id,
+      d.assignedDriver||'', d.assignedDriverPhone||''
     ]
   },
   driver: {
@@ -146,6 +150,7 @@ module.exports = async function handler(req, res) {
     const row    = cfg.row(data, now, rowId);
 
     await ensureSheet(sheets, sheetId, cfg.name, cfg.headers, cfg.color);
+    await syncHeaders(sheets, sheetId, cfg.name, cfg.headers);
     await sheets.spreadsheets.values.append({
       spreadsheetId: sheetId,
       range: `${cfg.name}!A:A`,
@@ -170,6 +175,27 @@ function genId(prefix) {
   const now = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Bangkok'}));
   const d = now.getFullYear()+String(now.getMonth()+1).padStart(2,'0')+String(now.getDate()).padStart(2,'0');
   return `${prefix}-${d}-${Math.random().toString(36).substr(2,4).toUpperCase()}`;
+}
+
+// If current header row is missing newly-added columns, extend it.
+async function syncHeaders(sheets, spreadsheetId, sheetName, expectedHeaders) {
+  try {
+    const resp = await sheets.spreadsheets.values.get({
+      spreadsheetId, range: `${sheetName}!1:1`
+    });
+    const current = (resp.data.values || [[]])[0];
+    if (current.length >= expectedHeaders.length) return;
+    // Extend (preserve existing headers, append missing)
+    const merged = [...current];
+    for (let i = current.length; i < expectedHeaders.length; i++) {
+      merged.push(expectedHeaders[i]);
+    }
+    await sheets.spreadsheets.values.update({
+      spreadsheetId, range: `${sheetName}!A1`,
+      valueInputOption: 'RAW',
+      requestBody: { values: [merged] }
+    });
+  } catch (e) { /* non-fatal */ }
 }
 
 async function ensureSheet(sheets, spreadsheetId, sheetName, headers, hexColor) {

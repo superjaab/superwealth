@@ -701,7 +701,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v4.4 | 28/05/2026 05:10</span>
+  <span class="version" style="margin-left:auto">v4.5 | 28/05/2026 06:00</span>
   <div style="position:relative;margin-left:10px">
     <button class="header-bell" onclick="toggleBell(event)" title="แจ้งเตือน">
       🔔<span class="bell-badge" id="bell-badge" style="display:none">0</span>
@@ -948,8 +948,8 @@
           <input type="text" id="e-plateNumber" placeholder="กข-1234" maxlength="20">
         </div>
         <div class="form-row">
-          <label>ร้านค้า/ผู้รับเงิน</label>
-          <input type="text" id="e-vendor" placeholder="ชื่อร้านค้า" maxlength="150">
+          <label>ผู้รับเงิน</label>
+          <input type="text" id="e-vendor" placeholder="พิมพ์เพื่อค้นหา (คนขับ/ร้านค้า)..." maxlength="150" autocomplete="off">
         </div>
       </div>
       <div class="form-row">
@@ -1109,7 +1109,7 @@
         <option value="">🚚 ทุกทะเบียน</option>
       </select>
       <div class="cal-legend">
-        <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#f59e0b"></span>รอโหลด</div>
+        <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#f59e0b"></span>รอจัดส่ง</div>
         <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#3b82f6"></span>กำลังขนส่ง</div>
         <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#10b981"></span>ส่งแล้ว</div>
         <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#94a3b8"></span>ยกเลิก</div>
@@ -1358,6 +1358,16 @@
         <div class="form-row"><label>บรรทุกสูงสุด (ตัน)</label><input type="number" id="v-load" placeholder="0" min="0" step="0.1"></div>
         <div class="form-row"><label>สีรถ</label><input type="text" id="v-color" maxlength="30"></div>
         <div class="form-row"><label>เลขตัวถัง</label><input type="text" id="v-chassis" maxlength="50"></div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row">
+          <label>👤 คนขับประจำรถ</label>
+          <input type="text" id="v-driver" placeholder="พิมพ์เพื่อค้นหาคนขับ..." maxlength="100" autocomplete="off">
+        </div>
+        <div class="form-row">
+          <label>📞 เบอร์โทรคนขับ</label>
+          <input type="tel" id="v-driver-phone" placeholder="081-234-5678" maxlength="20">
+        </div>
       </div>
     </div>
     <div class="card">
@@ -2081,27 +2091,30 @@ const TH_PROVINCES_LIST = [
   'พัทลุง','สตูล','สงขลา','ปัตตานี','ยะลา','นราธิวาส'
 ];
 const _master = {
-  vehicles: [],        // [{plateNumber, brand, model, vehicleType, ...}]
-  customers: [],       // [{name, contactName, phone, ...}]
+  vehicles: [],        // [{plateNumber, brand, model, vehicleType, assignedDriver, assignedDriverPhone, ...}]
+  customers: [],       // [{customerName, contactName, phone, ...}]
+  drivers:  [],        // [{driverName, driverPhone, ...}]
   truckHistory: [],    // recent truck records (for cargo + plate→driver autofill)
   cargoSaved: JSON.parse(localStorage.getItem('cargo_saved') || '[]')
 };
 
 async function loadMasterData() {
   try {
-    const [vehRes, custRes, truckRes] = await Promise.all([
+    const [vehRes, custRes, drvRes, truckRes] = await Promise.all([
       fetch('/api/get-data?type=vehicle').then(r => r.json()).catch(() => ({})),
       fetch('/api/get-data?type=customer').then(r => r.json()).catch(() => ({})),
+      fetch('/api/get-data?type=driver').then(r => r.json()).catch(() => ({})),
       fetch('/api/get-data?type=truck').then(r => r.json()).catch(() => ({}))
     ]);
     _master.vehicles     = ((vehRes.data || {}).vehicle) || [];
     _master.customers    = ((custRes.data || {}).customer) || [];
+    _master.drivers      = ((drvRes.data || {}).driver) || [];
     _master.truckHistory = ((truckRes.data || {}).truck) || [];
-    // Populate plate-dl + cust-dl datalists for places still using them
+    // Populate datalists (for places still using them)
     const plateDl = document.getElementById('plate-dl');
     if (plateDl) plateDl.innerHTML = _master.vehicles.map(v => `<option value="${escAttr(v.plateNumber||'')}">`).join('');
     const custDl = document.getElementById('cust-dl');
-    if (custDl) custDl.innerHTML = _master.customers.map(c => `<option value="${escAttr(c.name||'')}">`).join('');
+    if (custDl) custDl.innerHTML = _master.customers.map(c => `<option value="${escAttr(c.customerName||c.name||'')}">`).join('');
   } catch (e) { console.warn('Master data load failed:', e); }
 }
 function escAttr(s) { return String(s||'').replace(/"/g, '&quot;'); }
@@ -2119,12 +2132,34 @@ function getPlateOpts() {
 }
 function getCustomerOpts() {
   const set = new Map();
-  _master.customers.forEach(c => { if (c.name) set.set(c.name, c); });
+  _master.customers.forEach(c => {
+    const n = c.customerName || c.name || '';
+    if (n) set.set(n, c);
+  });
   _master.truckHistory.forEach(t => { if (t.customerName && !set.has(t.customerName)) set.set(t.customerName, null); });
   return Array.from(set.entries()).sort().map(([name, c]) => {
     const sub = c ? [c.contactName, c.phone].filter(x => x).join(' • ') : '';
     return { value: name, label: name, sub };
   });
+}
+function getDriverOpts() {
+  const set = new Map();
+  _master.drivers.forEach(d => {
+    const n = d.driverName || '';
+    if (n) set.set(n, d);
+  });
+  // Also include drivers from truck history (people who actually drove)
+  _master.truckHistory.forEach(t => { if (t.driverName && !set.has(t.driverName)) set.set(t.driverName, { driverPhone: t.driverPhone }); });
+  return Array.from(set.entries()).sort().map(([name, d]) => {
+    const sub = d && d.driverPhone ? '📞 ' + d.driverPhone : '';
+    return { value: name, label: name, sub };
+  });
+}
+function getDriverPhone(name) {
+  const d = _master.drivers.find(x => x.driverName === name);
+  if (d && d.driverPhone) return d.driverPhone;
+  const t = _master.truckHistory.find(x => x.driverName === name && x.driverPhone);
+  return t ? t.driverPhone : '';
 }
 function getCargoOpts() {
   const set = new Set();
@@ -2140,35 +2175,57 @@ function saveCargoIfNew(name) {
   }
 }
 
-// Auto-fill driver name + phone when plate selected (from latest truck record)
+// Auto-fill driver name + phone when plate selected.
+// Priority: 1) Vehicle's assignedDriver  2) Latest truck record with same plate
 function onPlateSelected(plate) {
   if (!plate) return;
   const driverField = document.getElementById('t-driverName');
   const phoneField  = document.getElementById('t-driverPhone');
-  // Look up latest truck record for this plate
-  const latest = [..._master.truckHistory]
-    .reverse()
-    .find(t => (t.plateNumber||'') === plate && (t.driverName || t.driverPhone));
-  if (latest) {
-    if (driverField && !driverField.value && latest.driverName)  driverField.value = latest.driverName;
-    if (phoneField  && !phoneField.value  && latest.driverPhone) phoneField.value  = latest.driverPhone;
-    if (latest.driverName) showToast(`👤 เติมคนขับ "${latest.driverName}" อัตโนมัติ`, 'success');
+  // Try vehicle's assigned driver first
+  const veh = _master.vehicles.find(v => v.plateNumber === plate);
+  let name = '', phone = '';
+  if (veh && (veh.assignedDriver || veh.assignedDriverPhone)) {
+    name  = veh.assignedDriver || '';
+    phone = veh.assignedDriverPhone || (name ? getDriverPhone(name) : '');
   }
+  // Fallback: latest history record
+  if (!name && !phone) {
+    const latest = [..._master.truckHistory].reverse().find(t => (t.plateNumber||'') === plate && (t.driverName || t.driverPhone));
+    if (latest) { name = latest.driverName || ''; phone = latest.driverPhone || ''; }
+  }
+  if (driverField && name)  driverField.value = name;
+  if (phoneField  && phone) phoneField.value  = phone;
+  if (name) showToast(`👤 เติมคนขับ "${name}" อัตโนมัติ`, 'success');
+}
+// When driver is selected in vehicle form → auto-fill phone
+function onVehicleDriverSelected(name) {
+  const phoneField = document.getElementById('v-driver-phone');
+  if (!phoneField || phoneField.value) return;
+  const phone = getDriverPhone(name);
+  if (phone) phoneField.value = phone;
 }
 
 function initAllAutocompletes() {
-  // Truck form
+  // Truck form — plate must come from vehicle list (validated on submit)
   acAttach('t-plateNumber',  getPlateOpts,    onPlateSelected);
   acAttach('t-customerName', getCustomerOpts, null);
   acAttach('t-cargoList',    getCargoOpts,    saveCargoIfNew);
+  acAttach('t-driverName',   getDriverOpts,   (n) => {
+    const p = getDriverPhone(n);
+    const pf = document.getElementById('t-driverPhone');
+    if (pf && !pf.value && p) pf.value = p;
+  });
   acAttach('t-origin',       getProvinceOpts, null);
   acAttach('t-destination',  getProvinceOpts, null);
   // Income / Expense / Maintenance / Fuel — customer & plate fields
   acAttach('i-customerName', getCustomerOpts, null);
   acAttach('e-plateNumber',  getPlateOpts,    null);
+  acAttach('e-vendor',       getDriverOpts,   null);   // ผู้รับเงิน = คนขับ
   acAttach('mnt-plate',      getPlateOpts,    null);
   acAttach('fuel-plate',     getPlateOpts,    null);
   acAttach('inv-customer',   getCustomerOpts, null);
+  // Vehicle form — driver dropdown
+  acAttach('v-driver',       getDriverOpts,   onVehicleDriverSelected);
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -2663,7 +2720,14 @@ async function uploadAllImages(formKey) {
 function collectFormData(formKey) {
   const g = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
   if (formKey === 'truck') {
-    if (!g('t-plateNumber')) { showToast('กรุณากรอกทะเบียนรถ', 'warning'); return null; }
+    if (!g('t-plateNumber')) { showToast('กรุณาเลือกทะเบียนรถ', 'warning'); return null; }
+    // Plate must exist in vehicle master data
+    const plate = g('t-plateNumber');
+    const exists = (_master.vehicles||[]).some(v => (v.plateNumber||'').trim() === plate);
+    if (!exists) {
+      showToast(`⚠️ ทะเบียน "${plate}" ไม่อยู่ในระบบ — กรุณาเพิ่มที่เมนู "ทะเบียนรถ" ก่อน`, 'error');
+      return null;
+    }
     if (!g('t-pickupDate'))  { showToast('กรุณาเลือกวันเข้ารับสินค้า', 'warning'); return null; }
     // jobDate ใช้ pickupDate (backward compat กับ Google Sheets)
     const pickupDate = g('t-pickupDate');
@@ -2764,6 +2828,7 @@ const _PREFILL_MAP = {
     plateNumber:'v-plate', vehicleType:'v-type', brand:'v-brand', model:'v-model',
     year:'v-year', loadCapacity:'v-load', color:'v-color', chassisNo:'v-chassis',
     regExpiry:'v-reg', prbExpiry:'v-prb', insuranceExpiry:'v-ins', inspectionExpiry:'v-inspect',
+    assignedDriver:'v-driver', assignedDriverPhone:'v-driver-phone',
     notes:'v-notes'
   },
   driver: {
@@ -3303,6 +3368,7 @@ function submitVehicle() {
     plateNumber:gv('v-plate'), vehicleType:gv('v-type'), brand:gv('v-brand'), model:gv('v-model'),
     year:gv('v-year'), loadCapacity:gv('v-load'), color:gv('v-color'), chassisNo:gv('v-chassis'),
     regExpiry:gv('v-reg'), prbExpiry:gv('v-prb'), insuranceExpiry:gv('v-ins'), inspectionExpiry:gv('v-inspect'),
+    assignedDriver:gv('v-driver'), assignedDriverPhone:gv('v-driver-phone'),
     notes:gv('v-notes')
   }, ()=>resetFields(['v-plate','v-type','v-brand','v-model','v-year','v-load','v-color','v-chassis','v-reg','v-prb','v-ins','v-inspect','v-notes']));
 }
@@ -3658,22 +3724,26 @@ function renderAlerts(el, vehicles, drivers, invoices) {
 // ─── RENDER TRUCK JOB LIST ────────────────────────────────────────────────────
 function renderTruckList(items) {
   const statusInfo = {
-    'รอโหลด':     { color:'#F57F17', bg:'#FFF8E1', icon:'⏳' },
+    'รอจัดส่ง':   { color:'#F57F17', bg:'#FFF8E1', icon:'⏳' },
     'กำลังขนส่ง': { color:'#1565C0', bg:'#E3F2FD', icon:'🚚' },
     'ส่งแล้ว':    { color:'#2E7D32', bg:'#E8F5E9', icon:'✅' },
     'ยกเลิก':     { color:'#9E9E9E', bg:'#F5F5F5', icon:'❌' }
   };
   return [...items].reverse().map(r=>{
-    const s = statusInfo[r.jobStatus] || statusInfo['รอโหลด'];
+    // Auto-derive status from dates
+    const auto = (typeof _autoTripStatus === 'function') ? _autoTripStatus(r) : (r.jobStatus || 'รอจัดส่ง');
+    const s = statusInfo[auto] || statusInfo['รอจัดส่ง'];
     const hasSpan = r.pickupDate && r.deliveryDate && r.pickupDate !== r.deliveryDate;
     const dateLabel = hasSpan
       ? `📥 ${fmtDate(r.pickupDate)} → 📤 ${fmtDate(r.deliveryDate)}`
-      : `📅 ${fmtDate(r.jobDate||r.pickupDate||r.deliveryDate)}${r.jobTime?' '+r.jobTime:''}`;
+      : (r.pickupDate ? `📥 ${fmtDate(r.pickupDate)}` :
+         r.deliveryDate ? `📤 ${fmtDate(r.deliveryDate)}` :
+         `📅 ${fmtDate(r.jobDate)}${r.jobTime?' '+r.jobTime:''}`);
     return `
     <div class="record-card" style="border-left-color:${s.color}">
       <div class="rc-title" style="color:${s.color};display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         🚛 ${r.plateNumber||'-'}
-        <span style="padding:2px 10px;border-radius:10px;background:${s.bg};color:${s.color};font-weight:700;font-size:.7rem">${s.icon} ${r.jobStatus||'รอโหลด'}</span>
+        <span style="padding:2px 10px;border-radius:10px;background:${s.bg};color:${s.color};font-weight:700;font-size:.7rem">${s.icon} ${auto}</span>
         ${r.freightCost?`<span style="margin-left:auto;color:#2E7D32;font-weight:700;font-size:.85rem">${fmtBaht(r.freightCost)}</span>`:''}
       </div>
       <div class="rc-sub" style="display:flex;flex-direction:column;gap:3px">
@@ -3851,10 +3921,25 @@ function _refreshPlateFilterOptions() {
     plates.map(p => `<option value="${escHtml(p)}">${escHtml(p)}</option>`).join('');
   if (cur && plates.includes(cur)) sel.value = cur;
 }
+// Auto-derive status from dates (today vs pickup/delivery)
+// Manual jobStatus only respected if = 'ยกเลิก' or explicitly 'ส่งแล้ว'
+function _autoTripStatus(r) {
+  if (r.jobStatus === 'ยกเลิก') return 'ยกเลิก';
+  const todayNum = Math.floor(Date.UTC(
+    new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate()
+  ) / 86400000);
+  const p = _calDateNum(r.pickupDate || r.jobDate);
+  const d = _calDateNum(r.deliveryDate);
+  if (r.jobStatus === 'ส่งแล้ว')  return 'ส่งแล้ว';
+  if (d !== null && todayNum > d) return 'ส่งแล้ว';
+  if (p !== null && todayNum >= p) return 'กำลังขนส่ง';
+  return 'รอจัดส่ง';
+}
 function _calStatusClass(s) {
-  if (s === 'ส่งแล้ว')     return 's-done';
-  if (s === 'กำลังขนส่ง')  return 's-driving';
-  if (s === 'ยกเลิก')      return 's-cancel';
+  const auto = (typeof s === 'object') ? _autoTripStatus(s) : s;
+  if (auto === 'ส่งแล้ว')     return 's-done';
+  if (auto === 'กำลังขนส่ง')  return 's-driving';
+  if (auto === 'ยกเลิก')      return 's-cancel';
   return 's-wait';
 }
 function escHtml(s) {
@@ -3971,7 +4056,7 @@ function renderCalendar() {
       const colStart = ev.segStart - weekStartNum + 1;   // 1-based for CSS grid
       const colSpan  = ev.segEnd - ev.segStart + 1;
       const t = ev.trip;
-      const cls = _calStatusClass(t.jobStatus);
+      const cls = _calStatusClass(t);
 
       // Span position class
       let posCls;
@@ -4073,7 +4158,8 @@ function openCalDay(dateKey) {
     body.innerHTML = '<div class="cal-empty">📭 ไม่มีเที่ยวรถในวันนี้</div>';
   } else {
     body.innerHTML = matches.map(({trip, kind, span}) => {
-      const cls = _calStatusClass(trip.jobStatus);
+      const cls = _calStatusClass(trip);
+      const autoStat = _autoTripStatus(trip);
       const kindLabel = kind === 'pickup' ? '📥 เข้ารับสินค้า'
                      : kind === 'delivery' ? '📤 ส่งสินค้า'
                      : kind === 'transit' ? '🚚 อยู่ระหว่างขนส่ง'
@@ -4086,7 +4172,7 @@ function openCalDay(dateKey) {
         <div class="cal-trip-card ${cls}">
           <div class="cal-trip-head">
             <span class="cal-trip-plate">${escHtml(trip.plateNumber || '-')}</span>
-            <span class="cal-trip-badge ${cls}">${escHtml(trip.jobStatus || 'รอโหลด')}</span>
+            <span class="cal-trip-badge ${cls}">${escHtml(autoStat)}</span>
             <span style="font-size:.7rem;color:#64748b">${kindLabel}${time}</span>
           </div>
           ${spanLabel}

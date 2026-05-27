@@ -15,7 +15,8 @@ const CONFIGS = {
       d.origin||'', d.destination||'', d.customerName||'', d.cargoList||'',
       +d.cargoWeight||0, +d.tripCount||1, +d.freightCost||0,
       d.jobStatus||'รอโหลด', d.remark||'',
-      JSON.stringify(d.imageUrls||[]), d.ocrText||'', d.userAgent||'', id
+      JSON.stringify(d.imageUrls||[]), d.ocrText||'', d.userAgent||'', id,
+      d.pickupDate||'', d.deliveryDate||''
     ]
   },
   income: {
@@ -40,7 +41,8 @@ const CONFIGS = {
       ts, d.plateNumber||'', d.vehicleType||'', d.brand||'', d.model||'',
       d.year||'', d.loadCapacity||'', d.color||'', d.chassisNo||'',
       d.regExpiry||'', d.prbExpiry||'', d.insuranceExpiry||'', d.inspectionExpiry||'',
-      d.notes||'', id
+      d.notes||'', id,
+      d.assignedDriver||'', d.assignedDriverPhone||''
     ]
   },
   driver: {
