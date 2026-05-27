@@ -49,11 +49,17 @@ module.exports = async function handler(req, res) {
     const rowIdIdx = headers.indexOf('rowId');
     if (rowIdIdx < 0) return res.status(400).json({ success:false, error:'Sheet has no rowId column' });
 
+    const target = String(rowId || '').trim();
     let foundIdx = -1;
     for (let i = 1; i < rows.length; i++) {
-      if ((rows[i][rowIdIdx] || '') === rowId) { foundIdx = i; break; }
+      if (String(rows[i][rowIdIdx] || '').trim() === target) { foundIdx = i; break; }
     }
-    if (foundIdx < 0) return res.status(404).json({ success:false, error:'rowId not found: ' + rowId });
+    if (foundIdx < 0) {
+      for (let i = 1; i < rows.length; i++) {
+        if ((rows[i] || []).some(v => String(v||'').trim() === target)) { foundIdx = i; break; }
+      }
+    }
+    if (foundIdx < 0) return res.status(404).json({ success:false, error:'rowId not found: ' + target });
 
     // Delete the row (0-based; row 0 = header)
     await sheets.spreadsheets.batchUpdate({

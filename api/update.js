@@ -126,11 +126,19 @@ module.exports = async function handler(req, res) {
     const rowIdIdx = headers.indexOf('rowId');
     if (rowIdIdx < 0) return res.status(400).json({ success:false, error:'Sheet has no rowId column' });
 
+    const target = String(rowId || '').trim();
     let foundIdx = -1;
+    // Strategy 1: look in declared rowId column
     for (let i = 1; i < rows.length; i++) {
-      if ((rows[i][rowIdIdx] || '') === rowId) { foundIdx = i; break; }
+      if (String(rows[i][rowIdIdx] || '').trim() === target) { foundIdx = i; break; }
     }
-    if (foundIdx < 0) return res.status(404).json({ success:false, error:'rowId not found: ' + rowId });
+    // Strategy 2 (fallback): search ALL columns — handles columns drift / wrong sheet schema
+    if (foundIdx < 0) {
+      for (let i = 1; i < rows.length; i++) {
+        if ((rows[i] || []).some(v => String(v||'').trim() === target)) { foundIdx = i; break; }
+      }
+    }
+    if (foundIdx < 0) return res.status(404).json({ success:false, error:'rowId not found: ' + target });
 
     // Preserve original timestamp (column 0)
     const origTimestamp = rows[foundIdx][0] || new Date().toISOString();
