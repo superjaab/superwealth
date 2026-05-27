@@ -701,7 +701,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v6.5 | 28/05/2026 08:40</span>
+  <span class="version" style="margin-left:auto">v6.6 | 28/05/2026 09:00</span>
   <div style="position:relative;margin-left:10px">
     <button class="header-bell" onclick="toggleBell(event)" title="แจ้งเตือน">
       🔔<span class="bell-badge" id="bell-badge" style="display:none">0</span>
@@ -2297,18 +2297,27 @@ function autoFillTripRound() {
 }
 
 // ─── INCOME — LINKED TRIP DROPDOWN ───
-// Shows ALL trips (paid + unpaid), sorted by round desc. Paid trips marked ✅.
+// NEW mode: show only ค้างจ่าย trips
+// EDIT mode: show ค้างจ่าย + the currently-linked trip (even if จ่ายแล้ว)
 function populateLinkedTripsDropdown(editingRecord) {
   const sel = document.getElementById('i-linkedTrip');
   if (!sel) return;
   const currentVal = sel.value;
-  const candidates = (_master.truckHistory || [])
-    .filter(t => t.rowId && (t.tripRound != null && t.tripRound !== ''))
-    .sort((a,b) => (+b.tripRound||0) - (+a.tripRound||0));
 
   const editingLinkId = editingRecord && editingRecord.linkedTripRowId
     ? editingRecord.linkedTripRowId
     : null;
+
+  const candidates = (_master.truckHistory || [])
+    .filter(t => {
+      if (!t.rowId || t.tripRound == null || t.tripRound === '') return false;
+      // ค้างจ่าย: always include
+      if ((t.paymentStatus || 'ค้างจ่าย') === 'ค้างจ่าย') return true;
+      // จ่ายแล้ว: include ONLY if it's the editing record's currently-linked trip
+      if (editingLinkId && t.rowId === editingLinkId) return true;
+      return false;
+    })
+    .sort((a,b) => (+b.tripRound||0) - (+a.tripRound||0));
 
   sel.innerHTML = '<option value="">— ไม่ลิงก์รอบเที่ยว —</option>' + candidates.map(t => {
     const dates = (t.deliveryDate && t.deliveryDate !== t.pickupDate)
@@ -2316,7 +2325,7 @@ function populateLinkedTripsDropdown(editingRecord) {
       : fmtDate(t.pickupDate || t.jobDate);
     const cust = t.customerName ? ` • ${t.customerName}` : '';
     const amt  = t.freightCost ? ` (฿${(+t.freightCost).toLocaleString('en-US')})` : '';
-    const paid = (t.paymentStatus === 'จ่ายแล้ว') ? ' ✅' : ' ⚠️';
+    const paid = (t.paymentStatus === 'จ่ายแล้ว') ? ' ✅ (ลิงก์ปัจจุบัน)' : '';
     return `<option value="${escAttr(t.rowId)}" data-round="${t.tripRound}" data-amount="${t.freightCost||''}" data-customer="${escAttr(t.customerName||'')}">รอบ #${t.tripRound}${paid} • ${escAttr(t.plateNumber||'')} • ${escAttr(dates)}${escAttr(cust)}${amt}</option>`;
   }).join('');
   if (editingLinkId) sel.value = editingLinkId;
@@ -4802,14 +4811,26 @@ async function loadSummary() {
   }
 }
 
+// Heuristic — find amount value in possibly-misaligned legacy records
+function _detectAmount(r) {
+  const a = parseFloat(r.amount) || 0;
+  if (a > 0) return a;
+  const isPureNum = s => /^[\d,]+(\.\d+)?$/.test(String(s||'').replace(/[฿\s]/g,''));
+  for (const f of ['paymentMethod','docNumber','remark','vendor','customerName','incomeItem','expenseDetail']) {
+    const val = String(r[f]||'').replace(/[,฿\s]/g,'');
+    if (isPureNum(val) && parseFloat(val) > 0) return parseFloat(val);
+  }
+  return 0;
+}
+
 function renderSummary(data, dateFrom, dateTo) {
   const income  = data.income  || [];
   const expense = data.expense || [];
   const truck   = data.truck   || [];
 
-  // ── คำนวณยอดรวม ──
-  const totalIncome  = income.reduce((s, r)  => s + (parseFloat(r.amount)       || 0), 0);
-  const totalExpense = expense.reduce((s, r) => s + (parseFloat(r.amount)       || 0), 0);
+  // ── คำนวณยอดรวม (with heuristic for misaligned legacy records) ──
+  const totalIncome  = income.reduce((s, r)  => s + _detectAmount(r), 0);
+  const totalExpense = expense.reduce((s, r) => s + _detectAmount(r), 0);
   const totalFreight = truck.reduce((s, r)   => s + (parseFloat(r.freightCost)  || 0), 0);
   const profit       = totalIncome - totalExpense;
 
@@ -4866,11 +4887,11 @@ function renderBarChart(income, expense, dateFrom, dateTo) {
 
   income.forEach(r => {
     const m = (r.incomeDate || '').slice(0, 7);
-    if (incomeByMonth[m] !== undefined) incomeByMonth[m] += parseFloat(r.amount) || 0;
+    if (incomeByMonth[m] !== undefined) incomeByMonth[m] += _detectAmount(r);
   });
   expense.forEach(r => {
     const m = (r.expenseDate || '').slice(0, 7);
-    if (expenseByMonth[m] !== undefined) expenseByMonth[m] += parseFloat(r.amount) || 0;
+    if (expenseByMonth[m] !== undefined) expenseByMonth[m] += _detectAmount(r);
   });
 
   const thMonths = months.map(m => {
@@ -4963,29 +4984,30 @@ function renderDoughnutChart(expense) {
 }
 
 function renderTruckTable(truck) {
+  // Use auto-derived status (2 categories only: กำลังขนส่ง / ส่งแล้ว)
   const statusMap = {
-    'รอโหลด':     { cls: 'wait',    label: '⏳ รอโหลด' },
-    'กำลังขนส่ง': { cls: 'driving', label: '🚚 กำลังขนส่ง' },
-    'ส่งแล้ว':    { cls: 'done',    label: '✅ ส่งแล้ว' },
-    'ยกเลิก':     { cls: 'cancel',  label: '❌ ยกเลิก' }
+    'กำลังขนส่ง': { cls: 'driving', label: '🔵 กำลังขนส่ง' },
+    'ส่งแล้ว':    { cls: 'done',    label: '🟢 ส่งแล้ว' }
   };
-  const grouped = {};
+  const grouped = { 'กำลังขนส่ง': {count:0, freight:0}, 'ส่งแล้ว': {count:0, freight:0} };
   truck.forEach(r => {
-    const s = r.jobStatus || 'รอโหลด';
+    const s = _autoTripStatus(r);
     if (!grouped[s]) grouped[s] = { count: 0, freight: 0 };
     grouped[s].count++;
     grouped[s].freight += parseFloat(r.freightCost) || 0;
   });
   const fmt = n => '฿' + n.toLocaleString('th-TH', { maximumFractionDigits: 0 });
   const tbody = document.getElementById('sum-truck-tbody');
-  tbody.innerHTML = Object.entries(grouped).map(([s, v]) => {
-    const info = statusMap[s] || { cls: 'wait', label: s };
-    return `<tr>
-      <td><span class="sum-badge ${info.cls}">${info.label}</span></td>
-      <td style="text-align:right;font-weight:700">${v.count}</td>
-      <td style="text-align:right;color:var(--green);font-weight:700">${fmt(v.freight)}</td>
-    </tr>`;
-  }).join('');
+  tbody.innerHTML = Object.entries(grouped)
+    .filter(([s, v]) => v.count > 0)
+    .map(([s, v]) => {
+      const info = statusMap[s] || { cls: 'driving', label: s };
+      return `<tr>
+        <td><span class="sum-badge ${info.cls}">${info.label}</span></td>
+        <td style="text-align:right;font-weight:700">${v.count}</td>
+        <td style="text-align:right;color:var(--green);font-weight:700">${fmt(v.freight)}</td>
+      </tr>`;
+    }).join('');
 }
 </script>
 
