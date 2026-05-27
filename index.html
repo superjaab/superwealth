@@ -701,7 +701,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v4.9 | 28/05/2026 03:40</span>
+  <span class="version" style="margin-left:auto">v4.9 | 28/05/2026 03:55</span>
   <div style="position:relative;margin-left:10px">
     <button class="header-bell" onclick="toggleBell(event)" title="แจ้งเตือน">
       🔔<span class="bell-badge" id="bell-badge" style="display:none">0</span>
@@ -2845,22 +2845,46 @@ function collectFormData(formKey) {
 
 // ─── RESET FORM ───────────────────────────
 function resetForm(formKey, silent) {
-  document.getElementById('form-' + formKey).reset();
-  state[formKey] = { images: [], ocrText: '', ocrParsed: null };
+  // 1) Reset native form element if exists (truck/income/expense/maintenance)
+  const formEl = document.getElementById('form-' + formKey);
+  if (formEl) {
+    formEl.reset();
+  } else {
+    // No <form> wrapper — clear all fields from PREFILL_MAP
+    const map = (typeof _PREFILL_MAP === 'object') ? _PREFILL_MAP[formKey] : null;
+    if (map) {
+      Object.values(map).forEach(elId => {
+        const el = document.getElementById(elId);
+        if (el) {
+          if (el.tagName === 'SELECT' && el.options.length) el.selectedIndex = 0;
+          else el.value = '';
+        }
+      });
+    }
+  }
+
+  // 2) Reset state for types that have it (with image uploads)
+  if (state[formKey]) {
+    state[formKey] = { images: [], ocrText: '', ocrParsed: null };
+    try { renderPreview(formKey); } catch(e) {}
+    try { closeOCRPanel(formKey); } catch(e) {}
+  }
+
+  // 3) Reset defaults
   setDefaultDates();
-  renderPreview(formKey);
-  closeOCRPanel(formKey);
   if (formKey === 'truck') {
     const st = document.getElementById('t-status'); if (st) st.value = 'รอโหลด';
     const tc = document.getElementById('t-tripCount'); if (tc) tc.value = '1';
   }
-  // Clear editing mode if active
+
+  // 4) Clear editing mode if active
   if (_editingMode[formKey]) {
     _editingMode[formKey] = null;
     updateSubmitLabel(formKey, false);
     const banner = document.getElementById(`edit-banner-${formKey}`);
     if (banner) banner.remove();
   }
+
   if (!silent) showToast('ล้างข้อมูลแล้ว', 'success');
 }
 
