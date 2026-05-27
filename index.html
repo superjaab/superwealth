@@ -527,7 +527,7 @@
     <button class="tab-btn" onclick="switchTab('gps',this)"><span class="icon">📡</span>GPS</button>
     <button class="tab-btn" onclick="switchTab('ocr',this)"><span class="icon">🔍</span>อ่านภาพ</button>
   </nav>
-  <div class="sb-footer"><span class="version">v3.3 | 27/05/2026 22:55</span></div>
+  <div class="sb-footer"><span class="version">v3.4 | 27/05/2026 23:30</span></div>
 </aside>
 
 <!-- Mobile overlay -->
@@ -538,7 +538,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version">v3.3 | 27/05/2026 22:55</span>
+  <span class="version">v3.4 | 27/05/2026 23:30</span>
 </header>
 <main id="main-content">
 
@@ -1283,189 +1283,255 @@
 </div><!-- /app-shell -->
 
 <!-- ══ TIRE SELECTOR MODAL ══ -->
-<div id="tire-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:300;align-items:center;justify-content:center;padding:12px 8px">
-  <div style="background:#0f172a;border-radius:20px;padding:18px 14px 16px;max-width:460px;width:100%;max-height:95dvh;overflow-y:auto;box-shadow:0 30px 80px rgba(0,0,0,.8);border:1px solid #1e293b">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+<div id="tire-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;align-items:center;justify-content:center;padding:10px 8px">
+  <div style="background:#0f172a;border-radius:20px;padding:16px 14px 14px;max-width:420px;width:100%;max-height:96dvh;overflow-y:auto;box-shadow:0 30px 80px rgba(0,0,0,.9);border:1px solid #1e293b">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <div>
         <div style="font-weight:800;color:#f97316;font-size:1rem">🚛 แผนผังยาง 22 เส้น</div>
-        <div style="font-size:.68rem;color:#475569;margin-top:2px">กดยางที่ต้องการเปลี่ยน • กดซ้ำเพื่อยกเลิก</div>
+        <div style="font-size:.68rem;color:#475569;margin-top:2px">กดที่ยางที่ต้องการเปลี่ยน • กดซ้ำเพื่อยกเลิก</div>
       </div>
       <button onclick="closeTireModal()" style="background:#1e293b;border:1.5px solid #334155;border-radius:8px;width:30px;height:30px;cursor:pointer;color:#64748b;font-size:1rem;flex-shrink:0">✕</button>
     </div>
-    <!-- TRUCK DIAGRAM STYLES -->
-    <style>
-      #td { display:flex;flex-direction:column;align-items:center;user-select:none }
-      .td-row { display:flex;align-items:center;width:100% }
-      .td-lbl { flex:1;font-size:.6rem;font-weight:700;color:#475569;white-space:nowrap }
-      .td-lbl.r { text-align:right }
-      .td-tl { display:flex;gap:3px;justify-content:flex-end }
-      .td-tr { display:flex;gap:3px;justify-content:flex-start }
-      /* Tire button — looks like a tire from top-down */
-      .tt { width:14px;height:36px;flex-shrink:0;background:#1e3a5f;border:1.5px solid #2d5282;border-radius:3px;cursor:pointer;transition:background .12s,border-color .12s,box-shadow .12s;padding:0;position:relative;overflow:hidden }
-      .tt::before { content:'';position:absolute;top:5px;bottom:5px;left:2px;right:2px;border-top:1px solid rgba(255,255,255,.12);border-bottom:1px solid rgba(255,255,255,.12) }
-      .tt:hover { background:#2d5282;border-color:#60a5fa;transform:scaleX(1.15) }
-      .tt.sel { background:#f97316;border-color:#fb923c;box-shadow:0 0 10px rgba(249,115,22,.7) }
-      .tt.sel:hover { background:#ea580c }
-      /* Head body */
-      .td-hb { flex:0 0 110px;background:#1e3a5f;border-left:2.5px solid #1e40af;border-right:2.5px solid #1e40af }
-      /* Trailer body */
-      .td-tb { flex:0 0 110px;background:#0d1f33;border-left:2.5px solid #1e3a5f;border-right:2.5px solid #1e3a5f }
-    </style>
+    <!-- SVG TRUCK DIAGRAM: top-down view, industry-standard layout -->
+    <!-- Coordinates: viewBox 0 0 280 395, Center x=140                -->
+    <!-- Frame rails: L x=96-104, R x=176-184. Body fill x=104-176     -->
+    <!-- Dual tires: Linner x=78-94, Louter x=58-74 (4px gap)          -->
+    <!--             Rinner x=186-202, Router x=206-222 (4px gap)       -->
+    <!-- Steer tire: L x=59-77 (18px), R x=203-221                     -->
+    <svg id="truck-svg" viewBox="0 0 280 395" xmlns="http://www.w3.org/2000/svg"
+         style="width:100%;max-width:340px;margin:0 auto;display:block;font-family:'Noto Sans Thai','Segoe UI',sans-serif">
+      <defs>
+        <!-- Head tire gradient (3D depth effect) -->
+        <linearGradient id="htg" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%"   stop-color="#112236"/>
+          <stop offset="35%"  stop-color="#1e3a5f"/>
+          <stop offset="65%"  stop-color="#1e3a5f"/>
+          <stop offset="100%" stop-color="#112236"/>
+        </linearGradient>
+        <!-- Trailer tire gradient -->
+        <linearGradient id="ttg2" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%"   stop-color="#06111e"/>
+          <stop offset="35%"  stop-color="#0d1f33"/>
+          <stop offset="65%"  stop-color="#0d1f33"/>
+          <stop offset="100%" stop-color="#06111e"/>
+        </linearGradient>
+        <!-- Selected tire gradient -->
+        <linearGradient id="stg" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%"   stop-color="#c2400c"/>
+          <stop offset="35%"  stop-color="#f97316"/>
+          <stop offset="65%"  stop-color="#f97316"/>
+          <stop offset="100%" stop-color="#c2400c"/>
+        </linearGradient>
+        <filter id="glow"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
 
-    <div id="td">
-      <!-- ▲ FRONT -->
-      <div style="font-size:.6rem;font-weight:700;color:#334155;letter-spacing:2px;margin-bottom:4px">▲ หน้ารถ</div>
+      <!-- ── Background ── -->
+      <rect width="280" height="395" fill="#0b1422" rx="10"/>
 
-      <!-- CAB -->
-      <div style="width:110px;height:50px;background:linear-gradient(160deg,#1d4ed8,#1e40af);border-radius:14px 14px 0 0;border:2px solid #3b82f6;border-bottom:none;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden">
-        <div style="position:absolute;top:0;left:0;right:0;height:18px;background:rgba(147,197,253,.2);border-radius:12px 12px 0 0"></div>
-        <div style="width:54px;height:7px;background:rgba(147,197,253,.35);border-radius:2px;margin-bottom:6px;position:relative"></div>
-        <div style="font-size:.65rem;font-weight:800;color:rgba(255,255,255,.95)">🚛 หัวลาก</div>
-      </div>
+      <!-- ── FRONT LABEL ── -->
+      <text x="140" y="13" text-anchor="middle" font-size="7.5" fill="#334155" font-weight="700" letter-spacing="3">▲ หน้ารถ</text>
 
-      <!-- Steer axle (หน้า) — 1 tire each side -->
-      <div class="td-row">
-        <div class="td-lbl r">หน้า</div>
-        <div class="td-tl" style="margin-right:4px">
-          <button class="tt" id="t-H1L" onclick="togTire('H1L','หน้าซ้าย')"></button>
-        </div>
-        <div class="td-hb" style="height:28px;display:flex;align-items:center;justify-content:center">
-          <div style="width:75%;height:2px;background:#1e40af;border-radius:1px"></div>
-        </div>
-        <div class="td-tr" style="margin-left:4px">
-          <button class="tt" id="t-H1R" onclick="togTire('H1R','หน้าขวา')"></button>
-        </div>
-        <div class="td-lbl">หน้า</div>
-      </div>
+      <!-- ══ TRACTOR / หัวลาก ══ -->
+      <!-- Cab exterior -->
+      <rect x="86" y="17" width="108" height="42" rx="11" fill="#1d4ed8" stroke="#3b82f6" stroke-width="1.5"/>
+      <!-- Windshield -->
+      <rect x="108" y="21" width="64" height="9" rx="3" fill="rgba(147,197,253,0.32)"/>
+      <!-- Grille bottom -->
+      <rect x="108" y="51" width="64" height="5" rx="0" fill="rgba(0,0,0,0.4)"/>
+      <!-- Cab label -->
+      <text x="140" y="44" text-anchor="middle" font-size="9" font-weight="800" fill="white">🚛 หัวลาก</text>
 
-      <!-- Engine body -->
-      <div class="td-hb" style="height:24px;width:110px;display:flex;align-items:center;justify-content:center">
-        <div style="font-size:.46rem;color:#3b82f6;opacity:.4;letter-spacing:4px">──────</div>
-      </div>
+      <!-- Head frame rails L+R -->
+      <rect x="96"  y="59" width="8"  height="112" fill="#1e40af"/>
+      <rect x="176" y="59" width="8"  height="112" fill="#1e40af"/>
+      <!-- Head body fill -->
+      <rect x="104" y="59" width="72" height="112" fill="#17304f"/>
+      <!-- Chassis spine -->
+      <rect x="136" y="59" width="8"  height="112" fill="#1a2d4a"/>
+      <!-- Chassis cross-members -->
+      <line x1="104" y1="97"  x2="176" y2="97"  stroke="#1a2d4a" stroke-width="1.5"/>
+      <line x1="104" y1="134" x2="176" y2="134" stroke="#1a2d4a" stroke-width="1.5"/>
 
-      <!-- Drive axle 1 (กลาง1) — 2 tires each side -->
-      <div class="td-row">
-        <div class="td-lbl r">กลาง1</div>
-        <div class="td-tl" style="margin-right:4px">
-          <button class="tt" id="t-H2LO" onclick="togTire('H2LO','กลาง1-ซ้ายนอก')"></button>
-          <button class="tt" id="t-H2LI" onclick="togTire('H2LI','กลาง1-ซ้ายใน')"></button>
-        </div>
-        <div class="td-hb" style="height:28px;display:flex;align-items:center;justify-content:center">
-          <div style="width:80%;height:2.5px;background:#1e40af;border-radius:1px"></div>
-        </div>
-        <div class="td-tr" style="margin-left:4px">
-          <button class="tt" id="t-H2RI" onclick="togTire('H2RI','กลาง1-ขวาใน')"></button>
-          <button class="tt" id="t-H2RO" onclick="togTire('H2RO','กลาง1-ขวานอก')"></button>
-        </div>
-        <div class="td-lbl">กลาง1</div>
-      </div>
+      <!-- ── Steer axle (หน้า) y=84 ── -->
+      <!-- Axle shaft stubs -->
+      <line x1="32"  y1="84" x2="59"  y2="84" stroke="#243a56" stroke-width="2"/>
+      <line x1="221" y1="84" x2="248" y2="84" stroke="#243a56" stroke-width="2"/>
+      <!-- L steer tire (18px wide, 30px tall) -->
+      <rect id="t-H1L" x="59" y="69" width="18" height="30" rx="5"
+            fill="url(#htg)" stroke="#2d5282" stroke-width="1.5" style="cursor:pointer"/>
+      <!-- tread detail -->
+      <rect x="62" y="73" width="12" height="22" rx="3" fill="none" stroke="rgba(255,255,255,0.09)" stroke-width="1" pointer-events="none"/>
+      <!-- R steer tire -->
+      <rect id="t-H1R" x="203" y="69" width="18" height="30" rx="5"
+            fill="url(#htg)" stroke="#2d5282" stroke-width="1.5" style="cursor:pointer"/>
+      <rect x="206" y="73" width="12" height="22" rx="3" fill="none" stroke="rgba(255,255,255,0.09)" stroke-width="1" pointer-events="none"/>
+      <!-- Onclick overlays (invisible, full tire size) -->
+      <rect x="59" y="69" width="18" height="30" fill="transparent" onclick="togTire('H1L','หน้าซ้าย')" style="cursor:pointer"/>
+      <rect x="203" y="69" width="18" height="30" fill="transparent" onclick="togTire('H1R','หน้าขวา')" style="cursor:pointer"/>
+      <!-- Labels -->
+      <text x="55"  y="87" text-anchor="end"   font-size="7.5" fill="#475569" font-weight="700">หน้า</text>
+      <text x="225" y="87" text-anchor="start" font-size="7.5" fill="#475569" font-weight="700">หน้า</text>
 
-      <!-- Drive axle 2 (กลาง2) -->
-      <div class="td-row">
-        <div class="td-lbl r">กลาง2</div>
-        <div class="td-tl" style="margin-right:4px">
-          <button class="tt" id="t-H3LO" onclick="togTire('H3LO','กลาง2-ซ้ายนอก')"></button>
-          <button class="tt" id="t-H3LI" onclick="togTire('H3LI','กลาง2-ซ้ายใน')"></button>
-        </div>
-        <div class="td-hb" style="height:28px;display:flex;align-items:center;justify-content:center">
-          <div style="width:80%;height:2.5px;background:#1e40af;border-radius:1px"></div>
-        </div>
-        <div class="td-tr" style="margin-left:4px">
-          <button class="tt" id="t-H3RI" onclick="togTire('H3RI','กลาง2-ขวาใน')"></button>
-          <button class="tt" id="t-H3RO" onclick="togTire('H3RO','กลาง2-ขวานอก')"></button>
-        </div>
-        <div class="td-lbl">กลาง2</div>
-      </div>
+      <!-- ── Drive axle 1 (กลาง1) y=122 ── -->
+      <line x1="10"  y1="122" x2="58"  y2="122" stroke="#243a56" stroke-width="2"/>
+      <line x1="222" y1="122" x2="270" y2="122" stroke="#243a56" stroke-width="2"/>
+      <!-- L outer -->
+      <rect id="t-H2LO" x="58" y="108" width="16" height="28" rx="4"
+            fill="url(#htg)" stroke="#2d5282" stroke-width="1.5" style="cursor:pointer"/>
+      <rect x="61" y="112" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" pointer-events="none"/>
+      <!-- L inner -->
+      <rect id="t-H2LI" x="78" y="108" width="16" height="28" rx="4"
+            fill="url(#htg)" stroke="#2d5282" stroke-width="1.5" style="cursor:pointer"/>
+      <rect x="81" y="112" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" pointer-events="none"/>
+      <!-- R inner -->
+      <rect id="t-H2RI" x="186" y="108" width="16" height="28" rx="4"
+            fill="url(#htg)" stroke="#2d5282" stroke-width="1.5" style="cursor:pointer"/>
+      <rect x="189" y="112" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" pointer-events="none"/>
+      <!-- R outer -->
+      <rect id="t-H2RO" x="206" y="108" width="16" height="28" rx="4"
+            fill="url(#htg)" stroke="#2d5282" stroke-width="1.5" style="cursor:pointer"/>
+      <rect x="209" y="112" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" pointer-events="none"/>
+      <!-- Click zones -->
+      <rect x="58"  y="108" width="16" height="28" fill="transparent" onclick="togTire('H2LO','กลาง1-ซ้ายนอก')" style="cursor:pointer"/>
+      <rect x="78"  y="108" width="16" height="28" fill="transparent" onclick="togTire('H2LI','กลาง1-ซ้ายใน')" style="cursor:pointer"/>
+      <rect x="186" y="108" width="16" height="28" fill="transparent" onclick="togTire('H2RI','กลาง1-ขวาใน')" style="cursor:pointer"/>
+      <rect x="206" y="108" width="16" height="28" fill="transparent" onclick="togTire('H2RO','กลาง1-ขวานอก')" style="cursor:pointer"/>
+      <text x="54"  y="125" text-anchor="end"   font-size="7.5" fill="#475569" font-weight="700">กลาง1</text>
+      <text x="226" y="125" text-anchor="start" font-size="7.5" fill="#475569" font-weight="700">กลาง1</text>
 
-      <!-- Head tail cap -->
-      <div style="width:110px;height:14px;background:#1e3a5f;border:2.5px solid #1e40af;border-top:none;border-radius:0 0 8px 8px"></div>
+      <!-- ── Drive axle 2 (กลาง2) y=158 ── -->
+      <line x1="10"  y1="158" x2="58"  y2="158" stroke="#243a56" stroke-width="2"/>
+      <line x1="222" y1="158" x2="270" y2="158" stroke="#243a56" stroke-width="2"/>
+      <rect id="t-H3LO" x="58"  y="144" width="16" height="28" rx="4" fill="url(#htg)" stroke="#2d5282" stroke-width="1.5" style="cursor:pointer"/>
+      <rect x="61"  y="148" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" pointer-events="none"/>
+      <rect id="t-H3LI" x="78"  y="144" width="16" height="28" rx="4" fill="url(#htg)" stroke="#2d5282" stroke-width="1.5" style="cursor:pointer"/>
+      <rect x="81"  y="148" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" pointer-events="none"/>
+      <rect id="t-H3RI" x="186" y="144" width="16" height="28" rx="4" fill="url(#htg)" stroke="#2d5282" stroke-width="1.5" style="cursor:pointer"/>
+      <rect x="189" y="148" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" pointer-events="none"/>
+      <rect id="t-H3RO" x="206" y="144" width="16" height="28" rx="4" fill="url(#htg)" stroke="#2d5282" stroke-width="1.5" style="cursor:pointer"/>
+      <rect x="209" y="148" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" pointer-events="none"/>
+      <rect x="58"  y="144" width="16" height="28" fill="transparent" onclick="togTire('H3LO','กลาง2-ซ้ายนอก')" style="cursor:pointer"/>
+      <rect x="78"  y="144" width="16" height="28" fill="transparent" onclick="togTire('H3LI','กลาง2-ซ้ายใน')" style="cursor:pointer"/>
+      <rect x="186" y="144" width="16" height="28" fill="transparent" onclick="togTire('H3RI','กลาง2-ขวาใน')" style="cursor:pointer"/>
+      <rect x="206" y="144" width="16" height="28" fill="transparent" onclick="togTire('H3RO','กลาง2-ขวานอก')" style="cursor:pointer"/>
+      <text x="54"  y="161" text-anchor="end"   font-size="7.5" fill="#475569" font-weight="700">กลาง2</text>
+      <text x="226" y="161" text-anchor="start" font-size="7.5" fill="#475569" font-weight="700">กลาง2</text>
 
-      <!-- Coupling / King pin -->
-      <div style="display:flex;flex-direction:column;align-items:center;margin:2px 0">
-        <div style="width:2px;height:10px;background:#334155"></div>
-        <div style="width:32px;height:14px;background:#334155;border:1.5px solid #475569;border-radius:4px;display:flex;align-items:center;justify-content:center">
-          <div style="width:8px;height:8px;background:#0f172a;border:1.5px solid #64748b;border-radius:50%"></div>
-        </div>
-        <div style="width:2px;height:10px;background:#334155"></div>
-      </div>
+      <!-- Head rear bumper -->
+      <rect x="96"  y="171" width="88" height="8" rx="0" fill="#1a2e50"/>
+      <rect x="100" y="171" width="80" height="5" rx="0" fill="#0f1e33"/>
 
-      <!-- Trailer section label -->
-      <div style="font-size:.6rem;font-weight:700;color:#3b82f6;letter-spacing:1px;margin-bottom:3px">🚌 หางพ่วงพื้นเรียบ</div>
+      <!-- ══ COUPLING / KING PIN ══ -->
+      <!-- 5th wheel plate -->
+      <rect x="116" y="179" width="48" height="7" rx="3" fill="#2a3a50" stroke="#3d5270" stroke-width="1"/>
+      <!-- King pin housing -->
+      <ellipse cx="140" cy="193" rx="12" ry="9" fill="#243246" stroke="#3d5270" stroke-width="1.5"/>
+      <!-- King pin bolt -->
+      <circle cx="140" cy="193" r="5" fill="#1a2535" stroke="#4a6080" stroke-width="1.2"/>
+      <circle cx="140" cy="193" r="2" fill="#0a1320" stroke="#607090" stroke-width="0.8"/>
+      <!-- Lower coupling beam -->
+      <rect x="116" y="199" width="48" height="7" rx="3" fill="#2a3a50" stroke="#3d5270" stroke-width="1"/>
 
-      <!-- Trailer front cap -->
-      <div style="width:110px;height:12px;background:#0d1f33;border:2.5px solid #1e3a5f;border-bottom:none;border-radius:8px 8px 0 0"></div>
+      <!-- ══ TRAILER / หางพ่วง ══ -->
+      <!-- Section label -->
+      <text x="140" y="217" text-anchor="middle" font-size="8" font-weight="700" fill="#3b82f6" letter-spacing="1">🚌 หางพ่วงพื้นเรียบ</text>
 
-      <!-- Trailer axle 1 (หาง1) -->
-      <div class="td-row">
-        <div class="td-lbl r" style="color:#3b82f6">หาง1</div>
-        <div class="td-tl" style="margin-right:4px">
-          <button class="tt" id="t-T1LO" onclick="togTire('T1LO','หาง1-ซ้ายนอก')" style="background:#0d1f33;border-color:#1e3a5f"></button>
-          <button class="tt" id="t-T1LI" onclick="togTire('T1LI','หาง1-ซ้ายใน')" style="background:#0d1f33;border-color:#1e3a5f"></button>
-        </div>
-        <div class="td-tb" style="height:28px;display:flex;align-items:center;justify-content:center">
-          <div style="width:80%;height:2px;background:#1e3a5f;border-radius:1px"></div>
-        </div>
-        <div class="td-tr" style="margin-left:4px">
-          <button class="tt" id="t-T1RI" onclick="togTire('T1RI','หาง1-ขวาใน')" style="background:#0d1f33;border-color:#1e3a5f"></button>
-          <button class="tt" id="t-T1RO" onclick="togTire('T1RO','หาง1-ขวานอก')" style="background:#0d1f33;border-color:#1e3a5f"></button>
-        </div>
-        <div class="td-lbl" style="color:#3b82f6">หาง1</div>
-      </div>
+      <!-- Trailer frame rails -->
+      <rect x="96"  y="221" width="8"   height="152" fill="#1e3a5f"/>
+      <rect x="176" y="221" width="8"   height="152" fill="#1e3a5f"/>
+      <!-- Trailer deck fill -->
+      <rect x="104" y="221" width="72"  height="152" fill="#0d1f33"/>
+      <!-- Trailer spine -->
+      <rect x="136" y="221" width="8"   height="152" fill="#0a1a2c"/>
+      <!-- Deck planks (flatbed detail) -->
+      <line x1="104" y1="230" x2="176" y2="230" stroke="#0a1828" stroke-width="1.5"/>
+      <line x1="104" y1="238" x2="176" y2="238" stroke="#0a1828" stroke-width="1.5"/>
+      <line x1="104" y1="246" x2="176" y2="246" stroke="#0a1828" stroke-width="1.5"/>
+      <!-- Front cap -->
+      <rect x="96"  y="219" width="88" height="5" rx="2" fill="#1e3a5f"/>
 
-      <div class="td-tb" style="height:22px;width:110px"></div>
+      <!-- ── Trailer axle 1 (หาง1) y=268 ── -->
+      <line x1="10"  y1="268" x2="58"  y2="268" stroke="#162538" stroke-width="2"/>
+      <line x1="222" y1="268" x2="270" y2="268" stroke="#162538" stroke-width="2"/>
+      <rect id="t-T1LO" x="58"  y="254" width="16" height="28" rx="4" fill="url(#ttg2)" stroke="#1e3a5f" stroke-width="1.5" style="cursor:pointer"/>
+      <rect x="61"  y="258" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" pointer-events="none"/>
+      <rect id="t-T1LI" x="78"  y="254" width="16" height="28" rx="4" fill="url(#ttg2)" stroke="#1e3a5f" stroke-width="1.5" style="cursor:pointer"/>
+      <rect x="81"  y="258" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" pointer-events="none"/>
+      <rect id="t-T1RI" x="186" y="254" width="16" height="28" rx="4" fill="url(#ttg2)" stroke="#1e3a5f" stroke-width="1.5" style="cursor:pointer"/>
+      <rect x="189" y="258" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" pointer-events="none"/>
+      <rect id="t-T1RO" x="206" y="254" width="16" height="28" rx="4" fill="url(#ttg2)" stroke="#1e3a5f" stroke-width="1.5" style="cursor:pointer"/>
+      <rect x="209" y="258" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" pointer-events="none"/>
+      <rect x="58"  y="254" width="16" height="28" fill="transparent" onclick="togTire('T1LO','หาง1-ซ้ายนอก')" style="cursor:pointer"/>
+      <rect x="78"  y="254" width="16" height="28" fill="transparent" onclick="togTire('T1LI','หาง1-ซ้ายใน')" style="cursor:pointer"/>
+      <rect x="186" y="254" width="16" height="28" fill="transparent" onclick="togTire('T1RI','หาง1-ขวาใน')" style="cursor:pointer"/>
+      <rect x="206" y="254" width="16" height="28" fill="transparent" onclick="togTire('T1RO','หาง1-ขวานอก')" style="cursor:pointer"/>
+      <text x="54"  y="271" text-anchor="end"   font-size="7.5" fill="#3b82f6" font-weight="700">หาง1</text>
+      <text x="226" y="271" text-anchor="start" font-size="7.5" fill="#3b82f6" font-weight="700">หาง1</text>
 
-      <!-- Trailer axle 2 (หาง2) -->
-      <div class="td-row">
-        <div class="td-lbl r" style="color:#3b82f6">หาง2</div>
-        <div class="td-tl" style="margin-right:4px">
-          <button class="tt" id="t-T2LO" onclick="togTire('T2LO','หาง2-ซ้ายนอก')" style="background:#0d1f33;border-color:#1e3a5f"></button>
-          <button class="tt" id="t-T2LI" onclick="togTire('T2LI','หาง2-ซ้ายใน')" style="background:#0d1f33;border-color:#1e3a5f"></button>
-        </div>
-        <div class="td-tb" style="height:28px;display:flex;align-items:center;justify-content:center">
-          <div style="width:80%;height:2px;background:#1e3a5f;border-radius:1px"></div>
-        </div>
-        <div class="td-tr" style="margin-left:4px">
-          <button class="tt" id="t-T2RI" onclick="togTire('T2RI','หาง2-ขวาใน')" style="background:#0d1f33;border-color:#1e3a5f"></button>
-          <button class="tt" id="t-T2RO" onclick="togTire('T2RO','หาง2-ขวานอก')" style="background:#0d1f33;border-color:#1e3a5f"></button>
-        </div>
-        <div class="td-lbl" style="color:#3b82f6">หาง2</div>
-      </div>
+      <!-- Deck planks mid -->
+      <line x1="104" y1="297" x2="176" y2="297" stroke="#0a1828" stroke-width="1.5"/>
 
-      <div class="td-tb" style="height:22px;width:110px"></div>
+      <!-- ── Trailer axle 2 (หาง2) y=307 ── -->
+      <line x1="10"  y1="307" x2="58"  y2="307" stroke="#162538" stroke-width="2"/>
+      <line x1="222" y1="307" x2="270" y2="307" stroke="#162538" stroke-width="2"/>
+      <rect id="t-T2LO" x="58"  y="293" width="16" height="28" rx="4" fill="url(#ttg2)" stroke="#1e3a5f" stroke-width="1.5" style="cursor:pointer"/>
+      <rect x="61"  y="297" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" pointer-events="none"/>
+      <rect id="t-T2LI" x="78"  y="293" width="16" height="28" rx="4" fill="url(#ttg2)" stroke="#1e3a5f" stroke-width="1.5" style="cursor:pointer"/>
+      <rect x="81"  y="297" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" pointer-events="none"/>
+      <rect id="t-T2RI" x="186" y="293" width="16" height="28" rx="4" fill="url(#ttg2)" stroke="#1e3a5f" stroke-width="1.5" style="cursor:pointer"/>
+      <rect x="189" y="297" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" pointer-events="none"/>
+      <rect id="t-T2RO" x="206" y="293" width="16" height="28" rx="4" fill="url(#ttg2)" stroke="#1e3a5f" stroke-width="1.5" style="cursor:pointer"/>
+      <rect x="209" y="297" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" pointer-events="none"/>
+      <rect x="58"  y="293" width="16" height="28" fill="transparent" onclick="togTire('T2LO','หาง2-ซ้ายนอก')" style="cursor:pointer"/>
+      <rect x="78"  y="293" width="16" height="28" fill="transparent" onclick="togTire('T2LI','หาง2-ซ้ายใน')" style="cursor:pointer"/>
+      <rect x="186" y="293" width="16" height="28" fill="transparent" onclick="togTire('T2RI','หาง2-ขวาใน')" style="cursor:pointer"/>
+      <rect x="206" y="293" width="16" height="28" fill="transparent" onclick="togTire('T2RO','หาง2-ขวานอก')" style="cursor:pointer"/>
+      <text x="54"  y="310" text-anchor="end"   font-size="7.5" fill="#3b82f6" font-weight="700">หาง2</text>
+      <text x="226" y="310" text-anchor="start" font-size="7.5" fill="#3b82f6" font-weight="700">หาง2</text>
 
-      <!-- Trailer axle 3 (หาง3) -->
-      <div class="td-row">
-        <div class="td-lbl r" style="color:#3b82f6">หาง3</div>
-        <div class="td-tl" style="margin-right:4px">
-          <button class="tt" id="t-T3LO" onclick="togTire('T3LO','หาง3-ซ้ายนอก')" style="background:#0d1f33;border-color:#1e3a5f"></button>
-          <button class="tt" id="t-T3LI" onclick="togTire('T3LI','หาง3-ซ้ายใน')" style="background:#0d1f33;border-color:#1e3a5f"></button>
-        </div>
-        <div class="td-tb" style="height:28px;display:flex;align-items:center;justify-content:center">
-          <div style="width:80%;height:2px;background:#1e3a5f;border-radius:1px"></div>
-        </div>
-        <div class="td-tr" style="margin-left:4px">
-          <button class="tt" id="t-T3RI" onclick="togTire('T3RI','หาง3-ขวาใน')" style="background:#0d1f33;border-color:#1e3a5f"></button>
-          <button class="tt" id="t-T3RO" onclick="togTire('T3RO','หาง3-ขวานอก')" style="background:#0d1f33;border-color:#1e3a5f"></button>
-        </div>
-        <div class="td-lbl" style="color:#3b82f6">หาง3</div>
-      </div>
+      <!-- Deck plank lower -->
+      <line x1="104" y1="336" x2="176" y2="336" stroke="#0a1828" stroke-width="1.5"/>
 
-      <!-- Trailer tail cap -->
-      <div style="width:110px;height:14px;background:#0d1f33;border:2.5px solid #1e3a5f;border-top:none;border-radius:0 0 10px 10px"></div>
+      <!-- ── Trailer axle 3 (หาง3) y=346 ── -->
+      <line x1="10"  y1="346" x2="58"  y2="346" stroke="#162538" stroke-width="2"/>
+      <line x1="222" y1="346" x2="270" y2="346" stroke="#162538" stroke-width="2"/>
+      <rect id="t-T3LO" x="58"  y="332" width="16" height="28" rx="4" fill="url(#ttg2)" stroke="#1e3a5f" stroke-width="1.5" style="cursor:pointer"/>
+      <rect x="61"  y="336" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" pointer-events="none"/>
+      <rect id="t-T3LI" x="78"  y="332" width="16" height="28" rx="4" fill="url(#ttg2)" stroke="#1e3a5f" stroke-width="1.5" style="cursor:pointer"/>
+      <rect x="81"  y="336" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" pointer-events="none"/>
+      <rect id="t-T3RI" x="186" y="332" width="16" height="28" rx="4" fill="url(#ttg2)" stroke="#1e3a5f" stroke-width="1.5" style="cursor:pointer"/>
+      <rect x="189" y="336" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" pointer-events="none"/>
+      <rect id="t-T3RO" x="206" y="332" width="16" height="28" rx="4" fill="url(#ttg2)" stroke="#1e3a5f" stroke-width="1.5" style="cursor:pointer"/>
+      <rect x="209" y="336" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" pointer-events="none"/>
+      <rect x="58"  y="332" width="16" height="28" fill="transparent" onclick="togTire('T3LO','หาง3-ซ้ายนอก')" style="cursor:pointer"/>
+      <rect x="78"  y="332" width="16" height="28" fill="transparent" onclick="togTire('T3LI','หาง3-ซ้ายใน')" style="cursor:pointer"/>
+      <rect x="186" y="332" width="16" height="28" fill="transparent" onclick="togTire('T3RI','หาง3-ขวาใน')" style="cursor:pointer"/>
+      <rect x="206" y="332" width="16" height="28" fill="transparent" onclick="togTire('T3RO','หาง3-ขวานอก')" style="cursor:pointer"/>
+      <text x="54"  y="349" text-anchor="end"   font-size="7.5" fill="#3b82f6" font-weight="700">หาง3</text>
+      <text x="226" y="349" text-anchor="start" font-size="7.5" fill="#3b82f6" font-weight="700">หาง3</text>
 
-      <!-- ▼ REAR -->
-      <div style="font-size:.6rem;font-weight:700;color:#334155;letter-spacing:2px;margin-top:6px">▼ ท้ายรถ</div>
-    </div><!-- /#td -->
+      <!-- Trailer rear bumper -->
+      <rect x="96"  y="373" width="88" height="5" rx="2" fill="#1e3a5f"/>
+      <rect x="104" y="360" width="72" height="15" fill="#0d1f33"/>
+      <!-- Tail lights -->
+      <rect x="98"  y="362" width="6"  height="10" rx="2" fill="#7f1d1d" stroke="#dc2626" stroke-width="0.5"/>
+      <rect x="176" y="362" width="6"  height="10" rx="2" fill="#7f1d1d" stroke="#dc2626" stroke-width="0.5"/>
+
+      <!-- ── REAR LABEL ── -->
+      <text x="140" y="388" text-anchor="middle" font-size="7.5" fill="#334155" font-weight="700" letter-spacing="3">▼ ท้ายรถ</text>
+    </svg>
 
     <!-- Legend -->
-    <div style="display:flex;align-items:center;gap:16px;justify-content:center;margin-top:12px;padding:7px 14px;background:#1e293b;border-radius:8px">
+    <div style="display:flex;align-items:center;gap:14px;justify-content:center;margin-top:10px;padding:7px 12px;background:#1e293b;border-radius:8px">
       <div style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:#64748b">
-        <div style="width:10px;height:22px;background:#1e3a5f;border:1.5px solid #2d5282;border-radius:2px;flex-shrink:0"></div>ปกติ
+        <svg width="12" height="24" viewBox="0 0 12 24" style="flex-shrink:0"><defs><linearGradient id="leg1" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#112236"/><stop offset="50%" stop-color="#1e3a5f"/><stop offset="100%" stop-color="#112236"/></linearGradient></defs><rect width="12" height="24" rx="3" fill="url(#leg1)" stroke="#2d5282" stroke-width="1.5"/></svg>
+        ปกติ
       </div>
       <div style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:#f97316">
-        <div style="width:10px;height:22px;background:#f97316;border:1.5px solid #fb923c;border-radius:2px;flex-shrink:0;box-shadow:0 0 6px rgba(249,115,22,.5)"></div>เลือกเปลี่ยน
+        <svg width="12" height="24" viewBox="0 0 12 24" style="flex-shrink:0"><defs><linearGradient id="leg2" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#c2400c"/><stop offset="50%" stop-color="#f97316"/><stop offset="100%" stop-color="#c2400c"/></linearGradient></defs><rect width="12" height="24" rx="3" fill="url(#leg2)" stroke="#fb923c" stroke-width="1.5"/></svg>
+        เปลี่ยนยาง
       </div>
-      <div style="font-size:.67rem;color:#334155">กดซ้ำ = ยกเลิก</div>
+      <div style="font-size:.67rem;color:#334155">• กดซ้ำเพื่อยกเลิก</div>
     </div>
 
     <!-- Summary -->
@@ -2693,12 +2759,19 @@ function closeTireModal() {
 function togTire(id, label) {
   const btn = document.getElementById('t-'+id);
   if (!btn) return;
+  const isTrailer = id.startsWith('T');
+  const normalFill   = isTrailer ? 'url(#ttg2)' : 'url(#htg)';
+  const normalStroke = isTrailer ? '#1e3a5f' : '#2d5282';
   if (selectedTires[id]) {
     delete selectedTires[id];
-    btn.classList.remove('sel');
+    btn.setAttribute('fill', normalFill);
+    btn.setAttribute('stroke', normalStroke);
+    btn.removeAttribute('filter');
   } else {
     selectedTires[id] = label;
-    btn.classList.add('sel');
+    btn.setAttribute('fill', 'url(#stg)');
+    btn.setAttribute('stroke', '#fb923c');
+    btn.setAttribute('filter', 'url(#glow)');
   }
   updateTireModalSummary();
 }
@@ -2712,7 +2785,11 @@ function clearTires() {
   selectedTires = {};
   Object.keys(TIRE_LABELS).forEach(id => {
     const btn = document.getElementById('t-'+id);
-    if (btn) btn.classList.remove('sel');
+    if (!btn) return;
+    const isTrailer = id.startsWith('T');
+    btn.setAttribute('fill', isTrailer ? 'url(#ttg2)' : 'url(#htg)');
+    btn.setAttribute('stroke', isTrailer ? '#1e3a5f' : '#2d5282');
+    btn.removeAttribute('filter');
   });
   updateTireModalSummary();
   document.getElementById('selected-tires-display').textContent = 'ยังไม่ได้เลือกยาง — กดปุ่มด้านล่างเพื่อเลือก';
