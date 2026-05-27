@@ -701,7 +701,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v4.8 | 28/05/2026 03:05</span>
+  <span class="version" style="margin-left:auto">v4.9 | 28/05/2026 03:25</span>
   <div style="position:relative;margin-left:10px">
     <button class="header-bell" onclick="toggleBell(event)" title="แจ้งเตือน">
       🔔<span class="bell-badge" id="bell-badge" style="display:none">0</span>
@@ -1163,9 +1163,6 @@
             <span id="mp-year-label">—</span>
             <button onclick="calMpYear(1)">▶</button>
           </div>
-          <div style="text-align:center;margin-bottom:10px">
-            <button id="mp-multi-toggle" class="mp-toggle-btn" onclick="calMpToggleMode()">☐ เลือกหลายเดือน</button>
-          </div>
           <div class="mp-months" id="mp-months"></div>
           <div id="mp-footer" style="margin-top:10px"></div>
         </div>
@@ -1175,8 +1172,8 @@
         <option value="">🚚 ทุกทะเบียน</option>
       </select>
       <div class="cal-legend">
-        <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#3b82f6"></span>🔵 กำลังขนส่ง</div>
-        <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#10b981"></span>🟢 ส่งแล้ว</div>
+        <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#3b82f6"></span>กำลังขนส่ง</div>
+        <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#10b981"></span>ส่งแล้ว</div>
       </div>
     </div>
 
@@ -3980,10 +3977,9 @@ function calChangePlate(plate) {
   renderCalendar();
 }
 
-// ── MONTH PICKER (single + multi-select) ──
+// ── MONTH PICKER (always multi-select, click to add/remove) ──
 const CAL_TH_MON_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 let _mpYear = null;
-let _mpMulti = false;          // multi-select mode
 let _mpStaging = [];           // staging selection [{year,month}, ...]
 
 function toggleMonthPicker(e) {
@@ -3993,22 +3989,13 @@ function toggleMonthPicker(e) {
   const isOpen = dd.classList.toggle('open');
   if (isOpen) {
     _mpYear = _calYear;
-    // Start with current multi-selection (or single current month)
+    // Start with current selection (multi or single current month)
     _mpStaging = _calMultiMonths.length ? [..._calMultiMonths] : [{year:_calYear, month:_calMonth}];
-    _mpMulti = _calMultiMonths.length > 0;
     _renderMonthPicker();
   }
 }
 function calMpYear(delta) {
   _mpYear += delta;
-  _renderMonthPicker();
-}
-function calMpToggleMode() {
-  _mpMulti = !_mpMulti;
-  if (!_mpMulti) {
-    // Reset to single
-    _mpStaging = [{year:_calYear, month:_calMonth}];
-  }
   _renderMonthPicker();
 }
 function _isStagingSelected(year, month) {
@@ -4018,9 +4005,7 @@ function _renderMonthPicker() {
   const yl = document.getElementById('mp-year-label');
   const mc = document.getElementById('mp-months');
   const ft = document.getElementById('mp-footer');
-  const tg = document.getElementById('mp-multi-toggle');
   if (yl) yl.textContent = `พ.ศ. ${_mpYear + 543}`;
-  if (tg) tg.textContent = _mpMulti ? '☑ เลือกหลายเดือน' : '☐ เลือกหลายเดือน';
   if (mc) {
     mc.innerHTML = CAL_TH_MON_SHORT.map((name, idx) => {
       const sel = _isStagingSelected(_mpYear, idx);
@@ -4028,28 +4013,23 @@ function _renderMonthPicker() {
     }).join('');
   }
   if (ft) {
-    if (_mpMulti) {
-      ft.innerHTML = `
-        <button class="mp-apply" onclick="calMpApply()">✅ แสดง ${_mpStaging.length} เดือน</button>
-        <button class="mp-clear" onclick="_mpStaging=[];_renderMonthPicker()">ล้าง</button>`;
-    } else { ft.innerHTML = ''; }
+    const n = _mpStaging.length;
+    ft.innerHTML = `
+      <div style="font-size:.7rem;color:#64748b;text-align:center;margin-bottom:6px;line-height:1.4">
+        ${n === 0 ? '⚠️ ยังไม่ได้เลือกเดือน' : `เลือกแล้ว ${n} เดือน — กดเดือนเพื่อเพิ่ม/นำออก`}
+      </div>
+      <button class="mp-apply" onclick="calMpApply()" ${n===0?'disabled style="opacity:.4;cursor:not-allowed"':''}>
+        ✅ ${n <= 1 ? 'แสดงเดือนนี้' : 'แสดง ' + n + ' เดือน'}
+      </button>
+      ${n > 1 ? '<button class="mp-clear" onclick="_mpStaging=[];_renderMonthPicker()">🗑 ล้างทั้งหมด</button>' : ''}`;
   }
 }
 function calMpClickMonth(month) {
-  if (_mpMulti) {
-    // Toggle in staging
-    const i = _mpStaging.findIndex(s => s.year === _mpYear && s.month === month);
-    if (i >= 0) _mpStaging.splice(i, 1);
-    else        _mpStaging.push({year:_mpYear, month});
-    _renderMonthPicker();
-  } else {
-    // Single-pick → apply immediately
-    _calMultiMonths = [];
-    _calYear = _mpYear;
-    _calMonth = month;
-    document.getElementById('month-picker').classList.remove('open');
-    renderCalendar();
-  }
+  // Always toggle in staging
+  const i = _mpStaging.findIndex(s => s.year === _mpYear && s.month === month);
+  if (i >= 0) _mpStaging.splice(i, 1);
+  else        _mpStaging.push({year:_mpYear, month});
+  _renderMonthPicker();
 }
 function calMpApply() {
   if (_mpStaging.length === 0) return;
@@ -4097,9 +4077,22 @@ function _refreshPlateFilterOptions() {
   if (cur && plates.includes(cur)) sel.value = cur;
 }
 // ─── STATUS LOGIC (only 2 statuses) ───
-// Rule: a trip is "ส่งแล้ว" if there exists ANY newer record (same plate, later date/timestamp).
-//       Otherwise (= the LATEST record for that plate) → "กำลังขนส่ง"
+// Rules (priority order):
+//   1. If pickupDate is TODAY or FUTURE → "กำลังขนส่ง" (regardless of newer records)
+//   2. If trip is in past AND has newer record (same plate) → "ส่งแล้ว"
+//   3. Otherwise → "กำลังขนส่ง"
 function _autoTripStatus(r, list) {
+  // Get today's date number (UTC days since epoch)
+  const now = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Bangkok'}));
+  const todayNum = Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 86400000);
+
+  // Pickup-date number (earliest of pickup/jobDate)
+  const pickupNum = _calDateNum(r.pickupDate || r.jobDate);
+
+  // Rule 1: Future trip → always "กำลังขนส่ง"
+  if (pickupNum !== null && pickupNum >= todayNum) return 'กำลังขนส่ง';
+
+  // Rule 2: Past trip — check if there's a newer record for same plate
   const plate = (r.plateNumber || '').trim();
   if (!plate) return 'กำลังขนส่ง';
   const arr = list || _calTrips || _master.truckHistory || [];
