@@ -510,6 +510,7 @@
   <nav class="sb-nav">
     <div class="sb-section">ภาพรวม</div>
     <button class="tab-btn" onclick="switchTab('summary',this);initSummaryOnce()"><span class="icon">📊</span>สรุปผล</button>
+    <button class="tab-btn" onclick="switchTab('calendar',this);initCalendar()"><span class="icon">📅</span>ปฏิทินเที่ยวรถ</button>
     <div class="sb-section">บันทึกรายการ</div>
     <button class="tab-btn active" onclick="switchTab('truck',this)"><span class="icon">🚚</span>บันทึกรถ</button>
     <button class="tab-btn" onclick="switchTab('income',this)"><span class="icon">💰</span>รายรับ</button>
@@ -527,7 +528,7 @@
     <button class="tab-btn" onclick="switchTab('gps',this)"><span class="icon">📡</span>GPS</button>
     <button class="tab-btn" onclick="switchTab('ocr',this)"><span class="icon">🔍</span>อ่านภาพ</button>
   </nav>
-  <div class="sb-footer"><span class="version">v3.7 | 28/05/2026 00:18</span></div>
+  <div class="sb-footer"><span class="version">v3.8 | 28/05/2026 00:45</span></div>
 </aside>
 
 <!-- Mobile overlay -->
@@ -538,7 +539,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version">v3.7 | 28/05/2026 00:18</span>
+  <span class="version">v3.8 | 28/05/2026 00:45</span>
 </header>
 <main id="main-content">
 
@@ -550,12 +551,22 @@
       <div class="card-title">📋 ข้อมูลงาน</div>
       <div class="form-row-2">
         <div class="form-row">
-          <label>วันที่ <span class="req">*</span></label>
+          <label>วันที่งาน <span class="req">*</span></label>
           <input type="date" id="t-jobDate" required>
         </div>
         <div class="form-row">
           <label>เวลา</label>
           <input type="time" id="t-jobTime">
+        </div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row">
+          <label>📥 วันเข้ารับสินค้า</label>
+          <input type="date" id="t-pickupDate">
+        </div>
+        <div class="form-row">
+          <label>📤 วันส่งสินค้า</label>
+          <input type="date" id="t-deliveryDate">
         </div>
       </div>
       <div class="form-row">
@@ -822,6 +833,118 @@
   </form>
   </div><!-- /expense-form-view -->
   <div id="expense-list-view" style="display:none"><div id="exp-list" class="list-loading">กด "รายการรายจ่าย" เพื่อโหลด</div></div>
+</div>
+
+<!-- ══ TAB: ปฏิทินเที่ยวรถ ══ -->
+<div class="tab-panel" id="tab-calendar">
+  <style>
+    #cal-wrap { max-width:960px; margin:0 auto; padding:16px 12px 32px }
+    .cal-toolbar { display:flex; align-items:center; gap:8px; margin-bottom:14px; flex-wrap:wrap }
+    .cal-month-nav { display:flex; align-items:center; gap:6px; background:white; border:1px solid #e2e8f0; border-radius:10px; padding:4px }
+    .cal-nav-btn { background:#f1f5f9; border:none; border-radius:6px; width:32px; height:32px; cursor:pointer; font-size:1rem; color:#475569; font-family:inherit }
+    .cal-nav-btn:hover { background:#e2e8f0 }
+    .cal-month-label { font-weight:800; font-size:.95rem; color:#1e293b; padding:0 12px; min-width:140px; text-align:center }
+    .cal-today-btn { background:#3b82f6; color:white; border:none; border-radius:8px; padding:8px 14px; font-weight:700; font-size:.78rem; cursor:pointer; font-family:inherit }
+    .cal-today-btn:hover { background:#2563eb }
+    .cal-legend { display:flex; gap:10px; flex-wrap:wrap; margin-left:auto; font-size:.7rem; color:#64748b }
+    .cal-leg-item { display:flex; align-items:center; gap:5px }
+    .cal-leg-dot { width:10px; height:10px; border-radius:50% }
+
+    .cal-grid { background:white; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.06); overflow:hidden }
+    .cal-weekdays { display:grid; grid-template-columns:repeat(7,1fr); background:#f8fafc; border-bottom:1px solid #e2e8f0 }
+    .cal-weekday { padding:10px 6px; text-align:center; font-size:.72rem; font-weight:800; color:#475569 }
+    .cal-weekday.sun { color:#dc2626 } .cal-weekday.sat { color:#3b82f6 }
+    .cal-days { display:grid; grid-template-columns:repeat(7,1fr); grid-auto-rows:minmax(95px,auto) }
+    .cal-day { border-right:1px solid #f1f5f9; border-bottom:1px solid #f1f5f9; padding:6px 5px; cursor:pointer; position:relative; min-height:95px; display:flex; flex-direction:column; gap:3px; transition:background .12s }
+    .cal-day:nth-child(7n) { border-right:none }
+    .cal-day:hover { background:#f8fafc }
+    .cal-day.other-month { background:#fafafa; color:#cbd5e1 }
+    .cal-day.today { background:#dbeafe }
+    .cal-day.today .cal-day-num { background:#3b82f6; color:white; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-weight:800 }
+    .cal-day.sun .cal-day-num { color:#dc2626 } .cal-day.sat .cal-day-num { color:#3b82f6 }
+    .cal-day-num { font-size:.78rem; font-weight:700; color:#334155; padding:2px 4px }
+    .cal-events { display:flex; flex-direction:column; gap:2px; overflow:hidden }
+    .cal-evt { font-size:.62rem; padding:2px 5px; border-radius:3px; color:white; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.3 }
+    .cal-evt.s-wait    { background:#f59e0b }  /* รอโหลด */
+    .cal-evt.s-driving { background:#3b82f6 }  /* กำลังขนส่ง */
+    .cal-evt.s-done    { background:#10b981 }  /* ส่งแล้ว */
+    .cal-evt.s-cancel  { background:#94a3b8 }  /* ยกเลิก */
+    .cal-evt-more { font-size:.6rem; color:#64748b; font-weight:700; padding:2px 5px }
+
+    @media (max-width:640px) {
+      .cal-day { min-height:70px; padding:4px 3px }
+      .cal-day-num { font-size:.7rem }
+      .cal-evt { font-size:.55rem; padding:1px 3px }
+      .cal-month-label { font-size:.85rem; min-width:110px }
+    }
+
+    /* Modal for day details */
+    #cal-day-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:300; align-items:center; justify-content:center; padding:14px }
+    #cal-day-modal.show { display:flex }
+    .cal-modal-box { background:white; border-radius:14px; max-width:560px; width:100%; max-height:90dvh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.4) }
+    .cal-modal-head { display:flex; align-items:center; justify-content:space-between; padding:16px 18px; border-bottom:1px solid #e2e8f0; position:sticky; top:0; background:white; border-radius:14px 14px 0 0 }
+    .cal-modal-title { font-weight:800; font-size:1rem; color:#1e293b }
+    .cal-modal-close { background:#f1f5f9; border:none; border-radius:6px; width:30px; height:30px; cursor:pointer; font-size:1rem; color:#64748b }
+    .cal-modal-body { padding:14px 18px }
+    .cal-trip-card { padding:12px; border-radius:10px; background:#f8fafc; border-left:4px solid #3b82f6; margin-bottom:10px }
+    .cal-trip-card.s-wait    { border-left-color:#f59e0b }
+    .cal-trip-card.s-driving { border-left-color:#3b82f6 }
+    .cal-trip-card.s-done    { border-left-color:#10b981 }
+    .cal-trip-card.s-cancel  { border-left-color:#94a3b8 }
+    .cal-trip-head { display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap }
+    .cal-trip-plate { font-weight:800; color:#1e293b; font-size:.92rem }
+    .cal-trip-badge { font-size:.62rem; padding:2px 8px; border-radius:10px; color:white; font-weight:700 }
+    .cal-trip-badge.s-wait    { background:#f59e0b }
+    .cal-trip-badge.s-driving { background:#3b82f6 }
+    .cal-trip-badge.s-done    { background:#10b981 }
+    .cal-trip-badge.s-cancel  { background:#94a3b8 }
+    .cal-trip-row { font-size:.78rem; color:#475569; line-height:1.6 }
+    .cal-trip-row b { color:#1e293b; font-weight:700 }
+    .cal-empty { text-align:center; padding:40px 20px; color:#94a3b8 }
+  </style>
+
+  <div id="cal-wrap">
+    <!-- Toolbar -->
+    <div class="cal-toolbar">
+      <div class="cal-month-nav">
+        <button class="cal-nav-btn" onclick="calNav(-1)" title="เดือนก่อน">◀</button>
+        <div class="cal-month-label" id="cal-month-label">—</div>
+        <button class="cal-nav-btn" onclick="calNav(1)" title="เดือนถัดไป">▶</button>
+      </div>
+      <button class="cal-today-btn" onclick="calGoToday()">📅 วันนี้</button>
+      <div class="cal-legend">
+        <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#f59e0b"></span>รอโหลด</div>
+        <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#3b82f6"></span>กำลังขนส่ง</div>
+        <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#10b981"></span>ส่งแล้ว</div>
+        <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#94a3b8"></span>ยกเลิก</div>
+      </div>
+    </div>
+
+    <!-- Calendar grid -->
+    <div class="cal-grid">
+      <div class="cal-weekdays">
+        <div class="cal-weekday sun">อา</div>
+        <div class="cal-weekday">จ</div>
+        <div class="cal-weekday">อ</div>
+        <div class="cal-weekday">พ</div>
+        <div class="cal-weekday">พฤ</div>
+        <div class="cal-weekday">ศ</div>
+        <div class="cal-weekday sat">ส</div>
+      </div>
+      <div class="cal-days" id="cal-days"></div>
+    </div>
+  </div>
+
+  <!-- Day details modal -->
+  <div id="cal-day-modal" onclick="if(event.target===this)closeCalDay()">
+    <div class="cal-modal-box">
+      <div class="cal-modal-head">
+        <div class="cal-modal-title" id="cal-modal-title">—</div>
+        <button class="cal-modal-close" onclick="closeCalDay()">✕</button>
+      </div>
+      <div class="cal-modal-body" id="cal-modal-body">—</div>
+    </div>
+  </div>
 </div>
 
 <!-- ══ TAB 4: GPS (เลือกผู้ให้บริการ) ══ -->
@@ -1619,7 +1742,7 @@ const PAGE_NAMES = {
   truck:'บันทึกรถบรรทุก', income:'รายรับ', expense:'รายจ่าย',
   vehicle:'ทะเบียนรถ', driver:'คนขับ', customer:'ลูกค้า',
   maintenance:'ซ่อมบำรุง', fuel:'น้ำมัน', invoice:'ใบแจ้งหนี้',
-  summary:'สรุปผล', alert:'แจ้งเตือน', gps:'GPS', ocr:'อ่านภาพ'
+  summary:'สรุปผล', calendar:'ปฏิทินเที่ยวรถ', alert:'แจ้งเตือน', gps:'GPS', ocr:'อ่านภาพ'
 };
 function switchTab(tab, btnEl) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -1975,6 +2098,7 @@ function collectFormData(formKey) {
     if (!g('t-jobDate'))     { showToast('กรุณาเลือกวันที่', 'warning');   return null; }
     return {
       jobDate: g('t-jobDate'), jobTime: g('t-jobTime'),
+      pickupDate: g('t-pickupDate'), deliveryDate: g('t-deliveryDate'),
       plateNumber: g('t-plateNumber'), driverName: g('t-driverName'), driverPhone: g('t-driverPhone'),
       origin: g('t-origin'), destination: g('t-destination'), customerName: g('t-customerName'),
       cargoList: g('t-cargoList'), cargoWeight: g('t-cargoWeight'), tripCount: g('t-tripCount'),
@@ -2778,6 +2902,175 @@ function confirmTires() {
   document.getElementById('selected-tires-display').textContent = `✅ เลือก ${keys.length} เส้น: ` + keys.map(k=>selectedTires[k]).join(', ');
   closeTireModal();
   showToast(`เพิ่มข้อมูลยาง ${keys.length} เส้นแล้ว`, 'success');
+}
+
+// ─── CALENDAR TAB ─────────────────────────────────────────────────────────────
+const CAL_TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+                       'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+let _calYear  = null;
+let _calMonth = null;     // 0-11
+let _calTrips = [];       // cached truck records
+let _calInited = false;
+
+function initCalendar() {
+  if (!_calInited) {
+    const today = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Bangkok'}));
+    _calYear  = today.getFullYear();
+    _calMonth = today.getMonth();
+    _calInited = true;
+  }
+  loadCalTrips();
+}
+function calNav(delta) {
+  _calMonth += delta;
+  if (_calMonth < 0)  { _calMonth = 11; _calYear--; }
+  if (_calMonth > 11) { _calMonth = 0;  _calYear++; }
+  renderCalendar();
+}
+function calGoToday() {
+  const today = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Bangkok'}));
+  _calYear  = today.getFullYear();
+  _calMonth = today.getMonth();
+  renderCalendar();
+}
+async function loadCalTrips() {
+  document.getElementById('cal-days').innerHTML = '<div style="grid-column:1/-1;padding:40px;text-align:center;color:#94a3b8">⏳ กำลังโหลดข้อมูลเที่ยวรถ...</div>';
+  try {
+    const result = await api('/api/get-data', { sheet: 'truck' });
+    _calTrips = (result.data || []);
+    renderCalendar();
+  } catch (e) {
+    document.getElementById('cal-days').innerHTML = '<div style="grid-column:1/-1;padding:40px;text-align:center;color:#dc2626">❌ โหลดข้อมูลไม่สำเร็จ: ' + e.message + '</div>';
+  }
+}
+function _calStatusClass(s) {
+  if (s === 'ส่งแล้ว')     return 's-done';
+  if (s === 'กำลังขนส่ง')  return 's-driving';
+  if (s === 'ยกเลิก')      return 's-cancel';
+  return 's-wait';
+}
+function _calDateKey(y, m, d) {
+  return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+function _parseTripDates(t) {
+  // Returns array of date strings (YYYY-MM-DD) this trip appears on
+  const dates = [];
+  const j = (t.jobDate || '').trim();
+  const p = (t.pickupDate || '').trim();
+  const d = (t.deliveryDate || '').trim();
+  if (j) dates.push({ date: j.slice(0,10), kind: 'job' });
+  if (p && p !== j) dates.push({ date: p.slice(0,10), kind: 'pickup' });
+  if (d && d !== j && d !== p) dates.push({ date: d.slice(0,10), kind: 'delivery' });
+  return dates;
+}
+function renderCalendar() {
+  document.getElementById('cal-month-label').textContent =
+    `${CAL_TH_MONTHS[_calMonth]} ${_calYear + 543}`;
+
+  // Group trips by date
+  const byDate = {};
+  _calTrips.forEach(t => {
+    const ds = _parseTripDates(t);
+    ds.forEach(({date, kind}) => {
+      if (!byDate[date]) byDate[date] = [];
+      byDate[date].push({ trip: t, kind });
+    });
+  });
+
+  // Build the calendar grid
+  const firstDay = new Date(_calYear, _calMonth, 1);
+  const startDow = firstDay.getDay(); // 0=Sun
+  const lastDay  = new Date(_calYear, _calMonth + 1, 0).getDate();
+  const prevLast = new Date(_calYear, _calMonth, 0).getDate();
+
+  const today = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Bangkok'}));
+  const todayKey = _calDateKey(today.getFullYear(), today.getMonth(), today.getDate());
+
+  let html = '';
+  // Previous month tail
+  for (let i = startDow - 1; i >= 0; i--) {
+    const d = prevLast - i;
+    html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
+  }
+  // Current month
+  for (let d = 1; d <= lastDay; d++) {
+    const key = _calDateKey(_calYear, _calMonth, d);
+    const dow = new Date(_calYear, _calMonth, d).getDay();
+    const evts = byDate[key] || [];
+    const isToday = key === todayKey;
+    const sunCls = dow === 0 ? ' sun' : (dow === 6 ? ' sat' : '');
+    const todayCls = isToday ? ' today' : '';
+    let evHtml = '';
+    const maxShow = 3;
+    evts.slice(0, maxShow).forEach(({trip, kind}) => {
+      const cls = _calStatusClass(trip.jobStatus);
+      const prefix = kind === 'pickup' ? '📥 ' : (kind === 'delivery' ? '📤 ' : '');
+      const txt = prefix + (trip.plateNumber || '?') + (trip.customerName ? ' • ' + trip.customerName : '');
+      evHtml += `<div class="cal-evt ${cls}" title="${escHtml(txt)}">${escHtml(txt)}</div>`;
+    });
+    if (evts.length > maxShow) {
+      evHtml += `<div class="cal-evt-more">+ ${evts.length - maxShow} เพิ่ม</div>`;
+    }
+    html += `<div class="cal-day${sunCls}${todayCls}" onclick="openCalDay('${key}')">
+      <div class="cal-day-num">${d}</div>
+      <div class="cal-events">${evHtml}</div>
+    </div>`;
+  }
+  // Next month head
+  const totalCells = startDow + lastDay;
+  const nextNeeded = (7 - totalCells % 7) % 7;
+  for (let d = 1; d <= nextNeeded; d++) {
+    html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
+  }
+  document.getElementById('cal-days').innerHTML = html;
+}
+function escHtml(s) {
+  return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function openCalDay(dateKey) {
+  // Find all trips on this date
+  const matches = [];
+  _calTrips.forEach(t => {
+    const ds = _parseTripDates(t);
+    ds.forEach(({date, kind}) => {
+      if (date === dateKey) matches.push({ trip: t, kind });
+    });
+  });
+
+  const [y, m, d] = dateKey.split('-').map(Number);
+  const dateObj = new Date(y, m-1, d);
+  const dowTh = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'][dateObj.getDay()];
+  document.getElementById('cal-modal-title').textContent =
+    `📅 วัน${dowTh}ที่ ${d} ${CAL_TH_MONTHS[m-1]} ${y + 543}`;
+
+  const body = document.getElementById('cal-modal-body');
+  if (matches.length === 0) {
+    body.innerHTML = '<div class="cal-empty">📭 ไม่มีเที่ยวรถในวันนี้</div>';
+  } else {
+    body.innerHTML = matches.map(({trip, kind}) => {
+      const cls = _calStatusClass(trip.jobStatus);
+      const kindLabel = kind === 'pickup' ? '📥 เข้ารับสินค้า' : (kind === 'delivery' ? '📤 ส่งสินค้า' : '🚚 เที่ยวรถ');
+      const time = trip.jobTime ? ' • ' + trip.jobTime : '';
+      return `
+        <div class="cal-trip-card ${cls}">
+          <div class="cal-trip-head">
+            <span class="cal-trip-plate">${escHtml(trip.plateNumber || '-')}</span>
+            <span class="cal-trip-badge ${cls}">${escHtml(trip.jobStatus || 'รอโหลด')}</span>
+            <span style="font-size:.7rem;color:#64748b">${kindLabel}${time}</span>
+          </div>
+          ${trip.customerName ? `<div class="cal-trip-row">🏢 <b>ลูกค้า:</b> ${escHtml(trip.customerName)}</div>` : ''}
+          ${trip.driverName   ? `<div class="cal-trip-row">👤 <b>คนขับ:</b> ${escHtml(trip.driverName)}${trip.driverPhone ? ' (' + escHtml(trip.driverPhone) + ')' : ''}</div>` : ''}
+          ${(trip.origin || trip.destination) ? `<div class="cal-trip-row">📍 <b>เส้นทาง:</b> ${escHtml(trip.origin||'-')} → ${escHtml(trip.destination||'-')}</div>` : ''}
+          ${trip.cargoList    ? `<div class="cal-trip-row">📦 <b>สินค้า:</b> ${escHtml(trip.cargoList)}${trip.cargoWeight ? ' (' + escHtml(trip.cargoWeight) + ' ตัน)' : ''}</div>` : ''}
+          ${trip.freightCost  ? `<div class="cal-trip-row">💰 <b>ค่าขนส่ง:</b> ${fmtBaht(trip.freightCost)}</div>` : ''}
+          ${trip.notes        ? `<div class="cal-trip-row">📝 ${escHtml(trip.notes)}</div>` : ''}
+        </div>`;
+    }).join('');
+  }
+  document.getElementById('cal-day-modal').classList.add('show');
+}
+function closeCalDay() {
+  document.getElementById('cal-day-modal').classList.remove('show');
 }
 
 // ─── SUMMARY TAB ──────────────────────────────────────────────────────────────
