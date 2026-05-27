@@ -73,11 +73,11 @@ const CONFIGS = {
   customer: {
     name: 'Customers', color: '#4A148C', prefix: 'CUST',
     headers: ['timestamp','customerName','contactName','phone','email',
-      'address','taxId','paymentTerms','notes','rowId'],
+      'address','taxId','paymentTerms','notes','rowId','cargoItems'],
     row: (d, now, id) => [
       now, d.customerName||'', d.contactName||'', d.phone||'',
       d.email||'', d.address||'', d.taxId||'',
-      d.paymentTerms||'เงินสด', d.notes||'', id
+      d.paymentTerms||'เงินสด', d.notes||'', id, d.cargoItems||''
     ]
   },
   maintenance: {

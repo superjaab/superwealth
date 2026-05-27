@@ -59,7 +59,7 @@ const CONFIGS = {
     row: (d, ts, id) => [
       ts, d.customerName||'', d.contactName||'', d.phone||'',
       d.email||'', d.address||'', d.taxId||'',
-      d.paymentTerms||'เงินสด', d.notes||'', id
+      d.paymentTerms||'เงินสด', d.notes||'', id, d.cargoItems||''
     ]
   },
   maintenance: {

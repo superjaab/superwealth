@@ -701,7 +701,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v4.5 | 28/05/2026 06:00</span>
+  <span class="version" style="margin-left:auto">v4.6 | 28/05/2026 06:20</span>
   <div style="position:relative;margin-left:10px">
     <button class="header-bell" onclick="toggleBell(event)" title="แจ้งเตือน">
       🔔<span class="bell-badge" id="bell-badge" style="display:none">0</span>
@@ -923,8 +923,9 @@
         <div class="form-row">
           <label>หมวดรายจ่าย <span class="req">*</span></label>
           <select id="e-category" required>
-            <option value="">-- เลือก --</option>
+            <option value="ค่าเดินทาง" selected>🚗 ค่าเดินทาง</option>
             <option value="ค่าน้ำมัน">⛽ ค่าน้ำมัน</option>
+            <option value="เงินเดือน">💼 เงินเดือน</option>
             <option value="ซ่อมบำรุง">🔧 ซ่อมบำรุง</option>
             <option value="ค่าซ่อม">🔩 ค่าซ่อม</option>
             <option value="ค่าอะไหล่">⚙️ ค่าอะไหล่</option>
@@ -1451,10 +1452,15 @@
           <select id="c-terms"><option value="เงินสด">💵 เงินสด</option><option value="เงินโอน">📲 เงินโอน</option><option value="โอน QR">📱 โอน QR</option><option value="เช็ค">📝 เช็ค</option><option value="7 วัน">7 วัน</option><option value="15 วัน">15 วัน</option><option value="30 วัน">30 วัน</option><option value="45 วัน">45 วัน</option><option value="60 วัน">60 วัน</option><option value="90 วัน">90 วัน</option></select>
         </div>
       </div>
+      <div class="form-row">
+        <label>📦 ข้อมูลสินค้า / รายการสินค้าที่ส่งบ่อย</label>
+        <textarea id="c-cargo" rows="2" placeholder="เช่น น้ำตาล, ข้าวสาร, ปุ๋ย (คั่นด้วย comma)"></textarea>
+        <p class="hint" style="font-size:.7rem;color:#94a3b8;margin-top:4px">💡 จะนำไปใช้เป็นตัวเลือกใน "รายการสินค้า" ตอนบันทึกเที่ยวรถ</p>
+      </div>
       <div class="form-row"><label>หมายเหตุ</label><textarea id="c-notes" rows="2"></textarea></div>
     </div>
     <div class="submit-row"><button type="button" class="btn btn-primary btn-block" onclick="submitCustomer()" style="padding:15px;background:#4A148C">💾 บันทึกข้อมูลลูกค้า</button></div>
-    <div style="margin-top:8px"><button type="button" class="btn btn-secondary btn-block btn-small" onclick="resetFields(['c-name','c-contact','c-phone','c-email','c-address','c-taxid','c-terms','c-notes'])">🗑 ล้างข้อมูล</button></div>
+    <div style="margin-top:8px"><button type="button" class="btn btn-secondary btn-block btn-small" onclick="resetFields(['c-name','c-contact','c-phone','c-email','c-address','c-taxid','c-terms','c-cargo','c-notes'])">🗑 ล้างข้อมูล</button></div>
   </div>
   <div id="customer-list-view" style="display:none"><div id="cust-list" class="list-loading">กด "รายชื่อลูกค้า" เพื่อโหลด</div></div>
 </div>
@@ -2164,7 +2170,14 @@ function getDriverPhone(name) {
 function getCargoOpts() {
   const set = new Set();
   _master.cargoSaved.forEach(c => set.add(c));
+  // From truck history
   _master.truckHistory.forEach(t => { if (t.cargoList) set.add(t.cargoList); });
+  // From customer master data — split comma-separated items
+  _master.customers.forEach(c => {
+    if (c.cargoItems) {
+      c.cargoItems.split(/[,;\n]/).map(x => x.trim()).filter(x => x).forEach(item => set.add(item));
+    }
+  });
   return Array.from(set).sort();
 }
 function saveCargoIfNew(name) {
@@ -2197,6 +2210,21 @@ function onPlateSelected(plate) {
   if (phoneField  && phone) phoneField.value  = phone;
   if (name) showToast(`👤 เติมคนขับ "${name}" อัตโนมัติ`, 'success');
 }
+// When customer is selected in truck form → suggest cargo from customer's cargoItems
+function onCustomerSelected(name) {
+  if (!name) return;
+  const c = _master.customers.find(x => (x.customerName || x.name) === name);
+  if (!c || !c.cargoItems) return;
+  const cargoField = document.getElementById('t-cargoList');
+  if (cargoField && !cargoField.value) {
+    // Fill with first cargo item; user can change to any other
+    const first = c.cargoItems.split(/[,;\n]/)[0].trim();
+    if (first) {
+      cargoField.value = first;
+      showToast(`📦 เติมสินค้า "${first}" จากข้อมูลลูกค้า`, 'info');
+    }
+  }
+}
 // When driver is selected in vehicle form → auto-fill phone
 function onVehicleDriverSelected(name) {
   const phoneField = document.getElementById('v-driver-phone');
@@ -2208,7 +2236,7 @@ function onVehicleDriverSelected(name) {
 function initAllAutocompletes() {
   // Truck form — plate must come from vehicle list (validated on submit)
   acAttach('t-plateNumber',  getPlateOpts,    onPlateSelected);
-  acAttach('t-customerName', getCustomerOpts, null);
+  acAttach('t-customerName', getCustomerOpts, onCustomerSelected);
   acAttach('t-cargoList',    getCargoOpts,    saveCargoIfNew);
   acAttach('t-driverName',   getDriverOpts,   (n) => {
     const p = getDriverPhone(n);
@@ -2839,7 +2867,7 @@ const _PREFILL_MAP = {
   },
   customer: {
     customerName:'c-name', contactName:'c-contact', phone:'c-phone', email:'c-email',
-    address:'c-address', taxId:'c-taxid', paymentTerms:'c-terms', notes:'c-notes'
+    address:'c-address', taxId:'c-taxid', paymentTerms:'c-terms', cargoItems:'c-cargo', notes:'c-notes'
   },
   maintenance: {
     maintenanceDate:'mnt-date', plateNumber:'mnt-plate', maintenanceType:'mnt-type',
@@ -3411,8 +3439,8 @@ function submitCustomer() {
   submitData('customer', {
     customerName:gv('c-name'), contactName:gv('c-contact'), phone:gv('c-phone'),
     email:gv('c-email'), address:gv('c-address'), taxId:gv('c-taxid'),
-    paymentTerms:gv('c-terms')||'เงินสด', notes:gv('c-notes')
-  }, ()=>resetFields(['c-name','c-contact','c-phone','c-email','c-address','c-taxid','c-terms','c-notes']));
+    paymentTerms:gv('c-terms')||'เงินสด', cargoItems:gv('c-cargo'), notes:gv('c-notes')
+  }, ()=>resetFields(['c-name','c-contact','c-phone','c-email','c-address','c-taxid','c-terms','c-cargo','c-notes']));
 }
 function renderCustomerList(items) {
   return [...items].reverse().map(c=>`
