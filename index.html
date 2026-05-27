@@ -527,7 +527,7 @@
     <button class="tab-btn" onclick="switchTab('gps',this)"><span class="icon">📡</span>GPS</button>
     <button class="tab-btn" onclick="switchTab('ocr',this)"><span class="icon">🔍</span>อ่านภาพ</button>
   </nav>
-  <div class="sb-footer"><span class="version">v3.6 | 28/05/2026 00:05</span></div>
+  <div class="sb-footer"><span class="version">v3.7 | 28/05/2026 00:18</span></div>
 </aside>
 
 <!-- Mobile overlay -->
@@ -538,7 +538,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version">v3.6 | 28/05/2026 00:05</span>
+  <span class="version">v3.7 | 28/05/2026 00:18</span>
 </header>
 <main id="main-content">
 
@@ -824,46 +824,62 @@
   <div id="expense-list-view" style="display:none"><div id="exp-list" class="list-loading">กด "รายการรายจ่าย" เพื่อโหลด</div></div>
 </div>
 
-<!-- ══ TAB 4: GPS (iframe preview + big login button) ══ -->
+<!-- ══ TAB 4: GPS (เลือกผู้ให้บริการ) ══ -->
 <div class="tab-panel" id="tab-gps">
-  <!-- Top bar -->
-  <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#1e293b;border-bottom:1px solid #334155;color:white;font-size:.82rem">
-    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e;animation:gps-pulse 1.5s infinite"></span>
-    <span style="font-weight:700">📡 OneTrack Smart GPS</span>
-    <span style="flex:1"></span>
-    <button type="button" onclick="reloadGPSFrame()"
-            style="background:#334155;border:none;color:#cbd5e1;padding:5px 10px;border-radius:6px;font-size:.75rem;cursor:pointer;font-family:inherit">
-      🔄 รีโหลด
-    </button>
-  </div>
-
-  <!-- BIG LOGIN BUTTON CARD -->
-  <div style="padding:16px 14px;background:linear-gradient(135deg,#0f172a,#1e293b);border-bottom:1px solid #334155">
-    <button type="button" onclick="openGPSNewTab()"
-            style="width:100%;padding:18px 16px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border:none;border-radius:12px;color:white;font-weight:800;font-size:1.05rem;cursor:pointer;font-family:inherit;box-shadow:0 6px 24px rgba(59,130,246,.5);display:flex;align-items:center;justify-content:center;gap:10px;letter-spacing:.5px;transition:transform .15s">
-      <span style="font-size:1.6rem">🔓</span>
-      <div style="text-align:left;line-height:1.2">
-        <div>เข้าสู่ระบบ OneTrack GPS</div>
-        <div style="font-size:.7rem;font-weight:500;opacity:.9;margin-top:2px">↗ เปิดในแท็บใหม่ • ใช้งานได้เต็มรูปแบบ</div>
+  <div style="padding:24px 18px;background:linear-gradient(180deg,#0f172a 0%,#1e293b 100%);min-height:calc(100dvh - 96px)">
+    <!-- Header -->
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="display:inline-flex;align-items:center;gap:10px;background:rgba(34,197,94,.12);padding:6px 14px;border-radius:20px;border:1px solid rgba(34,197,94,.3);margin-bottom:14px">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e;animation:gps-pulse 1.5s infinite"></span>
+        <span style="color:#86efac;font-size:.72rem;font-weight:700">ONLINE</span>
       </div>
-    </button>
-    <!-- Info banner -->
-    <div style="margin-top:10px;padding:10px 12px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:8px;font-size:.72rem;color:#fbbf24;line-height:1.5">
-      <span style="font-weight:700">💡 ทำไมต้องเปิดแท็บใหม่?</span><br>
-      Browser ป้องกัน third-party cookie ในหน้าฝัง (iframe) ทำให้ Login ค้างซ้ำๆ — เปิดแท็บใหม่ Login ปกติ แล้วกลับมาดู preview ด้านล่างได้
+      <h2 style="color:white;font-size:1.4rem;font-weight:800;margin-bottom:6px">📡 GPS ติดตามรถ</h2>
+      <p style="color:#94a3b8;font-size:.82rem">เลือกระบบ GPS ที่ต้องการเข้าใช้งาน</p>
     </div>
-  </div>
 
-  <!-- iframe preview of OneTrack -->
-  <div style="position:relative">
-    <div style="position:absolute;top:8px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.85);color:#fbbf24;padding:4px 10px;border-radius:20px;font-size:.65rem;font-weight:700;z-index:5;border:1px solid rgba(251,191,36,.3);pointer-events:none">
-      👁 พรีวิวเท่านั้น — Login ผ่านปุ่มด้านบน
+    <!-- Provider cards -->
+    <div style="display:flex;flex-direction:column;gap:14px;max-width:480px;margin:0 auto">
+
+      <!-- ── OneTrack Smart (Onelink) ── -->
+      <button type="button" onclick="openGPS('onelink')"
+              style="background:linear-gradient(135deg,#1d4ed8,#1e40af);border:1px solid #3b82f6;border-radius:16px;padding:18px;cursor:pointer;font-family:inherit;text-align:left;color:white;box-shadow:0 8px 24px rgba(29,78,216,.35);transition:transform .15s,box-shadow .15s;display:flex;align-items:center;gap:14px"
+              onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(29,78,216,.5)'"
+              onmouseout="this.style.transform='';this.style.boxShadow='0 8px 24px rgba(29,78,216,.35)'">
+        <div style="width:54px;height:54px;background:rgba(255,255,255,.15);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;flex-shrink:0">📍</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:1rem;font-weight:800;margin-bottom:3px">OneTrack Smart</div>
+          <div style="font-size:.72rem;opacity:.85;margin-bottom:6px">Onelink Technology — ติดตามรถยนต์/รถบรรทุก</div>
+          <div style="font-size:.65rem;opacity:.7;font-family:monospace">onetracksmart.onelink.co.th</div>
+        </div>
+        <div style="font-size:1.5rem;opacity:.7;flex-shrink:0">↗</div>
+      </button>
+
+      <!-- ── Hino Connect ── -->
+      <button type="button" onclick="openGPS('hino')"
+              style="background:linear-gradient(135deg,#dc2626,#991b1b);border:1px solid #ef4444;border-radius:16px;padding:18px;cursor:pointer;font-family:inherit;text-align:left;color:white;box-shadow:0 8px 24px rgba(220,38,38,.35);transition:transform .15s,box-shadow .15s;display:flex;align-items:center;gap:14px"
+              onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(220,38,38,.5)'"
+              onmouseout="this.style.transform='';this.style.boxShadow='0 8px 24px rgba(220,38,38,.35)'">
+        <div style="width:54px;height:54px;background:rgba(255,255,255,.15);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;flex-shrink:0">🚛</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:1rem;font-weight:800;margin-bottom:3px">Hino Connect</div>
+          <div style="font-size:.72rem;opacity:.85;margin-bottom:6px">Hino Motors — Telematics สำหรับรถ Hino</div>
+          <div style="font-size:.65rem;opacity:.7;font-family:monospace">hino-connect.onelink-iot.com</div>
+        </div>
+        <div style="font-size:1.5rem;opacity:.7;flex-shrink:0">↗</div>
+      </button>
+
     </div>
-    <iframe id="gps-main-iframe"
-            src="https://onetracksmart.onelink.co.th/onetrack.smart.new/login.jsp"
-            title="OneTrack Smart GPS"
-            allow="geolocation *; fullscreen *"
-            style="width:100%;border:none;display:block;height:calc(100dvh - 240px);min-height:380px;background:white"></iframe>
+
+    <!-- Info notice -->
+    <div style="max-width:480px;margin:22px auto 0;padding:12px 14px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);border-radius:10px">
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <span style="font-size:1.1rem;flex-shrink:0">💡</span>
+        <div style="font-size:.72rem;color:#93c5fd;line-height:1.6">
+          <b>หมายเหตุ:</b> ทั้ง 2 ระบบจะเปิดในแท็บใหม่เพื่อให้ Login และใช้งานได้เต็มรูปแบบ (Browser block third-party cookie ใน iframe)
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 <style>
@@ -1635,35 +1651,16 @@ function selectStatus(hiddenId, chipEl) {
   document.getElementById(hiddenId).value = chipEl.dataset.val;
 }
 
-// ─── GPS (Embedded OneTrack iframe) ──────────────
-const GPS_URL = 'https://onetracksmart.onelink.co.th/onetrack.smart.new/login.jsp';
-function reloadGPSFrame() {
-  const f = document.getElementById('gps-main-iframe');
-  if (f) f.src = GPS_URL + '?t=' + Date.now();
-  hideGPSBlockWarn();
+// ─── GPS (Provider selector) ──────────────
+const GPS_PROVIDERS = {
+  onelink: 'https://onetracksmart.onelink.co.th/onetrack.smart.new/login.jsp',
+  hino:    'https://hino-connect.onelink-iot.com/#/'
+};
+function openGPS(provider) {
+  const url = GPS_PROVIDERS[provider];
+  if (!url) return;
+  window.open(url, '_blank', 'noopener,noreferrer');
 }
-function openGPSNewTab() {
-  window.open(GPS_URL, '_blank', 'noopener,noreferrer');
-}
-function hideGPSBlockWarn() {
-  const w = document.getElementById('gps-block-warn');
-  if (w) w.style.display = 'none';
-}
-// Detect X-Frame-Options block: if iframe still empty after 5s, show warning
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    const f = document.getElementById('gps-main-iframe');
-    if (!f) return;
-    try {
-      // If iframe blocked, accessing contentDocument throws or returns null
-      if (!f.contentDocument && !f.contentWindow.location.href.includes('onelink')) {
-        document.getElementById('gps-block-warn').style.display = 'block';
-      }
-    } catch (e) {
-      // Cross-origin = iframe loaded fine (expected for OneTrack)
-    }
-  }, 5000);
-});
 
 function _unused_showGPSErr(msg) {
   const el     = document.getElementById('gps-err');
