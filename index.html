@@ -701,7 +701,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v6.2 | 28/05/2026 07:40</span>
+  <span class="version" style="margin-left:auto">v6.3 | 28/05/2026 08:00</span>
   <div style="position:relative;margin-left:10px">
     <button class="header-bell" onclick="toggleBell(event)" title="แจ้งเตือน">
       🔔<span class="bell-badge" id="bell-badge" style="display:none">0</span>
@@ -860,10 +860,13 @@
       </div>
       <div class="form-row">
         <label>📋 ลิงก์รอบเที่ยวรถ <span style="font-size:.7rem;color:#94a3b8;font-weight:400">(ถ้ารายรับนี้คือค่าเที่ยวรถ)</span></label>
-        <select id="i-linkedTrip" onchange="onLinkedTripChange()" style="background:#fafafa">
-          <option value="">— ไม่ลิงก์รอบเที่ยว —</option>
-        </select>
-        <p class="hint" style="font-size:.7rem;color:#94a3b8;margin-top:4px">💡 เลือกรอบที่ยังค้างจ่าย → บันทึกแล้วระบบจะอัปเดตรอบนั้นเป็น "จ่ายแล้ว" อัตโนมัติ</p>
+        <div style="display:flex;gap:6px;align-items:stretch">
+          <select id="i-linkedTrip" onchange="onLinkedTripChange()" style="flex:1;background:#fafafa">
+            <option value="">— ไม่ลิงก์รอบเที่ยว —</option>
+          </select>
+          <button type="button" onclick="refreshLinkedTripsDropdown()" title="รีเฟรชรายการรอบเที่ยว" style="background:#dbeafe;border:1.5px solid #93c5fd;border-radius:8px;width:46px;cursor:pointer;font-size:1.1rem;color:#1d4ed8;flex-shrink:0">🔄</button>
+        </div>
+        <p class="hint" style="font-size:.7rem;color:#94a3b8;margin-top:4px">💡 ⚠️ = ยังค้างจ่าย, ✅ = จ่ายแล้ว — เลือกแล้วบันทึกจะอัปเดตเป็น "จ่ายแล้ว" อัตโนมัติ</p>
       </div>
       <div class="form-row">
         <label>ลูกค้า <span class="req">*</span></label>
@@ -960,11 +963,14 @@
         </div>
       </div>
       <div class="form-row">
-        <label>📋 ลิงก์รอบเที่ยวรถ <span style="font-size:.7rem;color:#94a3b8;font-weight:400">(เฉพาะรอบที่ยังไม่ได้ลงรายจ่าย)</span></label>
-        <select id="e-linkedTrip" onchange="onExpenseLinkedTripChange()" style="background:#fafafa">
-          <option value="">— ไม่ลิงก์รอบเที่ยว —</option>
-        </select>
-        <p class="hint" style="font-size:.7rem;color:#94a3b8;margin-top:4px">💡 เลือกรอบที่ค่าใช้จ่ายนี้เกี่ยวข้อง — รอบที่เลือกไปแล้วจะไม่ขึ้นอีก</p>
+        <label>📋 ลิงก์รอบเที่ยวรถ <span style="font-size:.7rem;color:#94a3b8;font-weight:400">(ถ้ารายจ่ายนี้เกี่ยวกับรอบเที่ยว)</span></label>
+        <div style="display:flex;gap:6px;align-items:stretch">
+          <select id="e-linkedTrip" onchange="onExpenseLinkedTripChange()" style="flex:1;background:#fafafa">
+            <option value="">— ไม่ลิงก์รอบเที่ยว —</option>
+          </select>
+          <button type="button" onclick="refreshExpenseLinkedTripsDropdown()" title="รีเฟรชรายการรอบเที่ยว" style="background:#dbeafe;border:1.5px solid #93c5fd;border-radius:8px;width:46px;cursor:pointer;font-size:1.1rem;color:#1d4ed8;flex-shrink:0">🔄</button>
+        </div>
+        <p class="hint" style="font-size:.7rem;color:#94a3b8;margin-top:4px">💡 🔒 = รอบนี้ลงรายจ่ายไปแล้ว — สามารถเลือกซ้ำได้หากต้องการ</p>
       </div>
       <div class="form-row-2">
         <div class="form-row">
@@ -2291,23 +2297,18 @@ function autoFillTripRound() {
 }
 
 // ─── INCOME — LINKED TRIP DROPDOWN ───
+// Shows ALL trips (paid + unpaid), sorted by round desc. Paid trips marked ✅.
 function populateLinkedTripsDropdown(editingRecord) {
   const sel = document.getElementById('i-linkedTrip');
   if (!sel) return;
   const currentVal = sel.value;
-  // Trips that are still "ค้างจ่าย" — main candidates
   const candidates = (_master.truckHistory || [])
-    .filter(t => t.rowId && (t.paymentStatus || 'ค้างจ่าย') === 'ค้างจ่าย' && (t.tripRound != null && t.tripRound !== ''));
-  // If editing a record that's already linked to a (possibly จ่ายแล้ว) trip, INCLUDE that trip
+    .filter(t => t.rowId && (t.tripRound != null && t.tripRound !== ''))
+    .sort((a,b) => (+b.tripRound||0) - (+a.tripRound||0));
+
   const editingLinkId = editingRecord && editingRecord.linkedTripRowId
     ? editingRecord.linkedTripRowId
     : null;
-  if (editingLinkId && !candidates.find(t => t.rowId === editingLinkId)) {
-    const linkedTrip = (_master.truckHistory || []).find(t => t.rowId === editingLinkId);
-    if (linkedTrip) candidates.push(linkedTrip);
-  }
-  // Sort latest round first
-  candidates.sort((a,b) => (+b.tripRound||0) - (+a.tripRound||0));
 
   sel.innerHTML = '<option value="">— ไม่ลิงก์รอบเที่ยว —</option>' + candidates.map(t => {
     const dates = (t.deliveryDate && t.deliveryDate !== t.pickupDate)
@@ -2315,43 +2316,53 @@ function populateLinkedTripsDropdown(editingRecord) {
       : fmtDate(t.pickupDate || t.jobDate);
     const cust = t.customerName ? ` • ${t.customerName}` : '';
     const amt  = t.freightCost ? ` (฿${(+t.freightCost).toLocaleString('en-US')})` : '';
-    const paid = (t.paymentStatus === 'จ่ายแล้ว') ? ' ✅' : '';
+    const paid = (t.paymentStatus === 'จ่ายแล้ว') ? ' ✅' : ' ⚠️';
     return `<option value="${escAttr(t.rowId)}" data-round="${t.tripRound}" data-amount="${t.freightCost||''}" data-customer="${escAttr(t.customerName||'')}">รอบ #${t.tripRound}${paid} • ${escAttr(t.plateNumber||'')} • ${escAttr(dates)}${escAttr(cust)}${amt}</option>`;
   }).join('');
-  // Restore selection: prefer editing record's link, then previous value
   if (editingLinkId) sel.value = editingLinkId;
   else if (currentVal) sel.value = currentVal;
 }
-// Populate expense form's linked trip dropdown — trips NOT yet linked to any expense
-// (Plus the currently-linked trip if editing)
+// Refresh master data + repopulate (called when user clicks dropdown)
+async function refreshLinkedTripsDropdown() {
+  await loadMasterData();
+  const rec = _editingMode.income
+    ? (_listCache.income || []).find(r => r.rowId === _editingMode.income)
+    : null;
+  populateLinkedTripsDropdown(rec);
+}
+async function refreshExpenseLinkedTripsDropdown() {
+  await loadMasterData();
+  const rec = _editingMode.expense
+    ? (_listCache.expense || []).find(r => r.rowId === _editingMode.expense)
+    : null;
+  populateExpenseLinkedTripsDropdown(rec);
+}
+// Populate expense form's linked trip dropdown — show ALL trips, mark linked ones
 function populateExpenseLinkedTripsDropdown(editingRecord) {
   const sel = document.getElementById('e-linkedTrip');
   if (!sel) return;
   const currentVal = sel.value;
-  const linkedTripIds = new Set(
-    (_master.expenseHistory || [])
-      .map(e => e.linkedTripRowId)
-      .filter(id => id)
-  );
-  // Available: trips with tripRound + not already linked to expense
-  const candidates = (_master.truckHistory || [])
-    .filter(t => t.rowId && (t.tripRound != null && t.tripRound !== '') && !linkedTripIds.has(t.rowId));
-  // Include currently-linked trip if editing
+  // Find trips already linked to expense (excluding current editing)
   const editingLinkId = editingRecord && editingRecord.linkedTripRowId
     ? editingRecord.linkedTripRowId
     : null;
-  if (editingLinkId && !candidates.find(t => t.rowId === editingLinkId)) {
-    const linkedTrip = (_master.truckHistory || []).find(t => t.rowId === editingLinkId);
-    if (linkedTrip) candidates.push(linkedTrip);
-  }
-  candidates.sort((a,b) => (+b.tripRound||0) - (+a.tripRound||0));
+  const linkedTripIds = new Set(
+    (_master.expenseHistory || [])
+      .filter(e => e.linkedTripRowId && (!editingRecord || e.rowId !== editingRecord.rowId))
+      .map(e => e.linkedTripRowId)
+  );
+  // Show all trips with tripRound, sorted desc
+  const candidates = (_master.truckHistory || [])
+    .filter(t => t.rowId && (t.tripRound != null && t.tripRound !== ''))
+    .sort((a,b) => (+b.tripRound||0) - (+a.tripRound||0));
 
   sel.innerHTML = '<option value="">— ไม่ลิงก์รอบเที่ยว —</option>' + candidates.map(t => {
     const dates = (t.deliveryDate && t.deliveryDate !== t.pickupDate)
       ? `${fmtDate(t.pickupDate)} → ${fmtDate(t.deliveryDate)}`
       : fmtDate(t.pickupDate || t.jobDate);
     const cust = t.customerName ? ` • ${t.customerName}` : '';
-    return `<option value="${escAttr(t.rowId)}" data-round="${t.tripRound}" data-plate="${escAttr(t.plateNumber||'')}">รอบ #${t.tripRound} • ${escAttr(t.plateNumber||'')} • ${escAttr(dates)}${escAttr(cust)}</option>`;
+    const usedByOther = linkedTripIds.has(t.rowId) ? ' 🔒(ใช้แล้ว)' : '';
+    return `<option value="${escAttr(t.rowId)}" data-round="${t.tripRound}" data-plate="${escAttr(t.plateNumber||'')}">รอบ #${t.tripRound}${usedByOther} • ${escAttr(t.plateNumber||'')} • ${escAttr(dates)}${escAttr(cust)}</option>`;
   }).join('');
   if (editingLinkId) sel.value = editingLinkId;
   else if (currentVal) sel.value = currentVal;
