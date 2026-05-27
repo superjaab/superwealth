@@ -701,7 +701,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v5.5 | 28/05/2026 05:40</span>
+  <span class="version" style="margin-left:auto">v5.6 | 28/05/2026 05:55</span>
   <div style="position:relative;margin-left:10px">
     <button class="header-bell" onclick="toggleBell(event)" title="แจ้งเตือน">
       🔔<span class="bell-badge" id="bell-badge" style="display:none">0</span>
@@ -958,6 +958,13 @@
             <option value="อื่นๆ">📌 อื่นๆ</option>
           </select>
         </div>
+      </div>
+      <div class="form-row">
+        <label>📋 ลิงก์รอบเที่ยวรถ <span style="font-size:.7rem;color:#94a3b8;font-weight:400">(เฉพาะรอบที่ยังไม่ได้ลงรายจ่าย)</span></label>
+        <select id="e-linkedTrip" onchange="onExpenseLinkedTripChange()" style="background:#fafafa">
+          <option value="">— ไม่ลิงก์รอบเที่ยว —</option>
+        </select>
+        <p class="hint" style="font-size:.7rem;color:#94a3b8;margin-top:4px">💡 เลือกรอบที่ค่าใช้จ่ายนี้เกี่ยวข้อง — รอบที่เลือกไปแล้วจะไม่ขึ้นอีก</p>
       </div>
       <div class="form-row-2">
         <div class="form-row">
@@ -2061,6 +2068,7 @@ window.addEventListener('DOMContentLoaded', () => {
   loadMasterData().then(() => {
     setTripRoundField();
     populateLinkedTripsDropdown();
+    populateExpenseLinkedTripsDropdown();
   });
   // Image zoom keyboard
   document.addEventListener('keydown', e => {
@@ -2174,16 +2182,20 @@ const _master = {
 
 async function loadMasterData() {
   try {
-    const [vehRes, custRes, drvRes, truckRes] = await Promise.all([
+    const [vehRes, custRes, drvRes, truckRes, incRes, expRes] = await Promise.all([
       fetch('/api/get-data?type=vehicle').then(r => r.json()).catch(() => ({})),
       fetch('/api/get-data?type=customer').then(r => r.json()).catch(() => ({})),
       fetch('/api/get-data?type=driver').then(r => r.json()).catch(() => ({})),
-      fetch('/api/get-data?type=truck').then(r => r.json()).catch(() => ({}))
+      fetch('/api/get-data?type=truck').then(r => r.json()).catch(() => ({})),
+      fetch('/api/get-data?type=income').then(r => r.json()).catch(() => ({})),
+      fetch('/api/get-data?type=expense').then(r => r.json()).catch(() => ({}))
     ]);
-    _master.vehicles     = ((vehRes.data || {}).vehicle) || [];
-    _master.customers    = ((custRes.data || {}).customer) || [];
-    _master.drivers      = ((drvRes.data || {}).driver) || [];
-    _master.truckHistory = ((truckRes.data || {}).truck) || [];
+    _master.vehicles      = ((vehRes.data || {}).vehicle) || [];
+    _master.customers     = ((custRes.data || {}).customer) || [];
+    _master.drivers       = ((drvRes.data || {}).driver) || [];
+    _master.truckHistory  = ((truckRes.data || {}).truck) || [];
+    _master.incomeHistory = ((incRes.data || {}).income) || [];
+    _master.expenseHistory= ((expRes.data || {}).expense) || [];
     // Populate datalists (for places still using them)
     const plateDl = document.getElementById('plate-dl');
     if (plateDl) plateDl.innerHTML = _master.vehicles.map(v => `<option value="${escAttr(v.plateNumber||'')}">`).join('');
@@ -2296,6 +2308,40 @@ function populateLinkedTripsDropdown() {
     return `<option value="${escAttr(t.rowId)}" data-round="${t.tripRound}" data-amount="${t.freightCost||''}" data-customer="${escAttr(t.customerName||'')}">รอบ #${t.tripRound} • ${escAttr(t.plateNumber||'')} • ${escAttr(dates)}${escAttr(cust)}${amt}</option>`;
   }).join('');
   if (currentVal) sel.value = currentVal;
+}
+// Populate expense form's linked trip dropdown — only trips NOT yet linked to any expense
+function populateExpenseLinkedTripsDropdown() {
+  const sel = document.getElementById('e-linkedTrip');
+  if (!sel) return;
+  const currentVal = sel.value;
+  const linkedTripIds = new Set(
+    (_master.expenseHistory || [])
+      .map(e => e.linkedTripRowId)
+      .filter(id => id)
+  );
+  // Available: trips with tripRound + not already linked to expense
+  const available = (_master.truckHistory || [])
+    .filter(t => t.rowId && t.tripRound && !linkedTripIds.has(t.rowId))
+    .sort((a,b) => (+b.tripRound||0) - (+a.tripRound||0));
+  sel.innerHTML = '<option value="">— ไม่ลิงก์รอบเที่ยว —</option>' + available.map(t => {
+    const dates = (t.deliveryDate && t.deliveryDate !== t.pickupDate)
+      ? `${fmtDate(t.pickupDate)} → ${fmtDate(t.deliveryDate)}`
+      : fmtDate(t.pickupDate || t.jobDate);
+    const cust = t.customerName ? ` • ${t.customerName}` : '';
+    return `<option value="${escAttr(t.rowId)}" data-round="${t.tripRound}" data-plate="${escAttr(t.plateNumber||'')}">รอบ #${t.tripRound} • ${escAttr(t.plateNumber||'')} • ${escAttr(dates)}${escAttr(cust)}</option>`;
+  }).join('');
+  if (currentVal) sel.value = currentVal;
+}
+function onExpenseLinkedTripChange() {
+  const sel = document.getElementById('e-linkedTrip');
+  if (!sel) return;
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt || !opt.value) return;
+  // Auto-fill plate number field if empty
+  const plate = opt.dataset.plate;
+  const plateField = document.getElementById('e-plateNumber');
+  if (plateField && !plateField.value && plate) plateField.value = plate;
+  showToast(`📋 ลิงก์รอบ #${opt.dataset.round} แล้ว`, 'info');
 }
 function onLinkedTripChange() {
   const sel = document.getElementById('i-linkedTrip');
@@ -2527,6 +2573,7 @@ function switchTab(tab, btnEl) {
   if (tab === 'invoice') { genInvNum(); renderInvRows(); }
   if (tab === 'truck' && !_editingMode.truck) setTripRoundField();
   if (tab === 'income') populateLinkedTripsDropdown();
+  if (tab === 'expense') populateExpenseLinkedTripsDropdown();
   closeSidebar();
 }
 
@@ -2638,9 +2685,10 @@ function addFiles(files, formKey) {
     state[formKey].images.push({ file, previewUrl: null });
     renderPreview(formKey);
   }
-  // OCR อัตโนมัติเฉพาะรูปแรกที่เพิ่มใหม่ (ไม่รัน 4 ครั้งพร้อมกัน)
+  // OCR ไม่อ่านอัตโนมัติแล้ว — รอผู้ใช้กดปุ่ม "OCR" ที่แต่ละรูป
   if (state[formKey].images.length > startIdx) {
-    autoOCRAndFill(startIdx, formKey);
+    const n = state[formKey].images.length - startIdx;
+    showToast(`📸 เพิ่ม ${n} ภาพแล้ว — กดปุ่ม "OCR" ที่รูปเพื่ออ่านข้อความ`, 'info');
   }
 }
 
@@ -2859,8 +2907,11 @@ async function submitForm(formKey) {
       resetForm(formKey, true);  // silent — don't overwrite success toast
       // Refresh master data + re-fill auto fields (tripRound/linked trips)
       await loadMasterData();
-      if (formKey === 'truck')  setTripRoundField();
-      if (formKey === 'income') populateLinkedTripsDropdown();
+      if (formKey === 'truck')   setTripRoundField();
+      if (formKey === 'income')  populateLinkedTripsDropdown();
+      if (formKey === 'expense') populateExpenseLinkedTripsDropdown();
+      // Refresh expense dropdown too if a truck was added (so it includes new rounds)
+      if (formKey === 'truck') { populateLinkedTripsDropdown(); populateExpenseLinkedTripsDropdown(); }
     } else {
       showToast('บันทึกไม่สำเร็จ: ' + result.error, 'error');
     }
@@ -2940,12 +2991,17 @@ function collectFormData(formKey) {
     if (!g('e-expenseDate')) { showToast('กรุณาเลือกวันที่', 'warning');        return null; }
     if (!g('e-category'))    { showToast('กรุณาเลือกหมวดรายจ่าย', 'warning'); return null; }
     if (!g('e-amount'))      { showToast('กรุณากรอกจำนวนเงิน', 'warning');     return null; }
+    const eLinkedSel = document.getElementById('e-linkedTrip');
+    const eLinkedOpt = eLinkedSel && eLinkedSel.options[eLinkedSel.selectedIndex];
+    const eLinkedRound = (eLinkedOpt && eLinkedOpt.dataset.round) ? +eLinkedOpt.dataset.round : 0;
     return {
       expenseDate: g('e-expenseDate'), expenseTime: g('e-expenseTime'),
       category: g('e-category'),
       plateNumber: g('e-plateNumber'), vendor: g('e-vendor'),
       expenseDetail: g('e-expenseDetail'), amount: g('e-amount'),
-      paymentMethod: g('e-paymentMethod'), remark: g('e-remark')
+      paymentMethod: g('e-paymentMethod'), remark: g('e-remark'),
+      linkedTripRowId: g('e-linkedTrip'),
+      linkedTripRound: eLinkedRound
     };
   }
 }
@@ -3031,7 +3087,8 @@ const _PREFILL_MAP = {
   expense: {
     expenseDate:'e-expenseDate', expenseTime:'e-expenseTime', category:'e-category',
     plateNumber:'e-plateNumber', vendor:'e-vendor', expenseDetail:'e-expenseDetail',
-    amount:'e-amount', paymentMethod:'e-paymentMethod', remark:'e-remark'
+    amount:'e-amount', paymentMethod:'e-paymentMethod', remark:'e-remark',
+    linkedTripRowId:'e-linkedTrip'
   },
   vehicle: {
     plateNumber:'v-plate', vehicleType:'v-type', brand:'v-brand', model:'v-model',
@@ -3181,8 +3238,9 @@ async function performEditUpdate(type, data) {
       cancelEdit(type, true);   // silent — don't overwrite success toast
       reloadList(type);
       await loadMasterData();   // await to ensure cached data is fresh
-      if (type === 'truck')  setTripRoundField();
-      if (type === 'income') populateLinkedTripsDropdown();
+      if (type === 'truck')   setTripRoundField();
+      if (type === 'income')  populateLinkedTripsDropdown();
+      if (type === 'expense') populateExpenseLinkedTripsDropdown();
     } else {
       showToast(result.error || 'อัปเดตไม่สำเร็จ', 'error');
     }
@@ -3353,7 +3411,8 @@ function ocrTabAddFiles(files) {
   ocrTabRenderPreview();
   if (added > 0) {
     document.getElementById('ocr-tab-btns').style.display = 'flex';
-    runOCRTab(); // อ่านอัตโนมัติทันที
+    // อย่าอ่าน OCR อัตโนมัติ — รอผู้ใช้กดปุ่ม 🔍 อ่านภาพ
+    showToast(`📸 อัปโหลด ${added} ภาพแล้ว — กด "🔍 อ่านภาพ" เมื่อพร้อม`, 'info');
   }
 }
 function ocrTabRenderPreview() {

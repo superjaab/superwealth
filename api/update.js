@@ -33,7 +33,8 @@ const CONFIGS = {
     row: (d, ts, id) => [
       ts, d.expenseDate||'', d.expenseTime||'', d.category||'', d.plateNumber||'',
       d.vendor||'', d.expenseDetail||'', +d.amount||0, d.paymentMethod||'เงินสด',
-      d.remark||'', JSON.stringify(d.imageUrls||[]), d.ocrText||'', d.userAgent||'', id
+      d.remark||'', JSON.stringify(d.imageUrls||[]), d.ocrText||'', d.userAgent||'', id,
+      d.linkedTripRowId||'', +d.linkedTripRound||0
     ]
   },
   vehicle: {

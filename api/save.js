@@ -39,11 +39,13 @@ const CONFIGS = {
     name: 'Expense', color: '#B71C1C', prefix: 'EXP',
     headers: ['timestamp','expenseDate','expenseTime','category','plateNumber',
       'vendor','expenseDetail','amount','paymentMethod','remark',
-      'imageUrls','ocrText','userAgent','rowId'],
+      'imageUrls','ocrText','userAgent','rowId',
+      'linkedTripRowId','linkedTripRound'],
     row: (d, now, id) => [
       now, d.expenseDate||'', d.expenseTime||'', d.category||'', d.plateNumber||'',
       d.vendor||'', d.expenseDetail||'', +d.amount||0, d.paymentMethod||'เงินสด',
-      d.remark||'', JSON.stringify(d.imageUrls||[]), d.ocrText||'', d.userAgent||'', id
+      d.remark||'', JSON.stringify(d.imageUrls||[]), d.ocrText||'', d.userAgent||'', id,
+      d.linkedTripRowId||'', +d.linkedTripRound||0
     ]
   },
   vehicle: {
