@@ -367,11 +367,70 @@
 
     @media (min-width: 600px) {
       .tab-nav { position: static; border-top: none; border-bottom: 2px solid var(--gray2); box-shadow: none; }
-      .tab-btn { flex-direction: row; padding: 14px 20px; font-size: 0.88rem; gap: 8px; }
+      .tab-btn { flex-direction: row; padding: 14px 16px; font-size: 0.85rem; gap: 6px; }
       .tab-btn .icon { font-size: 1.1rem; }
       body { padding-bottom: 0; }
       .tab-panel { padding: 20px 16px; }
       #toast { bottom: 20px; }
+    }
+
+    /* ─── v3.0 ADDITIONS ─── */
+    /* Scrollable nav */
+    .tab-nav { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .tab-nav::-webkit-scrollbar { display: none; }
+    .tab-btn { flex: 0 0 auto; min-width: 64px; }
+
+    /* Inner nav (form / list toggle) */
+    .inner-nav { display: flex; gap: 8px; margin-bottom: 14px; }
+    .inner-btn { flex: 1; padding: 9px 6px; border: 1.5px solid var(--gray2); border-radius: 8px; background: var(--white); font-size: .82rem; font-family: inherit; cursor: pointer; transition: all .2s; }
+    .inner-btn.active { background: var(--blue); color: var(--white); border-color: var(--blue); }
+
+    /* Record list cards */
+    .record-card { background: var(--white); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 8px; border: 1px solid var(--gray2); border-left: 4px solid var(--blue); }
+    .rc-title { font-size: .92rem; font-weight: 700; margin-bottom: 4px; }
+    .rc-sub { font-size: .78rem; color: var(--gray4); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 2px; }
+    .rc-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+    .list-loading, .list-empty { text-align: center; padding: 24px 16px; color: var(--gray3); font-size: .85rem; }
+
+    /* Expiry badges */
+    .exp-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: .7rem; font-weight: 600; white-space: nowrap; }
+    .exp-ok       { background: #E8F5E9; color: #2E7D32; }
+    .exp-warning  { background: #FFF9C4; color: #F57F17; }
+    .exp-critical { background: #FFF3E0; color: #E65100; }
+    .exp-expired  { background: #FFEBEE; color: #C62828; }
+    .exp-none     { background: var(--gray1); color: var(--gray3); }
+
+    /* Invoice line-items table */
+    .inv-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    .inv-table th { background: var(--gray1); padding: 6px 8px; font-size: .72rem; color: var(--gray4); border-bottom: 1.5px solid var(--gray2); text-align: left; white-space: nowrap; }
+    .inv-input { width: 100%; padding: 5px 6px; border: 1px solid var(--gray2); border-radius: 4px; font-size: .82rem; font-family: inherit; background: var(--white); }
+    .inv-num  { width: 65px !important; }
+    .inv-unit { width: 55px !important; }
+    .inv-price{ width: 85px !important; }
+    .inv-total-cell { text-align: right; font-weight: 700; padding: 6px 8px; white-space: nowrap; min-width: 75px; }
+    .inv-del-btn { width: 24px; height: 24px; border: none; background: var(--gray2); border-radius: 4px; cursor: pointer; font-size: .8rem; color: var(--gray4); }
+    .inv-totals-box { display: flex; justify-content: flex-end; }
+    .inv-totals-inner { min-width: 200px; }
+    .inv-totals-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: .88rem; gap: 16px; }
+    .inv-totals-row.total { border-top: 2px solid var(--blue); font-size: 1.05rem; font-weight: 800; color: var(--blue); padding-top: 8px; margin-top: 2px; }
+
+    /* Alert items */
+    .alert-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; margin-bottom: 8px; border-radius: var(--radius-sm); gap: 10px; }
+    .alert-item-left { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+    .alert-icon  { font-size: 1.3rem; flex-shrink: 0; }
+    .alert-title { font-size: .85rem; font-weight: 700; }
+    .alert-sub   { font-size: .75rem; color: var(--gray4); }
+    .alert-badge { font-size: .7rem; font-weight: 700; white-space: nowrap; padding: 4px 8px; border-radius: 10px; color: white; }
+    .alert-expired  { background: #FFEBEE; } .alert-expired  .alert-badge { background: #C62828; }
+    .alert-critical { background: #FFF3E0; } .alert-critical .alert-badge { background: #E65100; }
+    .alert-warning  { background: #FFF9C4; } .alert-warning  .alert-badge { background: #F57F17; }
+    .alert-invoice  { background: #E3F2FD; } .alert-invoice  .alert-badge { background: #1565C0; }
+
+    /* Invoice print */
+    #invoice-print-overlay { display: none; }
+    @media print {
+      body > *:not(#invoice-print-overlay) { display: none !important; }
+      #invoice-print-overlay { display: block !important; }
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
@@ -381,28 +440,23 @@
 <header class="app-header">
   <span style="font-size:1.5rem">🚛</span>
   <h1>ระบบขนส่งรถบรรทุก</h1>
-  <span class="version">v2.5 | 27/05/2026 03:09</span>
+  <span class="version">v3.0 | 27/05/2026 15:32</span>
 </header>
 
 <nav class="tab-nav">
-  <button class="tab-btn active" onclick="switchTab('truck', this)">
-    <span class="icon">🚚</span><span>บันทึกรถ</span>
-  </button>
-  <button class="tab-btn" onclick="switchTab('income', this)">
-    <span class="icon">💰</span><span>รายรับ</span>
-  </button>
-  <button class="tab-btn" onclick="switchTab('expense', this)">
-    <span class="icon">💸</span><span>รายจ่าย</span>
-  </button>
-  <button class="tab-btn" onclick="switchTab('gps', this)">
-    <span class="icon">📡</span><span>GPS</span>
-  </button>
-  <button class="tab-btn" onclick="switchTab('ocr', this)">
-    <span class="icon">🔍</span><span>อ่านภาพ</span>
-  </button>
-  <button class="tab-btn" onclick="switchTab('summary', this); initSummaryOnce()">
-    <span class="icon">📊</span><span>สรุปผล</span>
-  </button>
+  <button class="tab-btn active" onclick="switchTab('truck',this)"><span class="icon">🚚</span><span>บันทึกรถ</span></button>
+  <button class="tab-btn" onclick="switchTab('income',this)"><span class="icon">💰</span><span>รายรับ</span></button>
+  <button class="tab-btn" onclick="switchTab('expense',this)"><span class="icon">💸</span><span>รายจ่าย</span></button>
+  <button class="tab-btn" onclick="switchTab('vehicle',this)"><span class="icon">🚛</span><span>ทะเบียนรถ</span></button>
+  <button class="tab-btn" onclick="switchTab('driver',this)"><span class="icon">👤</span><span>คนขับ</span></button>
+  <button class="tab-btn" onclick="switchTab('customer',this)"><span class="icon">🏢</span><span>ลูกค้า</span></button>
+  <button class="tab-btn" onclick="switchTab('maintenance',this)"><span class="icon">🔧</span><span>ซ่อมบำรุง</span></button>
+  <button class="tab-btn" onclick="switchTab('fuel',this)"><span class="icon">⛽</span><span>น้ำมัน</span></button>
+  <button class="tab-btn" onclick="switchTab('invoice',this)"><span class="icon">📋</span><span>Invoice</span></button>
+  <button class="tab-btn" onclick="switchTab('summary',this);initSummaryOnce()"><span class="icon">📊</span><span>สรุปผล</span></button>
+  <button class="tab-btn" onclick="switchTab('alert',this);loadAlerts()"><span class="icon">🔔</span><span>แจ้งเตือน</span></button>
+  <button class="tab-btn" onclick="switchTab('gps',this)"><span class="icon">📡</span><span>GPS</span></button>
+  <button class="tab-btn" onclick="switchTab('ocr',this)"><span class="icon">🔍</span><span>อ่านภาพ</span></button>
 </nav>
 
 <!-- ══ TAB 1: บันทึกรถบรรทุก ══ -->
@@ -842,6 +896,266 @@
 
 </div>
 
+<!-- ══ TAB 4: ทะเบียนรถ ══ -->
+<div class="tab-panel" id="tab-vehicle">
+  <div class="inner-nav">
+    <button class="inner-btn active" onclick="innerTab('vehicle','form',this)">➕ เพิ่มรถใหม่</button>
+    <button class="inner-btn" onclick="innerTab('vehicle','list',this)">📋 รายการรถ</button>
+  </div>
+  <div id="vehicle-form-view">
+    <div class="card">
+      <div class="card-title" style="color:#0D47A1">🚛 ข้อมูลรถ</div>
+      <div class="form-row-2">
+        <div class="form-row"><label>ทะเบียนรถ <span class="req">*</span></label><input type="text" id="v-plate" placeholder="กข-1234" maxlength="20"></div>
+        <div class="form-row"><label>ประเภทรถ <span class="req">*</span></label>
+          <select id="v-type"><option value="">-- เลือก --</option><option>รถบรรทุก 4 ล้อ</option><option>รถบรรทุก 6 ล้อ</option><option>รถบรรทุก 10 ล้อ</option><option>รถบรรทุก 18 ล้อ</option><option>หัวลาก+พ่วง</option><option>รถพ่วง</option><option>อื่นๆ</option></select>
+        </div>
+      </div>
+      <div class="form-row-3">
+        <div class="form-row"><label>ยี่ห้อ</label><input type="text" id="v-brand" placeholder="Isuzu / Hino" maxlength="50"></div>
+        <div class="form-row"><label>รุ่น</label><input type="text" id="v-model" maxlength="50"></div>
+        <div class="form-row"><label>ปีผลิต (ค.ศ.)</label><input type="number" id="v-year" placeholder="2022" min="1990" max="2030"></div>
+      </div>
+      <div class="form-row-3">
+        <div class="form-row"><label>บรรทุกสูงสุด (ตัน)</label><input type="number" id="v-load" placeholder="0" min="0" step="0.1"></div>
+        <div class="form-row"><label>สีรถ</label><input type="text" id="v-color" maxlength="30"></div>
+        <div class="form-row"><label>เลขตัวถัง</label><input type="text" id="v-chassis" maxlength="50"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="color:#C62828">📅 วันหมดอายุเอกสาร</div>
+      <div class="form-row-2">
+        <div class="form-row"><label>ภาษีรถยนต์</label><input type="date" id="v-reg"></div>
+        <div class="form-row"><label>พ.ร.บ. รถยนต์</label><input type="date" id="v-prb"></div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row"><label>ประกันภัยรถ</label><input type="date" id="v-ins"></div>
+        <div class="form-row"><label>ตรวจสภาพรถ (ครั้งต่อไป)</label><input type="date" id="v-inspect"></div>
+      </div>
+      <div class="form-row"><label>หมายเหตุ</label><textarea id="v-notes" rows="2" placeholder="หมายเหตุ..."></textarea></div>
+    </div>
+    <div class="submit-row"><button type="button" class="btn btn-primary btn-block" onclick="submitVehicle()" style="padding:15px;background:#0D47A1">💾 บันทึกข้อมูลรถ</button></div>
+    <div style="margin-top:8px"><button type="button" class="btn btn-secondary btn-block btn-small" onclick="resetFields(['v-plate','v-type','v-brand','v-model','v-year','v-load','v-color','v-chassis','v-reg','v-prb','v-ins','v-inspect','v-notes'])">🗑 ล้างข้อมูล</button></div>
+  </div>
+  <div id="vehicle-list-view" style="display:none"><div id="veh-list" class="list-loading">กด "รายการรถ" เพื่อโหลด</div></div>
+</div>
+
+<!-- ══ TAB 5: คนขับ ══ -->
+<div class="tab-panel" id="tab-driver">
+  <div class="inner-nav">
+    <button class="inner-btn active" onclick="innerTab('driver','form',this)">➕ เพิ่มคนขับ</button>
+    <button class="inner-btn" onclick="innerTab('driver','list',this)">📋 รายชื่อคนขับ</button>
+  </div>
+  <div id="driver-form-view">
+    <div class="card">
+      <div class="card-title" style="color:#1B5E20">👤 ข้อมูลคนขับ</div>
+      <div class="form-row-2">
+        <div class="form-row"><label>ชื่อ-นามสกุล <span class="req">*</span></label><input type="text" id="d-name" placeholder="ชื่อ นามสกุล" maxlength="100"></div>
+        <div class="form-row"><label>เบอร์โทรศัพท์ <span class="req">*</span></label><input type="tel" id="d-phone" placeholder="081-234-5678" maxlength="20"></div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row"><label>เลขบัตรประชาชน</label><input type="text" id="d-idcard" placeholder="1-XXXX-XXXXX-XX-X" maxlength="20"></div>
+        <div class="form-row"><label>ประเภทใบขับขี่</label>
+          <select id="d-lic-type"><option value="">-- เลือก --</option><option>ท.1</option><option>ท.2</option><option>ท.3</option><option>ท.4</option><option>อื่นๆ</option></select>
+        </div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row"><label>เลขที่ใบขับขี่</label><input type="text" id="d-lic-num" maxlength="30"></div>
+        <div class="form-row"><label>วันหมดอายุใบขับขี่</label><input type="date" id="d-lic-exp"></div>
+      </div>
+      <div class="form-row"><label>ที่อยู่</label><textarea id="d-address" rows="2" placeholder="บ้านเลขที่ ถนน ตำบล อำเภอ จังหวัด"></textarea></div>
+      <div class="form-row-2">
+        <div class="form-row"><label>ผู้ติดต่อฉุกเฉิน</label><input type="text" id="d-emg-contact" maxlength="100"></div>
+        <div class="form-row"><label>เบอร์ฉุกเฉิน</label><input type="tel" id="d-emg-phone" maxlength="20"></div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row"><label>สถานะ</label>
+          <select id="d-status"><option value="ทำงาน">✅ ทำงาน</option><option value="พักงาน">⏸ พักงาน</option><option value="ลาออก">❌ ลาออก</option></select>
+        </div>
+        <div class="form-row"><label>หมายเหตุ</label><input type="text" id="d-notes" maxlength="200"></div>
+      </div>
+    </div>
+    <div class="submit-row"><button type="button" class="btn btn-primary btn-block" onclick="submitDriver()" style="padding:15px;background:#1B5E20">💾 บันทึกข้อมูลคนขับ</button></div>
+    <div style="margin-top:8px"><button type="button" class="btn btn-secondary btn-block btn-small" onclick="resetFields(['d-name','d-phone','d-idcard','d-lic-type','d-lic-num','d-lic-exp','d-address','d-emg-contact','d-emg-phone','d-status','d-notes'])">🗑 ล้างข้อมูล</button></div>
+  </div>
+  <div id="driver-list-view" style="display:none"><div id="drv-list" class="list-loading">กด "รายชื่อคนขับ" เพื่อโหลด</div></div>
+</div>
+
+<!-- ══ TAB 6: ลูกค้า ══ -->
+<div class="tab-panel" id="tab-customer">
+  <div class="inner-nav">
+    <button class="inner-btn active" onclick="innerTab('customer','form',this)">➕ เพิ่มลูกค้า</button>
+    <button class="inner-btn" onclick="innerTab('customer','list',this)">📋 รายชื่อลูกค้า</button>
+  </div>
+  <div id="customer-form-view">
+    <div class="card">
+      <div class="card-title" style="color:#4A148C">🏢 ข้อมูลลูกค้า</div>
+      <div class="form-row-2">
+        <div class="form-row"><label>ชื่อบริษัท/ร้านค้า <span class="req">*</span></label><input type="text" id="c-name" placeholder="บริษัท / ร้าน / ชื่อบุคคล" maxlength="150"></div>
+        <div class="form-row"><label>ชื่อผู้ติดต่อ</label><input type="text" id="c-contact" maxlength="100"></div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row"><label>เบอร์โทร <span class="req">*</span></label><input type="tel" id="c-phone" placeholder="02-XXX-XXXX" maxlength="20"></div>
+        <div class="form-row"><label>อีเมล</label><input type="email" id="c-email" placeholder="example@email.com" maxlength="100"></div>
+      </div>
+      <div class="form-row"><label>ที่อยู่</label><textarea id="c-address" rows="2" placeholder="ที่อยู่สำหรับออกใบแจ้งหนี้"></textarea></div>
+      <div class="form-row-2">
+        <div class="form-row"><label>เลขผู้เสียภาษี</label><input type="text" id="c-taxid" placeholder="0000000000000" maxlength="20"></div>
+        <div class="form-row"><label>เงื่อนไขชำระเงิน</label>
+          <select id="c-terms"><option value="เงินสด">💵 เงินสด</option><option value="7 วัน">7 วัน</option><option value="15 วัน">15 วัน</option><option value="30 วัน">30 วัน</option><option value="60 วัน">60 วัน</option></select>
+        </div>
+      </div>
+      <div class="form-row"><label>หมายเหตุ</label><textarea id="c-notes" rows="2"></textarea></div>
+    </div>
+    <div class="submit-row"><button type="button" class="btn btn-primary btn-block" onclick="submitCustomer()" style="padding:15px;background:#4A148C">💾 บันทึกข้อมูลลูกค้า</button></div>
+    <div style="margin-top:8px"><button type="button" class="btn btn-secondary btn-block btn-small" onclick="resetFields(['c-name','c-contact','c-phone','c-email','c-address','c-taxid','c-terms','c-notes'])">🗑 ล้างข้อมูล</button></div>
+  </div>
+  <div id="customer-list-view" style="display:none"><div id="cust-list" class="list-loading">กด "รายชื่อลูกค้า" เพื่อโหลด</div></div>
+</div>
+
+<!-- ══ TAB 7: ซ่อมบำรุง ══ -->
+<div class="tab-panel" id="tab-maintenance">
+  <div class="inner-nav">
+    <button class="inner-btn active" onclick="innerTab('maintenance','form',this)">➕ บันทึกซ่อมบำรุง</button>
+    <button class="inner-btn" onclick="innerTab('maintenance','list',this)">📋 ประวัติซ่อม</button>
+  </div>
+  <div id="maintenance-form-view">
+    <div class="card">
+      <div class="card-title" style="color:#E65100">🔧 ข้อมูลการซ่อมบำรุง</div>
+      <div class="form-row-2">
+        <div class="form-row"><label>วันที่ซ่อม <span class="req">*</span></label><input type="date" id="mnt-date"></div>
+        <div class="form-row"><label>ทะเบียนรถ <span class="req">*</span></label><input type="text" id="mnt-plate" placeholder="กข-1234" list="plate-dl" maxlength="20"></div>
+      </div>
+      <div class="form-row"><label>ประเภทการซ่อม <span class="req">*</span></label>
+        <select id="mnt-type"><option value="">-- เลือก --</option><option>เปลี่ยนน้ำมันเครื่อง</option><option>เปลี่ยนยางรถ</option><option>ซ่อมเครื่องยนต์</option><option>ซ่อมระบบเกียร์</option><option>ซ่อมระบบไฟฟ้า</option><option>เปลี่ยนแบตเตอรี่</option><option>ตรวจสภาพทั่วไป</option><option>ล้างรถ/อัดฉีด</option><option>ซ่อมระบบเบรก</option><option>เปลี่ยนอะไหล่อื่นๆ</option><option>อื่นๆ</option></select>
+      </div>
+      <div class="form-row"><label>รายละเอียด</label><textarea id="mnt-desc" rows="2" placeholder="อธิบายรายละเอียดการซ่อม..."></textarea></div>
+      <div class="form-row-3">
+        <div class="form-row"><label>ค่าใช้จ่าย (บาท)</label><input type="number" id="mnt-cost" placeholder="0" min="0"></div>
+        <div class="form-row"><label>อู่/ร้านซ่อม</label><input type="text" id="mnt-vendor" maxlength="100"></div>
+        <div class="form-row"><label>เลขไมล์ตอนซ่อม</label><input type="number" id="mnt-km" placeholder="0" min="0"></div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row"><label>นัดซ่อมครั้งต่อไป</label><input type="date" id="mnt-next"></div>
+        <div class="form-row"><label>หมายเหตุ</label><input type="text" id="mnt-notes" maxlength="200"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="color:#E65100">📷 แนบรูป/ใบเสร็จ</div>
+      <div id="maint-upload-area"></div>
+    </div>
+    <div class="submit-row"><button type="button" class="btn btn-primary btn-block" onclick="submitMaintenance()" style="padding:15px;background:#E65100">💾 บันทึกการซ่อมบำรุง</button></div>
+    <div style="margin-top:8px"><button type="button" class="btn btn-secondary btn-block btn-small" onclick="resetMaintenance()">🗑 ล้างข้อมูล</button></div>
+  </div>
+  <div id="maintenance-list-view" style="display:none"><div id="mnt-list" class="list-loading">กด "ประวัติซ่อม" เพื่อโหลด</div></div>
+</div>
+
+<!-- ══ TAB 8: น้ำมัน ══ -->
+<div class="tab-panel" id="tab-fuel">
+  <div class="inner-nav">
+    <button class="inner-btn active" onclick="innerTab('fuel','form',this)">➕ บันทึกน้ำมัน</button>
+    <button class="inner-btn" onclick="innerTab('fuel','list',this)">📋 ประวัติเติมน้ำมัน</button>
+  </div>
+  <div id="fuel-form-view">
+    <div class="card">
+      <div class="card-title" style="color:#F57F17">⛽ บันทึกการเติมน้ำมัน</div>
+      <div class="form-row-3">
+        <div class="form-row"><label>วันที่ <span class="req">*</span></label><input type="date" id="fuel-date"></div>
+        <div class="form-row"><label>เวลา</label><input type="time" id="fuel-time"></div>
+        <div class="form-row"><label>ทะเบียนรถ <span class="req">*</span></label><input type="text" id="fuel-plate" placeholder="กข-1234" list="plate-dl" maxlength="20"></div>
+      </div>
+      <div class="form-row-3">
+        <div class="form-row"><label>จำนวนลิตร <span class="req">*</span></label><input type="number" id="fuel-liters" placeholder="0" min="0" step="0.01" oninput="calcFuelTotal()"></div>
+        <div class="form-row"><label>ราคา/ลิตร <span class="req">*</span></label><input type="number" id="fuel-price" placeholder="0" min="0" step="0.01" oninput="calcFuelTotal()"></div>
+        <div class="form-row"><label>รวมเป็นเงิน (บาท)</label><input type="number" id="fuel-total" placeholder="0.00" readonly style="background:#F5F5F5;color:var(--green);font-weight:700"></div>
+      </div>
+      <div class="form-row-3">
+        <div class="form-row"><label>เลขไมล์ปัจจุบัน</label><input type="number" id="fuel-km" placeholder="0" min="0"></div>
+        <div class="form-row"><label>ปั๊มน้ำมัน/สถานี</label><input type="text" id="fuel-station" maxlength="100"></div>
+        <div class="form-row"><label>วิธีชำระ</label>
+          <select id="fuel-pay"><option value="เงินสด">💵 เงินสด</option><option value="โอน">📲 โอน</option><option value="บัตรเครดิต">💳 บัตร</option><option value="อื่นๆ">🔄 อื่นๆ</option></select>
+        </div>
+      </div>
+      <div class="form-row"><label>หมายเหตุ</label><input type="text" id="fuel-notes" maxlength="200"></div>
+    </div>
+    <div class="submit-row"><button type="button" class="btn btn-primary btn-block" onclick="submitFuel()" style="padding:15px;background:#F57F17">💾 บันทึกข้อมูลน้ำมัน</button></div>
+    <div style="margin-top:8px"><button type="button" class="btn btn-secondary btn-block btn-small" onclick="resetFuel()">🗑 ล้างข้อมูล</button></div>
+  </div>
+  <div id="fuel-list-view" style="display:none"><div id="fuel-list" class="list-loading">กด "ประวัติเติมน้ำมัน" เพื่อโหลด</div></div>
+</div>
+
+<!-- ══ TAB 9: ใบแจ้งหนี้ ══ -->
+<div class="tab-panel" id="tab-invoice">
+  <div class="inner-nav">
+    <button class="inner-btn active" onclick="innerTab('invoice','form',this)">➕ สร้างใบแจ้งหนี้</button>
+    <button class="inner-btn" onclick="innerTab('invoice','list',this)">📋 รายการ Invoice</button>
+  </div>
+  <div id="invoice-form-view">
+    <div class="card">
+      <div class="card-title" style="color:#006064">📋 ข้อมูลใบแจ้งหนี้</div>
+      <div class="form-row-3">
+        <div class="form-row"><label>เลขที่ <span class="req">*</span></label><input type="text" id="inv-number" placeholder="INV-202605-XXX" maxlength="30"></div>
+        <div class="form-row"><label>วันที่ <span class="req">*</span></label><input type="date" id="inv-date"></div>
+        <div class="form-row"><label>ครบกำหนดชำระ</label><input type="date" id="inv-due"></div>
+      </div>
+      <div class="form-row"><label>ชื่อลูกค้า <span class="req">*</span></label><input type="text" id="inv-customer" placeholder="ชื่อลูกค้า/บริษัท" list="cust-dl" maxlength="150"></div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="color:#006064">📝 รายการสินค้า/บริการ</div>
+      <div style="overflow-x:auto">
+        <table class="inv-table">
+          <thead><tr><th style="min-width:120px">รายการ</th><th>จำนวน</th><th>หน่วย</th><th>ราคา/หน่วย</th><th style="text-align:right">รวม (฿)</th><th></th></tr></thead>
+          <tbody id="inv-items-body"></tbody>
+        </table>
+      </div>
+      <button type="button" class="btn btn-secondary btn-small" onclick="addInvRow()" style="margin-top:10px">+ เพิ่มรายการ</button>
+    </div>
+    <div class="card">
+      <div class="inv-totals-box">
+        <div class="inv-totals-inner">
+          <div class="inv-totals-row"><span>ยอดรวม</span><span id="inv-subtotal">0.00</span></div>
+          <div class="inv-totals-row">
+            <label style="margin:0;display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="inv-vat-toggle" onchange="calcInv()"> VAT 7%</label>
+            <span id="inv-vat-amount">0.00</span>
+          </div>
+          <div class="inv-totals-row total"><span>ยอดสุทธิ</span><span id="inv-total-display">0.00</span></div>
+        </div>
+      </div>
+      <div class="form-row-2" style="margin-top:12px">
+        <div class="form-row"><label>สถานะ</label>
+          <select id="inv-status"><option value="รอชำระ">⏳ รอชำระ</option><option value="ชำระแล้ว">✅ ชำระแล้ว</option><option value="เกินกำหนด">⚠️ เกินกำหนด</option><option value="ยกเลิก">❌ ยกเลิก</option></select>
+        </div>
+        <div class="form-row"><label>หมายเหตุ</label><input type="text" id="inv-notes" maxlength="200"></div>
+      </div>
+    </div>
+    <div class="submit-row" style="display:flex;gap:10px">
+      <button type="button" class="btn btn-primary" onclick="submitInvoice()" style="flex:1;padding:15px;background:#006064">💾 บันทึก</button>
+      <button type="button" class="btn btn-secondary" onclick="printInvoice()" style="flex:1;padding:15px">🖨️ พิมพ์</button>
+    </div>
+    <div style="margin-top:8px"><button type="button" class="btn btn-secondary btn-block btn-small" onclick="resetInvoice()">🗑 ล้างข้อมูล</button></div>
+  </div>
+  <div id="invoice-list-view" style="display:none"><div id="inv-list" class="list-loading">กด "รายการ Invoice" เพื่อโหลด</div></div>
+</div>
+
+<!-- ══ TAB 11: แจ้งเตือน ══ -->
+<div class="tab-panel" id="tab-alert">
+  <div class="card">
+    <div class="card-title">🔔 ระบบแจ้งเตือน</div>
+    <p class="hint" style="margin-bottom:12px">ตรวจสอบเอกสารหมดอายุ (ภาษีรถ / พ.ร.บ. / ประกัน / ใบขับขี่) และใบแจ้งหนี้รอชำระ</p>
+    <button type="button" class="btn btn-primary btn-block" onclick="loadAlerts(true)">🔄 โหลดการแจ้งเตือน</button>
+  </div>
+  <div id="alert-content">
+    <div class="sum-empty" style="margin-top:8px">กด <b>โหลดการแจ้งเตือน</b> เพื่อตรวจสอบ</div>
+  </div>
+</div>
+
+<!-- Invoice print overlay -->
+<div id="invoice-print-overlay"></div>
+
+<!-- Datalists (hidden, populated by JS) -->
+<datalist id="plate-dl"></datalist>
+<datalist id="cust-dl"></datalist>
+
 <!-- Loading -->
 <div id="loading-overlay" class="hidden">
   <div class="spinner"></div>
@@ -857,10 +1171,12 @@
 <script>
 // ─── STATE ───────────────────────────────
 const state = {
-  truck:   { images: [], ocrText: '', ocrParsed: null },
-  income:  { images: [], ocrText: '', ocrParsed: null },
-  expense: { images: [], ocrText: '', ocrParsed: null }
+  truck:       { images: [], ocrText: '', ocrParsed: null },
+  income:      { images: [], ocrText: '', ocrParsed: null },
+  expense:     { images: [], ocrText: '', ocrParsed: null },
+  maintenance: { images: [], ocrText: '', ocrParsed: null }
 };
+const REG = { vehicles:[], customers:[] };
 const MAX_FILE_SIZE = 4 * 1024 * 1024;   // 4 MB (Vercel body limit ~4.5 MB)
 const ALLOWED_TYPES = ['image/jpeg','image/jpg','image/png','image/gif','image/webp','image/heic','image/heif'];
 let gpsSession = { id: '', url: '', user: '' };
@@ -868,19 +1184,22 @@ let gpsSession = { id: '', url: '', user: '' };
 // ─── INIT ─────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   setDefaultDates();
-  buildUploadArea('truck',   'truck-upload-area');
-  buildUploadArea('income',  'income-upload-area');
-  buildUploadArea('expense', 'expense-upload-area');
+  buildUploadArea('truck',       'truck-upload-area');
+  buildUploadArea('income',      'income-upload-area');
+  buildUploadArea('expense',     'expense-upload-area');
+  buildUploadArea('maintenance', 'maint-upload-area');
   document.querySelector('.status-chip[data-val="รอโหลด"]').classList.add('selected');
+  renderInvRows();
+  genInvNum();
 });
 
 function setDefaultDates() {
   const today = new Date().toISOString().slice(0, 10);
   const now   = new Date().toTimeString().slice(0, 5);
-  ['t-jobDate','i-incomeDate','e-expenseDate'].forEach(id => {
+  ['t-jobDate','i-incomeDate','e-expenseDate','mnt-date','fuel-date','inv-date'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = today;
   });
-  ['t-jobTime','i-incomeTime','e-expenseTime'].forEach(id => {
+  ['t-jobTime','i-incomeTime','e-expenseTime','fuel-time'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = now;
   });
 }
@@ -891,6 +1210,7 @@ function switchTab(tab, btnEl) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
   btnEl.classList.add('active');
+  if (tab === 'invoice') { genInvNum(); renderInvRows(); }
 }
 
 // ─── STATUS CHIP ─────────────────────────
@@ -1522,6 +1842,397 @@ document.addEventListener('paste', e => {
   }
   if (files.length) { ocrTabAddFiles(files); showToast('วางภาพจาก Clipboard แล้ว', 'success'); }
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// v3.0 — NEW FEATURES
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── INNER TAB TOGGLE ──────────────────────────────────────────────────────
+function innerTab(key, view, btnEl) {
+  const fv = document.getElementById(key+'-form-view');
+  const lv = document.getElementById(key+'-list-view');
+  if (fv) fv.style.display = view==='form' ? '' : 'none';
+  if (lv) lv.style.display = view==='list' ? '' : 'none';
+  btnEl.parentElement.querySelectorAll('.inner-btn').forEach(b=>b.classList.remove('active'));
+  btnEl.classList.add('active');
+  // auto-load list when switching to it
+  const loaders = {
+    vehicle:     ()=>loadList('vehicle','veh-list',renderVehicleList),
+    driver:      ()=>loadList('driver','drv-list',renderDriverList),
+    customer:    ()=>loadList('customer','cust-list',renderCustomerList),
+    maintenance: ()=>loadList('maintenance','mnt-list',renderMaintenanceList),
+    fuel:        ()=>loadList('fuel','fuel-list',renderFuelList),
+    invoice:     ()=>loadList('invoice','inv-list',renderInvoiceList)
+  };
+  if (view==='list' && loaders[key]) loaders[key]();
+}
+
+// ─── GENERIC DATA HELPERS ──────────────────────────────────────────────────
+async function submitData(type, data, resetFn) {
+  showLoading('กำลังบันทึก...');
+  try {
+    data.userAgent = navigator.userAgent;
+    const result = await api('/api/save', { type, data });
+    hideLoading();
+    if (result.success) {
+      showToast(result.message + '\nID: ' + result.rowId, 'success');
+      if (resetFn) resetFn();
+    } else { showToast('บันทึกไม่สำเร็จ: ' + result.error, 'error'); }
+  } catch(e) { hideLoading(); showToast('เกิดข้อผิดพลาด: ' + e.message, 'error'); }
+}
+
+async function loadList(type, containerId, renderFn) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = '<p class="list-loading">⏳ กำลังโหลด...</p>';
+  try {
+    const res  = await fetch(`/api/get-data?type=${type}`);
+    const json = await res.json();
+    const items = (json.data||{})[type] || [];
+    el.innerHTML = items.length ? renderFn(items) : '<p class="list-empty">📭 ยังไม่มีข้อมูล</p>';
+    // update registries for datalist
+    if (type==='vehicle')  { REG.vehicles=items;  populateDl('plate-dl', items.map(v=>v.plateNumber)); }
+    if (type==='customer') { REG.customers=items; populateDl('cust-dl', items.map(c=>c.customerName)); }
+  } catch(e) { el.innerHTML = `<p class="list-empty">❌ โหลดไม่สำเร็จ: ${e.message}</p>`; }
+}
+
+function populateDl(id, values) {
+  const dl = document.getElementById(id);
+  if (!dl) return;
+  dl.innerHTML = [...new Set(values.filter(Boolean))].map(v=>`<option value="${v}">`).join('');
+}
+
+function resetFields(ids) {
+  ids.forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────
+function daysUntil(d) {
+  if (!d) return null;
+  return Math.floor((new Date(d) - new Date()) / 86400000);
+}
+function expiryBadge(d, label) {
+  if (!d) return '';
+  const days = daysUntil(d);
+  const cls = days<0 ? 'exp-expired' : days<=7 ? 'exp-critical' : days<=30 ? 'exp-warning' : 'exp-ok';
+  const txt = days<0 ? `${label}: หมดแล้ว ${Math.abs(days)} วัน` : days===0 ? `${label}: วันนี้!` : `${label}: อีก ${days} วัน`;
+  return `<span class="exp-badge ${cls}">${txt}</span>`;
+}
+function fmtBaht(n) { return '฿'+(parseFloat(n)||0).toLocaleString('th-TH',{maximumFractionDigits:2}); }
+function fmtDate(d) {
+  if (!d) return '-';
+  try {
+    const [y,m,day] = d.split('-');
+    const mo=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    return `${parseInt(day)} ${mo[parseInt(m)-1]} ${parseInt(y)+543}`;
+  } catch { return d; }
+}
+const gv = id => { const el=document.getElementById(id); return el ? el.value.trim() : ''; };
+
+// ─── VEHICLE ───────────────────────────────────────────────────────────────
+function submitVehicle() {
+  if (!gv('v-plate')) { showToast('กรุณากรอกทะเบียนรถ','warning'); return; }
+  if (!gv('v-type'))  { showToast('กรุณาเลือกประเภทรถ','warning'); return; }
+  submitData('vehicle', {
+    plateNumber:gv('v-plate'), vehicleType:gv('v-type'), brand:gv('v-brand'), model:gv('v-model'),
+    year:gv('v-year'), loadCapacity:gv('v-load'), color:gv('v-color'), chassisNo:gv('v-chassis'),
+    regExpiry:gv('v-reg'), prbExpiry:gv('v-prb'), insuranceExpiry:gv('v-ins'), inspectionExpiry:gv('v-inspect'),
+    notes:gv('v-notes')
+  }, ()=>resetFields(['v-plate','v-type','v-brand','v-model','v-year','v-load','v-color','v-chassis','v-reg','v-prb','v-ins','v-inspect','v-notes']));
+}
+function renderVehicleList(items) {
+  return [...items].reverse().map(v=>`
+    <div class="record-card" style="border-left-color:#0D47A1">
+      <div class="rc-title">🚛 ${v.plateNumber} <span style="font-size:.78rem;font-weight:400;color:var(--gray3)">${v.vehicleType||''}</span></div>
+      <div class="rc-sub"><span>${v.brand||''} ${v.model||''}</span>${v.year?`<span>ปี ${+v.year+543}</span>`:''}</div>
+      <div class="rc-badges">${expiryBadge(v.regExpiry,'ภาษี')}${expiryBadge(v.prbExpiry,'พ.ร.บ.')}${expiryBadge(v.insuranceExpiry,'ประกัน')}${expiryBadge(v.inspectionExpiry,'ตรวจสภาพ')}</div>
+    </div>`).join('');
+}
+
+// ─── DRIVER ────────────────────────────────────────────────────────────────
+function submitDriver() {
+  if (!gv('d-name'))  { showToast('กรุณากรอกชื่อคนขับ','warning'); return; }
+  if (!gv('d-phone')) { showToast('กรุณากรอกเบอร์โทร','warning'); return; }
+  submitData('driver', {
+    driverName:gv('d-name'), driverPhone:gv('d-phone'), idCard:gv('d-idcard'),
+    licenseType:gv('d-lic-type'), licenseNumber:gv('d-lic-num'), licenseExpiry:gv('d-lic-exp'),
+    address:gv('d-address'), emergencyContact:gv('d-emg-contact'), emergencyPhone:gv('d-emg-phone'),
+    status:gv('d-status')||'ทำงาน', notes:gv('d-notes')
+  }, ()=>resetFields(['d-name','d-phone','d-idcard','d-lic-type','d-lic-num','d-lic-exp','d-address','d-emg-contact','d-emg-phone','d-notes']));
+}
+function renderDriverList(items) {
+  const sBg={ทำงาน:'#E8F5E9',พักงาน:'#FFF9C4',ลาออก:'#FFEBEE'}, sFg={ทำงาน:'#2E7D32',พักงาน:'#F57F17',ลาออก:'#C62828'};
+  return [...items].reverse().map(d=>`
+    <div class="record-card" style="border-left-color:#1B5E20">
+      <div class="rc-title">👤 ${d.driverName} <span style="font-size:.72rem;padding:2px 8px;border-radius:10px;background:${sBg[d.status]||'#F5F5F5'};color:${sFg[d.status]||'#616161'}">${d.status||'ทำงาน'}</span></div>
+      <div class="rc-sub"><span>📞 ${d.driverPhone||'-'}</span><span>ใบขับขี่ ${d.licenseType||''} ${d.licenseNumber||''}</span></div>
+      <div class="rc-badges">${expiryBadge(d.licenseExpiry,'ใบขับขี่')}</div>
+    </div>`).join('');
+}
+
+// ─── CUSTOMER ──────────────────────────────────────────────────────────────
+function submitCustomer() {
+  if (!gv('c-name'))  { showToast('กรุณากรอกชื่อบริษัท/ลูกค้า','warning'); return; }
+  if (!gv('c-phone')) { showToast('กรุณากรอกเบอร์โทร','warning'); return; }
+  submitData('customer', {
+    customerName:gv('c-name'), contactName:gv('c-contact'), phone:gv('c-phone'),
+    email:gv('c-email'), address:gv('c-address'), taxId:gv('c-taxid'),
+    paymentTerms:gv('c-terms')||'เงินสด', notes:gv('c-notes')
+  }, ()=>resetFields(['c-name','c-contact','c-phone','c-email','c-address','c-taxid','c-terms','c-notes']));
+}
+function renderCustomerList(items) {
+  return [...items].reverse().map(c=>`
+    <div class="record-card" style="border-left-color:#4A148C">
+      <div class="rc-title">🏢 ${c.customerName}</div>
+      <div class="rc-sub"><span>${c.contactName||''}</span><span>📞 ${c.phone||'-'}</span><span>${c.paymentTerms||''}</span></div>
+      ${c.taxId?`<div class="rc-sub">เลขผู้เสียภาษี: ${c.taxId}</div>`:''}
+    </div>`).join('');
+}
+
+// ─── MAINTENANCE ───────────────────────────────────────────────────────────
+function submitMaintenance() {
+  if (!gv('mnt-date'))  { showToast('กรุณาเลือกวันที่','warning'); return; }
+  if (!gv('mnt-plate')) { showToast('กรุณากรอกทะเบียนรถ','warning'); return; }
+  if (!gv('mnt-type'))  { showToast('กรุณาเลือกประเภทการซ่อม','warning'); return; }
+  submitData('maintenance', {
+    maintenanceDate:gv('mnt-date'), plateNumber:gv('mnt-plate'), maintenanceType:gv('mnt-type'),
+    description:gv('mnt-desc'), cost:gv('mnt-cost'), vendor:gv('mnt-vendor'),
+    odometerKm:gv('mnt-km'), nextDueDate:gv('mnt-next'), notes:gv('mnt-notes'),
+    imageUrls: state.maintenance.images.length ? state.maintenance.images.map(i=>i.previewUrl||'') : []
+  }, resetMaintenance);
+}
+function resetMaintenance() {
+  resetFields(['mnt-date','mnt-plate','mnt-type','mnt-desc','mnt-cost','mnt-vendor','mnt-km','mnt-next','mnt-notes']);
+  state.maintenance = { images:[], ocrText:'', ocrParsed:null };
+  renderPreview('maintenance');
+  closeOCRPanel('maintenance');
+  setDefaultDates();
+}
+function renderMaintenanceList(items) {
+  return [...items].reverse().map(m=>`
+    <div class="record-card" style="border-left-color:#E65100">
+      <div class="rc-title">🔧 ${m.maintenanceType||'ซ่อมบำรุง'} — ${m.plateNumber||'-'}</div>
+      <div class="rc-sub"><span>📅 ${fmtDate(m.maintenanceDate)}</span><span>${fmtBaht(m.cost)}</span><span>${m.vendor||''}</span>${m.odometerKm?`<span>🛣 ${m.odometerKm} กม.</span>`:''}</div>
+      ${m.nextDueDate?`<div class="rc-sub" style="margin-top:3px">🔔 นัดต่อไป: ${fmtDate(m.nextDueDate)}</div>`:''}
+    </div>`).join('');
+}
+
+// ─── FUEL ──────────────────────────────────────────────────────────────────
+function calcFuelTotal() {
+  const l = parseFloat(document.getElementById('fuel-liters')?.value)||0;
+  const p = parseFloat(document.getElementById('fuel-price')?.value)||0;
+  const el = document.getElementById('fuel-total');
+  if (el) el.value = (l*p).toFixed(2);
+}
+function submitFuel() {
+  if (!gv('fuel-date'))   { showToast('กรุณาเลือกวันที่','warning'); return; }
+  if (!gv('fuel-plate'))  { showToast('กรุณากรอกทะเบียนรถ','warning'); return; }
+  if (!gv('fuel-liters')) { showToast('กรุณากรอกจำนวนลิตร','warning'); return; }
+  if (!gv('fuel-price'))  { showToast('กรุณากรอกราคาต่อลิตร','warning'); return; }
+  submitData('fuel', {
+    fuelDate:gv('fuel-date'), fuelTime:gv('fuel-time'), plateNumber:gv('fuel-plate'),
+    liters:gv('fuel-liters'), pricePerLiter:gv('fuel-price'), totalCost:gv('fuel-total'),
+    odometerKm:gv('fuel-km'), fuelStation:gv('fuel-station'),
+    paymentMethod:gv('fuel-pay')||'เงินสด', notes:gv('fuel-notes')
+  }, resetFuel);
+}
+function resetFuel() {
+  resetFields(['fuel-date','fuel-time','fuel-plate','fuel-liters','fuel-price','fuel-total','fuel-km','fuel-station','fuel-pay','fuel-notes']);
+  setDefaultDates();
+}
+function renderFuelList(items) {
+  return [...items].reverse().map(f=>`
+    <div class="record-card" style="border-left-color:#F57F17">
+      <div class="rc-title">⛽ ${f.plateNumber||'-'} — ${fmtDate(f.fuelDate)}</div>
+      <div class="rc-sub"><span>${parseFloat(f.liters)||0} ลิตร</span><span>฿${parseFloat(f.pricePerLiter)||0}/ลิตร</span><span>${fmtBaht(f.totalCost)}</span><span>${f.fuelStation||''}</span></div>
+    </div>`).join('');
+}
+
+// ─── INVOICE ───────────────────────────────────────────────────────────────
+let invRows = [{ desc:'', qty:1, unit:'เที่ยว', price:0, total:0 }];
+
+function addInvRow() {
+  invRows.push({ desc:'', qty:1, unit:'รายการ', price:0, total:0 });
+  renderInvRows();
+}
+function removeInvRow(i) {
+  if (invRows.length <= 1) return;
+  invRows.splice(i,1);
+  renderInvRows();
+}
+function renderInvRows() {
+  const tbody = document.getElementById('inv-items-body');
+  if (!tbody) return;
+  tbody.innerHTML = invRows.map((r,i)=>`
+    <tr>
+      <td style="padding:4px"><input class="inv-input" type="text" value="${r.desc.replace(/"/g,'&quot;')}" placeholder="รายละเอียด" onchange="invRows[${i}].desc=this.value"></td>
+      <td style="padding:4px"><input class="inv-input inv-num" type="number" value="${r.qty}" min="0" step="0.01" onchange="invRows[${i}].qty=+this.value;calcInvRow(${i})"></td>
+      <td style="padding:4px"><input class="inv-input inv-unit" type="text" value="${r.unit}" onchange="invRows[${i}].unit=this.value"></td>
+      <td style="padding:4px"><input class="inv-input inv-price" type="number" value="${r.price}" min="0" onchange="invRows[${i}].price=+this.value;calcInvRow(${i})"></td>
+      <td class="inv-total-cell">${(r.total||0).toLocaleString('th-TH',{maximumFractionDigits:2})}</td>
+      <td style="padding:4px"><button type="button" class="inv-del-btn" onclick="removeInvRow(${i})">✕</button></td>
+    </tr>`).join('');
+  calcInv();
+}
+function calcInvRow(i) {
+  invRows[i].total = (invRows[i].qty||0) * (invRows[i].price||0);
+  renderInvRows();
+}
+function calcInv() {
+  const sub = invRows.reduce((s,r)=>s+(r.total||0), 0);
+  const useVat = document.getElementById('inv-vat-toggle')?.checked;
+  const vat = useVat ? sub*0.07 : 0;
+  const fmt = n=>n.toLocaleString('th-TH',{maximumFractionDigits:2});
+  const setTxt = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+  setTxt('inv-subtotal', fmt(sub));
+  setTxt('inv-vat-amount', fmt(vat));
+  setTxt('inv-total-display', fmt(sub+vat));
+}
+function genInvNum() {
+  const el = document.getElementById('inv-number');
+  if (!el || el.value) return;
+  const now = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Bangkok'}));
+  const y=now.getFullYear(), m=String(now.getMonth()+1).padStart(2,'0');
+  el.value = `INV-${y}${m}-${Math.random().toString(36).substr(2,3).toUpperCase()}`;
+}
+function submitInvoice() {
+  if (!gv('inv-number'))   { showToast('กรุณากรอกเลขที่ใบแจ้งหนี้','warning'); return; }
+  if (!gv('inv-date'))     { showToast('กรุณาเลือกวันที่','warning'); return; }
+  if (!gv('inv-customer')) { showToast('กรุณากรอกชื่อลูกค้า','warning'); return; }
+  const sub = invRows.reduce((s,r)=>s+(r.total||0),0);
+  const vat = document.getElementById('inv-vat-toggle')?.checked ? sub*0.07 : 0;
+  submitData('invoice', {
+    invoiceNumber:gv('inv-number'), invoiceDate:gv('inv-date'), customerName:gv('inv-customer'),
+    dueDate:gv('inv-due'), items:JSON.stringify(invRows), subtotal:sub,
+    vatAmount:vat, total:sub+vat, status:gv('inv-status')||'รอชำระ', notes:gv('inv-notes')
+  }, resetInvoice);
+}
+function resetInvoice() {
+  resetFields(['inv-number','inv-customer','inv-due','inv-notes']);
+  const d=document.getElementById('inv-date'); if(d) d.value=new Date().toISOString().slice(0,10);
+  const s=document.getElementById('inv-status'); if(s) s.value='รอชำระ';
+  const v=document.getElementById('inv-vat-toggle'); if(v) v.checked=false;
+  invRows = [{ desc:'', qty:1, unit:'เที่ยว', price:0, total:0 }];
+  renderInvRows();
+  setTimeout(genInvNum, 50);
+}
+function renderInvoiceList(items) {
+  const sBg={'รอชำระ':'#FFF9C4','ชำระแล้ว':'#E8F5E9','เกินกำหนด':'#FFEBEE','ยกเลิก':'#F5F5F5'};
+  const sFg={'รอชำระ':'#F57F17','ชำระแล้ว':'#2E7D32','เกินกำหนด':'#C62828','ยกเลิก':'#9E9E9E'};
+  return [...items].reverse().map(inv=>`
+    <div class="record-card" style="border-left-color:#006064">
+      <div class="rc-title">📋 ${inv.invoiceNumber||'-'} <span style="font-size:.72rem;padding:2px 8px;border-radius:10px;background:${sBg[inv.status]||'#F5F5F5'};color:${sFg[inv.status]||'#616161'}">${inv.status||'รอชำระ'}</span></div>
+      <div class="rc-sub"><span>📅 ${fmtDate(inv.invoiceDate)}</span><span>🏢 ${inv.customerName||'-'}</span><span style="font-weight:700;color:var(--blue)">${fmtBaht(inv.total)}</span></div>
+      ${inv.dueDate?`<div class="rc-sub" style="margin-top:3px">ครบกำหนด: ${fmtDate(inv.dueDate)}</div>`:''}
+    </div>`).join('');
+}
+function printInvoice() {
+  const sub = invRows.reduce((s,r)=>s+(r.total||0),0);
+  const useVat = document.getElementById('inv-vat-toggle')?.checked;
+  const vat = useVat ? sub*0.07 : 0;
+  const fmt = n=>n.toLocaleString('th-TH',{maximumFractionDigits:2});
+  const rows = invRows.filter(r=>r.desc||r.total).map((r,i)=>`
+    <tr><td style="padding:7px;border-bottom:1px solid #eee">${i+1}</td>
+    <td style="padding:7px;border-bottom:1px solid #eee">${r.desc||''}</td>
+    <td style="padding:7px;border-bottom:1px solid #eee;text-align:center">${r.qty}</td>
+    <td style="padding:7px;border-bottom:1px solid #eee;text-align:center">${r.unit}</td>
+    <td style="padding:7px;border-bottom:1px solid #eee;text-align:right">${(r.price||0).toLocaleString()}</td>
+    <td style="padding:7px;border-bottom:1px solid #eee;text-align:right;font-weight:700">${(r.total||0).toLocaleString()}</td></tr>`).join('');
+  document.getElementById('invoice-print-overlay').innerHTML = `
+  <div style="max-width:680px;margin:0 auto;padding:28px;font-family:'Noto Sans Thai',Arial,sans-serif;color:#212121">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;margin-bottom:20px;border-bottom:3px solid #1565C0">
+      <div><div style="font-size:1.3rem;font-weight:900;color:#1565C0">ระบบขนส่งรถบรรทุก</div><div style="font-size:.82rem;color:#616161">Transport Management System</div></div>
+      <div style="text-align:right"><div style="font-size:1.5rem;font-weight:900;color:#1565C0">ใบแจ้งหนี้</div><div style="font-size:.8rem;color:#616161">INVOICE</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+      <div><div style="font-size:.75rem;color:#616161;margin-bottom:3px">ลูกค้า / Bill To</div><div style="font-size:1rem;font-weight:700">${gv('inv-customer')}</div></div>
+      <div style="text-align:right;font-size:.88rem">
+        <div><b>เลขที่:</b> ${gv('inv-number')}</div>
+        <div><b>วันที่:</b> ${fmtDate(gv('inv-date'))}</div>
+        ${gv('inv-due')?`<div><b>ครบกำหนด:</b> ${fmtDate(gv('inv-due'))}</div>`:''}
+      </div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
+      <thead><tr style="background:#1565C0;color:white">
+        <th style="padding:8px;text-align:left">#</th><th style="padding:8px;text-align:left">รายการ</th>
+        <th style="padding:8px;text-align:center">จำนวน</th><th style="padding:8px;text-align:center">หน่วย</th>
+        <th style="padding:8px;text-align:right">ราคา/หน่วย</th><th style="padding:8px;text-align:right">รวม (฿)</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div style="display:flex;justify-content:flex-end">
+      <div style="min-width:220px;font-size:.9rem">
+        <div style="display:flex;justify-content:space-between;padding:4px 0"><span>ยอดรวม</span><span>${fmt(sub)}</span></div>
+        ${useVat?`<div style="display:flex;justify-content:space-between;padding:4px 0"><span>VAT 7%</span><span>${fmt(vat)}</span></div>`:''}
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:2px solid #1565C0;font-size:1.05rem;font-weight:800;color:#1565C0"><span>ยอดสุทธิ</span><span>฿${fmt(sub+vat)}</span></div>
+      </div>
+    </div>
+    <div style="margin-top:50px;display:grid;grid-template-columns:1fr 1fr;gap:20px;text-align:center;font-size:.85rem">
+      <div><div style="border-top:1px solid #333;padding-top:6px;margin-top:40px">ผู้รับเงิน</div></div>
+      <div><div style="border-top:1px solid #333;padding-top:6px;margin-top:40px">ผู้จ่ายเงิน</div></div>
+    </div>
+  </div>`;
+  window.print();
+}
+
+// ─── ALERT ─────────────────────────────────────────────────────────────────
+let _alertLoaded = false;
+async function loadAlerts(force) {
+  if (!force && _alertLoaded) return;
+  _alertLoaded = true;
+  const el = document.getElementById('alert-content');
+  if (!el) return;
+  el.innerHTML = '<div class="sum-empty">⏳ กำลังโหลด...</div>';
+  try {
+    const [vR,dR,iR] = await Promise.all([
+      fetch('/api/get-data?type=vehicle').then(r=>r.json()),
+      fetch('/api/get-data?type=driver').then(r=>r.json()),
+      fetch('/api/get-data?type=invoice').then(r=>r.json())
+    ]);
+    renderAlerts(el, vR.data?.vehicle||[], dR.data?.driver||[], iR.data?.invoice||[]);
+  } catch(e) {
+    el.innerHTML = `<div class="sum-empty">❌ โหลดไม่สำเร็จ: ${e.message}</div>`;
+    _alertLoaded = false;
+  }
+}
+function renderAlerts(el, vehicles, drivers, invoices) {
+  const alerts = [];
+  vehicles.forEach(v => {
+    [[v.regExpiry,'ภาษีรถยนต์'],[v.prbExpiry,'พ.ร.บ.'],[v.insuranceExpiry,'ประกันภัย'],[v.inspectionExpiry,'ตรวจสภาพ']]
+      .forEach(([d,label]) => {
+        if (!d) return;
+        const days = daysUntil(d);
+        if (days <= 30) alerts.push({ days, icon:'🚛', title:`${v.plateNumber} — ${label}`, sub:`หมดอายุ: ${fmtDate(d)}`, tab:'vehicle' });
+      });
+  });
+  drivers.forEach(d => {
+    if (!d.licenseExpiry) return;
+    const days = daysUntil(d.licenseExpiry);
+    if (days <= 30) alerts.push({ days, icon:'👤', title:`${d.driverName} — ใบขับขี่ ${d.licenseType||''}`, sub:`หมดอายุ: ${fmtDate(d.licenseExpiry)}`, tab:'driver' });
+  });
+  invoices.filter(inv=>inv.status==='รอชำระ'||inv.status==='เกินกำหนด').forEach(inv=>{
+    const days = inv.dueDate ? daysUntil(inv.dueDate) : 999;
+    alerts.push({ days, icon:'💵', title:`${inv.invoiceNumber} — ${inv.customerName}`, sub:`${inv.status} | ${fmtBaht(inv.total)}`, tab:'invoice', isInv:true });
+  });
+  if (alerts.length === 0) {
+    el.innerHTML = '<div class="card"><div class="sum-empty" style="color:var(--green)">✅ ไม่มีการแจ้งเตือน ทุกอย่างปกติดี!</div></div>';
+    return;
+  }
+  alerts.sort((a,b)=>a.days-b.days);
+  const getClass = a => a.isInv?'alert-invoice':a.days<0?'alert-expired':a.days<=7?'alert-critical':'alert-warning';
+  const getLabel = a => a.isInv?'💵 รอชำระ':a.days<0?`หมดแล้ว ${Math.abs(a.days)} วัน`:a.days===0?'วันนี้!':a.days<=7?`อีก ${a.days} วัน`:`อีก ${a.days} วัน`;
+  el.innerHTML = `
+    <div class="card">
+      <div class="card-title">🔔 พบ ${alerts.length} รายการที่ต้องดำเนินการ</div>
+      ${alerts.map(a=>`
+        <div class="alert-item ${getClass(a)}" onclick="switchTab('${a.tab}',document.querySelector('[onclick*=\\'${a.tab}\\']'))" style="cursor:pointer">
+          <div class="alert-item-left"><span class="alert-icon">${a.icon}</span>
+            <div><div class="alert-title">${a.title}</div><div class="alert-sub">${a.sub}</div></div>
+          </div>
+          <span class="alert-badge">${getLabel(a)}</span>
+        </div>`).join('')}
+    </div>`;
+}
 
 // ─── SUMMARY TAB ──────────────────────────────────────────────────────────────
 let _barChart = null;

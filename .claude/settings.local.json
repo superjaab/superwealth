@@ -28,7 +28,26 @@
       "Bash(git add *)",
       "Bash(vercel git *)",
       "Bash(vercel deploy *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(git config *)",
+      "Bash(cmdkey /list)",
+      "Bash(findstr /i \"github git\")",
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "Bash(tasklist)",
+      "Bash(findstr /i \"git\")",
+      "Bash(where gh *)",
+      "Bash(where winget *)",
+      "Bash(export TZ=\"Asia/Bangkok\")",
+      "Bash(vercel --version)",
+      "Bash(vercel --prod)",
+      "Bash(vercel inspect *)",
+      "Bash(vercel logs *)",
+      "Bash(vercel env *)",
+      "Bash(ls ~/.claude/projects/ 2>&1 | head -20)",
+      "Bash(awk '{print $2}')",
+      "Bash(xargs '-I{}' sh -c ' *)",
+      "WebSearch"
     ]
   }
 }
