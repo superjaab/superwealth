@@ -528,7 +528,7 @@
     <button class="tab-btn" onclick="switchTab('gps',this)"><span class="icon">📡</span>GPS</button>
     <button class="tab-btn" onclick="switchTab('ocr',this)"><span class="icon">🔍</span>อ่านภาพ</button>
   </nav>
-  <div class="sb-footer"><span class="version">v3.8 | 28/05/2026 00:45</span></div>
+  <div class="sb-footer"><span class="version">v3.9 | 28/05/2026 01:00</span></div>
 </aside>
 
 <!-- Mobile overlay -->
@@ -539,7 +539,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version">v3.8 | 28/05/2026 00:45</span>
+  <span class="version">v3.9 | 28/05/2026 01:00</span>
 </header>
 <main id="main-content">
 
@@ -604,11 +604,11 @@
       <div class="form-row-2">
         <div class="form-row">
           <label>ต้นทาง</label>
-          <input type="text" id="t-origin" placeholder="จังหวัด/สถานที่" maxlength="100">
+          <input type="text" id="t-origin" placeholder="พิมพ์เพื่อค้นหาจังหวัด..." maxlength="100" list="province-dl" autocomplete="off">
         </div>
         <div class="form-row">
           <label>ปลายทาง</label>
-          <input type="text" id="t-destination" placeholder="จังหวัด/สถานที่" maxlength="100">
+          <input type="text" id="t-destination" placeholder="พิมพ์เพื่อค้นหาจังหวัด..." maxlength="100" list="province-dl" autocomplete="off">
         </div>
       </div>
       <div class="form-row">
@@ -1688,6 +1688,37 @@
 <!-- Datalists (hidden, populated by JS) -->
 <datalist id="plate-dl"></datalist>
 <datalist id="cust-dl"></datalist>
+
+<!-- 77 จังหวัดประเทศไทย (สำหรับ ต้นทาง/ปลายทาง) -->
+<datalist id="province-dl">
+  <!-- ภาคกลาง -->
+  <option value="กรุงเทพมหานคร"><option value="นนทบุรี"><option value="ปทุมธานี"><option value="สมุทรปราการ">
+  <option value="นครปฐม"><option value="สมุทรสาคร"><option value="สมุทรสงคราม"><option value="พระนครศรีอยุธยา">
+  <option value="อ่างทอง"><option value="ลพบุรี"><option value="สิงห์บุรี"><option value="ชัยนาท">
+  <option value="สระบุรี"><option value="สุพรรณบุรี">
+  <!-- ภาคตะวันออก -->
+  <option value="ชลบุรี"><option value="ระยอง"><option value="จันทบุรี"><option value="ตราด">
+  <option value="ฉะเชิงเทรา"><option value="ปราจีนบุรี"><option value="สระแก้ว"><option value="นครนายก">
+  <!-- ภาคตะวันตก -->
+  <option value="กาญจนบุรี"><option value="ราชบุรี"><option value="เพชรบุรี"><option value="ประจวบคีรีขันธ์">
+  <option value="ตาก">
+  <!-- ภาคเหนือ -->
+  <option value="เชียงใหม่"><option value="เชียงราย"><option value="ลำพูน"><option value="ลำปาง">
+  <option value="แม่ฮ่องสอน"><option value="น่าน"><option value="พะเยา"><option value="แพร่">
+  <option value="อุตรดิตถ์"><option value="พิษณุโลก"><option value="สุโขทัย"><option value="เพชรบูรณ์">
+  <option value="พิจิตร"><option value="กำแพงเพชร"><option value="นครสวรรค์"><option value="อุทัยธานี">
+  <!-- ภาคตะวันออกเฉียงเหนือ (อีสาน) -->
+  <option value="ขอนแก่น"><option value="มหาสารคาม"><option value="ร้อยเอ็ด"><option value="กาฬสินธุ์">
+  <option value="หนองคาย"><option value="เลย"><option value="หนองบัวลำภู"><option value="อุดรธานี">
+  <option value="บึงกาฬ"><option value="สกลนคร"><option value="นครพนม"><option value="มุกดาหาร">
+  <option value="ชัยภูมิ"><option value="นครราชสีมา"><option value="บุรีรัมย์"><option value="สุรินทร์">
+  <option value="ศรีสะเกษ"><option value="อุบลราชธานี"><option value="ยโสธร"><option value="อำนาจเจริญ">
+  <!-- ภาคใต้ -->
+  <option value="ชุมพร"><option value="ระนอง"><option value="สุราษฎร์ธานี"><option value="พังงา">
+  <option value="ภูเก็ต"><option value="กระบี่"><option value="นครศรีธรรมราช"><option value="ตรัง">
+  <option value="พัทลุง"><option value="สตูล"><option value="สงขลา"><option value="ปัตตานี">
+  <option value="ยะลา"><option value="นราธิวาส">
+</datalist>
 
 <!-- Loading -->
 <div id="loading-overlay" class="hidden">
