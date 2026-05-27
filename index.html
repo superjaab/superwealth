@@ -105,7 +105,7 @@
     label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--gray4); margin-bottom: 5px; }
     label .req { color: var(--red); margin-left: 2px; }
     input[type=text], input[type=number], input[type=date],
-    input[type=time], input[type=tel], textarea, select {
+    input[type=time], input[type=tel], input[type=email], textarea, select {
       width: 100%; padding: 10px 12px;
       border: 1.5px solid var(--gray2); border-radius: var(--radius-sm);
       font-size: 0.9rem; font-family: inherit; color: var(--text); background: var(--white);
@@ -527,7 +527,7 @@
     <button class="tab-btn" onclick="switchTab('gps',this)"><span class="icon">📡</span>GPS</button>
     <button class="tab-btn" onclick="switchTab('ocr',this)"><span class="icon">🔍</span>อ่านภาพ</button>
   </nav>
-  <div class="sb-footer"><span class="version">v3.2 | 27/05/2026 22:29</span></div>
+  <div class="sb-footer"><span class="version">v3.2 | 27/05/2026 22:35</span></div>
 </aside>
 
 <!-- Mobile overlay -->
@@ -538,7 +538,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version">v3.2 | 27/05/2026 22:29</span>
+  <span class="version">v3.2 | 27/05/2026 22:35</span>
 </header>
 <main id="main-content">
 
@@ -1103,7 +1103,7 @@
         <div class="form-row"><label>ชื่อผู้ติดต่อ</label><input type="text" id="c-contact" maxlength="100"></div>
       </div>
       <div class="form-row"><label>เบอร์โทร <span class="req">*</span></label><input type="tel" id="c-phone" placeholder="02-XXX-XXXX" maxlength="20"></div>
-      <div class="form-row"><label>อีเมล</label><input type="email" id="c-email" placeholder="example@email.com" maxlength="200" style="width:100%"></div>
+      <div class="form-row"><label>อีเมล</label><input type="email" id="c-email" placeholder="example@email.com" maxlength="200"></div>
       <div class="form-row"><label>ที่อยู่</label><textarea id="c-address" rows="2" placeholder="ที่อยู่สำหรับออกใบแจ้งหนี้"></textarea></div>
       <div class="form-row-2">
         <div class="form-row"><label>เลขผู้เสียภาษี</label><input type="text" id="c-taxid" placeholder="0000000000000" maxlength="20"></div>
