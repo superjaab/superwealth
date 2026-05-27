@@ -701,7 +701,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v5.3 | 28/05/2026 05:10</span>
+  <span class="version" style="margin-left:auto">v5.4 | 28/05/2026 05:25</span>
   <div style="position:relative;margin-left:10px">
     <button class="header-bell" onclick="toggleBell(event)" title="แจ้งเตือน">
       🔔<span class="bell-badge" id="bell-badge" style="display:none">0</span>
@@ -2260,12 +2260,14 @@ function saveCargoIfNew(name) {
 }
 
 // ─── TRIP ROUND # AUTO-INCREMENT ───
+// Returns first available round number — accounts for both:
+//   • explicit tripRound on records (max of those + 1)
+//   • implicit count of records without tripRound (older records)
 function _nextTripRound() {
-  const max = (_master.truckHistory || []).reduce((m, t) => {
-    const n = parseInt(t.tripRound) || 0;
-    return Math.max(m, n);
-  }, 0);
-  return max + 1;
+  const list = _master.truckHistory || [];
+  if (list.length === 0) return 1;
+  const maxRound = list.reduce((m, t) => Math.max(m, parseInt(t.tripRound) || 0), 0);
+  return Math.max(maxRound, list.length) + 1;
 }
 function setTripRoundField() {
   const el = document.getElementById('t-tripRound');
@@ -2897,6 +2899,18 @@ function collectFormData(formKey) {
     }
     if (!g('t-pickupDate'))  { showToast('กรุณาเลือกวันเข้ารับสินค้า', 'warning'); return null; }
     const pickupDate = g('t-pickupDate');
+
+    // ─── tripRound validation (no duplicates) ───
+    const tripRoundNum = parseInt(g('t-tripRound')) || _nextTripRound();
+    const currentRowId = _editingMode.truck || null;
+    const dup = (_master.truckHistory || []).find(t =>
+      (parseInt(t.tripRound) || 0) === tripRoundNum && t.rowId !== currentRowId
+    );
+    if (dup) {
+      showToast(`⚠️ รอบเที่ยว #${tripRoundNum} ใช้กับ ${dup.plateNumber || ''} แล้ว — กรุณาเลือกเลขอื่น (ลองกด ↻)`, 'error');
+      return null;
+    }
+
     return {
       jobDate: pickupDate, jobTime: g('t-jobTime'),
       pickupDate, deliveryDate: g('t-deliveryDate'),
@@ -2904,7 +2918,7 @@ function collectFormData(formKey) {
       origin: g('t-origin'), destination: g('t-destination'), customerName: g('t-customerName'),
       cargoList: g('t-cargoList'), cargoWeight: g('t-cargoWeight'), tripCount: g('t-tripCount') || '1',
       freightCost: g('t-freightCost'), jobStatus: g('t-status') || 'รอโหลด', remark: g('t-remark'),
-      tripRound: g('t-tripRound') || _nextTripRound(),
+      tripRound: tripRoundNum,
       paymentStatus: g('t-paymentStatus') || 'ค้างจ่าย'
     };
   }
@@ -3926,7 +3940,15 @@ function renderTruckList(items) {
     'กำลังขนส่ง': { color:'#1565C0', bg:'#E3F2FD', icon:'🔵' },
     'ส่งแล้ว':    { color:'#2E7D32', bg:'#E8F5E9', icon:'🟢' }
   };
-  return [...items].reverse().map(r=>{
+  // Sort by tripRound DESC (records without tripRound at the bottom by timestamp)
+  const sorted = [...items].sort((a, b) => {
+    const ar = parseInt(a.tripRound) || 0;
+    const br = parseInt(b.tripRound) || 0;
+    if (br !== ar) return br - ar;
+    // Tiebreak by timestamp DESC
+    return (b.timestamp || '').localeCompare(a.timestamp || '');
+  });
+  return sorted.map(r=>{
     // Auto-derive status — "ส่งแล้ว" if has newer record, else "กำลังขนส่ง"
     const auto = _autoTripStatus(r);
     const s = statusInfo[auto] || statusInfo['กำลังขนส่ง'];
@@ -3942,12 +3964,18 @@ function renderTruckList(items) {
       : `<span style="padding:2px 8px;border-radius:10px;background:#FEE2E2;color:#B91C1C;font-weight:700;font-size:.7rem">⚠️ ค้างจ่าย</span>`;
     return `
     <div class="record-card" style="border-left-color:${s.color}">
+      <!-- HEADER: Trip round (big) at top -->
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;padding-bottom:8px;border-bottom:1.5px dashed #e2e8f0">
+        <span style="background:linear-gradient(135deg,#0f172a,#1e293b);color:white;padding:5px 14px;border-radius:8px;font-size:.9rem;font-weight:800;letter-spacing:.3px">
+          🔢 รอบเที่ยว ${r.tripRound ? '#' + r.tripRound : '—'}
+        </span>
+        ${r.freightCost?`<span style="color:#2E7D32;font-weight:800;font-size:1rem">${fmtBaht(r.freightCost)}</span>`:''}
+      </div>
+      <!-- Title row -->
       <div class="rc-title" style="color:${s.color};display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        ${r.tripRound?`<span style="background:#0f172a;color:white;padding:2px 9px;border-radius:6px;font-size:.75rem;font-weight:800">#${r.tripRound}</span>`:''}
         🚛 ${r.plateNumber||'-'}
         <span style="padding:2px 10px;border-radius:10px;background:${s.bg};color:${s.color};font-weight:700;font-size:.7rem">${s.icon} ${auto}</span>
         ${payHtml}
-        ${r.freightCost?`<span style="margin-left:auto;color:#2E7D32;font-weight:700;font-size:.85rem">${fmtBaht(r.freightCost)}</span>`:''}
       </div>
       <div class="rc-sub" style="display:flex;flex-direction:column;gap:3px">
         <span>${dateLabel}</span>
