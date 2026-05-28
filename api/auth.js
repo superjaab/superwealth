@@ -34,6 +34,27 @@ const RATE_LIMIT_BLOCK_MS  = 15 * 60 * 1000; // → block for 15 min
 const FAIL_DELAY_MS = 1500;                 // Always delay 1.5s on failed login
 const _failureLog = new Map(); // ip → { attempts: [timestamps], blockedUntil }
 
+// v14.30 — Caches to reduce Google Sheets API reads
+let _schemaEnsured = false;          // schema setup done once per instance
+const _readCache = new Map();        // sheetName → { data, expiresAt }
+const READ_CACHE_TTL_MS = 5000;      // 5 seconds — short enough for freshness, long enough to dedupe parallel calls
+async function _ensureSchemaCached(sheets, sheetId) {
+  if (_schemaEnsured) return;
+  await ensureSheet(sheets, sheetId, CODES_SHEET,
+    ['timestamp','code','label','active','rowId'], '#1d4ed8');
+  await ensureSheet(sheets, sheetId, SESSIONS_SHEET,
+    ['timestamp','sessionId','code','label','device','loginAt','lastSeenAt','revoked','rowId','ip'], '#7c3aed');
+  await ensureSheet(sheets, sheetId, FAB_SHEET,
+    ['timestamp','icon','label','tab','sortOrder','active','rowId'], '#059669');
+  await syncHeaders(sheets, sheetId, SESSIONS_SHEET,
+    ['timestamp','sessionId','code','label','device','loginAt','lastSeenAt','revoked','rowId','ip']);
+  await seedFabDefaults(sheets, sheetId);
+  _schemaEnsured = true;
+}
+function _invalidateReadCache(sheetName) {
+  if (sheetName) _readCache.delete(sheetName); else _readCache.clear();
+}
+
 const FAB_DEFAULTS = [
   { icon: '🚚', label: 'บันทึกเที่ยวรถ', tab: 'truck',       sortOrder: 1 },
   { icon: '💰', label: 'เพิ่มรายรับ',     tab: 'income',      sortOrder: 2 },
@@ -60,17 +81,9 @@ module.exports = async function handler(req, res) {
     const auth = getAuth(['https://www.googleapis.com/auth/spreadsheets']);
     const sheets = google.sheets({ version: 'v4', auth });
 
-    await ensureSheet(sheets, sheetId, CODES_SHEET,
-      ['timestamp','code','label','active','rowId'], '#1d4ed8');
-    await ensureSheet(sheets, sheetId, SESSIONS_SHEET,
-      ['timestamp','sessionId','code','label','device','loginAt','lastSeenAt','revoked','rowId','ip'], '#7c3aed');
-    await ensureSheet(sheets, sheetId, FAB_SHEET,
-      ['timestamp','icon','label','tab','sortOrder','active','rowId'], '#059669');
-    // Backfill missing columns (e.g. ip) for existing sheets
-    await syncHeaders(sheets, sheetId, SESSIONS_SHEET,
-      ['timestamp','sessionId','code','label','device','loginAt','lastSeenAt','revoked','rowId','ip']);
-    // Seed FAB defaults if sheet is empty
-    await seedFabDefaults(sheets, sheetId);
+    // v14.30 — Run schema/seed setup ONLY ONCE per function instance
+    // (was running on every request → hit Google Sheets read quota)
+    await _ensureSchemaCached(sheets, sheetId);
 
     // Capture IP (prefer x-forwarded-for, fallback x-real-ip / req.socket)
     const ip = getClientIp(req);
@@ -207,16 +220,21 @@ async function doVerify(sheets, sheetId, { sessionId }, res) {
   if (!s) return res.json({ valid: false });
   if (String(s.revoked) === 'true') return res.json({ valid: false, revoked: true });
   const isAdmin = (HARDCODED_ADMIN_CODE && String(s.code).trim() === HARDCODED_ADMIN_CODE);
-  // Update lastSeenAt (best-effort, ignore errors)
-  try {
-    const rowIdx = sessions.indexOf(s) + 2; // +1 for header, +1 for 1-based
-    await sheets.spreadsheets.values.update({
-      spreadsheetId: sheetId,
-      range: `${SESSIONS_SHEET}!G${rowIdx}`,
-      valueInputOption: 'RAW',
-      requestBody: { values: [[new Date().toISOString()]] }
-    });
-  } catch {}
+  // v14.30 — Throttle lastSeenAt updates to 1/minute per session (avoid burning quota)
+  const lastSeen = new Date(s.lastSeenAt || 0).getTime();
+  if (Date.now() - lastSeen > 60_000) {
+    try {
+      const rowIdx = sessions.indexOf(s) + 2;
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: sheetId,
+        range: `${SESSIONS_SHEET}!G${rowIdx}`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [[new Date().toISOString()]] }
+      });
+      // Don't invalidate full cache — just update in-place
+      s.lastSeenAt = new Date().toISOString();
+    } catch {}
+  }
   return res.json({ valid: true, isAdmin });
 }
 
@@ -287,6 +305,7 @@ async function doDeleteCode(sheets, sheetId, { sessionId, rowId }, res) {
       }
     }]}
   });
+  _invalidateReadCache(CODES_SHEET); // v14.30
   return res.json({ success: true });
 }
 
@@ -372,6 +391,7 @@ async function doDeleteFabItem(sheets, sheetId, { sessionId, rowId }, res) {
       deleteDimension: { range: { sheetId: sheetInfo.sheetId, dimension:'ROWS', startIndex: foundIdx, endIndex: foundIdx+1 } }
     }]}
   });
+  _invalidateReadCache(FAB_SHEET); // v14.30
   return res.json({ success: true });
 }
 
@@ -405,6 +425,7 @@ async function doUpdateFabItem(sheets, sheetId, { sessionId, rowId, icon, label,
     range: `${FAB_SHEET}!A${foundIdx+1}:${lastCol}${foundIdx+1}`,
     valueInputOption: 'RAW', requestBody: { values: [newRow] }
   });
+  _invalidateReadCache(FAB_SHEET); // v14.30
   return res.json({ success: true });
 }
 
@@ -480,22 +501,31 @@ async function markSessionRevoked(sheets, sheetId, sessionId) {
         spreadsheetId: sheetId, range: `${SESSIONS_SHEET}!${colLetter}${i+1}`,
         valueInputOption: 'RAW', requestBody: { values: [['true']] }
       });
+      _invalidateReadCache(SESSIONS_SHEET); // v14.30
       return;
     }
   }
 }
+// v14.30 — Cached read (5s TTL) — dedupes parallel calls to same sheet
 async function readSheet(sheets, sheetId, sheetName) {
+  const cached = _readCache.get(sheetName);
+  if (cached && cached.expiresAt > Date.now()) return cached.data;
   const r = await sheets.spreadsheets.values.get({
     spreadsheetId: sheetId, range: `${sheetName}!A:Z`
   });
   const rows = r.data.values || [];
-  if (rows.length < 2) return [];
-  const headers = rows[0];
-  return rows.slice(1).map(row => {
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = row[i] !== undefined ? row[i] : ''; });
-    return obj;
-  });
+  let data;
+  if (rows.length < 2) { data = []; }
+  else {
+    const headers = rows[0];
+    data = rows.slice(1).map(row => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = row[i] !== undefined ? row[i] : ''; });
+      return obj;
+    });
+  }
+  _readCache.set(sheetName, { data, expiresAt: Date.now() + READ_CACHE_TTL_MS });
+  return data;
 }
 async function appendRow(sheets, sheetId, sheetName, values) {
   await sheets.spreadsheets.values.append({
@@ -504,6 +534,8 @@ async function appendRow(sheets, sheetId, sheetName, values) {
     valueInputOption: 'RAW',
     requestBody: { values: [values] }
   });
+  // v14.30 — invalidate cache so next read sees the new row
+  _invalidateReadCache(sheetName);
 }
 async function getSheetMeta(sheets, spreadsheetId, sheetName) {
   const ss = await sheets.spreadsheets.get({ spreadsheetId });

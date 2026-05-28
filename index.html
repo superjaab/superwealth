@@ -4268,7 +4268,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.29 | 29/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.30 | 29/05/2026</span>
   </div>
 </aside>
 
@@ -6375,10 +6375,14 @@ async function doLogout() {
   showToast('👋 ออกจากระบบแล้ว', 'info');
 }
 // Background session verification (called on app focus + periodically)
+let _lastVerifyAt = 0;
 async function verifySession() {
   if (_IS_LOCAL_DEV) return;  // skip on local dev
   const sid = getSessionId();
   if (!sid) return;
+  // v14.30 — Skip if verified within last 30s (avoid burning Google Sheets quota)
+  if (Date.now() - _lastVerifyAt < 30_000) return;
+  _lastVerifyAt = Date.now();
   try {
     const r = await api('/api/auth', { action: 'verify', sessionId: sid });
     if (!r.valid) {
@@ -6452,11 +6456,12 @@ async function initAdminTab() {
   if (sel && !sel.options.length && typeof FAB_TABS_AVAILABLE !== 'undefined') {
     sel.innerHTML = FAB_TABS_AVAILABLE.map(t => `<option value="${t.tab}">${t.label}</option>`).join('');
   }
-  loadAdminCodes();
-  loadAdminSessions();
-  loadAdminFab();
-  loadAdminInvItems();   // v14.20
-  loadAdminIncItems();   // v14.28
+  // v14.30 — Sequential loading to avoid Google Sheets API quota burst
+  await loadAdminCodes();
+  await loadAdminSessions();
+  await loadAdminFab();
+  loadAdminInvItems();   // v14.20 (localStorage-only — no API call)
+  loadAdminIncItems();   // v14.28 (localStorage-only — no API call)
 }
 
 // v14.29 — Admin: manage invoice item presets (full CRUD on defaults + extras)
@@ -11869,7 +11874,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.29';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.30';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
@@ -12132,11 +12137,9 @@ window.addEventListener('DOMContentLoaded', () => {
   refreshInvItemDatalist();
   // v14.28 — initialize income datalist
   refreshIncItemDatalist();
-  // Auto-update check — aggressive polling early, then back off
-  setTimeout(checkForUpdate, 2000);   // first check after 2s
-  setTimeout(checkForUpdate, 10000);  // then 10s
-  setTimeout(checkForUpdate, 30000);  // 30s
-  setInterval(checkForUpdate, 60000); // then every 60s
+  // v14.30 — Less aggressive polling (was 2s+10s+30s+60s burst)
+  setTimeout(checkForUpdate, 5000);        // first check after 5s
+  setInterval(checkForUpdate, 5 * 60_000); // then every 5 minutes
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') checkForUpdate();
   });
