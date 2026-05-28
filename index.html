@@ -3378,7 +3378,7 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v14.3</span>
+    <span style="opacity:.7">v14.4</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
@@ -4699,15 +4699,49 @@
 </div><!-- /main-wrapper -->
 </div><!-- /app-shell -->
 
-<!-- ══ TIRE SELECTOR MODAL ══ -->
-<div id="tire-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;align-items:center;justify-content:center;padding:10px 8px">
-  <div style="background:#0f172a;border-radius:20px;padding:16px 14px 14px;max-width:420px;width:100%;max-height:96dvh;overflow-y:auto;box-shadow:0 30px 80px rgba(0,0,0,.9);border:1px solid #1e293b">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div>
-        <div style="font-weight:800;color:#f97316;font-size:1rem">🚛 แผนผังยาง 22 เส้น</div>
-        <div style="font-size:.68rem;color:#475569;margin-top:2px">กดที่ยางที่ต้องการเปลี่ยน • กดซ้ำเพื่อยกเลิก</div>
+<!-- ══ TIRE SELECTOR MODAL — v14.4 (Premium Redesign) ══ -->
+<style>
+  #tire-modal { animation: tireModalIn .25s cubic-bezier(.4,0,.2,1); }
+  @keyframes tireModalIn { from{opacity:0;backdrop-filter:blur(0)} to{opacity:1;backdrop-filter:blur(8px)} }
+  .tire-modal-panel { animation: tirePanelIn .35s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes tirePanelIn { from{opacity:0;transform:scale(.92) translateY(8px)} to{opacity:1;transform:scale(1) translateY(0)} }
+  .tire-quick-chip {
+    flex:1; padding:9px 8px; border:1px solid #334155; border-radius:10px;
+    background:rgba(99,102,241,0.06); color:#a5b4fc; font-size:.72rem;
+    font-weight:700; cursor:pointer; font-family:inherit;
+    transition:all .15s; display:flex; flex-direction:column; align-items:center; gap:3px;
+  }
+  .tire-quick-chip:hover { background:rgba(99,102,241,0.12); border-color:#6366f1; color:#c7d2fe; transform:translateY(-1px); }
+  .tire-quick-chip:active { transform:scale(.97); }
+  .tire-quick-chip .qc-count { font-size:.95rem; font-weight:900; color:#a78bfa; }
+  /* Tire pulse when selected */
+  @keyframes tirePulse { 0%,100% { filter:drop-shadow(0 0 0 rgba(167,139,250,0)); } 50% { filter:drop-shadow(0 0 4px rgba(167,139,250,.6)); } }
+  .tire-selected { animation: tirePulse 1.6s ease-in-out infinite; }
+</style>
+<div id="tire-modal" style="display:none;position:fixed;inset:0;background:rgba(2,6,18,.78);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:300;align-items:center;justify-content:center;padding:10px 8px">
+  <div class="tire-modal-panel" style="background:linear-gradient(180deg,#0f172a 0%,#0b1224 100%);border-radius:20px;padding:18px 16px 16px;max-width:440px;width:100%;max-height:96dvh;overflow-y:auto;box-shadow:0 40px 100px rgba(0,0,0,.85),inset 0 1px 0 rgba(255,255,255,.04);border:1px solid rgba(99,102,241,0.2)">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;gap:10px">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:800;font-size:1.05rem;background:linear-gradient(135deg,#a78bfa 0%,#c4b5fd 60%,#f0abfc 100%);-webkit-background-clip:text;background-clip:text;color:transparent">🚛 แผนผังยาง 22 เส้น</div>
+        <div style="font-size:.7rem;color:#64748b;margin-top:3px">กดยางที่ต้องการเปลี่ยน · กดซ้ำเพื่อยกเลิก</div>
       </div>
-      <button onclick="closeTireModal()" style="background:#1e293b;border:1.5px solid #334155;border-radius:8px;width:30px;height:30px;cursor:pointer;color:#64748b;font-size:1rem;flex-shrink:0">✕</button>
+      <button onclick="closeTireModal()" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;width:34px;height:34px;cursor:pointer;color:#94a3b8;font-size:1.05rem;flex-shrink:0;transition:all .15s" onmouseover="this.style.background='rgba(239,68,68,.15)';this.style.color='#fca5a5';this.style.borderColor='rgba(239,68,68,.3)'" onmouseout="this.style.background='rgba(255,255,255,.04)';this.style.color='#94a3b8';this.style.borderColor='rgba(255,255,255,.08)'">✕</button>
+    </div>
+
+    <!-- Quick action chips — เปลี่ยนทั้งกลุ่ม -->
+    <div style="display:flex;gap:6px;margin-bottom:14px">
+      <button class="tire-quick-chip" onclick="selectTireGroup('head')">
+        <span style="font-size:.68rem;opacity:.85">🚛 ทั้งหัวลาก</span>
+        <span class="qc-count">10 ล้อ</span>
+      </button>
+      <button class="tire-quick-chip" onclick="selectTireGroup('trailer')">
+        <span style="font-size:.68rem;opacity:.85">🚌 ทั้งหาง</span>
+        <span class="qc-count">12 ล้อ</span>
+      </button>
+      <button class="tire-quick-chip" onclick="selectTireGroup('all')">
+        <span style="font-size:.68rem;opacity:.85">⚡ ทั้งคัน</span>
+        <span class="qc-count">22 ล้อ</span>
+      </button>
     </div>
     <!-- SVG TRUCK DIAGRAM: top-down view, industry-standard layout -->
     <!-- Coordinates: viewBox 0 0 280 395, Center x=140                -->
@@ -9862,7 +9896,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.3';   // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.4';   // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate(opts) {

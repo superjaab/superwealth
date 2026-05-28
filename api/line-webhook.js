@@ -108,6 +108,138 @@ function uniq(arr, key, limit=10) {
   return [...new Set(arr.map(r => r[key]).filter(Boolean))].slice(0, limit);
 }
 
+// ═══════════════════════════════════════════════════════════════
+// 📸 IMAGE UPLOAD + OCR HELPERS (v14.4)
+// ═══════════════════════════════════════════════════════════════
+
+// Download image binary from LINE Content API → return base64
+async function getLineImageBase64(messageId) {
+  const r = await fetch(`https://api-data.line.me/v2/bot/message/${messageId}/content`, {
+    headers: { Authorization: `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}` }
+  });
+  if (!r.ok) throw new Error(`LINE content fetch failed: HTTP ${r.status}`);
+  const buf = await r.arrayBuffer();
+  return Buffer.from(buf).toString('base64');
+}
+
+// Upload base64 image to ImgBB → return public URL
+async function uploadToImgBB(base64) {
+  const apiKey = process.env.IMGBB_API_KEY;
+  if (!apiKey) throw new Error('Missing IMGBB_API_KEY in env');
+  const params = new URLSearchParams({ key: apiKey, image: base64 });
+  const r = await fetch('https://api.imgbb.com/1/upload', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString()
+  });
+  let json;
+  try { json = await r.json(); }
+  catch { throw new Error(`ImgBB returned non-JSON (status ${r.status})`); }
+  if (!json.success) throw new Error(json.error?.message || `ImgBB error (status ${r.status})`);
+  return json.data.url;
+}
+
+// OCR via OCR.space → return parsed text
+async function ocrFromBase64(base64) {
+  const apiKey = process.env.OCRSPACE_API_KEY || 'K87391333588957';
+  const params = new URLSearchParams({
+    apikey: apiKey,
+    base64Image: 'data:image/jpeg;base64,' + base64,
+    language: 'tha',
+    OCREngine: '2',
+    scale: 'true',
+    isTable: 'false',
+    detectOrientation: 'true'
+  });
+  const r = await fetch('https://api.ocr.space/parse/image', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString()
+  });
+  const json = await r.json();
+  if (json.IsErroredOnProcessing) {
+    throw new Error((json.ErrorMessage||['OCR failed']).join(','));
+  }
+  return (json.ParsedResults||[]).map(p => p.ParsedText||'').join('\n');
+}
+
+// Parse OCR text → extract { amount, date, plateNumber, docNumber }
+function parseOCRText(text) {
+  const result = {};
+  if (!text) return result;
+
+  // ── Amount: find largest number (likely the total) ──
+  const amountStrs = text.match(/[\d,]+\.?\d{0,2}/g) || [];
+  const amounts = amountStrs
+    .map(s => parseFloat(s.replace(/,/g, '')))
+    .filter(n => n > 10 && n < 10_000_000); // reasonable range
+  if (amounts.length > 0) {
+    amounts.sort((a, b) => b - a);
+    result.amount = amounts[0]; // largest = likely the total
+  }
+
+  // ── Date: DD/MM/YYYY, DD-MM-YYYY, YYYY-MM-DD ──
+  let dateMatch = text.match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/);
+  if (dateMatch) {
+    let [, d, m, y] = dateMatch;
+    if (y.length === 2) y = '20' + y;
+    if (parseInt(y) > 2400) y = (parseInt(y) - 543).toString(); // Thai BE → CE
+    result.date = `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+  }
+
+  // ── Plate: Thai format (2-digit + 4-digit, or 2-char Thai + 4-digit) ──
+  const platePatterns = [
+    /(\d{2}[\s\-]?\d{4})/,           // 70-4770
+    /([ก-ฮ]{1,3}[\s\-]?\d{1,4})/     // กข-1234
+  ];
+  for (const p of platePatterns) {
+    const m = text.match(p);
+    if (m) { result.plateNumber = m[1].trim(); break; }
+  }
+
+  // ── Doc number / invoice: INV, RCP, etc + numbers ──
+  const docMatch = text.match(/(INV|RCP|RC|IV|TX|TAX)[\s\-#]?(\d+)/i);
+  if (docMatch) result.docNumber = docMatch[0];
+
+  return result;
+}
+
+// Apply OCR result to formData based on current form state
+function applyOCRToState(formData, state, ocrParsed) {
+  const summary = [];
+  if (!Object.keys(ocrParsed).length) return summary;
+
+  // Amount: applies to truck_5 (freight), inc_3 (amount), exp_3 (amount)
+  if (ocrParsed.amount && ['truck_5','inc_3','exp_3'].includes(state)) {
+    const field = FIELD[state];
+    if (field) {
+      formData[field] = String(ocrParsed.amount);
+      summary.push(`💵 ยอด: ฿${num(ocrParsed.amount)}`);
+    }
+  }
+  // Date: applies to truck_1, inc_1, exp_1
+  if (ocrParsed.date && ['truck_1','inc_1','exp_1'].includes(state)) {
+    const field = FIELD[state];
+    if (field) {
+      // Convert YYYY-MM-DD → DD/MM/YYYY for display
+      const [y,m,d] = ocrParsed.date.split('-');
+      formData[field] = `${d}/${m}/${y}`;
+      summary.push(`📅 วันที่: ${formData[field]}`);
+    }
+  }
+  // Plate: applies to truck_2 only
+  if (ocrParsed.plateNumber && state === 'truck_2') {
+    formData[FIELD[state]] = ocrParsed.plateNumber;
+    summary.push(`🚛 ทะเบียน: ${ocrParsed.plateNumber}`);
+  }
+  // Doc number (for income only — auto-fill but don't change state)
+  if (ocrParsed.docNumber) {
+    formData.docNumber = ocrParsed.docNumber;
+    summary.push(`📄 เลขที่: ${ocrParsed.docNumber}`);
+  }
+  return summary;
+}
+
 // ─── LINE API helpers ──────────────────────────────────────────
 async function reply(token, msgs) {
   if (!Array.isArray(msgs)) msgs = [msgs];
@@ -586,7 +718,9 @@ async function saveTruck(sheets, sheetId, f) {
     freightCost: parseFloat(f.freightCost)||0,
     jobStatus: 'กำลังดำเนินการ',
     remark: f.remark==='-'?'':(f.remark||''),
-    imageUrls: '[]', ocrText: '', userAgent: 'LINE Bot', rowId,
+    imageUrls: JSON.stringify(Array.isArray(f.imageUrls) ? f.imageUrls : []),
+    ocrText: f.ocrText || '',
+    userAgent: 'LINE Bot', rowId,
     pickupDate: toISO(f.pickupDate)||'',
     deliveryDate: toISO(f.deliveryDate)||'',
     tripRound: 1,
@@ -611,7 +745,9 @@ async function saveIncome(sheets, sheetId, f) {
     incomeItem: f.incomeItem||'', amount: parseFloat(f.amount)||0,
     paymentMethod: f.paymentMethod||'เงินสด',
     remark: f.remark==='-'?'':(f.remark||''),
-    imageUrls: '[]', ocrText: '', userAgent: 'LINE Bot', rowId,
+    imageUrls: JSON.stringify(Array.isArray(f.imageUrls) ? f.imageUrls : []),
+    ocrText: f.ocrText || '',
+    userAgent: 'LINE Bot', rowId,
     linkedTripRowId: '', linkedTripRound: 0,
   };
   const headers = ['timestamp','incomeDate','incomeTime','docNumber','customerName','incomeItem','amount','paymentMethod','remark','imageUrls','ocrText','userAgent','rowId','linkedTripRowId','linkedTripRound'];
@@ -633,7 +769,9 @@ async function saveExpense(sheets, sheetId, f) {
     vendor: '', expenseDetail: f.category||'',
     amount: parseFloat(f.amount)||0, paymentMethod: f.paymentMethod||'เงินสด',
     remark: f.remark==='-'?'':(f.remark||''),
-    imageUrls: '[]', ocrText: '', userAgent: 'LINE Bot', rowId,
+    imageUrls: JSON.stringify(Array.isArray(f.imageUrls) ? f.imageUrls : []),
+    ocrText: f.ocrText || '',
+    userAgent: 'LINE Bot', rowId,
     linkedTripRowId: '', linkedTripRound: 0,
   };
   const headers = ['timestamp','expenseDate','expenseTime','category','plateNumber','vendor','expenseDetail','amount','paymentMethod','remark','imageUrls','ocrText','userAgent','rowId','linkedTripRowId','linkedTripRound'];
@@ -715,6 +853,75 @@ async function buildCalendar(sheets, sheetId, year, month) {
   return flexMsg;
 }
 
+// ═══════════════════════════════════════════════════════════════
+// 📸 IMAGE UPLOAD HANDLER — receives image → ImgBB + OCR + autofill
+// ═══════════════════════════════════════════════════════════════
+async function handleImageUpload(sheets, sheetId, userId, token, messageId, state, formData, rowNum) {
+  // 1) Download from LINE Content API
+  let base64;
+  try {
+    base64 = await getLineImageBase64(messageId);
+  } catch (e) {
+    return reply(token, txt(`❌ ดาวน์โหลดรูปไม่ได้: ${e.message}`));
+  }
+
+  // 2) Upload to ImgBB
+  let imageUrl;
+  try {
+    imageUrl = await uploadToImgBB(base64);
+  } catch (e) {
+    return reply(token, txt(`❌ อัพโหลดรูปไม่สำเร็จ: ${e.message}\n\nลองส่งใหม่อีกครั้งครับ`));
+  }
+
+  // 3) Save URL into formData
+  formData.imageUrls = Array.isArray(formData.imageUrls) ? formData.imageUrls : [];
+  formData.imageUrls.push(imageUrl);
+  const imageCount = formData.imageUrls.length;
+
+  // 4) Run OCR (only if user is currently in a form — saves API calls)
+  let ocrSummary = [];
+  let ocrSucceeded = false;
+  const inForm = state && state !== 'idle' && !state.endsWith('_confirm');
+  if (inForm) {
+    try {
+      const ocrText = await ocrFromBase64(base64);
+      if (ocrText && ocrText.trim().length > 5) {
+        const parsed = parseOCRText(ocrText);
+        ocrSummary = applyOCRToState(formData, state, parsed);
+        if (formData.ocrText) formData.ocrText += '\n---\n' + ocrText;
+        else formData.ocrText = ocrText;
+        ocrSucceeded = ocrSummary.length > 0;
+      }
+    } catch (e) {
+      console.warn('OCR failed (non-fatal):', e.message);
+    }
+  }
+
+  // 5) Persist state
+  await writeState(sheets, sheetId, userId, state, formData, rowNum);
+
+  // 6) Build reply
+  const lines = [`✅ อัพโหลดรูปแล้ว (${imageCount} รูป)`];
+  lines.push(`🖼 ${imageUrl}`);
+  if (ocrSucceeded) {
+    lines.push('');
+    lines.push('🔍 พบข้อมูลจากรูป:');
+    ocrSummary.forEach(s => lines.push('  • ' + s));
+    lines.push('');
+    lines.push('✨ ค่าถูกใส่ในฟอร์มอัตโนมัติ — ส่งรูปเพิ่มได้ หรือพิมพ์ "ต่อ" เพื่อข้าม');
+  } else if (inForm) {
+    lines.push('');
+    lines.push('💡 รูปถูกแนบกับ record แล้ว — ส่งรูปเพิ่มได้ หรือพิมพ์ข้อมูลต่อ');
+  } else {
+    lines.push('');
+    lines.push('💡 ต้องเริ่มฟอร์มก่อน (เช่น "บันทึกรถ" / "รายจ่าย") รูปจะถูกแนบ + อ่าน OCR อัตโนมัติ');
+  }
+
+  return reply(token, txt(lines.join('\n'),
+    inForm ? [qMsg('▶️ ต่อ', 'ต่อ'), qMsg('❌ ยกเลิก', 'ยกเลิก')] : []
+  ));
+}
+
 // ─── Core event handler ────────────────────────────────────────
 async function handleEvent(event, sheets, sheetId) {
   if (!event.replyToken) return;
@@ -730,17 +937,38 @@ async function handleEvent(event, sheets, sheetId) {
 
   let text = '';
   let pb   = '';
+  let isImage = false;
+  let imageMessageId = '';
   if (event.type === 'message' && event.message?.type === 'text') {
     text = event.message.text.trim();
   } else if (event.type === 'postback') {
     pb   = event.postback?.data || '';
     text = pb;
+  } else if (event.type === 'message' && event.message?.type === 'image') {
+    isImage = true;
+    imageMessageId = event.message.id;
   } else {
     return;
   }
 
   // ── Read state (+ ref data in parallel for menus) ─────────────
   const { state, data: formData, row: rowNum } = await readState(sheets, sheetId, userId);
+
+  // ═════ IMAGE HANDLING — Upload to ImgBB + OCR + prefill ═════
+  if (isImage) {
+    return await handleImageUpload(sheets, sheetId, userId, token, imageMessageId, state, formData, rowNum);
+  }
+
+  // ── "ต่อ" — confirm OCR-filled value and move to next step ──
+  if ((text === 'ต่อ' || text === '▶️ ต่อ') && state && !state.endsWith('_confirm') && state !== 'idle') {
+    const field = FIELD[state];
+    const value = field ? (formData[field] || '') : '';
+    if (!value) {
+      return reply(token, txt('⚠️ ยังไม่มีข้อมูลในขั้นนี้ — ส่งรูปอีกครั้งหรือพิมพ์ค่าเอง'));
+    }
+    // Simulate user sending the OCR-filled value to progress the form
+    text = String(value);
+  }
 
   // ── Global cancel ──────────────────────────────────────────────
   if (text === 'ยกเลิก' || text === '❌ ยกเลิก') {
