@@ -4268,7 +4268,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.27 | 29/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.28 | 29/05/2026</span>
   </div>
 </aside>
 
@@ -4460,8 +4460,14 @@
         <input type="text" id="i-customerName" placeholder="ชื่อลูกค้า/บริษัท" maxlength="150" autocomplete="off">
       </div>
       <div class="form-row">
-        <label>รายการรายรับ <span class="req">*</span></label>
-        <input type="text" id="i-incomeItem" placeholder="ค่าขนส่ง, ค่าบริการ..." maxlength="200">
+        <label style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <span>รายการรายรับ <span class="req">*</span></span>
+          <a href="#" onclick="event.preventDefault();switchTab('admin',document.querySelector('[onclick*=\\'admin\\']'));setTimeout(()=>document.getElementById('admin-inc-items-section')?.scrollIntoView({behavior:'smooth'}),200)" style="font-size:.7rem;font-weight:600;color:#0891b2;text-decoration:none">⚙️ จัดการรายการ →</a>
+        </label>
+        <!-- v14.28 — dropdown + free input (datalist) -->
+        <input type="text" id="i-incomeItem" placeholder="เลือกหรือพิมพ์รายการ..." maxlength="200" list="inc-item-dl" autocomplete="off">
+        <datalist id="inc-item-dl"></datalist>
+        <p class="hint" style="font-size:.7rem;color:#94a3b8;margin-top:4px">💡 เลือกจากรายการที่กำหนดไว้ หรือพิมพ์ใหม่ได้</p>
       </div>
       <div class="form-row-2">
         <div class="form-row">
@@ -4889,6 +4895,27 @@
         💡 รายการดีฟอลต์ (ลบไม่ได้): ค่าเที่ยวคนขับ, เงินเดือน, ค่าเดินทางเพิ่มเติม, ค่าซ่อมแซมยาง, ค่าเบี้ยเลี้ยง, ค่าใช้จ่ายอื่นๆ
       </div>
       <div id="admin-inv-items-list" style="color:#94a3b8;text-align:center;padding:14px">— ไม่มีรายการเพิ่มเติม —</div>
+    </div>
+
+    <!-- v14.28 — Income items management -->
+    <div id="admin-inc-items-section" class="dash-card" style="margin-top:14px">
+      <div class="dash-card-head" style="margin-bottom:14px">
+        <div>
+          <div class="dash-card-title">💰 รายการรายรับ</div>
+          <div class="dash-card-sub">เพิ่ม/ลบรายการที่ใช้บ่อยตอนบันทึกรายรับ — แสดงเป็น dropdown ให้เลือก</div>
+        </div>
+      </div>
+      <div style="background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:10px;padding:12px;margin-bottom:14px">
+        <div style="font-weight:700;color:#0f172a;margin-bottom:8px;font-size:.85rem">➕ เพิ่มรายการใหม่</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input type="text" id="admin-inc-item-name" placeholder="เช่น ค่าน้ำมัน, ค่าจอดรถ, ค่ามัดจำ..." maxlength="120" style="flex:1;min-width:240px">
+          <button type="button" onclick="adminAddIncItem()" style="background:linear-gradient(135deg,#059669,#10b981);color:white;border:none;border-radius:8px;padding:10px 18px;font-weight:700;font-size:.82rem;cursor:pointer;font-family:inherit">➕ เพิ่ม</button>
+        </div>
+      </div>
+      <div style="background:#dcfce7;border:1px solid #86efac;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:.78rem;color:#166534">
+        💡 รายการดีฟอลต์ (ลบไม่ได้): ค่าขนส่ง, ค่าบริการ, ค่าเที่ยวรถ, ค่าปรับ, รายได้พิเศษ, ค่ามัดจำ, รายรับอื่นๆ
+      </div>
+      <div id="admin-inc-items-list" style="color:#94a3b8;text-align:center;padding:14px">— ไม่มีรายการเพิ่มเติม —</div>
     </div>
   </div>
 </div>
@@ -6429,6 +6456,7 @@ async function initAdminTab() {
   loadAdminSessions();
   loadAdminFab();
   loadAdminInvItems();   // v14.20
+  loadAdminIncItems();   // v14.28
 }
 
 // v14.20 — Admin: manage invoice item presets
@@ -6471,6 +6499,49 @@ function adminRemoveInvItem(i) {
   extras.splice(i, 1);
   setInvItemPresetsExtras(extras);
   loadAdminInvItems();
+  showToast(`🗑 ลบ "${name}" แล้ว`, 'success');
+}
+
+// v14.28 — Admin: manage income item presets (same pattern as invoice items)
+function loadAdminIncItems() {
+  const el = document.getElementById('admin-inc-items-list');
+  if (!el) return;
+  let extras = [];
+  try { extras = JSON.parse(localStorage.getItem(INC_ITEMS_KEY) || '[]'); } catch(_){}
+  if (!extras.length) {
+    el.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:18px;font-size:.85rem">📭 ยังไม่มีรายการเพิ่มเติม (ใช้ดีฟอลต์ 7 รายการ)</div>';
+    return;
+  }
+  el.innerHTML = extras.map((name, i) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #f1f5f9">
+      <span style="font-size:1rem">💰</span>
+      <div style="flex:1;font-weight:600;color:#0f172a;font-size:.88rem">${escHtml(name)}</div>
+      <button onclick="adminRemoveIncItem(${i})" style="background:#fee2e2;color:#b91c1c;border:none;border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:.78rem">🗑 ลบ</button>
+    </div>`).join('');
+}
+function adminAddIncItem() {
+  const input = document.getElementById('admin-inc-item-name');
+  if (!input) return;
+  const name = (input.value || '').trim();
+  if (!name) { showToast('กรุณากรอกชื่อรายการ', 'warning'); return; }
+  if (DEFAULT_INC_ITEMS.includes(name)) { showToast('รายการนี้มีในดีฟอลต์อยู่แล้ว', 'warning'); return; }
+  let extras = [];
+  try { extras = JSON.parse(localStorage.getItem(INC_ITEMS_KEY) || '[]'); } catch(_){}
+  if (extras.includes(name)) { showToast('รายการนี้มีอยู่แล้ว', 'warning'); return; }
+  extras.push(name);
+  setIncItemPresetsExtras(extras);
+  input.value = '';
+  loadAdminIncItems();
+  showToast(`✅ เพิ่ม "${name}" แล้ว`, 'success');
+}
+function adminRemoveIncItem(i) {
+  let extras = [];
+  try { extras = JSON.parse(localStorage.getItem(INC_ITEMS_KEY) || '[]'); } catch(_){}
+  const name = extras[i];
+  if (!confirm(`ลบรายการ "${name}" ออก?`)) return;
+  extras.splice(i, 1);
+  setIncItemPresetsExtras(extras);
+  loadAdminIncItems();
   showToast(`🗑 ลบ "${name}" แล้ว`, 'success');
 }
 async function loadAdminCodes() {
@@ -7993,6 +8064,7 @@ function switchTab(tab, btnEl, opts) {
   const title = document.getElementById('page-title');
   if (title) title.textContent = PAGE_NAMES[tab] || tab;
   if (tab === 'invoice') { genInvNum(); renderInvRows(); refreshInvItemDatalist(); refreshInvPayeeDatalists(); }
+  if (tab === 'income')  { refreshIncItemDatalist(); }
   if (tab === 'truck' && !_editingMode.truck) setTripRoundField();
   if (tab === 'income') populateLinkedTripsDropdown();
   if (tab === 'expense') populateExpenseLinkedTripsDropdown();
@@ -9410,6 +9482,33 @@ function refreshInvItemDatalist() {
   const dl = document.getElementById('inv-item-dl');
   if (!dl) return;
   dl.innerHTML = getInvItemPresets().map(v => `<option value="${escAttr(v)}">`).join('');
+}
+
+// v14.28 — Income item presets (same pattern as invoice items)
+const DEFAULT_INC_ITEMS = [
+  'ค่าขนส่ง',
+  'ค่าบริการ',
+  'ค่าเที่ยวรถ',
+  'ค่าปรับ',
+  'รายได้พิเศษ',
+  'ค่ามัดจำ',
+  'รายรับอื่นๆ'
+];
+const INC_ITEMS_KEY = 'sw_inc_items_v1';
+
+function getIncItemPresets() {
+  let extras = [];
+  try { extras = JSON.parse(localStorage.getItem(INC_ITEMS_KEY) || '[]'); } catch(_){}
+  return [...DEFAULT_INC_ITEMS, ...extras.filter(x => !DEFAULT_INC_ITEMS.includes(x))];
+}
+function setIncItemPresetsExtras(extras) {
+  localStorage.setItem(INC_ITEMS_KEY, JSON.stringify(extras));
+  refreshIncItemDatalist();
+}
+function refreshIncItemDatalist() {
+  const dl = document.getElementById('inc-item-dl');
+  if (!dl) return;
+  dl.innerHTML = getIncItemPresets().map(v => `<option value="${escAttr(v)}">`).join('');
 }
 
 // Driver autocomplete for payee
@@ -11629,7 +11728,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.27';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.28';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
@@ -11890,6 +11989,8 @@ window.addEventListener('DOMContentLoaded', () => {
   initFlatpickr();
   // v14.20 — initialize invoice datalists
   refreshInvItemDatalist();
+  // v14.28 — initialize income datalist
+  refreshIncItemDatalist();
   // Auto-update check — aggressive polling early, then back off
   setTimeout(checkForUpdate, 2000);   // first check after 2s
   setTimeout(checkForUpdate, 10000);  // then 10s

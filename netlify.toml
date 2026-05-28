@@ -13,8 +13,7 @@
   pretty_urls = true
 
 # v14.20 — Proxy all /api/* requests to Vercel backend
-# This keeps the API on Vercel (with all env vars + serverless functions)
-# while Netlify serves the static UI as a redundant CDN
+# (kept as-is: Vercel handles all serverless auth + data)
 [[redirects]]
   from = "/api/*"
   to = "https://superwealth.vercel.app/api/:splat"
