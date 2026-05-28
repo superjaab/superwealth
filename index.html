@@ -1637,6 +1637,277 @@
       background: rgba(139,92,246,0.4);
       color: white;
     }
+
+    /* ═══════════════════════════════════════════════════════════
+       LIGHT MODE — Premium soft pastel (mirror of dark mode)
+       Sidebar stays dark (Notion/Linear style)
+       ═══════════════════════════════════════════════════════════ */
+    body:not(.dark) {
+      --bg-app:           #f5f7fb;
+      --bg-card:          rgba(255, 255, 255, 0.78);
+      --bg-elevated:      rgba(255, 255, 255, 0.92);
+      --bg-subtle:        rgba(15, 23, 42, 0.04);
+      --c-primary:        #6366f1;
+      --c-primary-hover:  #4f46e5;
+      --c-accent:         #ec4899;
+    }
+    /* Ambient pastel blobs in light mode */
+    body:not(.dark)::before,
+    body:not(.dark)::after {
+      content: '';
+      position: fixed;
+      pointer-events: none;
+      z-index: 0;
+      border-radius: 50%;
+      filter: blur(140px);
+      opacity: 0.55;
+    }
+    body:not(.dark)::before {
+      width: 520px; height: 520px;
+      top: -180px; left: -160px;
+      background: radial-gradient(circle, #c7d2fe 0%, transparent 70%);
+      animation: blobFloat1 18s ease-in-out infinite;
+    }
+    body:not(.dark)::after {
+      width: 600px; height: 600px;
+      bottom: -260px; right: -200px;
+      background: radial-gradient(circle, #fbcfe8 0%, transparent 70%);
+      animation: blobFloat2 22s ease-in-out infinite;
+    }
+    body:not(.dark) #app-shell,
+    body:not(.dark) #preview-banner { position: relative; z-index: 1; }
+
+    /* Sidebar stays DARK in light mode too (premium SaaS pattern) */
+    body:not(.dark) #sidebar {
+      background: linear-gradient(180deg, #0a0d1a 0%, #060916 100%);
+      border-right: 1px solid rgba(255,255,255,0.06);
+    }
+    body:not(.dark) .sb-logo { border-bottom-color: rgba(255,255,255,0.06); }
+    body:not(.dark) .sb-logo-icon {
+      background: linear-gradient(135deg,#6366f1 0%,#ec4899 100%);
+      box-shadow: 0 8px 24px -6px rgba(99,102,241,0.5);
+    }
+    body:not(.dark) .sb-brand {
+      background: linear-gradient(135deg,#a78bfa 0%,#f9a8d4 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      font-weight: 800;
+    }
+    body:not(.dark) .sb-sub { color: rgba(255,255,255,0.4); }
+    body:not(.dark) .sb-section {
+      color: rgba(255,255,255,0.3);
+      font-size: .62rem; letter-spacing: 1.2px;
+    }
+    body:not(.dark) .tab-btn { color: rgba(255,255,255,0.55); }
+    body:not(.dark) .tab-btn:hover {
+      background: rgba(255,255,255,0.06);
+      color: #f1f5f9;
+    }
+    body:not(.dark) .tab-btn.active {
+      background: linear-gradient(90deg, rgba(99,102,241,0.22), rgba(236,72,153,0.10));
+      color: #ffffff;
+      box-shadow: inset 3px 0 0 #818cf8;
+    }
+    body:not(.dark) .tab-btn.active .icon {
+      filter: drop-shadow(0 0 6px rgba(167,139,250,0.7));
+    }
+    body:not(.dark) .sb-footer { border-top-color: rgba(255,255,255,0.06); }
+    body:not(.dark) .sb-footer .version {
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.6);
+    }
+
+    /* Header — soft glass */
+    body:not(.dark) .app-header {
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.5) inset;
+    }
+    body:not(.dark) .app-header h1 { color: #0f172a; font-weight: 700; }
+    body:not(.dark) .app-header .version {
+      background: rgba(255,255,255,0.7);
+      border: 1px solid rgba(15,23,42,0.08);
+      color: #475569;
+      backdrop-filter: blur(10px);
+    }
+    body:not(.dark) #live-clock { color: #0f172a; }
+
+    /* Main content */
+    body:not(.dark) #main-content { background: transparent !important; }
+
+    /* Cards — soft glass + subtle border */
+    body:not(.dark) .dash-card,
+    body:not(.dark) .card,
+    body:not(.dark) .record-card,
+    body:not(.dark) .cal-grid,
+    body:not(.dark) .cal-modal-box,
+    body:not(.dark) .gps-login-card,
+    body:not(.dark) .skeleton-card {
+      background: rgba(255, 255, 255, 0.78) !important;
+      border: 1px solid rgba(15, 23, 42, 0.06) !important;
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 4px 16px -4px rgba(15,23,42,0.06),
+                  0 1px 0 rgba(255,255,255,0.9) inset;
+    }
+    body:not(.dark) .dash-card:hover,
+    body:not(.dark) .record-card:hover {
+      border-color: rgba(99,102,241,0.35) !important;
+      box-shadow: 0 12px 32px -8px rgba(99,102,241,0.18),
+                  0 0 0 1px rgba(99,102,241,0.12),
+                  0 1px 0 rgba(255,255,255,0.9) inset;
+    }
+
+    /* Inputs */
+    body:not(.dark) input[type=text],
+    body:not(.dark) input[type=number],
+    body:not(.dark) input[type=date],
+    body:not(.dark) input[type=time],
+    body:not(.dark) input[type=tel],
+    body:not(.dark) input[type=email],
+    body:not(.dark) input[type=password],
+    body:not(.dark) textarea,
+    body:not(.dark) select {
+      background: rgba(255,255,255,0.92);
+      border: 1px solid rgba(15,23,42,0.10);
+      color: #0f172a;
+      transition: all var(--t-fast);
+    }
+    body:not(.dark) input:focus, body:not(.dark) textarea:focus, body:not(.dark) select:focus {
+      border-color: rgba(99,102,241,0.5);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.16);
+    }
+
+    /* Inner nav */
+    body:not(.dark) .inner-nav {
+      background: rgba(255,255,255,0.6);
+      border: 1px solid rgba(15,23,42,0.06);
+      backdrop-filter: blur(12px);
+    }
+    body:not(.dark) .inner-btn { color: #475569; }
+    body:not(.dark) .inner-btn.active {
+      background: linear-gradient(135deg,#6366f1,#4f46e5) !important;
+      color: white !important;
+      box-shadow: 0 8px 20px -4px rgba(99,102,241,0.45);
+    }
+
+    /* Primary buttons */
+    body:not(.dark) .btn-primary,
+    body:not(.dark) .submit-btn {
+      background: linear-gradient(135deg,#6366f1 0%,#4f46e5 100%) !important;
+      box-shadow: 0 8px 24px -6px rgba(99,102,241,0.5);
+      color: white !important;
+    }
+    body:not(.dark) .btn-primary:hover,
+    body:not(.dark) .submit-btn:hover {
+      box-shadow: 0 12px 32px -6px rgba(99,102,241,0.65);
+      filter: brightness(1.06);
+    }
+
+    /* FAB — light mode */
+    body:not(.dark) #fab {
+      background: linear-gradient(135deg,#6366f1 0%,#ec4899 100%);
+      box-shadow: 0 16px 40px -8px rgba(99,102,241,0.55),
+                  0 0 60px -10px rgba(236,72,153,0.32);
+    }
+    body:not(.dark) .fab-menu-item {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(15,23,42,0.08);
+      color: #0f172a;
+      backdrop-filter: blur(20px);
+    }
+    body:not(.dark) .fab-menu-item:hover {
+      background: rgba(99,102,241,0.08);
+      color: #4338ca;
+      border-color: rgba(99,102,241,0.3);
+    }
+
+    /* Header buttons */
+    body:not(.dark) .header-bell {
+      background: rgba(255,255,255,0.6);
+      border: 1px solid rgba(15,23,42,0.08);
+      color: #475569;
+      backdrop-filter: blur(10px);
+    }
+    body:not(.dark) .header-bell:hover {
+      background: rgba(99,102,241,0.08);
+      border-color: rgba(99,102,241,0.3);
+      color: #4338ca;
+    }
+    body:not(.dark) #auth-btn {
+      background: linear-gradient(135deg,rgba(99,102,241,0.10),rgba(236,72,153,0.06)) !important;
+      border: 1px solid rgba(99,102,241,0.25) !important;
+      color: #4338ca !important;
+    }
+
+    /* Tables */
+    body:not(.dark) .sum-table th {
+      background: rgba(255,255,255,0.6);
+      color: #64748b;
+      border-bottom: 1px solid rgba(15,23,42,0.08);
+      font-weight: 700;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      font-size: .68rem;
+    }
+    body:not(.dark) .sum-table tr:hover td { background: rgba(99,102,241,0.04); }
+
+    /* Calendar */
+    body:not(.dark) .cal-daycell { border-color: rgba(15,23,42,0.05) !important; }
+    body:not(.dark) .cal-daycell:hover { background: rgba(99,102,241,0.05); }
+    body:not(.dark) .cal-daycell.today {
+      background: rgba(99,102,241,0.10) !important;
+      box-shadow: inset 0 0 0 1px rgba(99,102,241,0.4);
+    }
+
+    /* Command palette */
+    body:not(.dark) #cmd-overlay { background: rgba(15,23,42,0.35); backdrop-filter: blur(10px); }
+    body:not(.dark) #cmd-box {
+      background: rgba(255,255,255,0.96) !important;
+      border-color: rgba(15,23,42,0.08) !important;
+      box-shadow: 0 32px 80px -12px rgba(15,23,42,0.25);
+    }
+    body:not(.dark) .cmd-item:hover, body:not(.dark) .cmd-item.active {
+      background: rgba(99,102,241,0.08);
+      border-left-color: #6366f1 !important;
+    }
+
+    /* Toast */
+    body:not(.dark) #toast {
+      background: rgba(15, 23, 42, 0.92) !important;
+      color: white !important;
+      backdrop-filter: blur(20px);
+    }
+
+    /* Empty state */
+    body:not(.dark) .empty-state-icon {
+      background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(236,72,153,0.08));
+      box-shadow: 0 8px 24px -6px rgba(99,102,241,0.2);
+    }
+    body:not(.dark) .empty-state-action {
+      background: linear-gradient(135deg,#6366f1,#4f46e5);
+      box-shadow: 0 8px 24px -6px rgba(99,102,241,0.5);
+    }
+
+    /* Scrollbar */
+    body:not(.dark) ::-webkit-scrollbar-thumb {
+      background: rgba(15,23,42,0.12);
+      border: 2px solid var(--bg-app);
+    }
+    body:not(.dark) ::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,0.4); }
+
+    /* Selection */
+    body:not(.dark) ::selection {
+      background: rgba(99,102,241,0.25);
+      color: #1e1b4b;
+    }
+
+    /* Logo hover glow (light mode) */
+    body:not(.dark) .sb-logo:hover .sb-logo-icon {
+      box-shadow: 0 0 24px -2px rgba(99,102,241,0.7);
+    }
   </style>
 </head>
 <body>
@@ -1711,7 +1982,7 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v12.0</span>
+    <span style="opacity:.7">v12.1</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
@@ -7378,7 +7649,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v12.0';   // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v12.1';   // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate() {
