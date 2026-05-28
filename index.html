@@ -631,6 +631,7 @@
     body.logged-out span.trip-round-badge,
     body.logged-out [class*="trip-round-badge"],
     body.logged-out .priv-phone,
+    body.logged-out .priv-data,
     body.logged-out #sum-total-income,
     body.logged-out #sum-total-expense,
     body.logged-out #sum-profit,
@@ -922,7 +923,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v8.6 | 28/05/2026 13:45</span>
+  <span class="version" style="margin-left:auto">v8.7 | 28/05/2026 14:00</span>
   <!-- Login/Logout button -->
   <button class="header-bell" id="auth-btn" onclick="handleAuthClick()" title="เข้าสู่ระบบ" style="margin-left:10px;width:auto;padding:0 14px;font-weight:700;font-size:.78rem;display:flex;align-items:center;gap:6px">
     <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
@@ -4551,12 +4552,12 @@ function renderTruckList(items) {
         ${payHtml}
       </div>
       <div class="rc-sub" style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;margin-top:6px">
-        ${r.customerName ? `<span>🏢 ${r.customerName}</span>` : ''}
+        ${r.customerName ? `<span class="priv-data">🏢 ${r.customerName}</span>` : ''}
         ${(r.origin||r.destination) ? `<span>📍 ${r.origin||'-'} → ${r.destination||'-'}</span>` : ''}
-        ${r.driverName ? `<span>👤 ${r.driverName}${r.driverPhone?' • '+r.driverPhone:''}</span>` : ''}
-        ${r.cargoList ? `<span>📦 ${r.cargoList}${r.cargoWeight?' ('+r.cargoWeight+' ตัน)':''}</span>` : ''}
-        ${r.notes ? `<span style="color:#9E9E9E">📝 ${r.notes}</span>` : ''}
-        ${r.remark && !r.notes ? `<span style="color:#9E9E9E">📝 ${r.remark}</span>` : ''}
+        ${r.driverName ? `<span class="priv-data">👤 ${r.driverName}${r.driverPhone?' • '+r.driverPhone:''}</span>` : ''}
+        ${r.cargoList ? `<span class="priv-data">📦 ${r.cargoList}${r.cargoWeight?' ('+r.cargoWeight+' ตัน)':''}</span>` : ''}
+        ${r.notes ? `<span class="priv-data" style="color:#9E9E9E">📝 ${r.notes}</span>` : ''}
+        ${r.remark && !r.notes ? `<span class="priv-data" style="color:#9E9E9E">📝 ${r.remark}</span>` : ''}
       </div>
       ${renderImgThumbs(r.imageUrls)}
       ${renderRecActions('truck', r.rowId || r.timestamp,`${r.plateNumber||''} - ${r.customerName||''}`)}
@@ -4612,11 +4613,11 @@ function renderIncomeList(items) {
       </div>
       <!-- Sub info — left aligned -->
       <div class="rc-sub" style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;margin-top:6px">
-        ${r.customerName ? `<span>🏢 ${r.customerName}</span>` : ''}
-        ${r.incomeItem ? `<span>📋 ${r.incomeItem}</span>` : ''}
+        ${r.customerName ? `<span class="priv-data">🏢 ${r.customerName}</span>` : ''}
+        ${r.incomeItem ? `<span class="priv-data">📋 ${r.incomeItem}</span>` : ''}
         ${paymentMethod ? `<span>💵 ${paymentMethod}</span>` : ''}
-        ${docNumber ? `<span style="color:#9E9E9E">📄 ${docNumber}</span>` : ''}
-        ${r.remark ? `<span style="color:#9E9E9E">📝 ${r.remark}</span>` : ''}
+        ${docNumber ? `<span class="priv-data" style="color:#9E9E9E">📄 ${docNumber}</span>` : ''}
+        ${r.remark ? `<span class="priv-data" style="color:#9E9E9E">📝 ${r.remark}</span>` : ''}
       </div>
       ${renderImgThumbs(r.imageUrls)}
       ${renderRecActions('income', r.rowId || r.timestamp,`${fmtBaht(amount)} - ${r.customerName||''}`)}
@@ -4668,10 +4669,10 @@ function renderExpenseList(items) {
       <div class="rc-sub" style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;margin-top:6px">
         ${r.category ? `<span style="padding:3px 12px;border-radius:10px;background:#FFEBEE;color:#B91C1C;font-weight:700;font-size:.72rem;display:inline-block">${r.category}</span>` : ''}
         ${r.plateNumber ? `<span>🚛 ${r.plateNumber}</span>` : ''}
-        ${r.vendor ? `<span>👤 ${r.vendor}</span>` : ''}
-        ${r.expenseDetail ? `<span>📋 ${r.expenseDetail}</span>` : ''}
+        ${r.vendor ? `<span class="priv-data">👤 ${r.vendor}</span>` : ''}
+        ${r.expenseDetail ? `<span class="priv-data">📋 ${r.expenseDetail}</span>` : ''}
         ${paymentMethodE ? `<span>💵 ${paymentMethodE}</span>` : ''}
-        ${r.remark ? `<span style="color:#9E9E9E">📝 ${r.remark}</span>` : ''}
+        ${r.remark ? `<span class="priv-data" style="color:#9E9E9E">📝 ${r.remark}</span>` : ''}
       </div>
       ${renderImgThumbs(r.imageUrls)}
       ${renderRecActions('expense', r.rowId || r.timestamp,`${fmtBaht(amount)} - ${r.category||''}`)}
