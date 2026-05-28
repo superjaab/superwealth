@@ -3,11 +3,13 @@
  * GET  /api/line-setup          → show current rich menu status
  * POST /api/line-setup          → create rich menu + set as default
  * POST /api/line-setup?delete=1 → delete all rich menus
+ * POST /api/line-setup?fullSetup=1 → ทำทุก step: delete old + create + render SVG + upload + set default
  *
  * Call once after deploy. Requires LINE_CHANNEL_ACCESS_TOKEN in env.
  */
 
-const LINE_API = 'https://api.line.me/v2/bot';
+const LINE_API  = 'https://api.line.me/v2/bot';
+const LINE_DATA = 'https://api-data.line.me/v2/bot';
 
 async function lineAPI(path, method = 'GET', body = null, isBlob = false) {
   const opts = {
@@ -136,7 +138,7 @@ module.exports = async function handler(req, res) {
   }
 
   // ── POST: create rich menu and set as default ─────────────────
-  if (req.method === 'POST') {
+  if (req.method === 'POST' && !req.query.uploadImage && !req.query.fullSetup) {
     // 1. Create rich menu structure
     const create = await lineAPI('/richmenu', 'POST', richMenuBody());
     if (create.status !== 200) {
@@ -156,5 +158,93 @@ module.exports = async function handler(req, res) {
     });
   }
 
+  // ── POST: upload rendered image to existing rich menu ─────────
+  if (req.method === 'POST' && req.query.uploadImage) {
+    const richMenuId = String(req.query.uploadImage);
+    try {
+      const jpegBuffer = await renderMenuSVGtoJPEG();
+      const upload = await fetch(`${LINE_DATA}/richmenu/${richMenuId}/content`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'image/png' },
+        body: jpegBuffer
+      });
+      const uploadText = await upload.text();
+      if (!upload.ok) {
+        return res.status(upload.status).json({ error: 'Image upload failed', detail: uploadText });
+      }
+      // Set as default after upload
+      const setDef = await lineAPI(`/user/all/richmenu/${richMenuId}`, 'POST');
+      return res.json({
+        success: true,
+        richMenuId,
+        imageBytes: jpegBuffer.length,
+        setDefaultStatus: setDef.status,
+        message: '✅ Rich Menu image uploaded + set as default'
+      });
+    } catch (e) {
+      return res.status(500).json({ error: 'Render/upload failed', detail: e.message });
+    }
+  }
+
+  // ── POST ?fullSetup=1: ทำทั้งหมด (delete old + create + render + upload + set default) ──
+  if (req.method === 'POST' && req.query.fullSetup) {
+    try {
+      // 1. Delete all existing menus
+      const list = await lineAPI('/richmenu/list');
+      const oldIds = (list.data?.richmenus || []).map(m => m.richMenuId);
+      for (const id of oldIds) await lineAPI(`/richmenu/${id}`, 'DELETE');
+
+      // 2. Create new menu structure
+      const create = await lineAPI('/richmenu', 'POST', richMenuBody());
+      if (create.status !== 200) return res.status(create.status).json({ error:'create failed', detail: create.data });
+      const newId = create.data.richMenuId;
+
+      // 3. Render SVG → JPEG
+      const jpegBuffer = await renderMenuSVGtoJPEG();
+
+      // 4. Upload image to LINE
+      const upload = await fetch(`${LINE_DATA}/richmenu/${newId}/content`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'image/png' },
+        body: jpegBuffer
+      });
+      if (!upload.ok) {
+        const t = await upload.text();
+        return res.status(upload.status).json({ error:'upload failed', detail: t });
+      }
+
+      // 5. Set as default
+      const setDef = await lineAPI(`/user/all/richmenu/${newId}`, 'POST');
+
+      return res.json({
+        success: true,
+        deleted: oldIds,
+        created: newId,
+        imageBytes: jpegBuffer.length,
+        setDefaultStatus: setDef.status,
+        message: '🎉 Rich Menu setup complete — 5 features + เมนูทั้งหมด ใช้งานได้ทันที'
+      });
+    } catch (e) {
+      return res.status(500).json({ error:'fullSetup failed', detail: e.message });
+    }
+  }
+
   return res.status(405).end();
 };
+
+// Render the SVG menu image → JPEG via @resvg/resvg-js (lightweight, ~6MB)
+async function renderMenuSVGtoJPEG() {
+  const { Resvg } = require('@resvg/resvg-js');
+  const svgString = buildMenuImageSVG();
+  const resvg = new Resvg(svgString, {
+    background: '#0f172a',
+    fitTo: { mode: 'width', value: 2500 },
+    font: { loadSystemFonts: true }
+  });
+  const pngData = resvg.render();
+  const pngBuffer = pngData.asPng();
+  // LINE accepts JPEG (also PNG since 2023). PNG safer since @resvg outputs PNG natively.
+  // Wrap in JPEG via simple approach — but LINE accepts PNG with Content-Type: image/png.
+  // Returning PNG buffer directly with PNG MIME is supported.
+  return pngBuffer;
+}

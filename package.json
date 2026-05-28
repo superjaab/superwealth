@@ -4,6 +4,7 @@
   "description": "SuperWealth — Truck transport management with working capital tracking",
   "private": true,
   "dependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "googleapis": "^140.0.0"
   },
   "engines": {
