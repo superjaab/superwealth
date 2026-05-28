@@ -2294,7 +2294,7 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v12.6</span>
+    <span style="opacity:.7">v12.7</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
@@ -6419,6 +6419,14 @@ function renderTruckList(items) {
     // Tiebreak by timestamp DESC
     return (b.timestamp || '').localeCompare(a.timestamp || '');
   });
+  // Pre-build a lookup: tripRowId → sum of linked income amounts
+  const incomeByTrip = {};
+  (_master.incomeHistory || []).forEach(inc => {
+    const tripId = inc.linkedTripRowId;
+    if (!tripId) return;
+    const amt = parseFloat(inc.amount) || _detectAmount(inc) || 0;
+    incomeByTrip[tripId] = (incomeByTrip[tripId] || 0) + amt;
+  });
   return sorted.map(r=>{
     // Auto-derive status — "ส่งแล้ว" if has newer record, else "กำลังขนส่ง"
     const auto = _autoTripStatus(r);
@@ -6433,6 +6441,15 @@ function renderTruckList(items) {
     const payHtml = paid
       ? `<span style="padding:2px 8px;border-radius:10px;background:#E8F5E9;color:#2E7D32;font-weight:700;font-size:.7rem">💰 จ่ายแล้ว</span>`
       : `<span style="padding:2px 8px;border-radius:10px;background:#FEE2E2;color:#B91C1C;font-weight:700;font-size:.7rem">⚠️ ค้างจ่าย</span>`;
+
+    // ── ค่าขนส่ง: ใช้ freightCost ก่อน → ถ้า 0 ใช้รายรับที่ link มา ──
+    const freight = parseFloat(r.freightCost) || 0;
+    const linkedIncome = incomeByTrip[r.rowId] || 0;
+    const showAmount = freight > 0 ? freight : linkedIncome;
+    const amountSource = freight > 0
+      ? '' // ค่าเที่ยวจากฟอร์มเอง — ไม่ต้องระบุ
+      : (linkedIncome > 0 ? '🔗 จากรายรับ' : '');
+
     return `
     <div class="record-card" style="border-left-color:${s.color}">
       <!-- HEADER: Trip round + date (left) | freight cost (right) -->
@@ -6441,7 +6458,12 @@ function renderTruckList(items) {
           🔢 รอบเที่ยว ${r.tripRound ? '#' + r.tripRound : '—'}
         </span>
         <span style="font-size:.78rem;color:#475569;font-weight:600">${dateLabel}</span>
-        ${r.freightCost?`<span class="priv-amt" style="margin-left:auto;color:#2E7D32;font-weight:800;font-size:1rem">${fmtBaht(r.freightCost)}</span>`:''}
+        ${showAmount > 0
+          ? `<span class="priv-amt" style="margin-left:auto;color:#2E7D32;font-weight:800;font-size:1rem;display:inline-flex;flex-direction:column;align-items:flex-end;line-height:1.1">
+               <span>${fmtBaht(showAmount)}</span>
+               ${amountSource ? `<span style="font-size:.62rem;color:#94a3b8;font-weight:600;letter-spacing:.3px">${amountSource}</span>` : ''}
+             </span>`
+          : `<span style="margin-left:auto;color:#94a3b8;font-weight:700;font-size:.85rem">฿0</span>`}
       </div>
       <!-- Title row -->
       <div class="rc-title" style="color:${s.color};display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -7994,7 +8016,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v12.6';   // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v12.7';   // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate(opts) {
