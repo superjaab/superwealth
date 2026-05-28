@@ -4266,7 +4266,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.24 | 29/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.25 | 29/05/2026</span>
   </div>
 </aside>
 
@@ -11527,8 +11527,25 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.24';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.25';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
+
+// v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
+function _parseVersion(v) {
+  if (!v) return [0,0,0];
+  const m = String(v).match(/(\d+)/g);
+  return m ? m.map(Number) : [0,0,0];
+}
+// Returns: positive if a > b, negative if a < b, 0 if equal
+function _compareVersions(a, b) {
+  const pa = _parseVersion(a), pb = _parseVersion(b);
+  const len = Math.max(pa.length, pb.length);
+  for (let i = 0; i < len; i++) {
+    const diff = (pa[i] || 0) - (pb[i] || 0);
+    if (diff !== 0) return diff;
+  }
+  return 0;
+}
 
 async function checkForUpdate(opts) {
   opts = opts || {};
@@ -11551,17 +11568,23 @@ async function checkForUpdate(opts) {
     }
     const json = await res.json();
     const serverVer = json.version;
-    console.log(`[update-check] current=${APP_VERSION} server=${serverVer}`);
+    const cmp = _compareVersions(serverVer, APP_VERSION);
+    console.log(`[update-check] current=${APP_VERSION} server=${serverVer} cmp=${cmp}`);
     if (!serverVer || serverVer === 'unknown' || serverVer === 'error') {
       if (opts.manual) showToast('❌ ตรวจสอบไม่ได้', 'error');
       return;
     }
-    if (serverVer !== APP_VERSION) {
+    // v14.25 — Only prompt if server is GENUINELY newer (not equal, not older)
+    if (cmp > 0) {
       if (!_updateBannerShown) {
         _updateBannerShown = true;
         showUpdateBanner(serverVer);
       }
       if (opts.manual) showToast(`🎉 พบเวอร์ชันใหม่ ${serverVer}`, 'success');
+    } else if (cmp < 0) {
+      // Client newer than server (e.g. Netlify ahead of Vercel during deploy gap) — silent
+      console.log(`[update-check] client is ahead — skip banner`);
+      if (opts.manual) showToast(`✅ ใช้เวอร์ชันล่าสุดอยู่แล้ว (${APP_VERSION})`, 'success');
     } else if (opts.manual) {
       showToast(`✅ ใช้เวอร์ชันล่าสุดอยู่แล้ว (${APP_VERSION})`, 'success');
     }
