@@ -1183,6 +1183,11 @@
   <!-- v14.16 — Invoice PDF/JPG export libraries -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
+  <!-- v14.17 — Flatpickr Thai date picker (Buddhist Era) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/themes/airbnb.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/th.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     /* ─── LAYOUT OVERRIDE (v3.1 Sidebar) ─── */
@@ -3867,6 +3872,123 @@
     body.dark [class*="status-"] {
       backdrop-filter: blur(8px);
     }
+
+    /* ═══════════════════════════════════════════════════════════
+       v14.17 — FLATPICKR THAI THEME (Buddhist Era)
+       ═══════════════════════════════════════════════════════════ */
+    .flatpickr-calendar {
+      font-family: 'Noto Sans Thai', system-ui, sans-serif !important;
+      border-radius: 14px !important;
+      box-shadow: 0 20px 50px rgba(15,23,42,.18), 0 8px 20px rgba(15,23,42,.08) !important;
+      border: 1px solid #e2e8f0 !important;
+      padding-bottom: 6px;
+    }
+    .flatpickr-months .flatpickr-month {
+      background: linear-gradient(135deg,#1d4ed8,#3b82f6) !important;
+      color: white !important;
+      border-radius: 14px 14px 0 0;
+      height: 44px;
+    }
+    .flatpickr-current-month {
+      font-size: 1rem !important;
+      font-weight: 700 !important;
+      padding-top: 8px !important;
+    }
+    .flatpickr-current-month .flatpickr-monthDropdown-months,
+    .flatpickr-current-month input.cur-year {
+      color: white !important;
+      font-weight: 700 !important;
+    }
+    .flatpickr-current-month .flatpickr-monthDropdown-months:hover {
+      background: rgba(255,255,255,.15) !important;
+    }
+    .flatpickr-prev-month, .flatpickr-next-month {
+      fill: white !important;
+      color: white !important;
+      padding-top: 12px !important;
+    }
+    .flatpickr-prev-month:hover, .flatpickr-next-month:hover {
+      background: rgba(255,255,255,.15);
+      border-radius: 6px;
+    }
+    .flatpickr-weekday {
+      color: #64748b !important;
+      font-weight: 700 !important;
+      font-size: .78rem !important;
+    }
+    .flatpickr-day {
+      border-radius: 8px !important;
+      font-weight: 600;
+      max-width: 38px;
+      height: 36px;
+      line-height: 36px;
+    }
+    .flatpickr-day.today {
+      border-color: #1d4ed8 !important;
+      color: #1d4ed8 !important;
+      font-weight: 800;
+    }
+    .flatpickr-day.selected,
+    .flatpickr-day.selected:hover,
+    .flatpickr-day.startRange,
+    .flatpickr-day.endRange {
+      background: linear-gradient(135deg,#1d4ed8,#3b82f6) !important;
+      border-color: transparent !important;
+      color: white !important;
+      box-shadow: 0 4px 10px rgba(29,78,216,.25);
+    }
+    .flatpickr-day.inRange {
+      background: #dbeafe !important;
+      border-color: #dbeafe !important;
+      box-shadow: none !important;
+    }
+    .flatpickr-day:hover {
+      background: #eff6ff !important;
+    }
+    .flatpickr-day.prevMonthDay, .flatpickr-day.nextMonthDay {
+      color: #cbd5e1 !important;
+    }
+    /* Quick shortcut buttons */
+    .fp-quick-buttons {
+      display: flex; gap: 6px; padding: 8px 12px 4px 12px;
+      flex-wrap: wrap; justify-content: center;
+      border-top: 1px solid #f1f5f9;
+    }
+    .fp-quick-buttons button {
+      flex: 1 1 auto;
+      padding: 6px 10px;
+      font-size: .76rem;
+      font-weight: 700;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: #1e293b;
+      cursor: pointer;
+      transition: all .15s ease;
+      font-family: inherit;
+    }
+    .fp-quick-buttons button:hover {
+      background: #1d4ed8;
+      color: white;
+      border-color: #1d4ed8;
+      transform: translateY(-1px);
+    }
+    /* dark mode */
+    body.dark .flatpickr-calendar {
+      background: #1e293b !important;
+      border-color: #334155 !important;
+    }
+    body.dark .flatpickr-day { color: #e2e8f0 !important; }
+    body.dark .flatpickr-day.prevMonthDay,
+    body.dark .flatpickr-day.nextMonthDay { color: #475569 !important; }
+    body.dark .flatpickr-day:hover { background: #334155 !important; }
+    body.dark .flatpickr-day.inRange { background: #1e3a8a !important; border-color: #1e3a8a !important; }
+    body.dark .fp-quick-buttons { border-top-color: #334155; }
+    body.dark .fp-quick-buttons button {
+      background: #334155; color: #e2e8f0; border-color: #475569;
+    }
+    /* Hide native picker icon (Flatpickr replaces it) */
+    .flatpickr-input[readonly]::-webkit-calendar-picker-indicator { display: none; }
   </style>
 </head>
 <body>
@@ -3934,7 +4056,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.16 | 29/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.17 | 29/05/2026</span>
   </div>
 </aside>
 
@@ -3947,7 +4069,7 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v14.16</span>
+    <span style="opacity:.7">v14.17</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
@@ -7450,10 +7572,15 @@ function setDefaultDates() {
   const today = new Date().toISOString().slice(0, 10);
   const now   = new Date().toTimeString().slice(0, 5);
   ['t-jobDate','t-pickupDate','i-incomeDate','e-expenseDate','mnt-date','fuel-date','inv-date'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.value = today;
+    const el = document.getElementById(id); if (!el) return;
+    // v14.17 — use Flatpickr API so altInput display stays in sync
+    if (el._flatpickr) el._flatpickr.setDate(today, false);
+    else el.value = today;
   });
   ['t-jobTime','i-incomeTime','e-expenseTime','fuel-time'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.value = now;
+    const el = document.getElementById(id); if (!el) return;
+    if (el._flatpickr) el._flatpickr.setDate(now, false);
+    else el.value = now;
   });
 }
 
@@ -8057,6 +8184,10 @@ function resetForm(formKey, silent) {
   const formEl = document.getElementById('form-' + formKey);
   if (formEl) {
     formEl.reset();
+    // v14.17 — sync Flatpickr altInputs after native reset
+    formEl.querySelectorAll('input[type="date"], input[type="time"]').forEach(el => {
+      if (el._flatpickr) el._flatpickr.clear();
+    });
   } else {
     // No <form> wrapper — clear all fields from PREFILL_MAP
     const map = (typeof _PREFILL_MAP === 'object') ? _PREFILL_MAP[formKey] : null;
@@ -8228,6 +8359,9 @@ function _prefillForm(type, record) {
     // v14.16 — format money inputs with comma when prefilling
     if (el.dataset && el.dataset.money === '1' && v !== '') {
       el.value = formatMoneyDisplay(String(v));
+    } else if (el._flatpickr && v !== '') {
+      // v14.17 — use Flatpickr API so altInput display stays in sync
+      el._flatpickr.setDate(String(v), false);
     } else {
       el.value = String(v);
     }
@@ -10922,7 +11056,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.16';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.17';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate(opts) {
@@ -11036,6 +11170,103 @@ function initAllMoneyInputs() {
   document.querySelectorAll('input[data-money="1"]').forEach(attachMoneyInput);
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// v14.17 — FLATPICKR THAI DATE PICKER (Buddhist Era + quick shortcuts)
+// ═══════════════════════════════════════════════════════════════════
+function _fpQuickButtonsPlugin() {
+  return function(fp) {
+    return {
+      onReady: [
+        function() {
+          if (fp.calendarContainer.querySelector('.fp-quick-buttons')) return;
+          const wrap = document.createElement('div');
+          wrap.className = 'fp-quick-buttons';
+          const shortcuts = [
+            { label: '📅 วันนี้', days: 0 },
+            { label: 'เมื่อวาน', days: -1 },
+            { label: '7 วันก่อน', days: -7 },
+            { label: '30 วันก่อน', days: -30 }
+          ];
+          shortcuts.forEach(sc => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = sc.label;
+            btn.addEventListener('click', () => {
+              const d = new Date(); d.setDate(d.getDate() + sc.days);
+              fp.setDate(d, true);
+              fp.close();
+            });
+            wrap.appendChild(btn);
+          });
+          fp.calendarContainer.appendChild(wrap);
+        }
+      ]
+    };
+  };
+}
+
+function initFlatpickr() {
+  if (typeof flatpickr === 'undefined') return;
+  // Buddhist Era month names
+  const thMonthsLong = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  const thMonthsShort = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  // Use built-in Thai locale, but customize for Buddhist Era
+  const thLocale = Object.assign({}, flatpickr.l10ns.th, {
+    months: { longhand: thMonthsLong, shorthand: thMonthsShort },
+    weekdays: {
+      longhand: ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'],
+      shorthand: ['อา','จ','อ','พ','พฤ','ศ','ส']
+    },
+    firstDayOfWeek: 1,
+    rangeSeparator: ' ถึง '
+  });
+  flatpickr.localize(thLocale);
+
+  // Format with Buddhist Era year (Gregorian + 543)
+  const formatBE = (date) => {
+    if (!date) return '';
+    const d = date.getDate().toString().padStart(2,'0');
+    const m = thMonthsShort[date.getMonth()];
+    const y = date.getFullYear() + 543;
+    return `${d} ${m} ${y}`;
+  };
+
+  // Apply to all date inputs
+  document.querySelectorAll('input[type="date"]').forEach(el => {
+    if (el._fpBound) return; el._fpBound = true;
+    flatpickr(el, {
+      dateFormat: 'Y-m-d',  // backend ISO
+      altInput: true,
+      altFormat: 'd M Y',
+      formatDate: (date, format) => {
+        if (format === 'Y-m-d') {
+          const y = date.getFullYear();
+          const m = (date.getMonth()+1).toString().padStart(2,'0');
+          const d = date.getDate().toString().padStart(2,'0');
+          return `${y}-${m}-${d}`;
+        }
+        return formatBE(date); // altFormat (Thai BE)
+      },
+      disableMobile: true,  // always use Flatpickr UI (not native)
+      allowInput: false,
+      plugins: [ _fpQuickButtonsPlugin()() ]
+    });
+  });
+
+  // Apply to all time inputs (cleaner time picker)
+  document.querySelectorAll('input[type="time"]').forEach(el => {
+    if (el._fpBound) return; el._fpBound = true;
+    flatpickr(el, {
+      enableTime: true,
+      noCalendar: true,
+      dateFormat: 'H:i',
+      time_24hr: true,
+      disableMobile: true,
+      minuteIncrement: 5
+    });
+  });
+}
+
 // v14.16 — Freight cost UX: placeholder changes based on payment status
 function onFreightStatusChange(sel) {
   const inp = document.getElementById('t-freightCost');
@@ -11056,6 +11287,8 @@ window.addEventListener('DOMContentLoaded', () => {
   initAllMoneyInputs();
   const statusSel = document.getElementById('t-paymentStatus');
   if (statusSel) onFreightStatusChange(statusSel);
+  // v14.17 — Flatpickr Thai date picker
+  initFlatpickr();
   // Auto-update check — aggressive polling early, then back off
   setTimeout(checkForUpdate, 2000);   // first check after 2s
   setTimeout(checkForUpdate, 10000);  // then 10s
