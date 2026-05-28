@@ -1908,6 +1908,143 @@
     body:not(.dark) .sb-logo:hover .sb-logo-icon {
       box-shadow: 0 0 24px -2px rgba(99,102,241,0.7);
     }
+
+    /* ═══════════════════════════════════════════════════════════
+       TEXT CONTRAST FIX — v12.3
+       ปรับ label / title / placeholder ให้อ่านง่ายขึ้น (ทั้ง 2 mode)
+       ═══════════════════════════════════════════════════════════ */
+
+    /* ── LIGHT MODE — เพิ่มความเข้ม ── */
+    body:not(.dark) {
+      color: #0f172a;   /* base text เข้มขึ้น */
+    }
+    body:not(.dark) label {
+      color: #1e293b !important;        /* gray-800 (เข้มมาก) */
+      font-weight: 600;
+      font-size: .82rem;
+    }
+    body:not(.dark) .card-title,
+    body:not(.dark) .dash-card-title,
+    body:not(.dark) .rc-title {
+      color: #0f172a !important;        /* slate-900 */
+      font-weight: 800 !important;
+    }
+    body:not(.dark) .card-sub,
+    body:not(.dark) .dash-card-sub {
+      color: #475569 !important;        /* slate-600 */
+    }
+    body:not(.dark) input[type=text],
+    body:not(.dark) input[type=number],
+    body:not(.dark) input[type=date],
+    body:not(.dark) input[type=time],
+    body:not(.dark) input[type=tel],
+    body:not(.dark) input[type=email],
+    body:not(.dark) input[type=password],
+    body:not(.dark) textarea,
+    body:not(.dark) select {
+      color: #0f172a !important;        /* ตัวเลข/ตัวหนังสือเข้มชัด */
+      font-weight: 500;
+    }
+    body:not(.dark) input::placeholder,
+    body:not(.dark) textarea::placeholder {
+      color: #94a3b8 !important;        /* slate-400 — เห็นแต่ไม่รบกวน */
+      opacity: 1;
+    }
+    body:not(.dark) .sb-sub { color: rgba(255,255,255,0.55); }   /* แทน 0.4 (เคยจางเกิน) */
+
+    /* required asterisk เด่นชัด */
+    body:not(.dark) label .req,
+    body:not(.dark) label::after,
+    body:not(.dark) [class*="required"] { color: #dc2626; }
+
+    /* ── DARK MODE — เพิ่มความสว่างของ label ── */
+    body.dark { color: #f1f5f9; }
+    body.dark label {
+      color: #e2e8f0 !important;        /* slate-200 (สว่างชัด) */
+      font-weight: 600;
+      font-size: .82rem;
+    }
+    body.dark .card-title,
+    body.dark .dash-card-title,
+    body.dark .rc-title {
+      color: #ffffff !important;
+      font-weight: 800 !important;
+    }
+    body.dark .card-sub,
+    body.dark .dash-card-sub {
+      color: #94a3b8 !important;        /* slate-400 */
+    }
+    body.dark input[type=text],
+    body.dark input[type=number],
+    body.dark input[type=date],
+    body.dark input[type=time],
+    body.dark input[type=tel],
+    body.dark input[type=email],
+    body.dark input[type=password],
+    body.dark textarea,
+    body.dark select {
+      color: #f8fafc !important;
+      font-weight: 500;
+    }
+    body.dark input::placeholder,
+    body.dark textarea::placeholder {
+      color: rgba(255,255,255,0.35) !important;
+      opacity: 1;
+    }
+
+    /* ── ปุ่ม Inner-nav (บันทึก/รายการ) ทั้ง 2 mode ── */
+    body:not(.dark) .inner-btn:not(.active) {
+      color: #475569;
+      font-weight: 600;
+    }
+    body.dark .inner-btn:not(.active) {
+      color: #cbd5e1 !important;
+      font-weight: 600;
+    }
+
+    /* ── หมายเหตุ hint ใต้ input ── */
+    body:not(.dark) .hint,
+    body:not(.dark) small,
+    body:not(.dark) .field-hint {
+      color: #64748b !important;
+    }
+    body.dark .hint,
+    body.dark small,
+    body.dark .field-hint {
+      color: #94a3b8 !important;
+    }
+
+    /* ── Datalist option text ── */
+    body:not(.dark) .ac-opt { color: #0f172a; }
+    body.dark .ac-opt { color: #e2e8f0 !important; }
+
+    /* ── FORCE light mode cards to be WHITE (kill leftover dark styles) ── */
+    body:not(.dark) .card {
+      background: rgba(255, 255, 255, 0.92) !important;
+      border: 1px solid rgba(15, 23, 42, 0.08) !important;
+      color: #0f172a !important;
+      box-shadow: 0 2px 8px -2px rgba(15,23,42,0.05),
+                  0 1px 0 rgba(255,255,255,0.9) inset !important;
+    }
+    body:not(.dark) .card * {
+      /* Default text inside cards = dark slate */
+      color: inherit;
+    }
+    body:not(.dark) .card label,
+    body:not(.dark) .card .field-label {
+      color: #1e293b !important;
+    }
+    body:not(.dark) .card input,
+    body:not(.dark) .card textarea,
+    body:not(.dark) .card select {
+      background: #ffffff !important;
+      color: #0f172a !important;
+      border-color: rgba(15,23,42,0.12) !important;
+    }
+    body:not(.dark) .card .card-title {
+      color: #4338ca !important;       /* indigo-700 — เห็นชัดและสวย */
+      font-weight: 800 !important;
+    }
   </style>
 </head>
 <body>
@@ -1982,7 +2119,7 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v12.2</span>
+    <span style="opacity:.7">v12.3</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
@@ -7678,7 +7815,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v12.2';   // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v12.3';   // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate() {
