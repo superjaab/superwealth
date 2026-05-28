@@ -610,46 +610,31 @@
       body.logged-out #app-shell { margin-top: 36px !important; height: calc(100dvh - 36px) !important; }
     }
 
-    /* Blur sensitive data when logged out */
+    /* ── Blur sensitive data when logged out ──
+       Blur: amounts (฿), trip round badges, charts, summary tables, phone numbers
+       Don't blur: calendar, origin/destination, plate, customer name, cargo */
     body.logged-out .dash-stat-value,
     body.logged-out .dash-stat-sub,
-    body.logged-out .dash-cust-amount,
-    body.logged-out .dash-cust-sub,
-    body.logged-out .dash-list-value,
-    body.logged-out .dash-list-name,
-    body.logged-out .cal-evt-bar,
-    body.logged-out .sum-table tbody td,
     body.logged-out canvas,
-    body.logged-out .rc-title span:not(:first-child),
-    body.logged-out .rc-sub,
-    body.logged-out .rc-imgs,
-    body.logged-out .rc-badges,
-    body.logged-out .cal-trip-card,
-    body.logged-out .bell-item,
-    body.logged-out .ac-dd,
-    body.logged-out .dash-stat .dash-stat-value,
-    body.logged-out .summary-grid .dash-stat-value,
-    body.logged-out .summary-grid .dash-stat-sub {
-      filter: blur(7px) !important;
+    body.logged-out .sum-table tbody td,
+    body.logged-out .dash-cust-amount,
+    body.logged-out .dash-list-value,
+    body.logged-out .priv-amt,           /* per-record amounts (฿) */
+    body.logged-out .trip-round-badge,    /* รอบเที่ยว #N badge */
+    body.logged-out .priv-phone           /* phone numbers */ {
+      filter: blur(6px) !important;
       user-select: none !important;
       pointer-events: none !important;
       transition: filter .25s;
     }
-    body.logged-out .dash-stat:hover .dash-stat-value,
-    body.logged-out .dash-stat:hover .dash-stat-sub {
-      filter: blur(7px) !important; /* keep blurred even on hover */
-    }
-    /* Lock icon overlay on blurred sections */
-    body.logged-out .dash-stat::after,
-    body.logged-out .record-card::after {
+    /* Lock icon only on dash stat cards */
+    body.logged-out .dash-stat::after {
       content: '🔒';
-      position: absolute; top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 1.4rem;
-      opacity: .35; pointer-events: none;
-      z-index: 5;
+      position: absolute; top: 12px; right: 12px;
+      font-size: 1rem;
+      opacity: .55; pointer-events: none;
     }
-    body.logged-out .dash-stat, body.logged-out .record-card { position: relative; }
+    body.logged-out .dash-stat { position: relative; }
 
     /* ════ DARK MODE ════ */
     body.dark { background:#0f172a !important; color:#e2e8f0; }
@@ -920,7 +905,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v8.3 | 28/05/2026 13:00</span>
+  <span class="version" style="margin-left:auto">v8.4 | 28/05/2026 13:15</span>
   <!-- Login/Logout button -->
   <button class="header-bell" id="auth-btn" onclick="handleAuthClick()" title="เข้าสู่ระบบ" style="margin-left:10px;width:auto;padding:0 14px;font-weight:700;font-size:.78rem;display:flex;align-items:center;gap:6px">
     <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
@@ -4532,11 +4517,11 @@ function renderTruckList(items) {
     <div class="record-card" style="border-left-color:${s.color}">
       <!-- HEADER: Trip round + date (left) | freight cost (right) -->
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;padding-bottom:8px;border-bottom:1.5px dashed #e2e8f0">
-        <span style="background:linear-gradient(135deg,#0f172a,#1e293b);color:white;padding:5px 14px;border-radius:8px;font-size:.9rem;font-weight:800;letter-spacing:.3px;white-space:nowrap">
+        <span style="background:linear-gradient(135deg,#0f172a,#1e293b);color:white;padding:5px 14px;border-radius:8px;font-size:.9rem;font-weight:800;letter-spacing:.3px;white-space:nowrap" class="trip-round-badge">
           🔢 รอบเที่ยว ${r.tripRound ? '#' + r.tripRound : '—'}
         </span>
         <span style="font-size:.78rem;color:#475569;font-weight:600">${dateLabel}</span>
-        ${r.freightCost?`<span style="margin-left:auto;color:#2E7D32;font-weight:800;font-size:1rem">${fmtBaht(r.freightCost)}</span>`:''}
+        ${r.freightCost?`<span class="priv-amt" style="margin-left:auto;color:#2E7D32;font-weight:800;font-size:1rem">${fmtBaht(r.freightCost)}</span>`:''}
       </div>
       <!-- Title row -->
       <div class="rc-title" style="color:${s.color};display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -4599,10 +4584,10 @@ function renderIncomeList(items) {
       <!-- HEADER: round (if linked) + date | amount -->
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;padding-bottom:8px;border-bottom:1.5px dashed #e2e8f0">
         ${tripRound
-          ? `<span style="background:linear-gradient(135deg,#0f172a,#1e293b);color:white;padding:5px 14px;border-radius:8px;font-size:.9rem;font-weight:800;letter-spacing:.3px;white-space:nowrap">🔢 รอบเที่ยว #${tripRound}</span>`
+          ? `<span style="background:linear-gradient(135deg,#0f172a,#1e293b);color:white;padding:5px 14px;border-radius:8px;font-size:.9rem;font-weight:800;letter-spacing:.3px;white-space:nowrap" class="trip-round-badge">🔢 รอบเที่ยว #${tripRound}</span>`
           : ''}
         <span style="font-size:.78rem;color:#475569;font-weight:600">${dateLabel}</span>
-        <span style="margin-left:auto;color:#2E7D32;font-weight:800;font-size:1rem">${fmtBaht(amount)}</span>
+        <span class="priv-amt" style="margin-left:auto;color:#2E7D32;font-weight:800;font-size:1rem">${fmtBaht(amount)}</span>
       </div>
       <!-- Sub info — left aligned -->
       <div class="rc-sub" style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;margin-top:6px">
@@ -4653,10 +4638,10 @@ function renderExpenseList(items) {
       <!-- HEADER -->
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;padding-bottom:8px;border-bottom:1.5px dashed #e2e8f0">
         ${tripRound
-          ? `<span style="background:linear-gradient(135deg,#0f172a,#1e293b);color:white;padding:5px 14px;border-radius:8px;font-size:.9rem;font-weight:800;letter-spacing:.3px;white-space:nowrap">🔢 รอบเที่ยว #${tripRound}</span>`
+          ? `<span style="background:linear-gradient(135deg,#0f172a,#1e293b);color:white;padding:5px 14px;border-radius:8px;font-size:.9rem;font-weight:800;letter-spacing:.3px;white-space:nowrap" class="trip-round-badge">🔢 รอบเที่ยว #${tripRound}</span>`
           : ''}
         <span style="font-size:.78rem;color:#475569;font-weight:600">${dateLabel}</span>
-        <span style="margin-left:auto;color:#C62828;font-weight:800;font-size:1rem">${fmtBaht(amount)}</span>
+        <span class="priv-amt" style="margin-left:auto;color:#C62828;font-weight:800;font-size:1rem">${fmtBaht(amount)}</span>
       </div>
       <!-- Sub info -->
       <div class="rc-sub" style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;margin-top:6px">
