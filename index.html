@@ -4268,7 +4268,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.30 | 29/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.31 | 29/05/2026</span>
   </div>
 </aside>
 
@@ -6756,9 +6756,12 @@ async function loadAdminSessions() {
           ? `<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:8px;font-size:.65rem;font-weight:700">เครื่องนี้ ✓</span>`
           : `<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:8px;font-size:.65rem;font-weight:700">Active</span>`;
       const deviceShort = (s.device || '').slice(0, 60) + ((s.device||'').length > 60 ? '...' : '');
-      const btn = s.revoked || s.isCurrent
+      // v14.31 — Revoked sessions can be DELETED (was '—' with no action)
+      const btn = s.isCurrent
         ? `<span style="color:#cbd5e1;font-size:.74rem">—</span>`
-        : `<button onclick="adminRevokeSession('${escAttr(s.sessionId)}','${escAttr(s.label||'')}')" style="background:#fef2f2;border:1px solid #fecaca;border-radius:6px;color:#dc2626;padding:6px 10px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit">🚪 Logout</button>`;
+        : s.revoked
+          ? `<button onclick="adminDeleteSession('${escAttr(s.rowId)}','${escAttr(s.label||'')}')" title="ลบประวัติทันที (ไม่ถาม)" style="background:#fef2f2;border:1px solid #fecaca;border-radius:6px;color:#b91c1c;padding:6px 10px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit">🗑 ลบประวัติ</button>`
+          : `<button onclick="adminRevokeSession('${escAttr(s.sessionId)}','${escAttr(s.label||'')}')" style="background:#fef2f2;border:1px solid #fecaca;border-radius:6px;color:#dc2626;padding:6px 10px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit">🚪 Logout</button>`;
       return `
       <div style="padding:12px 12px;border-bottom:1px solid #f1f5f9;display:flex;flex-direction:column;gap:6px">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -6775,10 +6778,53 @@ async function loadAdminSessions() {
         <div style="font-size:.66rem;color:#94a3b8;word-break:break-all">📱 ${escHtml(deviceShort) || '(ไม่ระบุ)'}</div>
       </div>`;
     }).join('');
+    // v14.31 — Bulk clear all revoked sessions
+    const revokedCount = r.sessions.filter(s => s.revoked).length;
+    if (revokedCount > 0) {
+      el.innerHTML += `
+        <div style="padding:12px;text-align:center;border-top:1.5px dashed #cbd5e1;margin-top:6px">
+          <button onclick="adminClearRevokedSessions()" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:8px;padding:8px 16px;font-weight:700;cursor:pointer;font-size:.78rem;font-family:inherit">
+            🧹 ล้างประวัติทั้งหมด (${revokedCount} รายการ)
+          </button>
+        </div>`;
+    }
   } catch (e) {
     el.innerHTML = `<div style="text-align:center;color:#dc2626;padding:14px">❌ ${escHtml(e.message)}</div>`;
   }
 }
+
+// v14.31 — Delete a single revoked session (one-click, no confirm)
+async function adminDeleteSession(rowId, label) {
+  if (!rowId) return;
+  showLoading('กำลังลบ...');
+  try {
+    const r = await api('/api/auth', { action: 'deleteSession', sessionId: getSessionId(), rowId });
+    hideLoading();
+    if (!r.success) { showToast(r.error || 'ลบไม่สำเร็จ', 'error'); return; }
+    showToast(`🗑 ลบ "${label}" แล้ว`, 'success');
+    loadAdminSessions();
+  } catch (e) {
+    hideLoading();
+    showToast('ผิดพลาด: ' + e.message, 'error');
+  }
+}
+
+// v14.31 — Bulk clear all revoked sessions
+async function adminClearRevokedSessions() {
+  if (!confirm('ลบประวัติเครื่องที่ถูกเตะออกทั้งหมด?')) return;
+  showLoading('กำลังล้างประวัติ...');
+  try {
+    const r = await api('/api/auth', { action: 'clearRevokedSessions', sessionId: getSessionId() });
+    hideLoading();
+    if (!r.success) { showToast(r.error || 'ล้างไม่สำเร็จ', 'error'); return; }
+    showToast(`🧹 ล้างแล้ว ${r.removed || 0} รายการ`, 'success');
+    loadAdminSessions();
+  } catch (e) {
+    hideLoading();
+    showToast('ผิดพลาด: ' + e.message, 'error');
+  }
+}
+
 async function adminRevokeSession(target, label) {
   if (!confirm(`เตะ "${label}" ออกจากระบบ?\nเครื่องนี้จะถูก logout ในไม่กี่วินาที`)) return;
   showLoading('กำลังดำเนินการ...');
@@ -11874,7 +11920,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.30';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.31';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison

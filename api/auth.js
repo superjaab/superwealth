@@ -97,6 +97,9 @@ module.exports = async function handler(req, res) {
       case 'deleteCode':   return await doDeleteCode(sheets, sheetId, params, res);
       case 'listSessions': return await doListSessions(sheets, sheetId, params, res);
       case 'revokeSession':return await doRevokeSession(sheets, sheetId, params, res);
+      // v14.31 — Hard-delete session row (and bulk-clear revoked)
+      case 'deleteSession':       return await doDeleteSession(sheets, sheetId, params, res);
+      case 'clearRevokedSessions':return await doClearRevokedSessions(sheets, sheetId, params, res);
       case 'listFabItems': return await doListFabItems(sheets, sheetId, params, res);
       case 'addFabItem':   return await doAddFabItem(sheets, sheetId, params, res);
       case 'deleteFabItem':return await doDeleteFabItem(sheets, sheetId, params, res);
@@ -337,6 +340,81 @@ async function doRevokeSession(sheets, sheetId, { sessionId, target }, res) {
   if (!target) return res.json({ success: false, error: 'Missing target sessionId' });
   await markSessionRevoked(sheets, sheetId, target);
   return res.json({ success: true });
+}
+
+// v14.31 — Hard-delete one session row (any state — admin choice)
+async function doDeleteSession(sheets, sheetId, { sessionId, rowId }, res) {
+  if (!await verifyAdmin(sheets, sheetId, sessionId))
+    return res.status(403).json({ success: false, error: 'Forbidden — admin only' });
+  if (!rowId) return res.json({ success: false, error: 'Missing rowId' });
+
+  // Don't allow deleting your own active session row
+  const sessions = await readSheet(sheets, sheetId, SESSIONS_SHEET);
+  const self = sessions.find(s => s.sessionId === sessionId);
+  if (self && self.rowId === rowId) {
+    return res.json({ success: false, error: 'ห้ามลบ session ตัวเอง — กด Logout แทน' });
+  }
+
+  const sheetInfo = await getSheetMeta(sheets, sheetId, SESSIONS_SHEET);
+  const rows = (await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId, range: `${SESSIONS_SHEET}!A:Z`
+  })).data.values || [];
+  if (rows.length < 2) return res.json({ success: false, error: 'No data' });
+  const headers = rows[0];
+  const rowIdIdx = headers.indexOf('rowId');
+  if (rowIdIdx < 0) return res.json({ success: false, error: 'No rowId column' });
+  let foundIdx = -1;
+  for (let i = 1; i < rows.length; i++) if (rows[i][rowIdIdx] === rowId) { foundIdx = i; break; }
+  if (foundIdx < 0) return res.json({ success: false, error: 'Not found' });
+
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId: sheetId,
+    requestBody: { requests: [{
+      deleteDimension: {
+        range: { sheetId: sheetInfo.sheetId, dimension: 'ROWS', startIndex: foundIdx, endIndex: foundIdx + 1 }
+      }
+    }]}
+  });
+  _invalidateReadCache(SESSIONS_SHEET);
+  return res.json({ success: true });
+}
+
+// v14.31 — Bulk delete ALL revoked sessions (cleanup)
+async function doClearRevokedSessions(sheets, sheetId, { sessionId }, res) {
+  if (!await verifyAdmin(sheets, sheetId, sessionId))
+    return res.status(403).json({ success: false, error: 'Forbidden — admin only' });
+
+  const sheetInfo = await getSheetMeta(sheets, sheetId, SESSIONS_SHEET);
+  const rows = (await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId, range: `${SESSIONS_SHEET}!A:Z`
+  })).data.values || [];
+  if (rows.length < 2) return res.json({ success: true, removed: 0 });
+  const headers = rows[0];
+  const revIdx = headers.indexOf('revoked');
+  const sidIdx = headers.indexOf('sessionId');
+  if (revIdx < 0) return res.json({ success: false, error: 'No revoked column' });
+
+  // Collect rows to delete (skip current session for safety)
+  const toDelete = [];
+  for (let i = 1; i < rows.length; i++) {
+    const isRevoked = String(rows[i][revIdx]) === 'true';
+    const isSelf = sidIdx >= 0 && rows[i][sidIdx] === sessionId;
+    if (isRevoked && !isSelf) toDelete.push(i);
+  }
+  if (toDelete.length === 0) return res.json({ success: true, removed: 0 });
+
+  // Delete from BOTTOM to TOP to keep indexes stable
+  const requests = toDelete.sort((a, b) => b - a).map(idx => ({
+    deleteDimension: {
+      range: { sheetId: sheetInfo.sheetId, dimension: 'ROWS', startIndex: idx, endIndex: idx + 1 }
+    }
+  }));
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId: sheetId,
+    requestBody: { requests }
+  });
+  _invalidateReadCache(SESSIONS_SHEET);
+  return res.json({ success: true, removed: toDelete.length });
 }
 
 // ───────── FAB MENU ─────────
