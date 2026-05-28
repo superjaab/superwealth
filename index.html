@@ -610,22 +610,30 @@
       body.logged-out #app-shell { margin-top: 36px !important; height: calc(100dvh - 36px) !important; }
     }
 
-    /* ── Blur sensitive data when logged out ──
-       Blur: amounts (฿), trip round badges, charts, summary tables, phone numbers
-       Don't blur: calendar, origin/destination, plate, customer name, cargo */
+    /* Blur sensitive data when logged out */
     body.logged-out .dash-stat-value,
     body.logged-out .dash-stat-sub,
     body.logged-out canvas,
     body.logged-out .sum-table tbody td,
     body.logged-out .dash-cust-amount,
     body.logged-out .dash-list-value,
-    body.logged-out .priv-amt,           /* per-record amounts (฿) */
-    body.logged-out .trip-round-badge,    /* รอบเที่ยว #N badge */
-    body.logged-out .priv-phone           /* phone numbers */ {
-      filter: blur(6px) !important;
+    body.logged-out .priv-amt,
+    body.logged-out .trip-round-badge,
+    body.logged-out span.trip-round-badge,
+    body.logged-out [class*="trip-round-badge"],
+    body.logged-out .priv-phone,
+    body.logged-out #sum-total-income,
+    body.logged-out #sum-total-expense,
+    body.logged-out #sum-profit,
+    body.logged-out #sum-truck-count,
+    body.logged-out #sum-truck-sub,
+    body.logged-out #sum-profit-sub,
+    body.logged-out #sum-income-count,
+    body.logged-out #sum-expense-count {
+      filter: blur(7px) !important;
+      -webkit-filter: blur(7px) !important;
       user-select: none !important;
       pointer-events: none !important;
-      transition: filter .25s;
     }
     /* Lock icon only on dash stat cards */
     body.logged-out .dash-stat::after {
@@ -905,7 +913,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v8.4 | 28/05/2026 13:15</span>
+  <span class="version" style="margin-left:auto">v8.5 | 28/05/2026 13:30</span>
   <!-- Login/Logout button -->
   <button class="header-bell" id="auth-btn" onclick="handleAuthClick()" title="เข้าสู่ระบบ" style="margin-left:10px;width:auto;padding:0 14px;font-weight:700;font-size:.78rem;display:flex;align-items:center;gap:6px">
     <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
