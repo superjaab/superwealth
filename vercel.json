@@ -5,5 +5,21 @@
     "api/save.js":          { "maxDuration": 30 },
     "api/ocr.js":           { "maxDuration": 20 },
     "api/get-data.js":      { "maxDuration": 30 }
-  }
+  },
+  "rewrites": [
+    { "source": "/summary",     "destination": "/index.html" },
+    { "source": "/calendar",    "destination": "/index.html" },
+    { "source": "/truck",       "destination": "/index.html" },
+    { "source": "/income",      "destination": "/index.html" },
+    { "source": "/expense",     "destination": "/index.html" },
+    { "source": "/vehicle",     "destination": "/index.html" },
+    { "source": "/driver",      "destination": "/index.html" },
+    { "source": "/customer",    "destination": "/index.html" },
+    { "source": "/maintenance", "destination": "/index.html" },
+    { "source": "/fuel",        "destination": "/index.html" },
+    { "source": "/invoice",     "destination": "/index.html" },
+    { "source": "/admin",       "destination": "/index.html" },
+    { "source": "/gps",         "destination": "/index.html" },
+    { "source": "/ocr",         "destination": "/index.html" }
+  ]
 }

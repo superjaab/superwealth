@@ -1349,7 +1349,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v10.4 | 28/05/2026 19:30</span>
+  <span class="version" style="margin-left:auto">v11.0 | 28/05/2026 20:00</span>
   <!-- Login/Logout button -->
   <button class="header-bell" id="auth-btn" onclick="handleAuthClick()" title="เข้าสู่ระบบ" style="margin-left:10px;width:auto;padding:0 14px;font-weight:700;font-size:.78rem;display:flex;align-items:center;gap:6px">
     <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
@@ -3829,12 +3829,32 @@ function goToCalendar() {
   const btn = document.querySelector('.tab-btn[onclick*="\'calendar\'"]');
   if (btn) btn.click();
 }
-function switchTab(tab, btnEl) {
+// ─── ROUTER ────────────────────────
+// Valid tabs that can be in URL
+const VALID_TABS = ['summary','calendar','truck','income','expense','vehicle','driver','customer',
+                    'maintenance','fuel','invoice','admin','gps','ocr'];
+// Default tab when URL is "/"
+const DEFAULT_TAB = 'summary';
+// Map URL path → tab name (and vice versa)
+function tabFromPath() {
+  const p = (location.pathname || '/').replace(/^\/+|\/+$/g, '');
+  return VALID_TABS.includes(p) ? p : DEFAULT_TAB;
+}
+function urlForTab(tab) {
+  return tab === DEFAULT_TAB ? '/' : '/' + tab;
+}
+function switchTab(tab, btnEl, opts) {
+  opts = opts || {};
+  // Find the actual sidebar button for this tab if btnEl not provided
+  if (!btnEl) {
+    btnEl = document.querySelector(`.tab-btn[onclick*="'${tab}'"]`) || document.body;
+  }
   // Preview mode: allow all navigation (data is blurred via CSS instead)
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + tab).classList.add('active');
-  btnEl.classList.add('active');
+  const panel = document.getElementById('tab-' + tab);
+  if (panel) panel.classList.add('active');
+  if (btnEl && btnEl.classList) btnEl.classList.add('active');
   const title = document.getElementById('page-title');
   if (title) title.textContent = PAGE_NAMES[tab] || tab;
   if (tab === 'invoice') { genInvNum(); renderInvRows(); }
@@ -3842,7 +3862,44 @@ function switchTab(tab, btnEl) {
   if (tab === 'income') populateLinkedTripsDropdown();
   if (tab === 'expense') populateExpenseLinkedTripsDropdown();
   closeSidebar();
+
+  // ─── Sync URL with current tab (unless popstate triggered the switch) ───
+  if (!opts.fromPopState) {
+    const newUrl = urlForTab(tab) + location.hash;  // preserve any hash
+    if (newUrl !== location.pathname + location.hash) {
+      try { history.pushState({ tab }, '', newUrl); } catch {}
+    }
+  }
+  // Update document title
+  document.title = (PAGE_NAMES[tab] || tab) + ' — SuperWealth';
 }
+
+// Handle browser back/forward
+window.addEventListener('popstate', () => {
+  const tab = tabFromPath();
+  switchTab(tab, null, { fromPopState: true });
+  // Trigger any tab-specific init (e.g. summary/calendar/admin)
+  if (tab === 'summary')  { if (typeof initSummaryOnce === 'function') initSummaryOnce(); }
+  if (tab === 'calendar') { if (typeof initCalendar === 'function')   initCalendar(); }
+  if (tab === 'admin')    { if (typeof initAdminTab === 'function')   initAdminTab(); }
+});
+
+// On initial page load — read URL and switch to that tab
+window.addEventListener('DOMContentLoaded', () => {
+  const tab = tabFromPath();
+  if (tab !== 'truck') {  // 'truck' is the default-active panel in HTML
+    setTimeout(() => {
+      switchTab(tab, null, { fromPopState: true });
+      // Trigger tab-specific init
+      if (tab === 'summary')  { if (typeof initSummaryOnce === 'function') initSummaryOnce(); }
+      if (tab === 'calendar') { if (typeof initCalendar === 'function')   initCalendar(); }
+      if (tab === 'admin')    { if (typeof initAdminTab === 'function')   initAdminTab(); }
+    }, 50);
+  } else {
+    // Still update title
+    document.title = (PAGE_NAMES['truck'] || 'truck') + ' — SuperWealth';
+  }
+});
 
 // ─── SIDEBAR TOGGLE ───────────────────────
 function toggleSidebar() {
