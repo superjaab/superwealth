@@ -2577,15 +2577,26 @@
         radial-gradient(at 0% 100%, rgba(236,72,153,0.03) 0%, transparent 60%),
         #f6f8fb !important;
     }
-    /* LIGHT Sidebar — slightly off-white (สีต่างกับ main ชัด) */
+    /* LIGHT Sidebar — tinted cool gray (มี character ต่างจาก main ขาว) */
     body:not(.dark) #sidebar {
+      background: linear-gradient(180deg, #eef2f9 0%, #e8edf5 100%) !important;
+      border-right: 1px solid #dde3ed !important;
+    }
+    /* Main bg → ขาวสะอาดกว่าเดิม เพื่อให้ contrast กับ sidebar ชัด */
+    body:not(.dark) {
+      --bg-app: #fdfdfe !important;
       background: #fdfdfe !important;
-      border-right: 1px solid #e4e8ee !important;
+    }
+    body:not(.dark) #main-content {
+      background:
+        radial-gradient(at 80% 0%, rgba(99,102,241,0.04) 0%, transparent 60%),
+        radial-gradient(at 0% 100%, rgba(236,72,153,0.03) 0%, transparent 60%),
+        #fdfdfe !important;
     }
     body:not(.dark) .sb-logo {
-      border-bottom: 1px solid #eef1f6 !important;
+      border-bottom: 1px solid rgba(15,23,42,0.06) !important;
     }
-    body:not(.dark) .sb-logo:hover { background: #f6f8fb !important; }
+    body:not(.dark) .sb-logo:hover { background: rgba(255,255,255,0.5) !important; }
     body:not(.dark) .sb-logo-icon {
       background: linear-gradient(135deg,#3b82f6 0%,#2563eb 100%) !important;
       box-shadow: 0 6px 16px -4px rgba(37,99,235,0.4) !important;
@@ -2606,16 +2617,25 @@
       border-radius: 8px !important;
     }
     body:not(.dark) .tab-btn:hover {
-      background: #f1f3f7 !important;
+      background: rgba(255,255,255,0.6) !important;
       color: #1a1f2e !important;
     }
     body:not(.dark) .tab-btn.active {
-      background: linear-gradient(90deg, #eff6ff 0%, #f8fafc 100%) !important;
+      background: #ffffff !important;
       color: #1d4ed8 !important;
       font-weight: 600 !important;
-      box-shadow: inset 3px 0 0 #2563eb !important;
+      box-shadow:
+        0 1px 3px rgba(15,23,42,0.08),
+        0 0 0 1px rgba(37,99,235,0.1),
+        inset 3px 0 0 #2563eb !important;
     }
-    body:not(.dark) .sb-footer { border-top: 1px solid #eef1f6 !important; }
+    body:not(.dark) .tab-btn.active .icon { color: #2563eb; }
+    body:not(.dark) .sb-section { color: #6b7589 !important; }
+    body:not(.dark) .sb-footer { border-top: 1px solid rgba(15,23,42,0.06) !important; }
+    body:not(.dark) .sb-footer .version {
+      background: rgba(255,255,255,0.6) !important;
+      border: 1px solid rgba(15,23,42,0.08) !important;
+    }
 
     /* LIGHT Header — clean white */
     body:not(.dark) .app-header {
@@ -2805,9 +2825,9 @@
         radial-gradient(at 0% 100%, rgba(139,92,246,0.04) 0%, transparent 60%),
         #0a0d14 !important;
     }
-    /* DARK Sidebar — even deeper */
+    /* DARK Sidebar — subtle gradient (deep navy with hint of color) */
     body.dark #sidebar {
-      background: #06080f !important;
+      background: linear-gradient(180deg, #0a1024 0%, #060912 60%, #04060d 100%) !important;
       border-right: 1px solid #1a1f31 !important;
     }
     body.dark .sb-logo-icon {
@@ -3257,7 +3277,7 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v13.1</span>
+    <span style="opacity:.7">v13.2</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
@@ -9038,7 +9058,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v13.1';   // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v13.2';   // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate(opts) {
