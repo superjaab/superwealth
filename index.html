@@ -1364,7 +1364,7 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v11.5</span>
+    <span style="opacity:.7">v11.6</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
@@ -6549,30 +6549,35 @@ function renderBarChart(income, expense, dateFrom, dateTo) {
       ctx.save();
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.font = 'bold 11px Inter, "IBM Plex Sans Thai", sans-serif';
+      ctx.font = 'bold 10.5px Inter, "IBM Plex Sans Thai", sans-serif';
       chart.data.datasets.forEach((dataset, di) => {
         const meta = chart.getDatasetMeta(di);
         meta.data.forEach((bar, idx) => {
           const value = dataset.data[idx];
           if (!value) return;
-          // Format: < 1000 → integer, < 1M → "12.3K", else "1.23M"
-          let txt;
-          if (value >= 1_000_000)      txt = '฿' + (value / 1_000_000).toFixed(2).replace(/\.?0+$/,'') + 'M';
-          else if (value >= 1000)      txt = '฿' + (value / 1000).toFixed(1).replace(/\.0$/,'') + 'K';
-          else                          txt = '฿' + Math.round(value).toLocaleString('th-TH');
+          // เต็มจำนวนพร้อม comma separator (ไม่ย่อ K/M)
+          // ตัวอย่าง: 82500 → "฿82,500"  |  1234568 → "฿1,234,568"
+          const txt = '฿' + Math.round(value).toLocaleString('th-TH');
           // Bar geometry
           const barHeight = Math.abs(bar.base - bar.y);
+          const barWidth  = bar.width || 40;
           const midY = (bar.y + bar.base) / 2;
-          // If bar too short for inside text → draw above the bar with dark text
-          if (barHeight < 24) {
-            ctx.fillStyle = '#0f172a';
-            ctx.fillText(txt, bar.x, bar.y - 8);
-          } else {
-            // Inside bar — white text with subtle shadow
-            ctx.shadowColor = 'rgba(0,0,0,0.35)';
+          const textWidth = ctx.measureText(txt).width;
+          const fitsInside = (barHeight >= 22) && (textWidth + 8 <= barWidth);
+          if (fitsInside) {
+            // Inside bar — white text with shadow
+            ctx.shadowColor = 'rgba(0,0,0,0.45)';
             ctx.shadowBlur = 4;
             ctx.fillStyle = '#ffffff';
             ctx.fillText(txt, bar.x, midY);
+            ctx.shadowBlur = 0;
+          } else {
+            // Above the bar — dark text with white halo (อ่านง่ายบนพื้นสว่าง)
+            ctx.shadowColor = 'rgba(255,255,255,0.95)';
+            ctx.shadowBlur = 5;
+            ctx.fillStyle = '#0f172a';
+            ctx.fillText(txt, bar.x, bar.y - 8);
+            ctx.fillText(txt, bar.x, bar.y - 8); // double-pass for stronger halo
             ctx.shadowBlur = 0;
           }
         });
@@ -7023,7 +7028,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v11.5';   // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v11.6';   // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate() {
