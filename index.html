@@ -1337,13 +1337,17 @@
     body.logged-out #sum-income-count,
     body.logged-out #sum-expense-count,
     /* v14.18 — blur ALL sensitive data in logout mode */
+    /* v14.21 — added .rc-sub, .rc-badges, .rc-meta, expiry-badge */
     body.logged-out .sw-record-title,
     body.logged-out .sw-record-sub,
     body.logged-out .sw-record-amount,
     body.logged-out .sw-trip-header,
     body.logged-out .rc-title,
+    body.logged-out .rc-sub,
     body.logged-out .rc-body,
     body.logged-out .rc-meta,
+    body.logged-out .rc-badges,
+    body.logged-out .expiry-badge,
     body.logged-out .dash-list-item,
     body.logged-out .dash-cust-name,
     body.logged-out .dash-cust-phone,
@@ -1359,6 +1363,44 @@
       -webkit-filter: blur(7px) !important;
       user-select: none !important;
       pointer-events: none !important;
+    }
+
+    /* v14.21 — Blur form INPUT VALUES (but keep labels + placeholders visible) */
+    /* Trick: :not(:placeholder-shown) only matches when user has entered text */
+    body.logged-out #tab-vehicle input:not(:placeholder-shown),
+    body.logged-out #tab-vehicle select,
+    body.logged-out #tab-vehicle textarea:not(:placeholder-shown),
+    body.logged-out #tab-driver input:not(:placeholder-shown),
+    body.logged-out #tab-driver select,
+    body.logged-out #tab-driver textarea:not(:placeholder-shown),
+    body.logged-out #tab-customer input:not(:placeholder-shown),
+    body.logged-out #tab-customer select,
+    body.logged-out #tab-customer textarea:not(:placeholder-shown),
+    body.logged-out #tab-truck input:not(:placeholder-shown),
+    body.logged-out #tab-truck select,
+    body.logged-out #tab-truck textarea:not(:placeholder-shown),
+    body.logged-out #tab-income input:not(:placeholder-shown),
+    body.logged-out #tab-income select,
+    body.logged-out #tab-income textarea:not(:placeholder-shown),
+    body.logged-out #tab-expense input:not(:placeholder-shown),
+    body.logged-out #tab-expense select,
+    body.logged-out #tab-expense textarea:not(:placeholder-shown),
+    body.logged-out #tab-maintenance input:not(:placeholder-shown),
+    body.logged-out #tab-maintenance select,
+    body.logged-out #tab-maintenance textarea:not(:placeholder-shown),
+    body.logged-out #tab-invoice input:not(:placeholder-shown),
+    body.logged-out #tab-invoice select,
+    body.logged-out #tab-invoice textarea:not(:placeholder-shown) {
+      color: transparent !important;
+      text-shadow: 0 0 8px rgba(15,23,42,.55) !important;
+      caret-color: transparent !important;
+      user-select: none !important;
+    }
+    /* Flatpickr alt inputs (visible date display) — same treatment */
+    body.logged-out .flatpickr-input.form-control.input + .flatpickr-alt-input,
+    body.logged-out input.flatpickr-alt-input:not(:placeholder-shown) {
+      color: transparent !important;
+      text-shadow: 0 0 8px rgba(15,23,42,.55) !important;
     }
     /* Lock icon only on dash stat cards */
     body.logged-out .dash-stat::after {
@@ -4201,7 +4243,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.20 | 29/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.21 | 29/05/2026</span>
   </div>
 </aside>
 
@@ -11434,7 +11476,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.20';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.21';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate(opts) {

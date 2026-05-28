@@ -4,3 +4,6 @@ rich-menu-preview.jpg
 package-lock.json
 .vercel/
 rich-menu*.png
+
+# Local Netlify folder
+.netlify
