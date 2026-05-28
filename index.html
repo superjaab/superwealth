@@ -4150,6 +4150,113 @@
     .flatpickr-input[readonly]::-webkit-calendar-picker-indicator { display: none; }
 
     /* ═══════════════════════════════════════════════════════════
+       v14.34 — Custom Thai BE Date Picker (NO CDN dependency)
+       ═══════════════════════════════════════════════════════════ */
+    .swdp-wrapper { position: relative; display: block; width: 100%; }
+    .swdp-display {
+      width: 100%; padding: 9px 12px; border-radius: 8px;
+      border: 1.5px solid var(--sw-border, #e4e8ee);
+      background: var(--sw-bg-card, #fff);
+      font-family: inherit; font-size: .9rem;
+      cursor: pointer;
+      color: var(--sw-fg-primary, #1a1f2e);
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .swdp-display:hover, .swdp-display:focus {
+      border-color: var(--sw-primary, #2563eb);
+      box-shadow: 0 0 0 3px rgba(37,99,235,.18);
+      outline: none;
+    }
+    .swdp-display::placeholder { color: #94a3b8; }
+    .swdp-pop {
+      position: absolute; z-index: 9000; top: calc(100% + 6px); left: 0;
+      width: 290px; max-width: 95vw;
+      background: white; border-radius: 14px;
+      box-shadow: 0 20px 50px rgba(15,23,42,.2), 0 8px 20px rgba(15,23,42,.08);
+      border: 1px solid #e2e8f0;
+      overflow: hidden;
+      font-family: 'Noto Sans Thai', system-ui, sans-serif;
+      animation: swdpFadeIn .2s ease-out;
+    }
+    @keyframes swdpFadeIn { from { opacity:0; transform: translateY(-8px); } to { opacity:1; transform: translateY(0); } }
+    .swdp-head {
+      background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+      color: white; padding: 12px 14px;
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .swdp-nav-btn {
+      background: rgba(255,255,255,.18); border: none; color: white;
+      width: 32px; height: 32px; border-radius: 8px;
+      cursor: pointer; font-size: 1rem; font-family: inherit;
+      transition: background .15s;
+    }
+    .swdp-nav-btn:hover { background: rgba(255,255,255,.32); }
+    .swdp-title {
+      flex: 1; text-align: center; font-weight: 800; font-size: .92rem;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .swdp-title select {
+      background: rgba(255,255,255,.18); border: none; color: white;
+      font-weight: 700; padding: 3px 6px; border-radius: 6px;
+      cursor: pointer; font-family: inherit; font-size: .85rem;
+    }
+    .swdp-title select option { color: #1e293b; }
+    .swdp-weekdays, .swdp-days {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
+    }
+    .swdp-weekdays { padding: 8px 10px 4px; background: #f8fafc; }
+    .swdp-weekday {
+      text-align: center; font-size: .72rem; font-weight: 700; color: #64748b;
+      padding: 4px 0;
+    }
+    .swdp-days { padding: 6px 10px 12px; }
+    .swdp-day {
+      aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+      border-radius: 8px; cursor: pointer; font-weight: 600; font-size: .85rem;
+      color: #1e293b; transition: all .12s;
+      border: none; background: transparent; font-family: inherit;
+    }
+    .swdp-day:hover { background: #eff6ff; color: #1d4ed8; }
+    .swdp-day.is-today { border: 1.5px solid #1d4ed8; color: #1d4ed8; font-weight: 800; }
+    .swdp-day.is-selected { background: linear-gradient(135deg, #1d4ed8, #3b82f6); color: white; box-shadow: 0 4px 10px rgba(29,78,216,.3); }
+    .swdp-day.is-other-month { color: #cbd5e1; }
+    .swdp-day.is-other-month:hover { background: #f1f5f9; color: #64748b; }
+    .swdp-quick {
+      display: flex; gap: 4px; padding: 8px 10px;
+      border-top: 1px solid #f1f5f9; flex-wrap: wrap; justify-content: center;
+    }
+    .swdp-quick button {
+      flex: 1 1 auto;
+      padding: 6px 8px; font-size: .72rem; font-weight: 700;
+      border-radius: 7px; border: 1px solid #cbd5e1;
+      background: #f8fafc; color: #475569;
+      cursor: pointer; font-family: inherit;
+      transition: all .12s;
+    }
+    .swdp-quick button:hover {
+      background: #1d4ed8; color: white; border-color: #1d4ed8;
+    }
+    .swdp-clear {
+      padding: 8px; text-align: center;
+      border-top: 1px solid #f1f5f9; background: #fafafa;
+    }
+    .swdp-clear button {
+      background: none; border: none; color: #dc2626; font-weight: 700;
+      cursor: pointer; font-size: .8rem; padding: 4px 10px;
+      font-family: inherit;
+    }
+    body.dark .swdp-display { background: #1e293b; color: #f1f5f9; border-color: #334155; }
+    body.dark .swdp-pop { background: #1e293b; border-color: #334155; }
+    body.dark .swdp-weekdays { background: #0f172a; }
+    body.dark .swdp-weekday { color: #94a3b8; }
+    body.dark .swdp-day { color: #e2e8f0; }
+    body.dark .swdp-day:hover { background: #334155; }
+    body.dark .swdp-day.is-other-month { color: #475569; }
+    body.dark .swdp-quick { border-top-color: #334155; }
+    body.dark .swdp-quick button { background: #0f172a; color: #cbd5e1; border-color: #475569; }
+    body.dark .swdp-clear { background: #0f172a; border-top-color: #334155; }
+
+    /* ═══════════════════════════════════════════════════════════
        v14.19 — Elegant clock pill (replaces version stamp)
        ═══════════════════════════════════════════════════════════ */
     .sw-clock-pill {
@@ -4268,7 +4375,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.33 | 29/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.34 | 29/05/2026</span>
   </div>
 </aside>
 
@@ -11925,7 +12032,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.33';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.34';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
@@ -12100,9 +12207,184 @@ function _fpQuickButtonsPlugin() {
   };
 }
 
-// v14.33 — Thai/BE constants (used by formatters + parsers)
-const TH_FP_MONTHS_LONG  = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
-const TH_FP_MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+// ═══════════════════════════════════════════════════════════════════
+// v14.34 — Custom Thai/BE Date Picker (NO CDN dependency)
+// Replaces Flatpickr entirely. Works offline too.
+// ═══════════════════════════════════════════════════════════════════
+const SWDP_MONTHS_LONG  = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const SWDP_MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const SWDP_WEEKDAYS = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+
+function _swdpFmt(iso) {
+  if (!iso) return '';
+  const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return iso;
+  const d = +m[3], mo = +m[2] - 1, y = +m[1];
+  return `${d} ${SWDP_MONTHS_SHORT[mo]} ${y + 543}`;
+}
+function _swdpToISO(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function _swdpAttach(input) {
+  if (!input || input._swdpAttached) return;
+  if (input.type !== 'date') return;
+  input._swdpAttached = true;
+
+  // Create wrapper + display input + hidden popover
+  const wrap = document.createElement('div');
+  wrap.className = 'swdp-wrapper';
+  const display = document.createElement('input');
+  display.type = 'text';
+  display.readOnly = true;
+  display.className = 'swdp-display';
+  display.placeholder = 'คลิกเพื่อเลือกวันที่...';
+  if (input.required) display.required = true;
+
+  // Hide original (still in DOM so form submission works)
+  input.type = 'hidden';
+  input.parentNode.insertBefore(wrap, input);
+  wrap.appendChild(display);
+  wrap.appendChild(input);
+
+  const updateDisplay = () => { display.value = _swdpFmt(input.value); };
+  updateDisplay();
+
+  // Open popover on click
+  display.addEventListener('click', () => _swdpOpen(input, display, wrap));
+  display.addEventListener('focus', () => _swdpOpen(input, display, wrap));
+
+  // Watch external changes (e.g. setDate from JS)
+  const origDescriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+  Object.defineProperty(input, 'value', {
+    configurable: true,
+    get() { return origDescriptor.get.call(this); },
+    set(v) { origDescriptor.set.call(this, v); updateDisplay(); }
+  });
+  // Mirror Flatpickr API so old code (setDefaultDates etc.) still works
+  input._flatpickr = {
+    setDate: (val, fire) => { input.value = (val instanceof Date) ? _swdpToISO(val) : String(val||''); updateDisplay(); if (fire) input.dispatchEvent(new Event('change', { bubbles:true })); },
+    clear: () => { input.value = ''; updateDisplay(); }
+  };
+}
+
+let _swdpCurrentPop = null;
+function _swdpClose() {
+  if (_swdpCurrentPop) { _swdpCurrentPop.remove(); _swdpCurrentPop = null; }
+}
+document.addEventListener('mousedown', (e) => {
+  if (_swdpCurrentPop && !_swdpCurrentPop.contains(e.target) && !e.target.classList.contains('swdp-display')) {
+    _swdpClose();
+  }
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') _swdpClose(); });
+
+function _swdpOpen(input, display, wrap) {
+  _swdpClose();
+  // State
+  let viewDate = input.value ? new Date(input.value + 'T00:00:00') : new Date();
+  if (isNaN(viewDate)) viewDate = new Date();
+  let vy = viewDate.getFullYear(), vm = viewDate.getMonth();
+
+  const pop = document.createElement('div');
+  pop.className = 'swdp-pop';
+  wrap.appendChild(pop);
+  _swdpCurrentPop = pop;
+
+  function render() {
+    const today = new Date();
+    const todayKey = _swdpToISO(today);
+    const selectedKey = input.value;
+    // Year options: BE 2400-2700
+    const yearOpts = [];
+    for (let y = vy - 50; y <= vy + 50; y++) yearOpts.push(`<option value="${y}" ${y===vy?'selected':''}>${y + 543}</option>`);
+    // Month options
+    const monthOpts = SWDP_MONTHS_LONG.map((m, i) => `<option value="${i}" ${i===vm?'selected':''}>${m}</option>`).join('');
+    // Build day grid
+    const firstDay = new Date(vy, vm, 1);
+    const startDow = firstDay.getDay();
+    const daysInMonth = new Date(vy, vm + 1, 0).getDate();
+    const prevMonthDays = new Date(vy, vm, 0).getDate();
+    let cells = '';
+    // Previous month tail
+    for (let i = startDow - 1; i >= 0; i--) {
+      const d = prevMonthDays - i;
+      const date = new Date(vy, vm - 1, d);
+      cells += `<button type="button" class="swdp-day is-other-month" data-iso="${_swdpToISO(date)}">${d}</button>`;
+    }
+    // Current month
+    for (let d = 1; d <= daysInMonth; d++) {
+      const iso = _swdpToISO(new Date(vy, vm, d));
+      const cls = ['swdp-day'];
+      if (iso === todayKey) cls.push('is-today');
+      if (iso === selectedKey) cls.push('is-selected');
+      cells += `<button type="button" class="${cls.join(' ')}" data-iso="${iso}">${d}</button>`;
+    }
+    // Next month head
+    const totalCells = startDow + daysInMonth;
+    const trailing = (7 - (totalCells % 7)) % 7;
+    for (let d = 1; d <= trailing; d++) {
+      const iso = _swdpToISO(new Date(vy, vm + 1, d));
+      cells += `<button type="button" class="swdp-day is-other-month" data-iso="${iso}">${d}</button>`;
+    }
+    pop.innerHTML = `
+      <div class="swdp-head">
+        <button type="button" class="swdp-nav-btn" data-nav="-1" title="เดือนก่อน">◀</button>
+        <div class="swdp-title">
+          <select data-sel="month">${monthOpts}</select>
+          <select data-sel="year">${yearOpts}</select>
+        </div>
+        <button type="button" class="swdp-nav-btn" data-nav="1" title="เดือนถัดไป">▶</button>
+      </div>
+      <div class="swdp-weekdays">${SWDP_WEEKDAYS.map(w => `<div class="swdp-weekday">${w}</div>`).join('')}</div>
+      <div class="swdp-days">${cells}</div>
+      <div class="swdp-quick">
+        <button type="button" data-quick="0">📅 วันนี้</button>
+        <button type="button" data-quick="-1">เมื่อวาน</button>
+        <button type="button" data-quick="-7">7 วันก่อน</button>
+        <button type="button" data-quick="-30">30 วันก่อน</button>
+      </div>
+      ${input.value ? `<div class="swdp-clear"><button type="button" data-clear="1">🗑 ล้างค่า</button></div>` : ''}`;
+
+    // Event delegation
+    pop.querySelectorAll('[data-nav]').forEach(btn => btn.addEventListener('click', () => {
+      vm += +btn.dataset.nav;
+      if (vm < 0) { vm = 11; vy--; }
+      if (vm > 11) { vm = 0; vy++; }
+      render();
+    }));
+    pop.querySelector('[data-sel="month"]').addEventListener('change', e => { vm = +e.target.value; render(); });
+    pop.querySelector('[data-sel="year"]').addEventListener('change', e => { vy = +e.target.value; render(); });
+    pop.querySelectorAll('.swdp-day').forEach(btn => btn.addEventListener('click', () => {
+      input.value = btn.dataset.iso;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      _swdpClose();
+    }));
+    pop.querySelectorAll('[data-quick]').forEach(btn => btn.addEventListener('click', () => {
+      const dt = new Date(); dt.setDate(dt.getDate() + +btn.dataset.quick);
+      input.value = _swdpToISO(dt);
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      _swdpClose();
+    }));
+    const clearBtn = pop.querySelector('[data-clear]');
+    if (clearBtn) clearBtn.addEventListener('click', () => { input.value = ''; input.dispatchEvent(new Event('change', { bubbles: true })); _swdpClose(); });
+  }
+  render();
+}
+
+function _swdpAttachAll() {
+  document.querySelectorAll('input[type="date"]').forEach(_swdpAttach);
+}
+// Lazy: catch new date inputs added later
+document.addEventListener('focusin', (e) => {
+  if (e.target && e.target.type === 'date' && !e.target._swdpAttached) _swdpAttach(e.target);
+}, true);
+
+// ═══════════════════════════════════════════════════════════════════
+// v14.33 — (Legacy Flatpickr constants kept for compat) — unused now
+// ═══════════════════════════════════════════════════════════════════
+const TH_FP_MONTHS_LONG  = SWDP_MONTHS_LONG;
+const TH_FP_MONTHS_SHORT = SWDP_MONTHS_SHORT;
 const TH_FP_MONTH_LOOKUP = {};
 TH_FP_MONTHS_SHORT.forEach((m, i) => TH_FP_MONTH_LOOKUP[m.replace(/\./g,'').toLowerCase()] = i);
 TH_FP_MONTHS_LONG.forEach((m, i)  => TH_FP_MONTH_LOOKUP[m.toLowerCase()] = i);
@@ -12186,12 +12468,9 @@ function _attachFlatpickrTime(el) {
 }
 
 function initFlatpickr() {
-  if (typeof flatpickr === 'undefined') {
-    console.warn('[Flatpickr] library not loaded — will retry on focus');
-    return;
-  }
-  document.querySelectorAll('input[type="date"]').forEach(_attachFlatpickrDate);
-  document.querySelectorAll('input[type="time"]').forEach(_attachFlatpickrTime);
+  // v14.34 — Use custom Thai BE picker for ALL date inputs (no CDN dependency)
+  _swdpAttachAll();
+  // Time inputs: keep native (no need for custom)
 }
 
 // v14.33 — Lazy init: catch any date/time input that wasn't bound at page load
