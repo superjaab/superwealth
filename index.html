@@ -1310,7 +1310,26 @@
     body.logged-out #sum-truck-sub,
     body.logged-out #sum-profit-sub,
     body.logged-out #sum-income-count,
-    body.logged-out #sum-expense-count {
+    body.logged-out #sum-expense-count,
+    /* v14.18 — blur ALL sensitive data in logout mode */
+    body.logged-out .sw-record-title,
+    body.logged-out .sw-record-sub,
+    body.logged-out .sw-record-amount,
+    body.logged-out .sw-trip-header,
+    body.logged-out .rc-title,
+    body.logged-out .rc-body,
+    body.logged-out .rc-meta,
+    body.logged-out .dash-list-item,
+    body.logged-out .dash-cust-name,
+    body.logged-out .dash-cust-phone,
+    body.logged-out .dash-truck-route,
+    body.logged-out .dash-truck-plate,
+    body.logged-out .v-card,
+    body.logged-out .v-plate,
+    body.logged-out .d-card,
+    body.logged-out .c-card,
+    body.logged-out .alert-title,
+    body.logged-out .alert-sub {
       filter: blur(7px) !important;
       -webkit-filter: blur(7px) !important;
       user-select: none !important;
@@ -1324,6 +1343,54 @@
       opacity: .55; pointer-events: none;
     }
     body.logged-out .dash-stat { position: relative; }
+
+    /* v14.18 — Hide images in logout mode (replace with placeholder) */
+    body.logged-out .rc-imgs img,
+    body.logged-out .record-card img:not([alt="logo"]) {
+      filter: blur(18px) saturate(.5) !important;
+      -webkit-filter: blur(18px) saturate(.5) !important;
+      background: linear-gradient(135deg,#e2e8f0,#cbd5e1) !important;
+      pointer-events: none !important;
+    }
+    body.logged-out .rc-imgs::after {
+      content: '🔒 ล็อกภาพ';
+      display: block; position: absolute; inset: 0;
+      background: rgba(15,23,42,.05); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .72rem; font-weight: 700; color: #64748b;
+      pointer-events: none;
+    }
+    body.logged-out .rc-imgs { position: relative; }
+
+    /* v14.18 — Calendar: keep colored bars visible, blur ALL text inside */
+    body.logged-out .cal-evt-bar {
+      color: transparent !important;
+      text-shadow: none !important;
+      pointer-events: none !important;
+    }
+    body.logged-out .cal-evt-bar * {
+      color: transparent !important;
+      background: transparent !important;
+      border-color: transparent !important;
+      filter: blur(4px);
+    }
+    body.logged-out .cal-evt-more {
+      filter: blur(5px) !important;
+      pointer-events: none !important;
+    }
+    /* Calendar day numbers stay visible (just dates), but trips count + plate filter hidden */
+    body.logged-out .cal-plate-filter,
+    body.logged-out #cal-month-label .month-trip-count {
+      filter: blur(5px) !important;
+      pointer-events: none !important;
+    }
+    /* Calendar trip cards (modal/list) — blur sensitive */
+    body.logged-out .cal-trip-plate,
+    body.logged-out .cal-trip-row {
+      filter: blur(6px) !important;
+      pointer-events: none !important;
+      user-select: none !important;
+    }
 
     /* ════ DARK MODE ════ */
     body.dark { background:#0f172a !important; color:#e2e8f0; }
@@ -4056,7 +4123,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.17 | 29/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.18 | 29/05/2026</span>
   </div>
 </aside>
 
@@ -4069,7 +4136,7 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v14.17</span>
+    <span style="opacity:.7">v14.18</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
@@ -11056,7 +11123,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.17';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.18';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate(opts) {
