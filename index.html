@@ -4201,7 +4201,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.19 | 29/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.20 | 29/05/2026</span>
   </div>
 </aside>
 
@@ -4801,6 +4801,27 @@
         </div>
       </div>
       <div id="admin-fab-list" style="color:#94a3b8;text-align:center;padding:14px">⏳ กำลังโหลด...</div>
+    </div>
+
+    <!-- v14.20 — Invoice items management -->
+    <div id="admin-inv-items-section" class="dash-card" style="margin-top:14px">
+      <div class="dash-card-head" style="margin-bottom:14px">
+        <div>
+          <div class="dash-card-title">🧾 รายการในใบเสร็จ</div>
+          <div class="dash-card-sub">เพิ่ม/ลบรายการที่ใช้บ่อยในใบเสร็จ — แสดงเป็น dropdown ให้เลือก</div>
+        </div>
+      </div>
+      <div style="background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:10px;padding:12px;margin-bottom:14px">
+        <div style="font-weight:700;color:#0f172a;margin-bottom:8px;font-size:.85rem">➕ เพิ่มรายการใหม่</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input type="text" id="admin-inv-item-name" placeholder="เช่น ค่าน้ำมัน, ค่าจอดรถ, ค่ามัดจำ..." maxlength="120" style="flex:1;min-width:240px">
+          <button type="button" onclick="adminAddInvItem()" style="background:linear-gradient(135deg,#0891b2,#06b6d4);color:white;border:none;border-radius:8px;padding:10px 18px;font-weight:700;font-size:.82rem;cursor:pointer;font-family:inherit">➕ เพิ่ม</button>
+        </div>
+      </div>
+      <div style="background:#ecfeff;border:1px solid #a5f3fc;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:.78rem;color:#155e75">
+        💡 รายการดีฟอลต์ (ลบไม่ได้): ค่าเที่ยวคนขับ, เงินเดือน, ค่าเดินทางเพิ่มเติม, ค่าซ่อมแซมยาง, ค่าเบี้ยเลี้ยง, ค่าใช้จ่ายอื่นๆ
+      </div>
+      <div id="admin-inv-items-list" style="color:#94a3b8;text-align:center;padding:14px">— ไม่มีรายการเพิ่มเติม —</div>
     </div>
   </div>
 </div>
@@ -5605,42 +5626,104 @@
     <button class="inner-btn" onclick="innerTab('invoice','list',this)">📋 รายการใบเสร็จ</button>
   </div>
   <div id="invoice-form-view">
+    <!-- v14.20 — ส่วน 1: ข้อมูลเอกสาร -->
     <div class="card">
-      <div class="card-title" style="color:#006064">🧾 ข้อมูลใบเสร็จรับเงิน</div>
+      <div class="card-title" style="color:#006064">📄 ข้อมูลเอกสาร</div>
       <div class="form-row-3">
-        <div class="form-row"><label>เลขที่ <span class="req">*</span></label><input type="text" id="inv-number" placeholder="INV-202605-0001" maxlength="30"></div>
-        <div class="form-row"><label>วันที่ <span class="req">*</span></label><input type="date" id="inv-date"></div>
-        <div class="form-row"><label>ครบกำหนดชำระ</label><input type="date" id="inv-due"></div>
+        <div class="form-row"><label>เลขที่เอกสาร <span class="req">*</span></label><input type="text" id="inv-number" placeholder="INV-202605-0001" maxlength="30"></div>
+        <div class="form-row"><label>วันที่จัดทำเอกสาร <span class="req">*</span></label><input type="date" id="inv-date"></div>
+        <div class="form-row"><label>วันที่จ่ายเงิน</label><input type="date" id="inv-paydate"></div>
       </div>
-      <div class="form-row"><label>ชื่อลูกค้า <span class="req">*</span></label><input type="text" id="inv-customer" placeholder="ชื่อลูกค้า/บริษัท" list="cust-dl" maxlength="150"></div>
     </div>
+
+    <!-- v14.20 — ส่วน 2: ผู้รับเงิน -->
     <div class="card">
-      <div class="card-title" style="color:#006064">📝 รายการสินค้า/บริการ</div>
+      <div class="card-title" style="color:#006064">👤 ผู้รับเงิน</div>
+      <div class="form-row-2">
+        <div class="form-row">
+          <label>ชื่อผู้รับเงิน <span class="req">*</span></label>
+          <input type="text" id="inv-payee" placeholder="พิมพ์เพื่อค้นหาคนขับ..." list="inv-payee-dl" maxlength="150" autocomplete="off" oninput="onInvPayeeChange()">
+          <datalist id="inv-payee-dl"></datalist>
+        </div>
+        <div class="form-row">
+          <label>เลขทะเบียนรถ</label>
+          <input type="text" id="inv-payee-plate" placeholder="กข-1234" maxlength="20" list="inv-plate-dl" autocomplete="off">
+          <datalist id="inv-plate-dl"></datalist>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>ตำแหน่ง / หน้าที่</label>
+        <input type="text" id="inv-payee-position" placeholder="พนักงานขับรถ" maxlength="80" value="พนักงานขับรถ">
+      </div>
+    </div>
+
+    <!-- v14.20 — ส่วน 3: ช่องทางการชำระเงิน -->
+    <div class="card">
+      <div class="card-title" style="color:#006064">💳 ช่องทางการชำระเงิน</div>
+      <div class="form-row-2">
+        <div class="form-row">
+          <label>ช่องทาง</label>
+          <select id="inv-paymethod">
+            <option value="โอนผ่านธนาคาร" selected>🏦 โอนผ่านธนาคาร</option>
+            <option value="เงินสด">💵 เงินสด</option>
+            <option value="เช็ค">📝 เช็ค</option>
+            <option value="บัตรเครดิต">💳 บัตรเครดิต</option>
+            <option value="พร้อมเพย์">📱 พร้อมเพย์</option>
+            <option value="อื่นๆ">🔄 อื่นๆ</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>ธนาคาร / เลขที่บัญชี</label>
+          <input type="text" id="inv-bank" placeholder="ธ.กสิกรไทย · 123-4-56789-0" maxlength="100">
+        </div>
+      </div>
+    </div>
+
+    <!-- v14.20 — ส่วน 4: รายการสินค้า/บริการ (dropdown + free input) -->
+    <div class="card">
+      <div class="card-title" style="color:#006064;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <span>📝 รายการสินค้า/บริการ</span>
+        <a href="#" onclick="event.preventDefault();switchTab('admin',document.querySelector('[onclick*=\\'admin\\']'));setTimeout(()=>document.getElementById('admin-inv-items-section')?.scrollIntoView({behavior:'smooth'}),200)" style="font-size:.72rem;font-weight:600;color:#0891b2;text-decoration:none">⚙️ จัดการรายการ →</a>
+      </div>
+      <p class="hint" style="font-size:.72rem;color:#64748b;margin-bottom:8px">💡 เลือกจากรายการที่กำหนดไว้ หรือพิมพ์รายการใหม่ได้</p>
+      <datalist id="inv-item-dl"></datalist>
       <div style="overflow-x:auto">
         <table class="inv-table">
-          <thead><tr><th style="min-width:120px">รายการ</th><th>จำนวน</th><th>หน่วย</th><th>ราคา/หน่วย</th><th style="text-align:right">รวม (฿)</th><th></th></tr></thead>
+          <thead><tr>
+            <th style="min-width:200px">รายละเอียดรายการจ่าย</th>
+            <th style="min-width:80px">จำนวน</th>
+            <th style="text-align:right;min-width:140px">จำนวนเงินรวม (บาท)</th>
+            <th style="width:40px"></th>
+          </tr></thead>
           <tbody id="inv-items-body"></tbody>
         </table>
       </div>
       <button type="button" class="btn btn-secondary btn-small" onclick="addInvRow()" style="margin-top:10px">+ เพิ่มรายการ</button>
     </div>
+
+    <!-- v14.20 — ส่วน 5: รวมเป็นเงิน + สถานะ + หมายเหตุ -->
     <div class="card">
       <div class="inv-totals-box">
         <div class="inv-totals-inner">
-          <div class="inv-totals-row"><span>ยอดรวม</span><span id="inv-subtotal">0.00</span></div>
-          <div class="inv-totals-row">
-            <label style="margin:0;display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="inv-vat-toggle" onchange="calcInv()"> VAT 7%</label>
-            <span id="inv-vat-amount">0.00</span>
+          <div class="inv-totals-row total" style="font-size:1.1rem">
+            <span>💰 รวมเป็นเงิน</span>
+            <span id="inv-total-display" style="font-size:1.4rem">0.00</span>
           </div>
-          <div class="inv-totals-row total"><span>ยอดสุทธิ</span><span id="inv-total-display">0.00</span></div>
+          <!-- Hidden VAT toggle (kept for backward compat - default off) -->
+          <input type="checkbox" id="inv-vat-toggle" style="display:none">
+          <span id="inv-subtotal" style="display:none">0.00</span>
+          <span id="inv-vat-amount" style="display:none">0.00</span>
         </div>
       </div>
       <div class="form-row-2" style="margin-top:12px">
         <div class="form-row"><label>สถานะ</label>
-          <select id="inv-status"><option value="รอชำระ">⏳ รอชำระ</option><option value="ชำระแล้ว">✅ ชำระแล้ว</option><option value="เกินกำหนด">⚠️ เกินกำหนด</option><option value="ยกเลิก">❌ ยกเลิก</option></select>
+          <select id="inv-status"><option value="ชำระแล้ว" selected>✅ ชำระแล้ว</option><option value="รอชำระ">⏳ รอชำระ</option><option value="เกินกำหนด">⚠️ เกินกำหนด</option><option value="ยกเลิก">❌ ยกเลิก</option></select>
         </div>
-        <div class="form-row"><label>หมายเหตุ</label><input type="text" id="inv-notes" maxlength="200"></div>
+        <div class="form-row"><label>หมายเหตุ</label><input type="text" id="inv-notes" maxlength="200" placeholder="หมายเหตุเพิ่มเติม..."></div>
       </div>
+      <!-- legacy field (no longer used in new layout but kept hidden for backward compat) -->
+      <input type="hidden" id="inv-customer">
+      <input type="hidden" id="inv-due">
     </div>
     <div class="submit-row" style="display:flex;gap:10px;flex-wrap:wrap">
       <button type="button" class="btn btn-primary" onclick="submitInvoice()" style="flex:1 1 100%;padding:15px;background:#006064">💾 บันทึก</button>
@@ -6256,6 +6339,50 @@ async function initAdminTab() {
   loadAdminCodes();
   loadAdminSessions();
   loadAdminFab();
+  loadAdminInvItems();   // v14.20
+}
+
+// v14.20 — Admin: manage invoice item presets
+function loadAdminInvItems() {
+  const el = document.getElementById('admin-inv-items-list');
+  if (!el) return;
+  let extras = [];
+  try { extras = JSON.parse(localStorage.getItem(INV_ITEMS_KEY) || '[]'); } catch(_){}
+  if (!extras.length) {
+    el.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:18px;font-size:.85rem">📭 ยังไม่มีรายการเพิ่มเติม (ใช้ดีฟอลต์ 6 รายการ)</div>';
+    return;
+  }
+  el.innerHTML = extras.map((name, i) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #f1f5f9">
+      <span style="font-size:1rem">🧾</span>
+      <div style="flex:1;font-weight:600;color:#0f172a;font-size:.88rem">${escHtml(name)}</div>
+      <button onclick="adminRemoveInvItem(${i})" style="background:#fee2e2;color:#b91c1c;border:none;border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:.78rem">🗑 ลบ</button>
+    </div>`).join('');
+}
+function adminAddInvItem() {
+  const input = document.getElementById('admin-inv-item-name');
+  if (!input) return;
+  const name = (input.value || '').trim();
+  if (!name) { showToast('กรุณากรอกชื่อรายการ', 'warning'); return; }
+  if (DEFAULT_INV_ITEMS.includes(name)) { showToast('รายการนี้มีในดีฟอลต์อยู่แล้ว', 'warning'); return; }
+  let extras = [];
+  try { extras = JSON.parse(localStorage.getItem(INV_ITEMS_KEY) || '[]'); } catch(_){}
+  if (extras.includes(name)) { showToast('รายการนี้มีอยู่แล้ว', 'warning'); return; }
+  extras.push(name);
+  setInvItemPresetsExtras(extras);
+  input.value = '';
+  loadAdminInvItems();
+  showToast(`✅ เพิ่ม "${name}" แล้ว`, 'success');
+}
+function adminRemoveInvItem(i) {
+  let extras = [];
+  try { extras = JSON.parse(localStorage.getItem(INV_ITEMS_KEY) || '[]'); } catch(_){}
+  const name = extras[i];
+  if (!confirm(`ลบรายการ "${name}" ออก?`)) return;
+  extras.splice(i, 1);
+  setInvItemPresetsExtras(extras);
+  loadAdminInvItems();
+  showToast(`🗑 ลบ "${name}" แล้ว`, 'success');
 }
 async function loadAdminCodes() {
   const el = document.getElementById('admin-codes-list');
@@ -7770,7 +7897,7 @@ function switchTab(tab, btnEl, opts) {
   if (btnEl && btnEl.classList) btnEl.classList.add('active');
   const title = document.getElementById('page-title');
   if (title) title.textContent = PAGE_NAMES[tab] || tab;
-  if (tab === 'invoice') { genInvNum(); renderInvRows(); }
+  if (tab === 'invoice') { genInvNum(); renderInvRows(); refreshInvItemDatalist(); refreshInvPayeeDatalists(); }
   if (tab === 'truck' && !_editingMode.truck) setTripRoundField();
   if (tab === 'income') populateLinkedTripsDropdown();
   if (tab === 'expense') populateExpenseLinkedTripsDropdown();
@@ -8440,7 +8567,13 @@ const _PREFILL_MAP = {
     notes:'fuel-notes'
   },
   invoice: {
-    invoiceDate:'inv-date', invoiceNumber:'inv-number', customerName:'inv-customer',
+    invoiceDate:'inv-date', invoiceNumber:'inv-number',
+    // v14.20 — new payee fields
+    paymentDate:'inv-paydate',
+    payeeName:'inv-payee', payeePlate:'inv-payee-plate', payeePosition:'inv-payee-position',
+    paymentMethod:'inv-paymethod', bankAccount:'inv-bank',
+    // legacy
+    customerName:'inv-customer',
     subtotal:'inv-subtotal', vatAmount:'inv-vat', total:'inv-total',
     dueDate:'inv-due', status:'inv-status', notes:'inv-notes'
   }
@@ -9157,11 +9290,70 @@ function renderFuelList(items) {
     </div>`).join('');
 }
 
-// ─── INVOICE ───────────────────────────────────────────────────────────────
-let invRows = [{ desc:'', qty:1, unit:'เที่ยว', price:0, total:0 }];
+// ─── INVOICE — v14.20 redesigned ──────────────────────────────────────────
+// Default invoice item presets (also extendable via Admin)
+const DEFAULT_INV_ITEMS = [
+  'ค่าเที่ยวคนขับ',
+  'เงินเดือน',
+  'ค่าเดินทางเพิ่มเติม',
+  'ค่าซ่อมแซมยาง / ค่าปะยาง / เปลี่ยนยาง',
+  'ค่าเบี้ยเลี้ยงกรณีรอรับ-ส่งสินค้า / ค้างคืน',
+  'ค่าใช้จ่ายอื่นๆ'
+];
+const INV_ITEMS_KEY = 'sw_inv_items_v1'; // localStorage key for user-added
+
+function getInvItemPresets() {
+  let extras = [];
+  try { extras = JSON.parse(localStorage.getItem(INV_ITEMS_KEY) || '[]'); } catch(_){}
+  return [...DEFAULT_INV_ITEMS, ...extras.filter(x => !DEFAULT_INV_ITEMS.includes(x))];
+}
+function setInvItemPresetsExtras(extras) {
+  localStorage.setItem(INV_ITEMS_KEY, JSON.stringify(extras));
+  refreshInvItemDatalist();
+}
+function refreshInvItemDatalist() {
+  const dl = document.getElementById('inv-item-dl');
+  if (!dl) return;
+  dl.innerHTML = getInvItemPresets().map(v => `<option value="${escAttr(v)}">`).join('');
+}
+
+// Driver autocomplete for payee
+function refreshInvPayeeDatalists() {
+  const payeeDl = document.getElementById('inv-payee-dl');
+  if (payeeDl) {
+    const drvNames = new Set();
+    (_master.drivers || []).forEach(d => { if (d.driverName) drvNames.add(d.driverName); });
+    (_master.truckHistory || []).forEach(t => { if (t.driverName) drvNames.add(t.driverName); });
+    payeeDl.innerHTML = [...drvNames].map(v => `<option value="${escAttr(v)}">`).join('');
+  }
+  const plateDl = document.getElementById('inv-plate-dl');
+  if (plateDl) {
+    const plates = new Set();
+    (_master.vehicles || []).forEach(v => { if (v.plateNumber) plates.add(v.plateNumber); });
+    (_master.truckHistory || []).forEach(t => { if (t.plateNumber) plates.add(t.plateNumber); });
+    plateDl.innerHTML = [...plates].map(v => `<option value="${escAttr(v)}">`).join('');
+  }
+}
+
+// Auto-fill plate from driver selection
+function onInvPayeeChange() {
+  const name = (document.getElementById('inv-payee')||{}).value || '';
+  if (!name) return;
+  const plateEl = document.getElementById('inv-payee-plate');
+  if (!plateEl || plateEl.value) return; // don't overwrite
+  // Try drivers list first
+  const drv = (_master.drivers || []).find(d => d.driverName === name);
+  if (drv && drv.assignedPlate) { plateEl.value = drv.assignedPlate; return; }
+  // Then truck history (latest)
+  const trip = [..._master.truckHistory || []].reverse().find(t => t.driverName === name && t.plateNumber);
+  if (trip) plateEl.value = trip.plateNumber;
+}
+
+// Each row: { desc, qty, total }  (total = manually entered amount, not qty*price)
+let invRows = [{ desc:'', qty:1, total:0 }];
 
 function addInvRow() {
-  invRows.push({ desc:'', qty:1, unit:'รายการ', price:0, total:0 });
+  invRows.push({ desc:'', qty:1, total:0 });
   renderInvRows();
 }
 function removeInvRow(i) {
@@ -9174,28 +9366,25 @@ function renderInvRows() {
   if (!tbody) return;
   tbody.innerHTML = invRows.map((r,i)=>`
     <tr>
-      <td style="padding:4px"><input class="inv-input" type="text" value="${r.desc.replace(/"/g,'&quot;')}" placeholder="รายละเอียด" onchange="invRows[${i}].desc=this.value"></td>
-      <td style="padding:4px"><input class="inv-input inv-num" type="number" value="${r.qty}" min="0" step="0.01" onchange="invRows[${i}].qty=+this.value;calcInvRow(${i})"></td>
-      <td style="padding:4px"><input class="inv-input inv-unit" type="text" value="${r.unit}" onchange="invRows[${i}].unit=this.value"></td>
-      <td style="padding:4px"><input class="inv-input inv-price" type="number" value="${r.price}" min="0" onchange="invRows[${i}].price=+this.value;calcInvRow(${i})"></td>
-      <td class="inv-total-cell">${(r.total||0).toLocaleString('th-TH',{maximumFractionDigits:2})}</td>
-      <td style="padding:4px"><button type="button" class="inv-del-btn" onclick="removeInvRow(${i})">✕</button></td>
+      <td style="padding:4px"><input class="inv-input" type="text" list="inv-item-dl" value="${(r.desc||'').replace(/"/g,'&quot;')}" placeholder="เลือกหรือพิมพ์รายการ..." onchange="invRows[${i}].desc=this.value"></td>
+      <td style="padding:4px"><input class="inv-input inv-num" type="number" value="${r.qty||1}" min="0" step="1" onchange="invRows[${i}].qty=+this.value||1;renderInvRows()"></td>
+      <td style="padding:4px"><input class="inv-input inv-price" type="text" inputmode="decimal" value="${formatMoneyDisplay(String(r.total||0))}" placeholder="0.00" style="text-align:right;font-weight:700"
+             oninput="this.value=formatMoneyDisplay(this.value)"
+             onchange="invRows[${i}].total=parseFloat((this.value||'0').replace(/,/g,''))||0;calcInv()"></td>
+      <td style="padding:4px"><button type="button" class="inv-del-btn" onclick="removeInvRow(${i})" title="ลบรายการ">✕</button></td>
     </tr>`).join('');
   calcInv();
 }
-function calcInvRow(i) {
-  invRows[i].total = (invRows[i].qty||0) * (invRows[i].price||0);
-  renderInvRows();
-}
+function calcInvRow(i) { calcInv(); }
 function calcInv() {
-  const sub = invRows.reduce((s,r)=>s+(r.total||0), 0);
+  const sub = invRows.reduce((s,r)=>s+(parseFloat(r.total)||0), 0);
   const useVat = document.getElementById('inv-vat-toggle')?.checked;
   const vat = useVat ? sub*0.07 : 0;
-  const fmt = n=>n.toLocaleString('th-TH',{maximumFractionDigits:2});
+  const fmt = n=>n.toLocaleString('th-TH',{minimumFractionDigits:2, maximumFractionDigits:2});
   const setTxt = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
   setTxt('inv-subtotal', fmt(sub));
   setTxt('inv-vat-amount', fmt(vat));
-  setTxt('inv-total-display', fmt(sub+vat));
+  setTxt('inv-total-display', '฿' + fmt(sub+vat));
 }
 function genInvNum() {
   const el = document.getElementById('inv-number');
@@ -9208,23 +9397,45 @@ function genInvNum() {
   el.value = `INV-${y}${m}-${String(seq).padStart(4,'0')}`;
 }
 function submitInvoice() {
-  if (!gv('inv-number'))   { showToast('กรุณากรอกเลขที่ใบเสร็จ','warning'); return; }
-  if (!gv('inv-date'))     { showToast('กรุณาเลือกวันที่','warning'); return; }
-  if (!gv('inv-customer')) { showToast('กรุณากรอกชื่อลูกค้า','warning'); return; }
-  const sub = invRows.reduce((s,r)=>s+(r.total||0),0);
+  if (!gv('inv-number')) { showToast('กรุณากรอกเลขที่เอกสาร','warning'); return; }
+  if (!gv('inv-date'))   { showToast('กรุณาเลือกวันที่จัดทำเอกสาร','warning'); return; }
+  if (!gv('inv-payee'))  { showToast('กรุณากรอกชื่อผู้รับเงิน','warning'); return; }
+  const sub = invRows.reduce((s,r)=>s+(parseFloat(r.total)||0),0);
   const vat = document.getElementById('inv-vat-toggle')?.checked ? sub*0.07 : 0;
+  // v14.20 — new payment-receipt fields (backward compat: payeeName saved as customerName too)
   submitData('invoice', {
-    invoiceNumber:gv('inv-number'), invoiceDate:gv('inv-date'), customerName:gv('inv-customer'),
-    dueDate:gv('inv-due'), items:JSON.stringify(invRows), subtotal:sub,
-    vatAmount:vat, total:sub+vat, status:gv('inv-status')||'รอชำระ', notes:gv('inv-notes')
+    invoiceNumber: gv('inv-number'),
+    invoiceDate:   gv('inv-date'),
+    paymentDate:   gv('inv-paydate'),
+    payeeName:     gv('inv-payee'),
+    customerName:  gv('inv-payee'),   // backward compat
+    payeePlate:    gv('inv-payee-plate'),
+    payeePosition: gv('inv-payee-position') || 'พนักงานขับรถ',
+    paymentMethod: gv('inv-paymethod') || 'โอนผ่านธนาคาร',
+    bankAccount:   gv('inv-bank'),
+    dueDate:       gv('inv-due'),  // legacy
+    items:         JSON.stringify(invRows),
+    subtotal:      sub,
+    vatAmount:     vat,
+    total:         sub+vat,
+    status:        gv('inv-status') || 'ชำระแล้ว',
+    notes:         gv('inv-notes')
   }, resetInvoice);
 }
 function resetInvoice() {
-  resetFields(['inv-number','inv-customer','inv-due','inv-notes']);
-  const d=document.getElementById('inv-date'); if(d) d.value=new Date().toISOString().slice(0,10);
-  const s=document.getElementById('inv-status'); if(s) s.value='รอชำระ';
-  const v=document.getElementById('inv-vat-toggle'); if(v) v.checked=false;
-  invRows = [{ desc:'', qty:1, unit:'เที่ยว', price:0, total:0 }];
+  resetFields(['inv-number','inv-payee','inv-payee-plate','inv-bank','inv-notes','inv-customer','inv-due']);
+  const today = new Date().toISOString().slice(0,10);
+  ['inv-date','inv-paydate'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el._flatpickr) el._flatpickr.setDate(today, false);
+    else el.value = today;
+  });
+  const pos = document.getElementById('inv-payee-position'); if(pos) pos.value = 'พนักงานขับรถ';
+  const pm  = document.getElementById('inv-paymethod');      if(pm)  pm.value  = 'โอนผ่านธนาคาร';
+  const s   = document.getElementById('inv-status');         if(s)   s.value   = 'ชำระแล้ว';
+  const v   = document.getElementById('inv-vat-toggle');     if(v)   v.checked = false;
+  invRows = [{ desc:'', qty:1, total:0 }];
   renderInvRows();
   setTimeout(genInvNum, 50);
 }
@@ -9239,20 +9450,18 @@ function renderInvoiceList(items) {
       ${renderRecActions('invoice', inv.rowId || inv.timestamp,inv.invoiceNumber||'')}
     </div>`).join('');
 }
-// v14.16 — shared invoice HTML builder (used by print, PDF, JPG)
+// v14.20 — shared invoice HTML builder (new payment-receipt layout)
 function _buildInvoiceHTML() {
-  const sub = invRows.reduce((s,r)=>s+(r.total||0),0);
+  const sub = invRows.reduce((s,r)=>s+(parseFloat(r.total)||0),0);
   const useVat = document.getElementById('inv-vat-toggle')?.checked;
   const vat = useVat ? sub*0.07 : 0;
-  const fmt = n => n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const fmt = n => Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   const rows = invRows.filter(r=>r.desc||r.total).map((r,i)=>`
     <tr style="background:${i%2===0?'white':'#fafafa'}">
-      <td style="padding:9px 10px;border-bottom:1px solid #e8e8e8;text-align:center;color:#64748b;width:32px">${i+1}</td>
-      <td style="padding:9px 10px;border-bottom:1px solid #e8e8e8">${r.desc||'—'}</td>
-      <td style="padding:9px 10px;border-bottom:1px solid #e8e8e8;text-align:center;width:60px">${r.qty.toLocaleString('en-US')}</td>
-      <td style="padding:9px 10px;border-bottom:1px solid #e8e8e8;text-align:center;width:60px">${r.unit}</td>
-      <td style="padding:9px 10px;border-bottom:1px solid #e8e8e8;text-align:right;width:100px">${fmt(r.price||0)}</td>
-      <td style="padding:9px 10px;border-bottom:1px solid #e8e8e8;text-align:right;width:110px;font-weight:700">${fmt(r.total||0)}</td>
+      <td style="padding:11px 12px;border-bottom:1px solid #e8e8e8;text-align:center;color:#64748b;width:32px">${i+1}</td>
+      <td style="padding:11px 12px;border-bottom:1px solid #e8e8e8">${escHtml(r.desc||'—')}</td>
+      <td style="padding:11px 12px;border-bottom:1px solid #e8e8e8;text-align:center;width:80px">${Number(r.qty||1).toLocaleString('en-US')}</td>
+      <td style="padding:11px 12px;border-bottom:1px solid #e8e8e8;text-align:right;width:140px;font-weight:700">${fmt(r.total||0)}</td>
     </tr>`).join('');
   return `
   <div id="invoice-render-root" style="max-width:720px;margin:0 auto;padding:36px;font-family:'Noto Sans Thai',Arial,sans-serif;color:#1e293b;font-size:14px;background:white">
@@ -9267,45 +9476,61 @@ function _buildInvoiceHTML() {
         <div style="font-size:11px;color:#94a3b8;font-weight:600;letter-spacing:1px">INVOICE</div>
       </div>
     </div>
-    <!-- Info grid -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px">
-      <div>
-        <div style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">เรียนเก็บเงินจาก / Bill To</div>
-        <div style="font-size:16px;font-weight:700;color:#0f172a">${gv('inv-customer')||'—'}</div>
-      </div>
-      <div style="text-align:right">
-        <table style="margin-left:auto;font-size:13px;border-collapse:collapse">
-          <tr><td style="color:#64748b;padding:2px 8px 2px 0">เลขที่ใบเสร็จ</td><td style="font-weight:700;color:#1d4ed8">${gv('inv-number')}</td></tr>
-          <tr><td style="color:#64748b;padding:2px 8px 2px 0">วันที่ออก</td><td style="font-weight:600">${fmtDate(gv('inv-date'))}</td></tr>
-          ${gv('inv-due')?`<tr><td style="color:#64748b;padding:2px 8px 2px 0">ครบกำหนดชำระ</td><td style="font-weight:600;color:#dc2626">${fmtDate(gv('inv-due'))}</td></tr>`:''}
-        </table>
-      </div>
+    <!-- v14.20 — Info grid: เลขที่เอกสาร, วันที่จัดทำ, วันที่จ่ายเงิน -->
+    <table style="width:100%;margin-bottom:18px;border-collapse:collapse;font-size:13px">
+      <tr>
+        <td style="padding:6px 12px 6px 0;color:#64748b;font-weight:600;width:35%">เลขที่เอกสาร</td>
+        <td style="padding:6px 0;font-weight:700;color:#1d4ed8">${escHtml(gv('inv-number')||'—')}</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 12px 6px 0;color:#64748b;font-weight:600">วันที่จัดทำเอกสาร</td>
+        <td style="padding:6px 0;font-weight:600">${fmtDate(gv('inv-date'))}</td>
+      </tr>
+      ${gv('inv-paydate')?`<tr>
+        <td style="padding:6px 12px 6px 0;color:#64748b;font-weight:600">วันที่จ่ายเงิน</td>
+        <td style="padding:6px 0;font-weight:600;color:#059669">${fmtDate(gv('inv-paydate'))}</td>
+      </tr>`:''}
+    </table>
+    <!-- v14.20 — Payee block -->
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px;margin-bottom:18px">
+      <div style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:8px">👤 ผู้รับเงิน</div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <tr>
+          <td style="padding:4px 12px 4px 0;color:#64748b;width:35%">ชื่อผู้รับเงิน</td>
+          <td style="padding:4px 0;font-weight:700;color:#0f172a">${escHtml(gv('inv-payee')||'—')}${gv('inv-payee-plate')?` <span style="font-weight:600;color:#64748b">(${escHtml(gv('inv-payee-plate'))})</span>`:''}</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 12px 4px 0;color:#64748b">ตำแหน่ง / หน้าที่</td>
+          <td style="padding:4px 0;font-weight:600">${escHtml(gv('inv-payee-position')||'พนักงานขับรถ')}</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 12px 4px 0;color:#64748b">ช่องทางการชำระเงิน</td>
+          <td style="padding:4px 0;font-weight:600">${escHtml(gv('inv-paymethod')||'โอนผ่านธนาคาร')}</td>
+        </tr>
+        ${gv('inv-bank')?`<tr>
+          <td style="padding:4px 12px 4px 0;color:#64748b">ธนาคาร / เลขที่บัญชี</td>
+          <td style="padding:4px 0;font-weight:600">${escHtml(gv('inv-bank'))}</td>
+        </tr>`:''}
+      </table>
     </div>
-    <!-- Items table -->
-    <table style="width:100%;border-collapse:collapse;margin-bottom:20px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
+    <!-- v14.20 — Items table -->
+    <table style="width:100%;border-collapse:collapse;margin-bottom:18px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
       <thead>
         <tr style="background:#0f172a;color:white">
-          <th style="padding:11px 10px;text-align:center;font-size:12px;width:32px">#</th>
-          <th style="padding:11px 10px;text-align:left;font-size:12px">รายการ / Description</th>
-          <th style="padding:11px 10px;text-align:center;font-size:12px;width:60px">จำนวน</th>
-          <th style="padding:11px 10px;text-align:center;font-size:12px;width:60px">หน่วย</th>
-          <th style="padding:11px 10px;text-align:right;font-size:12px;width:100px">ราคา/หน่วย</th>
-          <th style="padding:11px 10px;text-align:right;font-size:12px;width:110px">รวม (฿)</th>
+          <th style="padding:12px 10px;text-align:center;font-size:12px;width:32px">#</th>
+          <th style="padding:12px 12px;text-align:left;font-size:12px">รายละเอียดรายการจ่าย</th>
+          <th style="padding:12px 10px;text-align:center;font-size:12px;width:80px">จำนวน</th>
+          <th style="padding:12px 12px;text-align:right;font-size:12px;width:140px">จำนวนเงินรวม (บาท)</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
     </table>
-    <!-- Totals -->
-    <div style="display:flex;justify-content:flex-end;margin-bottom:40px">
-      <div style="min-width:260px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
-        <div style="display:flex;justify-content:space-between;padding:10px 14px;background:#f8fafc;border-bottom:1px solid #e2e8f0">
-          <span style="color:#64748b">ยอดรวมก่อนภาษี</span>
-          <span style="font-weight:600">฿${fmt(sub)}</span>
-        </div>
-        ${useVat?`<div style="display:flex;justify-content:space-between;padding:10px 14px;background:#f8fafc;border-bottom:1px solid #e2e8f0"><span style="color:#64748b">ภาษีมูลค่าเพิ่ม (VAT 7%)</span><span style="font-weight:600">฿${fmt(vat)}</span></div>`:''}
-        <div style="display:flex;justify-content:space-between;padding:14px;background:#1d4ed8;color:white">
-          <span style="font-weight:700;font-size:15px">ยอดสุทธิ / Total</span>
-          <span style="font-weight:900;font-size:18px">฿${fmt(sub+vat)}</span>
+    <!-- v14.20 — Grand total -->
+    <div style="display:flex;justify-content:flex-end;margin-bottom:36px">
+      <div style="min-width:280px;border-radius:10px;overflow:hidden;border:1px solid #1d4ed8">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:white">
+          <span style="font-weight:700;font-size:14px">💰 รวมเป็นเงิน</span>
+          <span style="font-weight:900;font-size:20px">฿${fmt(sub+vat)}</span>
         </div>
       </div>
     </div>
@@ -11209,7 +11434,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.19';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.20';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate(opts) {
@@ -11445,6 +11670,8 @@ window.addEventListener('DOMContentLoaded', () => {
   if (statusSel) onFreightStatusChange(statusSel);
   // v14.17 — Flatpickr Thai date picker
   initFlatpickr();
+  // v14.20 — initialize invoice datalists
+  refreshInvItemDatalist();
   // Auto-update check — aggressive polling early, then back off
   setTimeout(checkForUpdate, 2000);   // first check after 2s
   setTimeout(checkForUpdate, 10000);  // then 10s
