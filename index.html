@@ -488,6 +488,31 @@
     .sw-code-chip--expense { background: var(--sw-danger-soft, #fee2e2);  color: var(--sw-danger-hover, #b91c1c); }
     .sw-code-chip--pending { background: var(--sw-warning-soft, #fef3c7); color: #92400e; }
 
+    /* v14.19 — Round number chip (replaces code chip as main title) */
+    .sw-round-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: .8rem;
+      letter-spacing: .2px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+      box-shadow: 0 2px 8px rgba(99,102,241,.25);
+      white-space: nowrap;
+    }
+    .sw-round-chip--none {
+      background: linear-gradient(135deg, #94a3b8, #64748b);
+      box-shadow: 0 2px 6px rgba(100,116,139,.2);
+      opacity: .85;
+    }
+    body.dark .sw-round-chip {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      box-shadow: 0 2px 8px rgba(99,102,241,.4);
+    }
+
     /* ── STATUS PILLS — payment/job status ── */
     .sw-status {
       display: inline-flex;
@@ -4056,6 +4081,59 @@
     }
     /* Hide native picker icon (Flatpickr replaces it) */
     .flatpickr-input[readonly]::-webkit-calendar-picker-indicator { display: none; }
+
+    /* ═══════════════════════════════════════════════════════════
+       v14.19 — Elegant clock pill (replaces version stamp)
+       ═══════════════════════════════════════════════════════════ */
+    .sw-clock-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 14px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(29,78,216,.08), rgba(59,130,246,.04));
+      border: 1px solid rgba(29,78,216,.14);
+      font-size: .82rem;
+      font-weight: 600;
+      color: #1e293b;
+      letter-spacing: .01em;
+      transition: all .2s ease;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 2px 6px rgba(15,23,42,.04);
+    }
+    .sw-clock-pill:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(29,78,216,.12);
+      border-color: rgba(29,78,216,.25);
+    }
+    .sw-clock-pill .sw-date {
+      font-weight: 700;
+      color: #1d4ed8;
+    }
+    .sw-clock-pill .sw-sep {
+      color: rgba(29,78,216,.3);
+      margin: 0 2px;
+    }
+    .sw-clock-pill .sw-time {
+      font-variant-numeric: tabular-nums;
+      color: #0f172a;
+    }
+    .sw-clock-pill .sw-time .sw-sec {
+      font-size: .82em;
+      opacity: .55;
+      margin-left: 1px;
+    }
+    body.dark .sw-clock-pill {
+      background: linear-gradient(135deg, rgba(59,130,246,.12), rgba(99,102,241,.06));
+      border-color: rgba(59,130,246,.2);
+      color: #e2e8f0;
+    }
+    body.dark .sw-clock-pill .sw-date { color: #93c5fd; }
+    body.dark .sw-clock-pill .sw-time { color: #f1f5f9; }
+    body.dark .sw-clock-pill .sw-sep { color: rgba(147,197,253,.35); }
+    @media (max-width: 640px) {
+      .sw-clock-pill { padding: 5px 10px; font-size: .72rem; gap: 5px; }
+    }
   </style>
 </head>
 <body>
@@ -4123,7 +4201,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.18 | 29/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.19 | 29/05/2026</span>
   </div>
 </aside>
 
@@ -4135,11 +4213,10 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v14.18</span>
-    <span style="margin:0 6px;opacity:.4">·</span>
+  <!-- v14.19 — Elegant date + time pill (no version number) -->
+  <div class="sw-clock-pill" style="margin-left:auto" title="เวลาประเทศไทย">
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
-  </span>
+  </div>
   <!-- v14.16 — Login button moved to sidebar bottom-left -->
   <!-- Manual update check -->
   <button class="header-bell" onclick="checkForUpdate({manual:true})" title="ตรวจหาเวอร์ชันใหม่" style="margin-left:8px">
@@ -9503,11 +9580,15 @@ function renderTruckList(items) {
     if (r.driverName)   subParts.push(`👤 <span class="priv-data">${escHtml(r.driverName)}${r.driverPhone ? ' · ' + escHtml(r.driverPhone) : ''}</span>`);
     if (r.cargoList)    subParts.push(`📦 <span class="priv-data">${escHtml(r.cargoList)}${r.cargoWeight ? ' ' + r.cargoWeight + ' ตัน' : ''}</span>`);
 
+    // v14.19 — รอบ as the prominent title chip (no code chip)
+    const roundChip = r.tripRound
+      ? `<span class="sw-round-chip">🔄 รอบ #${r.tripRound}</span>`
+      : `<span class="sw-round-chip sw-round-chip--none">🚛 ไม่ระบุรอบ</span>`;
     return `
     <div class="record-card" style="border-left:4px solid ${s.color}">
       <div class="sw-record-head">
         <div class="sw-record-chips">
-          <span class="sw-code-chip ${codeChipClass}">${escHtml(r.rowId || 'TRUCK-—')}</span>
+          ${roundChip}
           <span class="sw-status ${statusClass}">${statusIcon} ${auto}</span>
           <span class="sw-status ${payClass}">${payIcon} ${paid ? 'จ่ายแล้ว' : 'ค้างจ่าย'}</span>
         </div>
@@ -9518,7 +9599,6 @@ function renderTruckList(items) {
       </div>
       <div class="sw-record-title">
         🚛 ${escHtml(titleText)}
-        ${r.tripRound ? `<span style="font-size:.7rem;color:#94a3b8;font-weight:600;margin-left:6px">รอบ #${r.tripRound}</span>` : ''}
         <span style="font-size:.72rem;color:#94a3b8;font-weight:500;margin-left:6px">· ${dateLabel}</span>
       </div>
       ${subParts.length ? `<div class="sw-record-sub">${subParts.join(' · ')}</div>` : ''}
@@ -9571,13 +9651,16 @@ function renderIncomeList(items) {
     if (r.incomeItem)   subParts.push(`📋 <span class="priv-data">${escHtml(r.incomeItem)}</span>`);
     if (paymentMethod)  subParts.push(`💵 ${escHtml(paymentMethod)}`);
     if (docNumber)      subParts.push(`📄 <span class="priv-data">${escHtml(docNumber)}</span>`);
+    // v14.19 — prominent รอบ chip in place of code chip
+    const roundChipI = tripRound
+      ? `<span class="sw-round-chip">🔄 รอบ #${tripRound}</span>`
+      : '';
     return `
     <div class="record-card" style="border-left:4px solid #16a34a">
       <div class="sw-record-head">
         <div class="sw-record-chips">
-          <span class="sw-code-chip sw-code-chip--income">${escHtml(r.rowId || 'INC-—')}</span>
+          ${roundChipI}
           <span class="sw-status sw-status--income">💰 รายรับ</span>
-          ${tripRound ? `<span class="sw-status sw-status--intransit">🔗 รอบ #${tripRound}</span>` : ''}
         </div>
         <div class="sw-record-amount priv-amt" style="color:var(--sw-success,#16a34a)">+${fmtBaht(amount)}</div>
       </div>
@@ -9626,14 +9709,17 @@ function renderExpenseList(items) {
     if (r.vendor)        subParts.push(`👤 <span class="priv-data">${escHtml(r.vendor)}</span>`);
     if (r.expenseDetail) subParts.push(`📋 <span class="priv-data">${escHtml(r.expenseDetail)}</span>`);
     if (paymentMethodE)  subParts.push(`💵 ${escHtml(paymentMethodE)}`);
+    // v14.19 — prominent รอบ chip in place of code chip
+    const roundChipE = tripRound
+      ? `<span class="sw-round-chip">🔄 รอบ #${tripRound}</span>`
+      : '';
     return `
     <div class="record-card" style="border-left:4px solid #dc2626">
       <div class="sw-record-head">
         <div class="sw-record-chips">
-          <span class="sw-code-chip sw-code-chip--expense">${escHtml(r.rowId || 'EXP-—')}</span>
+          ${roundChipE}
           <span class="sw-status sw-status--expense">💸 รายจ่าย</span>
           ${r.category ? `<span class="sw-status sw-status--pending" style="background:#fee2e2;color:#b91c1c">${escHtml(r.category)}</span>` : ''}
-          ${tripRound ? `<span class="sw-status sw-status--intransit">🔗 รอบ #${tripRound}</span>` : ''}
         </div>
         <div class="sw-record-amount priv-amt" style="color:var(--sw-danger,#dc2626)">−${fmtBaht(amount)}</div>
       </div>
@@ -11123,7 +11209,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.18';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.19';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate(opts) {
@@ -11196,10 +11282,13 @@ function tickLiveClock() {
   const d = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
   const pad = n => String(n).padStart(2, '0');
   const hh = pad(d.getHours()), mm = pad(d.getMinutes()), ss = pad(d.getSeconds());
-  const day = pad(d.getDate()), mo = pad(d.getMonth() + 1), yy = d.getFullYear();
+  const day = d.getDate(); // no leading zero for elegance
+  const TH_MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const moTh = TH_MONTHS_SHORT[d.getMonth()];
+  const yyBE = d.getFullYear() + 543; // Buddhist Era
   // Pulse the colon so it feels alive
   const sepBlink = d.getSeconds() % 2 ? ':' : ' ';
-  el.innerHTML = `${day}/${mo}/${yy} <span style="margin:0 4px;opacity:.4">·</span> ${hh}<span style="opacity:.6">${sepBlink}</span>${mm}<span style="opacity:.5">${sepBlink}</span><span style="font-size:.78em;opacity:.7">${ss}</span>`;
+  el.innerHTML = `<span class="sw-date">${day} ${moTh} ${yyBE}</span><span class="sw-sep">·</span><span class="sw-time">${hh}${sepBlink}${mm}<span class="sw-sec">${ss}</span></span>`;
 }
 // ═══════════════════════════════════════════════════════════════════
 // v14.16 — MONEY INPUT FORMATTING (comma separator while typing)
