@@ -299,6 +299,13 @@
       cursor: pointer;
       transition: all .15s;
       font-family: inherit;
+      white-space: nowrap !important;  /* fix: ห้ามตกบรรทัด */
+      flex-shrink: 0 !important;        /* fix: ไม่บีบ */
+      line-height: 1.3 !important;
+    }
+    .inner-nav {
+      flex-wrap: nowrap !important;      /* fix: บังคับอยู่บรรทัดเดียว */
+      overflow-x: auto;                  /* ถ้าจอแคบมาก ให้ scroll แทน wrap */
     }
     .inner-btn:hover { color: var(--sw-fg-primary, #1a1f2e) !important; background: rgba(15,23,42,.04); }
     .inner-btn.active {
@@ -3923,7 +3930,7 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v14.12</span>
+    <span style="opacity:.7">v14.13</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
@@ -10749,7 +10756,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.12';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.13';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate(opts) {
