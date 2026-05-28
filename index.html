@@ -774,7 +774,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v7.0 | 28/05/2026 10:05</span>
+  <span class="version" style="margin-left:auto">v7.1 | 28/05/2026 10:25</span>
   <div style="position:relative;margin-left:10px">
     <button class="header-bell" onclick="toggleBell(event)" title="แจ้งเตือน">
       🔔<span class="bell-badge" id="bell-badge" style="display:none">0</span>
@@ -1475,7 +1475,22 @@
     </div>
   </div>
 
-  <!-- 3-COLUMN INSIGHTS: top customers / top vehicles / top expense categories -->
+  <!-- RECENT TRIPS TABLE — moved up, right below charts -->
+  <div class="dash-card" id="sum-truck-card" style="display:none">
+    <div class="dash-card-head">
+      <div>
+        <div class="dash-card-title">🚚 รายเที่ยวรถ</div>
+        <div class="dash-card-sub" id="sum-truck-sub-count">—</div>
+      </div>
+      <a class="dash-card-action" href="#" onclick="goToTruckList(event)">ดูทั้งหมด →</a>
+    </div>
+    <table class="sum-table" id="sum-truck-table">
+      <thead><tr><th>รอบเที่ยว / งาน</th><th style="text-align:center">สถานะ</th><th style="text-align:right">ค่าขนส่ง</th></tr></thead>
+      <tbody id="sum-truck-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- 3-COLUMN INSIGHTS: top expense categories / top customers / top vehicles -->
   <div class="dash-3col" id="sum-3col" style="display:none">
     <!-- Top expense categories with bars -->
     <div class="dash-card">
@@ -1507,21 +1522,6 @@
       </div>
       <div id="sum-top-vehicles"></div>
     </div>
-  </div>
-
-  <!-- RECENT TRIPS TABLE -->
-  <div class="dash-card" id="sum-truck-card" style="display:none">
-    <div class="dash-card-head">
-      <div>
-        <div class="dash-card-title">🚚 รายเที่ยวรถ</div>
-        <div class="dash-card-sub" id="sum-truck-sub-count">—</div>
-      </div>
-      <a class="dash-card-action" href="#" onclick="event.preventDefault();const t=document.querySelector('[onclick*=\"switchTab(\\u0027truck\\u0027\"]');if(t){t.click();setTimeout(()=>document.querySelector('#tab-truck .inner-btn[onclick*=list]')?.click(),100)}">ดูทั้งหมด →</a>
-    </div>
-    <table class="sum-table" id="sum-truck-table">
-      <thead><tr><th>รอบเที่ยว / งาน</th><th style="text-align:center">สถานะ</th><th style="text-align:right">ค่าขนส่ง</th></tr></thead>
-      <tbody id="sum-truck-tbody"></tbody>
-    </table>
   </div>
 
   <!-- Placeholder when not yet loaded -->
@@ -4909,6 +4909,18 @@ function initSummaryOnce() {
   document.getElementById('sum-dateTo').value   = `${y}-${m}-${lastDay}`;
 }
 
+// Navigate to truck list view from summary "ดูทั้งหมด" link
+function goToTruckList(e) {
+  if (e) e.preventDefault();
+  const tabBtn = Array.from(document.querySelectorAll('.tab-btn'))
+    .find(b => b.getAttribute('onclick')?.includes("switchTab('truck'"));
+  if (tabBtn) tabBtn.click();
+  setTimeout(() => {
+    const listBtn = document.querySelector('#tab-truck .inner-btn[onclick*="list"]');
+    if (listBtn) listBtn.click();
+  }, 100);
+}
+
 async function loadSummary() {
   const dateFrom = document.getElementById('sum-dateFrom').value;
   const dateTo   = document.getElementById('sum-dateTo').value;
@@ -5042,9 +5054,22 @@ function renderTopCategories(expense) {
 function renderTopCustomers(income) {
   const el = document.getElementById('sum-top-customers');
   if (!el) return;
+  // Filter out garbage names (rowIds, times, pure numbers)
+  const isJunk = s => {
+    if (!s) return true;
+    s = String(s).trim();
+    if (/^\d{1,2}:\d{2}$/.test(s)) return true;          // HH:MM
+    if (/^[\d,.]+$/.test(s)) return true;                 // pure numbers
+    if (/^\d{8,}[A-Za-z0-9]{5,}$/.test(s)) return true;   // rowId-like long alphanumeric
+    if (s.length < 2) return true;
+    return false;
+  };
   const map = {};
   income.forEach(r => {
-    const name = r.customerName || '(ไม่ระบุ)';
+    let name = (r.customerName || '').trim();
+    // If customerName is junk, try incomeItem as fallback
+    if (isJunk(name) && !isJunk(r.incomeItem)) name = r.incomeItem;
+    if (!name || isJunk(name)) name = '(ไม่ระบุ)';
     map[name] = (map[name] || 0) + _detectAmount(r);
   });
   const sorted = Object.entries(map).sort((a,b) => b[1] - a[1]).slice(0, 6);
