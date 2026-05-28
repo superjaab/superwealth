@@ -582,11 +582,70 @@
     /* ── Nav scrollbar hide (no longer needed but safe to keep) ── */
     .tab-nav { display:none; }
 
-    /* ════ AUTH GATING (logged out) ════ */
+    /* ════ AUTH GATING — PREVIEW MODE (logged out) ════ */
     body.logged-out .rc-kebab,
     body.logged-out .rc-actions { display: none !important; }
     body.logged-out #auth-btn { background:#dbeafe !important; color:#1d4ed8 !important; }
     body.logged-in  #auth-btn { background:#fef2f2 !important; color:#dc2626 !important; }
+
+    /* Preview mode banner */
+    body.logged-out #preview-banner { display:flex !important; }
+    #preview-banner {
+      display: none;
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      background: linear-gradient(90deg, #f59e0b, #ea580c);
+      color: white; padding: 9px 16px;
+      font-weight: 700; font-size: .82rem;
+      align-items: center; justify-content: center; gap: 10px;
+      box-shadow: 0 2px 12px rgba(234,88,12,.3);
+      cursor: pointer;
+    }
+    body.logged-out .app-header { top: 38px; }
+    body.logged-out #app-shell { padding-top: 38px; }
+    @media (max-width:600px) {
+      #preview-banner { font-size:.72rem; padding:7px 10px }
+    }
+
+    /* Blur sensitive data when logged out */
+    body.logged-out .dash-stat-value,
+    body.logged-out .dash-stat-sub,
+    body.logged-out .dash-cust-amount,
+    body.logged-out .dash-cust-sub,
+    body.logged-out .dash-list-value,
+    body.logged-out .dash-list-name,
+    body.logged-out .cal-evt-bar,
+    body.logged-out .sum-table tbody td,
+    body.logged-out canvas,
+    body.logged-out .rc-title span:not(:first-child),
+    body.logged-out .rc-sub,
+    body.logged-out .rc-imgs,
+    body.logged-out .rc-badges,
+    body.logged-out .cal-trip-card,
+    body.logged-out .bell-item,
+    body.logged-out .ac-dd,
+    body.logged-out .dash-stat .dash-stat-value,
+    body.logged-out .summary-grid .dash-stat-value,
+    body.logged-out .summary-grid .dash-stat-sub {
+      filter: blur(7px) !important;
+      user-select: none !important;
+      pointer-events: none !important;
+      transition: filter .25s;
+    }
+    body.logged-out .dash-stat:hover .dash-stat-value,
+    body.logged-out .dash-stat:hover .dash-stat-sub {
+      filter: blur(7px) !important; /* keep blurred even on hover */
+    }
+    /* Lock icon overlay on blurred sections */
+    body.logged-out .dash-stat::after,
+    body.logged-out .record-card::after {
+      content: '🔒';
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.4rem;
+      opacity: .35; pointer-events: none;
+      z-index: 5;
+    }
+    body.logged-out .dash-stat, body.logged-out .record-card { position: relative; }
 
     /* ════ DARK MODE ════ */
     body.dark { background:#0f172a !important; color:#e2e8f0; }
@@ -812,6 +871,12 @@
   </style>
 </head>
 <body>
+<!-- Preview mode banner (only visible when logged out) -->
+<div id="preview-banner" onclick="showLoginModal()">
+  <span style="font-size:1rem">👁</span>
+  <span>โหมดพรีวิว — ข้อมูลถูกซ่อน คลิกเพื่อเข้าสู่ระบบ</span>
+  <span style="background:rgba(255,255,255,.25);padding:2px 10px;border-radius:6px;font-size:.74rem;margin-left:6px">🔓 เข้าสู่ระบบ</span>
+</div>
 <div id="app-shell">
 
 <!-- ══ SIDEBAR ══ -->
@@ -851,7 +916,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v8.1 | 28/05/2026 12:30</span>
+  <span class="version" style="margin-left:auto">v8.2 | 28/05/2026 12:50</span>
   <!-- Login/Logout button -->
   <button class="header-bell" id="auth-btn" onclick="handleAuthClick()" title="เข้าสู่ระบบ" style="margin-left:10px;width:auto;padding:0 14px;font-weight:700;font-size:.78rem;display:flex;align-items:center;gap:6px">
     <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
@@ -2401,31 +2466,10 @@ function applyAuthGating() {
   if (label) label.textContent = authed ? 'ออกจากระบบ' : 'เข้าสู่ระบบ';
   if (btn)   btn.title = authed ? 'ออกจากระบบ' : 'เข้าสู่ระบบ';
 
-  // Hide/show sidebar tabs — only calendar is visible when logged out
-  document.querySelectorAll('.tab-btn').forEach(b => {
-    const oc = b.getAttribute('onclick') || '';
-    const isCalendar = oc.includes("switchTab('calendar'");
-    b.style.display = (!authed && !isCalendar) ? 'none' : '';
-  });
-  // Hide sidebar section headers if section has no visible tabs
-  document.querySelectorAll('.sb-section').forEach(h => {
-    let n = h.nextElementSibling, anyVisible = false;
-    while (n && !n.classList.contains('sb-section')) {
-      if (n.classList.contains('tab-btn') && n.style.display !== 'none') { anyVisible = true; break; }
-      n = n.nextElementSibling;
-    }
-    h.style.display = anyVisible ? '' : 'none';
-  });
-
-  // If logged out and current tab isn't calendar → switch to calendar
-  if (!authed) {
-    const activePanel = document.querySelector('.tab-panel.active');
-    if (activePanel && activePanel.id !== 'tab-calendar') {
-      const calBtn = Array.from(document.querySelectorAll('.tab-btn'))
-        .find(b => (b.getAttribute('onclick') || '').includes("switchTab('calendar'"));
-      if (calBtn) calBtn.click();
-    }
-  }
+  // Preview mode: ALL tabs visible, just data is blurred via CSS
+  // (no longer hide tabs or force navigate to calendar)
+  document.querySelectorAll('.tab-btn').forEach(b => { b.style.display = ''; });
+  document.querySelectorAll('.sb-section').forEach(h => { h.style.display = ''; });
 }
 // Defensive: block protected actions
 function requireAuth() {
@@ -2458,14 +2502,8 @@ window.addEventListener('DOMContentLoaded', () => {
   // Set theme icon based on saved theme
   const icon = document.getElementById('theme-icon');
   if (icon) icon.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
-  // Apply auth gating (hide/show tabs based on login status)
+  // Apply auth gating (preview mode CSS blur)
   applyAuthGating();
-  // If logged out, switch to calendar by default
-  if (!isAuthed()) {
-    const calBtn = Array.from(document.querySelectorAll('.tab-btn'))
-      .find(b => (b.getAttribute('onclick') || '').includes("switchTab('calendar'"));
-    if (calBtn) setTimeout(() => calBtn.click(), 50);
-  }
   setDefaultDates();
   buildUploadArea('truck',       'truck-upload-area');
   buildUploadArea('income',      'income-upload-area');
@@ -3013,12 +3051,7 @@ const PAGE_NAMES = {
   summary:'สรุปผล', calendar:'ปฏิทินเที่ยวรถ', alert:'แจ้งเตือน', gps:'GPS', ocr:'อ่านภาพ'
 };
 function switchTab(tab, btnEl) {
-  // Enforce auth — non-authed users can only see calendar
-  if (!isAuthed() && tab !== 'calendar') {
-    showToast('🔒 กรุณาเข้าสู่ระบบก่อน', 'warning');
-    showLoginModal();
-    return;
-  }
+  // Preview mode: allow all navigation (data is blurred via CSS instead)
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
