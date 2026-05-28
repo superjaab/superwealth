@@ -3382,7 +3382,7 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v14.7</span>
+    <span style="opacity:.7">v14.8</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
@@ -4283,6 +4283,81 @@
       <div id="cap-insight-body" style="font-size:.85rem;line-height:1.7"></div>
     </div>
 
+    <!-- ── Financial Metrics (v14.8 — comprehensive calculations) ── -->
+    <div class="dash-card" style="padding:18px 20px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <span style="font-size:1.05rem;font-weight:800;background:linear-gradient(135deg,#7c3aed,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent">📊 ตัวชี้วัดทางการเงิน</span>
+        <span class="dash-card-sub" style="font-size:.72rem">Financial Health Metrics</span>
+      </div>
+      <div id="cap-metrics-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">
+        <!-- Net Worth -->
+        <div class="cap-metric" style="padding:12px 14px;border:1px solid #e2e8f0;border-radius:10px;background:linear-gradient(135deg,#faf5ff 0%,#ffffff 100%)">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+            <span style="font-size:1rem">💎</span>
+            <span style="font-size:.74rem;font-weight:700;color:#5b21b6">มูลค่าสุทธิ (Net Worth)</span>
+          </div>
+          <div class="priv-amt" id="cap-net-worth" style="font-size:1.3rem;font-weight:900;color:#7c3aed">฿0</div>
+          <div id="cap-net-worth-formula" style="font-size:.66rem;color:#94a3b8;margin-top:3px">ทุน + ทรัพย์สิน − หนี้</div>
+        </div>
+        <!-- Liquidity Ratio -->
+        <div class="cap-metric" style="padding:12px 14px;border:1px solid #e2e8f0;border-radius:10px;background:linear-gradient(135deg,#ecfdf5 0%,#ffffff 100%)">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+            <span style="font-size:1rem">💧</span>
+            <span style="font-size:.74rem;font-weight:700;color:#059669">สภาพคล่อง (Liquidity)</span>
+          </div>
+          <div id="cap-liquidity" style="font-size:1.3rem;font-weight:900;color:#059669">—</div>
+          <div id="cap-liquidity-sub" style="font-size:.66rem;color:#94a3b8;margin-top:3px">เงินสด ÷ ทุนรวม</div>
+        </div>
+        <!-- Monthly Cash Flow -->
+        <div class="cap-metric" style="padding:12px 14px;border:1px solid #e2e8f0;border-radius:10px;background:linear-gradient(135deg,#eff6ff 0%,#ffffff 100%)">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+            <span style="font-size:1rem">📈</span>
+            <span style="font-size:.74rem;font-weight:700;color:#1d4ed8">กระแสเงินสดเฉลี่ย/เดือน</span>
+          </div>
+          <div class="priv-amt" id="cap-monthly-flow" style="font-size:1.3rem;font-weight:900;color:#1d4ed8">฿0</div>
+          <div id="cap-monthly-flow-sub" style="font-size:.66rem;color:#94a3b8;margin-top:3px">รายรับ − รายจ่าย (เฉลี่ย 3 เดือน)</div>
+        </div>
+        <!-- Debt-to-Equity Ratio -->
+        <div class="cap-metric" style="padding:12px 14px;border:1px solid #e2e8f0;border-radius:10px;background:linear-gradient(135deg,#fef3f2 0%,#ffffff 100%)">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+            <span style="font-size:1rem">⚖️</span>
+            <span style="font-size:.74rem;font-weight:700;color:#dc2626">หนี้ต่อทุน (D/E)</span>
+          </div>
+          <div id="cap-de-ratio" style="font-size:1.3rem;font-weight:900;color:#dc2626">—</div>
+          <div id="cap-de-sub" style="font-size:.66rem;color:#94a3b8;margin-top:3px">หนี้สิน ÷ ส่วนของเจ้าของ</div>
+        </div>
+        <!-- Asset Efficiency -->
+        <div class="cap-metric" style="padding:12px 14px;border:1px solid #e2e8f0;border-radius:10px;background:linear-gradient(135deg,#fffbeb 0%,#ffffff 100%)">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+            <span style="font-size:1rem">⚡</span>
+            <span style="font-size:.74rem;font-weight:700;color:#b45309">ประสิทธิภาพทรัพย์สิน</span>
+          </div>
+          <div id="cap-asset-eff" style="font-size:1.3rem;font-weight:900;color:#b45309">—</div>
+          <div id="cap-asset-eff-sub" style="font-size:.66rem;color:#94a3b8;margin-top:3px">รายได้รวม ÷ ทรัพย์สินรวม</div>
+        </div>
+        <!-- Days of Runway -->
+        <div class="cap-metric" style="padding:12px 14px;border:1px solid #e2e8f0;border-radius:10px;background:linear-gradient(135deg,#f0f9ff 0%,#ffffff 100%)">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+            <span style="font-size:1rem">🛡️</span>
+            <span style="font-size:.74rem;font-weight:700;color:#0369a1">Runway (ทุนหมุน)</span>
+          </div>
+          <div id="cap-days-runway" style="font-size:1.3rem;font-weight:900;color:#0369a1">—</div>
+          <div id="cap-runway-sub2" style="font-size:.66rem;color:#94a3b8;margin-top:3px">เงินสด ÷ burn rate</div>
+        </div>
+      </div>
+      <!-- Health Score Bar -->
+      <div style="margin-top:14px;padding:12px 14px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-size:.78rem;font-weight:700;color:#1e293b">🩺 สุขภาพการเงินรวม</span>
+          <span id="cap-health-score" style="font-size:.95rem;font-weight:900;color:#7c3aed">— / 100</span>
+        </div>
+        <div style="height:8px;background:#e2e8f0;border-radius:99px;overflow:hidden">
+          <div id="cap-health-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#dc2626 0%,#f59e0b 40%,#16a34a 80%);border-radius:99px;transition:width .6s ease-out"></div>
+        </div>
+        <div id="cap-health-tip" style="font-size:.72rem;color:#64748b;margin-top:6px"></div>
+      </div>
+    </div>
+
     <!-- Tabs: Accounts list / Vehicle Assets / Analytics -->
     <div class="inner-nav" style="margin-bottom:14px">
       <button class="inner-btn active" onclick="capInnerTab('accounts',this)">🏦 บัญชี</button>
@@ -4292,22 +4367,76 @@
 
     <!-- ── Accounts view ── -->
     <div id="cap-view-accounts">
-      <!-- Add new account form -->
-      <div class="dash-card" style="padding:16px;margin-bottom:14px">
-        <div style="font-weight:800;margin-bottom:12px;font-size:.95rem">➕ เพิ่มบัญชีเงินทุน</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:10px">
-          <select id="cap-new-type" onchange="capToggleBankFields()">
-            <option value="bank">🏦 บัญชีธนาคาร</option>
-            <option value="cash">💵 เงินสด</option>
-            <option value="loan">📋 เงินกู้ (หนี้)</option>
-          </select>
-          <input id="cap-new-name" type="text" placeholder="ชื่อบัญชี (เช่น บัญชีหลัก, เงินสดในออฟฟิศ)">
-          <input id="cap-new-bank" type="text" placeholder="ชื่อธนาคาร (กสิกร, SCB, ฯลฯ)">
-          <input id="cap-new-accountno" type="text" placeholder="เลขบัญชี (ถ้ามี)">
-          <input id="cap-new-balance" type="number" step="0.01" placeholder="ยอดเริ่มต้น (บาท)">
+      <!-- Add new account form (v14.8 — refined layout) -->
+      <style>
+        .cap-form-card { padding:18px 20px 16px; margin-bottom:14px }
+        .cap-form-title { font-weight:800; font-size:.98rem; margin-bottom:14px; display:flex; align-items:center; gap:6px }
+        .cap-type-pills { display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap }
+        .cap-type-pill {
+          flex:1; min-width:100px; padding:10px 8px; border-radius:10px;
+          border:1.5px solid #e2e8f0; background:#f8fafc; color:#475569;
+          font-weight:700; font-size:.78rem; cursor:pointer; font-family:inherit;
+          transition:all .15s; display:flex; align-items:center; justify-content:center; gap:4px;
+        }
+        .cap-type-pill:hover { border-color:#7c3aed; color:#7c3aed; background:#faf5ff }
+        .cap-type-pill.active { background:linear-gradient(135deg,#7c3aed,#6d28d9); color:white; border-color:#7c3aed; box-shadow:0 4px 12px -2px rgba(124,58,237,.35) }
+        .cap-field-label { display:block; font-size:.72rem; font-weight:700; color:#475569; margin:10px 0 4px }
+        .cap-field-input {
+          width:100%; padding:9px 12px; border:1.5px solid #e2e8f0;
+          border-radius:8px; font-size:.88rem; font-family:inherit;
+          background:white; color:#1e293b; transition:all .15s;
+        }
+        .cap-field-input:focus { outline:none; border-color:#7c3aed; box-shadow:0 0 0 3px rgba(124,58,237,.12) }
+        .cap-grid-2 { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px }
+        @media (max-width:480px) { .cap-grid-2 { grid-template-columns:1fr } }
+        .cap-submit-btn {
+          background:linear-gradient(135deg,#7c3aed,#6d28d9); color:white; border:none;
+          border-radius:10px; padding:11px 28px; font-weight:800; font-size:.88rem;
+          cursor:pointer; font-family:inherit; margin-top:14px;
+          box-shadow:0 6px 16px -2px rgba(124,58,237,.4); transition:all .15s;
+        }
+        .cap-submit-btn:hover { box-shadow:0 8px 20px -2px rgba(124,58,237,.5); transform:translateY(-1px) }
+        .cap-submit-btn:active { transform:translateY(0) scale(.98) }
+        body.dark .cap-type-pill { background:#1a2032; border-color:#374151; color:#cbd5e1 }
+        body.dark .cap-type-pill:hover { background:#1f2937; border-color:#a78bfa; color:#c4b5fd }
+        body.dark .cap-field-label { color:#cbd5e1 }
+        body.dark .cap-field-input { background:#1a2032; border-color:#374151; color:#f1f5f9 }
+        body.dark .cap-field-input:focus { border-color:#a78bfa }
+      </style>
+      <div class="dash-card cap-form-card">
+        <div class="cap-form-title">
+          <span style="background:linear-gradient(135deg,#7c3aed,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent">➕ เพิ่มบัญชีเงินทุน</span>
         </div>
-        <textarea id="cap-new-notes" placeholder="หมายเหตุ (ไม่บังคับ)" style="width:100%;min-height:50px;margin-bottom:10px"></textarea>
-        <button onclick="capAddAccount()" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:white;border:none;border-radius:8px;padding:10px 24px;font-weight:700;cursor:pointer;font-family:inherit">➕ เพิ่มบัญชี</button>
+        <!-- Type pills (visual selector) -->
+        <div class="cap-type-pills">
+          <button type="button" class="cap-type-pill active" data-type="bank"  onclick="capSetType('bank')">🏦 บัญชีธนาคาร</button>
+          <button type="button" class="cap-type-pill"        data-type="cash"  onclick="capSetType('cash')">💵 เงินสด</button>
+          <button type="button" class="cap-type-pill"        data-type="loan"  onclick="capSetType('loan')">📋 เงินกู้ (หนี้)</button>
+        </div>
+        <input type="hidden" id="cap-new-type" value="bank">
+        <!-- Account name -->
+        <label class="cap-field-label">ชื่อบัญชี <span style="color:#dc2626">*</span></label>
+        <input id="cap-new-name" class="cap-field-input" type="text" placeholder="เช่น บัญชีหลัก, เงินสดในออฟฟิศ">
+        <!-- Bank fields (conditional) -->
+        <div id="cap-bank-fields-wrap">
+          <div class="cap-grid-2" style="margin-top:8px">
+            <div>
+              <label class="cap-field-label">ชื่อธนาคาร</label>
+              <input id="cap-new-bank" class="cap-field-input" type="text" placeholder="กสิกร, SCB, กรุงเทพ, ฯลฯ">
+            </div>
+            <div>
+              <label class="cap-field-label">เลขบัญชี <span style="color:#94a3b8;font-weight:500">(ถ้ามี)</span></label>
+              <input id="cap-new-accountno" class="cap-field-input" type="text" placeholder="0-1234-56789-0">
+            </div>
+          </div>
+        </div>
+        <!-- Balance -->
+        <label class="cap-field-label">ยอดเริ่มต้น (บาท) <span style="color:#dc2626">*</span></label>
+        <input id="cap-new-balance" class="cap-field-input" type="number" step="100" min="0" placeholder="0">
+        <!-- Notes -->
+        <label class="cap-field-label">หมายเหตุ <span style="color:#94a3b8;font-weight:500">(ไม่บังคับ)</span></label>
+        <textarea id="cap-new-notes" class="cap-field-input" placeholder="หมายเหตุ..." style="min-height:60px;resize:vertical"></textarea>
+        <button onclick="capAddAccount()" class="cap-submit-btn">➕ เพิ่มบัญชี</button>
       </div>
       <!-- Accounts list -->
       <div class="dash-card" style="padding:16px">
@@ -5597,11 +5726,29 @@ async function quickSetVehicleValue(rowId, plate) {
   }
 }
 
-function capToggleBankFields() {
-  const isBank = document.getElementById('cap-new-type').value === 'bank';
-  document.getElementById('cap-new-bank').style.display      = isBank ? '' : 'none';
-  document.getElementById('cap-new-accountno').style.display = isBank ? '' : 'none';
+function capSetType(type) {
+  document.getElementById('cap-new-type').value = type;
+  // Update pill active state
+  document.querySelectorAll('.cap-type-pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.type === type);
+  });
+  // Toggle bank-only field visibility
+  const wrap = document.getElementById('cap-bank-fields-wrap');
+  if (wrap) wrap.style.display = type === 'bank' ? '' : 'none';
+  // Adjust balance label based on type
+  const balanceLabel = document.querySelector('label[for] + #cap-new-balance, #cap-new-balance').previousElementSibling;
+  if (balanceLabel && balanceLabel.classList.contains('cap-field-label')) {
+    if (type === 'loan') {
+      balanceLabel.innerHTML = 'ยอดหนี้คงค้าง (บาท) <span style="color:#dc2626">*</span>';
+    } else if (type === 'cash') {
+      balanceLabel.innerHTML = 'จำนวนเงินสดในมือ (บาท) <span style="color:#dc2626">*</span>';
+    } else {
+      balanceLabel.innerHTML = 'ยอดเริ่มต้น (บาท) <span style="color:#dc2626">*</span>';
+    }
+  }
 }
+// legacy alias for existing onchange handler (if any references remain)
+function capToggleBankFields() { capSetType(document.getElementById('cap-new-type').value); }
 
 async function loadCapital() {
   const list = document.getElementById('cap-accounts-list');
@@ -5652,6 +5799,136 @@ function renderCapitalKPIs() {
     document.getElementById('cap-roi-sub').textContent = 'ตั้งทุนเริ่มต้นก่อน';
   }
   renderCapitalInsight(initialCapital, totalCapital, netProfit, totalIncome, totalExpense);
+  // v14.8 — comprehensive financial metrics
+  renderCapitalMetrics({ totalBank, totalCash, totalLoan, totalCapital, totalIncome, totalExpense, netProfit });
+}
+
+// ─── Financial Metrics Calculations (v14.8) ───
+function renderCapitalMetrics(m) {
+  const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  const setHTML = (id, v) => { const el = document.getElementById(id); if (el) el.innerHTML = v; };
+
+  // ── 1) Net Worth = Capital + Vehicle Assets - Loans ──
+  const vehicleAssetsValue = (_master.vehicles || []).reduce((s, v) => s + (parseFloat(v.vehicleValue) || 0), 0);
+  const equity = m.totalBank + m.totalCash;           // owner's equity (cash side)
+  const netWorth = equity + vehicleAssetsValue - m.totalLoan;
+  setText('cap-net-worth', fmtBaht(netWorth));
+  setText('cap-net-worth-formula', `ทุน ${fmtBaht(equity)} + รถ ${fmtBaht(vehicleAssetsValue)} − หนี้ ${fmtBaht(m.totalLoan)}`);
+
+  // ── 2) Liquidity Ratio = Cash ÷ Total Capital × 100% ──
+  if (equity > 0) {
+    const liquidityPct = (m.totalCash / equity) * 100;
+    setText('cap-liquidity', liquidityPct.toFixed(1) + '%');
+    const status = liquidityPct >= 30 ? '✅ ดี (มีเงินสดเพียงพอ)' :
+                   liquidityPct >= 15 ? '⚠️ พอใช้' :
+                                        '🚨 น้อย (เงินติดในธนาคารเยอะ)';
+    setText('cap-liquidity-sub', `${fmtBaht(m.totalCash)} ÷ ${fmtBaht(equity)} · ${status}`);
+  } else {
+    setText('cap-liquidity', '—');
+    setText('cap-liquidity-sub', 'ตั้งบัญชีก่อน');
+  }
+
+  // ── 3) Monthly Cash Flow (avg 3 months) ──
+  const now = new Date();
+  const m3Cutoff = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate()).toISOString().slice(0,10);
+  const inc3m = (_master.incomeHistory||[]).filter(r => (r.incomeDate||'') >= m3Cutoff)
+    .reduce((s,r) => s + _detectAmount(r), 0);
+  const exp3m = (_master.expenseHistory||[]).filter(r => (r.expenseDate||'') >= m3Cutoff)
+    .reduce((s,r) => s + _detectAmount(r), 0);
+  const monthlyFlow = (inc3m - exp3m) / 3;
+  setText('cap-monthly-flow', (monthlyFlow >= 0 ? '+' : '') + fmtBaht(monthlyFlow));
+  const flowColor = document.getElementById('cap-monthly-flow');
+  if (flowColor) flowColor.style.color = monthlyFlow >= 0 ? '#059669' : '#dc2626';
+  setText('cap-monthly-flow-sub', `รายรับ ${fmtBaht(inc3m/3)} − รายจ่าย ${fmtBaht(exp3m/3)}`);
+
+  // ── 4) Debt-to-Equity Ratio ──
+  if (equity > 0) {
+    const de = m.totalLoan / equity;
+    setText('cap-de-ratio', de.toFixed(2));
+    const judge = de === 0   ? '✅ ไม่มีหนี้ — ปลอดภัย' :
+                  de < 0.5   ? '✅ หนี้น้อย — ดีมาก' :
+                  de < 1.0   ? '⚠️ หนี้ปานกลาง — ดูแลใกล้ชิด' :
+                  de < 2.0   ? '🟠 หนี้สูง — ต้องระวัง' :
+                               '🚨 หนี้เกินทุน — เสี่ยงสูง';
+    setText('cap-de-sub', `${fmtBaht(m.totalLoan)} ÷ ${fmtBaht(equity)} · ${judge}`);
+  } else {
+    setText('cap-de-ratio', '—');
+    setText('cap-de-sub', 'ตั้งทุนก่อน');
+  }
+
+  // ── 5) Asset Efficiency = Total Revenue ÷ Total Assets × 100% (annualized estimate from 3m) ──
+  const totalAssets = equity + vehicleAssetsValue;
+  const annualRev = inc3m * 4; // annualize from 3 months
+  if (totalAssets > 0) {
+    const eff = (annualRev / totalAssets) * 100;
+    setText('cap-asset-eff', eff.toFixed(1) + '%/ปี');
+    const judge = eff >= 100 ? '🏆 หมุนทุน >1 รอบ/ปี' :
+                  eff >= 50  ? '✅ ดี' :
+                  eff >= 20  ? '🟡 ปานกลาง' :
+                               '🔴 หมุนช้า';
+    setText('cap-asset-eff-sub', `รายได้ ${fmtBaht(annualRev)}/ปี ÷ ทรัพย์สิน ${fmtBaht(totalAssets)} · ${judge}`);
+  } else {
+    setText('cap-asset-eff', '—');
+    setText('cap-asset-eff-sub', 'ตั้งทุน + รถก่อน');
+  }
+
+  // ── 6) Days of Runway = Cash ÷ Burn Rate ──
+  const burnPerDay = exp3m / 90; // 3 months = ~90 days
+  if (burnPerDay > 0 && m.totalCash > 0) {
+    const days = Math.floor(m.totalCash / burnPerDay);
+    setText('cap-days-runway', days.toLocaleString('th-TH') + ' วัน');
+    const months = (days / 30).toFixed(1);
+    setText('cap-runway-sub2', `${fmtBaht(m.totalCash)} ÷ ${fmtBaht(burnPerDay)}/วัน · ~${months} เดือน`);
+  } else if (m.totalCash > 0) {
+    setText('cap-days-runway', '∞');
+    setText('cap-runway-sub2', 'ไม่มีค่าใช้จ่ายล่าสุด');
+  } else {
+    setText('cap-days-runway', '—');
+    setText('cap-runway-sub2', 'ไม่มีเงินสด');
+  }
+
+  // ── 7) Health Score (0-100) ──
+  let score = 0;
+  let tips = [];
+  if (equity > 0) {
+    const liq = (m.totalCash / equity) * 100;
+    if (liq >= 30) score += 25;
+    else if (liq >= 15) { score += 15; tips.push('🟡 เพิ่มเงินสดในมือให้มากขึ้น'); }
+    else { score += 5; tips.push('🚨 เงินสดน้อยมาก — เสี่ยงสภาพคล่อง'); }
+  }
+  if (monthlyFlow >= 0) { score += 25; if (monthlyFlow > equity * 0.05) score += 5; }
+  else { tips.push('🚨 กระแสเงินสดติดลบ — ทบทวนรายจ่าย'); }
+  if (equity > 0) {
+    const de = m.totalLoan / equity;
+    if (de < 0.5) score += 20;
+    else if (de < 1) score += 12;
+    else if (de < 2) { score += 6; tips.push('⚠️ หนี้สูง — พิจารณาลดหนี้'); }
+    else tips.push('🚨 หนี้เกินทุน — เร่งลดหนี้');
+  }
+  if (totalAssets > 0 && annualRev > 0) {
+    const eff = (annualRev / totalAssets) * 100;
+    if (eff >= 50) score += 20;
+    else if (eff >= 20) score += 12;
+    else { score += 4; tips.push('🟡 ใช้ทรัพย์สินสร้างรายได้น้อย'); }
+  }
+  if (burnPerDay > 0 && m.totalCash > 0) {
+    const days = m.totalCash / burnPerDay;
+    if (days >= 180) score += 10;
+    else if (days >= 90) score += 7;
+    else if (days >= 30) { score += 3; tips.push('🟠 Runway < 3 เดือน'); }
+    else tips.push('🚨 Runway < 1 เดือน — วิกฤต');
+  }
+  score = Math.min(100, Math.max(0, score));
+  setText('cap-health-score', score + ' / 100');
+  const bar = document.getElementById('cap-health-bar');
+  if (bar) bar.style.width = score + '%';
+  const tipEl = document.getElementById('cap-health-tip');
+  if (tipEl) {
+    if (tips.length === 0 && score >= 70) tipEl.innerHTML = '✅ <b>การเงินแข็งแรง</b> — ทุกตัวชี้วัดอยู่ในเกณฑ์ดี';
+    else if (score >= 50) tipEl.innerHTML = '⚠️ <b>การเงินพอใช้</b> · ' + tips.slice(0,2).join(' · ');
+    else if (score >= 30) tipEl.innerHTML = '🟠 <b>ต้องปรับปรุง</b> · ' + tips.slice(0,2).join(' · ');
+    else tipEl.innerHTML = '🚨 <b>การเงินอ่อนแอ</b> · ' + tips.slice(0,3).join(' · ');
+  }
 }
 
 function renderCapitalInsight(initialCap, currentCap, netProfit, income, expense) {
@@ -9918,7 +10195,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.7';   // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.8';   // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate(opts) {
