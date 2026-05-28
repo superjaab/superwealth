@@ -2797,7 +2797,7 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v12.9</span>
+    <span style="opacity:.7">v13.0</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
@@ -4838,20 +4838,42 @@ function acRender(inputId) {
   _acPositionDropdown(a);
 }
 
-// คำนวณตำแหน่ง dropdown (position:fixed) ตาม input
+// คำนวณตำแหน่ง dropdown — ย้ายไปต่อกับ <body> เพื่อหลุดทุก stacking/containing context
 function _acPositionDropdown(a) {
   if (!a || !a.dd || !a.input) return;
   if (!a.dd.classList.contains('open')) return;
+
+  // ย้าย dropdown ไปเป็นลูกของ <body> ครั้งแรก
+  // (หลีกเลี่ยง transform/filter/contain บน parent ที่ทำให้ position:fixed เพี้ยน)
+  if (a.dd.parentNode !== document.body) {
+    document.body.appendChild(a.dd);
+  }
+
   const r = a.input.getBoundingClientRect();
   const vh = window.innerHeight;
+  const vw = window.innerWidth;
   const ddMaxH = 240;
   const gap = 2;
-  // ถ้าด้านล่างมีที่พอ → drop ลง, ถ้าไม่ → drop ขึ้น
+
+  // เลือกทิศทาง: ถ้าด้านล่างไม่พอ → เปิดขึ้นบน
   const spaceBelow = vh - r.bottom;
   const spaceAbove = r.top;
   const openUp = (spaceBelow < ddMaxH + 20) && (spaceAbove > spaceBelow);
-  a.dd.style.left  = r.left + 'px';
-  a.dd.style.width = r.width + 'px';
+
+  // Reset ค่าเก่าทิ้ง
+  a.dd.style.position = 'fixed';
+  a.dd.style.right    = 'auto';
+
+  // กำหนด width ตาม input + จำกัดไม่ให้ทะลุขอบจอ
+  const width = Math.min(r.width, vw - 16);
+  a.dd.style.width = width + 'px';
+
+  // กำหนด left + กันออกขอบขวา
+  let left = r.left;
+  if (left + width > vw - 8) left = vw - width - 8;
+  if (left < 8) left = 8;
+  a.dd.style.left = left + 'px';
+
   if (openUp) {
     a.dd.style.top    = 'auto';
     a.dd.style.bottom = (vh - r.top + gap) + 'px';
@@ -8556,7 +8578,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v12.9';   // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v13.0';   // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate(opts) {

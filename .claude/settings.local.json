@@ -55,7 +55,8 @@
       "WebFetch(domain:commons.wikimedia.org)",
       "WebFetch(domain:vecfleet.io)",
       "WebFetch(domain:datadis.com)",
-      "WebFetch(domain:devapi.hinoultimate.com)"
+      "WebFetch(domain:devapi.hinoultimate.com)",
+      "PowerShell(Invoke-RestMethod -Uri \"https://superwealth.vercel.app/api/line-webhook\" -Method Get)"
     ]
   }
 }
