@@ -1030,6 +1030,15 @@
     .dash-card-sub { font-size: .7rem; color: #94a3b8; margin-top: 2px; }
     .dash-card-action { font-size: .72rem; color: #2563eb; font-weight: 600; }
     .dash-charts-row { display: grid; gap: 12px; grid-template-columns: 1fr; margin-bottom: 12px; }
+    /* v14.16 — 2 donuts side-by-side */
+    .sw-charts-donut-row {
+      display: grid; gap: 14px;
+      grid-template-columns: 1fr;
+      margin-bottom: 14px;
+    }
+    @media (min-width: 768px) {
+      .sw-charts-donut-row { grid-template-columns: 1fr 1fr; }
+    }
     @media (min-width: 900px) {
       .dash-charts-row { grid-template-columns: 1.4fr 1fr; }
     }
@@ -1171,6 +1180,9 @@
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <!-- v14.16 — Invoice PDF/JPG export libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     /* ─── LAYOUT OVERRIDE (v3.1 Sidebar) ─── */
@@ -3911,14 +3923,19 @@
     <button class="tab-btn" onclick="switchTab('customer',this)"><span class="icon">🏢</span>ลูกค้า</button>
     <div class="sb-section">ปฏิบัติการ</div>
     <button class="tab-btn" onclick="switchTab('maintenance',this)"><span class="icon">🔧</span>ซ่อมบำรุง</button>
-    <button class="tab-btn" onclick="switchTab('fuel',this)"><span class="icon">⛽</span>น้ำมัน</button>
     <button class="tab-btn" onclick="switchTab('invoice',this)"><span class="icon">🧾</span>ใบเสร็จรับเงิน</button>
     <div class="sb-section">เครื่องมือ</div>
     <button class="tab-btn admin-only" onclick="switchTab('admin',this);initAdminTab()"><span class="icon">⚙️</span>Admin</button>
     <button class="tab-btn" onclick="switchTab('gps',this)"><span class="icon">📡</span>GPS</button>
-    <button class="tab-btn" onclick="switchTab('ocr',this)"><span class="icon">🔍</span>อ่านภาพ</button>
   </nav>
-  <div class="sb-footer"><span class="version">v4.1 | 28/05/2026 02:30</span></div>
+  <div class="sb-footer">
+    <!-- v14.16 — Login button moved here (bottom-left) -->
+    <button id="auth-btn" onclick="handleAuthClick()" title="เข้าสู่ระบบ"
+            style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
+      <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
+    </button>
+    <span class="version" style="display:block;text-align:center">v14.16 | 29/05/2026</span>
+  </div>
 </aside>
 
 <!-- Mobile overlay -->
@@ -3930,14 +3947,11 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v14.15</span>
+    <span style="opacity:.7">v14.16</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
-  <!-- Login/Logout button -->
-  <button class="header-bell" id="auth-btn" onclick="handleAuthClick()" title="เข้าสู่ระบบ" style="margin-left:10px;width:auto;padding:0 14px;font-weight:700;font-size:.78rem;display:flex;align-items:center;gap:6px">
-    <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
-  </button>
+  <!-- v14.16 — Login button moved to sidebar bottom-left -->
   <!-- Manual update check -->
   <button class="header-bell" onclick="checkForUpdate({manual:true})" title="ตรวจหาเวอร์ชันใหม่" style="margin-left:8px">
     🔄
@@ -3997,17 +4011,10 @@
         <label>ทะเบียนรถ <span class="req">*</span></label>
         <input type="text" id="t-plateNumber" placeholder="กข-1234 (พิมพ์เพื่อค้นหา)" maxlength="20" autocomplete="off">
       </div>
-      <div class="form-row-2">
-        <div class="form-row">
-          <label>ชื่อคนขับ</label>
-          <input type="text" id="t-driverName" placeholder="ชื่อ-นามสกุล" maxlength="100" autocomplete="off">
-        </div>
-        <div class="form-row">
-          <label>เบอร์โทรคนขับ</label>
-          <input type="tel" id="t-driverPhone" placeholder="081-234-5678" maxlength="20">
-        </div>
-      </div>
-      <p class="hint" style="font-size:.7rem;color:#94a3b8;margin-top:-4px">💡 เลือกทะเบียนจากรายการ ระบบจะเติมชื่อคนขับ + เบอร์โทรอัตโนมัติ</p>
+      <!-- v14.16 — Driver fields hidden from form, but still autofilled from plate selection -->
+      <input type="hidden" id="t-driverName">
+      <input type="hidden" id="t-driverPhone">
+      <p class="hint" style="font-size:.72rem;color:#64748b;margin-top:4px">💡 ระบบจะดึงชื่อคนขับ + เบอร์โทรจากทะเบียนรถอัตโนมัติ — แสดงผลในรายการเที่ยวรถ</p>
     </div>
 
     <div class="card">
@@ -4041,8 +4048,11 @@
       <div class="form-row">
         <label>ค่าขนส่ง (บาท) <span style="font-size:.7rem;color:#94a3b8;font-weight:400">— เลือกสถานะชำระเงินด้านขวา</span></label>
         <div style="display:flex;gap:8px;align-items:stretch">
-          <input type="number" id="t-freightCost" placeholder="0" min="0" style="flex:1;min-width:0">
-          <select id="t-paymentStatus" style="flex:0 0 150px;font-weight:700">
+          <!-- v14.16 — Money-formatted text input with comma separator -->
+          <input type="text" inputmode="numeric" id="t-freightCost" placeholder="⚠️ ค้างจ่าย — คลิกเพื่อกรอกตัวเลข"
+                 data-money="1" data-status-link="t-paymentStatus"
+                 style="flex:1;min-width:0;text-align:right;font-variant-numeric:tabular-nums;font-weight:700">
+          <select id="t-paymentStatus" style="flex:0 0 150px;font-weight:700" onchange="onFreightStatusChange(this)">
             <option value="ค้างจ่าย" selected>⚠️ ค้างจ่าย</option>
             <option value="จ่ายแล้ว">✅ จ่ายแล้ว</option>
           </select>
@@ -4123,7 +4133,8 @@
       <div class="form-row-2">
         <div class="form-row">
           <label>จำนวนเงิน (บาท) <span class="req">*</span></label>
-          <input type="number" id="i-amount" placeholder="0.00" min="0" step="0.01" required>
+          <input type="text" inputmode="decimal" id="i-amount" placeholder="0.00" data-money="1" required
+                 style="text-align:right;font-variant-numeric:tabular-nums;font-weight:700">
         </div>
         <div class="form-row">
           <label>วิธีรับเงิน</label>
@@ -4233,7 +4244,8 @@
       <div class="form-row-2">
         <div class="form-row">
           <label>จำนวนเงิน (บาท) <span class="req">*</span></label>
-          <input type="number" id="e-amount" placeholder="0.00" min="0" step="0.01" required>
+          <input type="text" inputmode="decimal" id="e-amount" placeholder="0.00" data-money="1" required
+                 style="text-align:right;font-variant-numeric:tabular-nums;font-weight:700">
         </div>
         <div class="form-row">
           <label>วิธีจ่ายเงิน</label>
@@ -4696,43 +4708,47 @@
     </div>
   </div>
 
-  <!-- CHARTS ROW: bar (left) + donut status (right) -->
-  <div class="dash-charts-row" id="sum-charts-row" style="display:none">
-    <div class="dash-card">
+  <!-- v14.16 — UNIFIED CHARTS GRID: bar full-width on top, 2 donuts side-by-side below -->
+  <div id="sum-charts-row" style="display:none">
+    <!-- Top row: bar chart full width -->
+    <div class="dash-card" style="margin-bottom:14px">
       <div class="dash-card-head">
         <div>
           <div class="dash-card-title">📈 รายรับ-รายจ่าย รายเดือน</div>
           <div class="dash-card-sub" id="sum-chart-range">—</div>
         </div>
       </div>
-      <div class="chart-wrap" style="height:280px"><canvas id="sum-chart-bar"></canvas></div>
+      <div class="chart-wrap" style="height:300px"><canvas id="sum-chart-bar"></canvas></div>
     </div>
-    <div class="dash-card" id="sum-status-donut-card">
-      <div class="dash-card-head">
-        <div>
-          <div class="dash-card-title">💰 สถานะการชำระเงิน</div>
-          <div class="dash-card-sub" id="sum-status-sub">— เที่ยว</div>
+    <!-- Bottom row: 2 donuts equal width -->
+    <div class="sw-charts-donut-row">
+      <div class="dash-card" id="sum-status-donut-card">
+        <div class="dash-card-head">
+          <div>
+            <div class="dash-card-title">💰 สถานะการชำระเงิน</div>
+            <div class="dash-card-sub" id="sum-status-sub">— เที่ยว</div>
+          </div>
+        </div>
+        <div class="chart-wrap" style="max-width:260px;margin:0 auto;position:relative;height:260px">
+          <canvas id="sum-chart-status"></canvas>
+          <div id="sum-status-center" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none">
+            <div style="font-size:1.8rem;font-weight:800;color:#0f172a;line-height:1" id="sum-status-total">0</div>
+            <div style="font-size:.7rem;color:#64748b;margin-top:4px">เที่ยวทั้งหมด</div>
+          </div>
         </div>
       </div>
-      <div class="chart-wrap" style="max-width:280px;margin:0 auto;position:relative">
-        <canvas id="sum-chart-status"></canvas>
-        <!-- Center label overlay -->
-        <div id="sum-status-center" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none">
-          <div style="font-size:1.8rem;font-weight:800;color:#0f172a;line-height:1" id="sum-status-total">0</div>
-          <div style="font-size:.7rem;color:#64748b;margin-top:4px">เที่ยวทั้งหมด</div>
+      <div class="dash-card" id="sum-doughnut-card">
+        <div class="dash-card-head">
+          <div>
+            <div class="dash-card-title">🍩 สัดส่วนรายจ่าย แยกตามหมวด</div>
+            <div class="dash-card-sub">แบ่งตามหมวดรายจ่าย</div>
+          </div>
+        </div>
+        <div class="chart-wrap" style="max-width:260px;margin:0 auto;height:260px">
+          <canvas id="sum-chart-doughnut"></canvas>
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- 2ND CHARTS ROW: expense category donut -->
-  <div class="dash-card" id="sum-doughnut-card" style="display:none;max-width:520px;margin:0 auto 12px">
-    <div class="dash-card-head">
-      <div>
-        <div class="dash-card-title">🍩 สัดส่วนรายจ่าย แยกตามหมวด</div>
-      </div>
-    </div>
-    <div class="chart-wrap" style="max-width:300px;margin:0 auto"><canvas id="sum-chart-doughnut"></canvas></div>
   </div>
 
   <!-- RECENT TRIPS TABLE — moved up, right below charts -->
@@ -5360,9 +5376,11 @@
         <div class="form-row"><label>หมายเหตุ</label><input type="text" id="inv-notes" maxlength="200"></div>
       </div>
     </div>
-    <div class="submit-row" style="display:flex;gap:10px">
-      <button type="button" class="btn btn-primary" onclick="submitInvoice()" style="flex:1;padding:15px;background:#006064">💾 บันทึก</button>
-      <button type="button" class="btn btn-secondary" onclick="printInvoice()" style="flex:1;padding:15px">🖨️ พิมพ์</button>
+    <div class="submit-row" style="display:flex;gap:10px;flex-wrap:wrap">
+      <button type="button" class="btn btn-primary" onclick="submitInvoice()" style="flex:1 1 100%;padding:15px;background:#006064">💾 บันทึก</button>
+      <button type="button" class="btn btn-secondary" onclick="printInvoice()" style="flex:1 1 30%;padding:14px;min-width:140px">🖨️ พิมพ์</button>
+      <button type="button" class="btn btn-secondary" onclick="exportInvoicePDF()" style="flex:1 1 30%;padding:14px;min-width:140px;background:#fee2e2;color:#b91c1c;border-color:#fca5a5">📄 PDF</button>
+      <button type="button" class="btn btn-secondary" onclick="exportInvoiceJPG()" style="flex:1 1 30%;padding:14px;min-width:140px;background:#dcfce7;color:#166534;border-color:#86efac">🖼️ JPG</button>
     </div>
     <div style="margin-top:8px"><button type="button" class="btn btn-secondary btn-block btn-small" onclick="resetInvoice()">🗑 ล้างข้อมูล</button></div>
   </div>
@@ -7953,7 +7971,17 @@ async function compressForUpload(file) {
 
 // ─── COLLECT FORM DATA ────────────────────
 function collectFormData(formKey) {
-  const g = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  // v14.16 — strip comma from money fields so backend stores plain numbers
+  const g = id => {
+    const el = document.getElementById(id);
+    if (!el) return '';
+    let v = (el.value || '').trim();
+    if (el.dataset && el.dataset.money === '1') {
+      v = v.replace(/,/g, '');
+      if (v === '' || isNaN(parseFloat(v))) v = '';
+    }
+    return v;
+  };
   if (formKey === 'truck') {
     if (!g('t-plateNumber')) { showToast('กรุณาเลือกทะเบียนรถ', 'warning'); return null; }
     const plate = g('t-plateNumber');
@@ -8197,8 +8225,18 @@ function _prefillForm(type, record) {
       // Skip JSON arrays (like imageUrls)
       return;
     }
-    el.value = String(v);
+    // v14.16 — format money inputs with comma when prefilling
+    if (el.dataset && el.dataset.money === '1' && v !== '') {
+      el.value = formatMoneyDisplay(String(v));
+    } else {
+      el.value = String(v);
+    }
   });
+  // v14.16 — sync freight cost placeholder with status when editing
+  if (type === 'truck') {
+    const sSel = document.getElementById('t-paymentStatus');
+    if (sSel) onFreightStatusChange(sSel);
+  }
 }
 
 function updateSubmitLabel(type, editing) {
@@ -8923,7 +8961,8 @@ function renderInvoiceList(items) {
       ${renderRecActions('invoice', inv.rowId || inv.timestamp,inv.invoiceNumber||'')}
     </div>`).join('');
 }
-function printInvoice() {
+// v14.16 — shared invoice HTML builder (used by print, PDF, JPG)
+function _buildInvoiceHTML() {
   const sub = invRows.reduce((s,r)=>s+(r.total||0),0);
   const useVat = document.getElementById('inv-vat-toggle')?.checked;
   const vat = useVat ? sub*0.07 : 0;
@@ -8937,8 +8976,8 @@ function printInvoice() {
       <td style="padding:9px 10px;border-bottom:1px solid #e8e8e8;text-align:right;width:100px">${fmt(r.price||0)}</td>
       <td style="padding:9px 10px;border-bottom:1px solid #e8e8e8;text-align:right;width:110px;font-weight:700">${fmt(r.total||0)}</td>
     </tr>`).join('');
-  document.getElementById('invoice-print-overlay').innerHTML = `
-  <div style="max-width:720px;margin:0 auto;padding:36px;font-family:'Noto Sans Thai',Arial,sans-serif;color:#1e293b;font-size:14px">
+  return `
+  <div id="invoice-render-root" style="max-width:720px;margin:0 auto;padding:36px;font-family:'Noto Sans Thai',Arial,sans-serif;color:#1e293b;font-size:14px;background:white">
     <!-- Header -->
     <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #0f172a;padding-bottom:20px;margin-bottom:24px">
       <div>
@@ -9013,7 +9052,96 @@ function printInvoice() {
       เอกสารนี้ออกโดยระบบอัตโนมัติ · SuperWealth Transport Management System
     </div>
   </div>`;
+}
+
+// v14.16 — wrappers
+function printInvoice() {
+  document.getElementById('invoice-print-overlay').innerHTML = _buildInvoiceHTML();
   window.print();
+}
+
+// v14.16 — render invoice into a hidden offscreen container for capture
+async function _renderInvoiceForCapture() {
+  let container = document.getElementById('invoice-capture-zone');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'invoice-capture-zone';
+    container.style.cssText = 'position:fixed;left:-99999px;top:0;width:760px;background:white;z-index:-1;';
+    document.body.appendChild(container);
+  }
+  container.innerHTML = _buildInvoiceHTML();
+  // wait a tick for fonts/layout
+  await new Promise(r => setTimeout(r, 200));
+  return container.querySelector('#invoice-render-root');
+}
+
+async function exportInvoiceJPG() {
+  if (typeof html2canvas === 'undefined') {
+    showToast('⏳ กำลังโหลดไลบรารี... ลองอีกครั้ง', 'warning');
+    return;
+  }
+  if (!invRows.length || !invRows.some(r=>r.desc||r.total)) {
+    showToast('กรุณากรอกรายการก่อน', 'warning'); return;
+  }
+  showLoading('กำลังสร้างภาพ JPG...');
+  try {
+    const node = await _renderInvoiceForCapture();
+    const canvas = await html2canvas(node, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    const a = document.createElement('a');
+    const invNo = (document.getElementById('inv-number')||{}).value || 'invoice';
+    a.href = dataUrl;
+    a.download = `${invNo}.jpg`;
+    document.body.appendChild(a); a.click(); a.remove();
+    hideLoading();
+    showToast('✅ ดาวน์โหลด JPG สำเร็จ', 'success');
+  } catch (e) {
+    hideLoading();
+    showToast('❌ Export JPG ล้มเหลว: ' + e.message, 'error');
+  }
+}
+
+async function exportInvoicePDF() {
+  if (typeof html2canvas === 'undefined' || !window.jspdf) {
+    showToast('⏳ กำลังโหลดไลบรารี... ลองอีกครั้ง', 'warning');
+    return;
+  }
+  if (!invRows.length || !invRows.some(r=>r.desc||r.total)) {
+    showToast('กรุณากรอกรายการก่อน', 'warning'); return;
+  }
+  showLoading('กำลังสร้าง PDF...');
+  try {
+    const node = await _renderInvoiceForCapture();
+    const canvas = await html2canvas(node, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const imgW = pageW - 16; // 8mm margin each side
+    const imgH = canvas.height * imgW / canvas.width;
+    let y = 8;
+    if (imgH <= pageH - 16) {
+      pdf.addImage(imgData, 'JPEG', 8, y, imgW, imgH);
+    } else {
+      // Multi-page split
+      let remaining = imgH;
+      let srcY = 0;
+      const pageImgH = pageH - 16;
+      while (remaining > 0) {
+        pdf.addImage(imgData, 'JPEG', 8, y - srcY, imgW, imgH);
+        remaining -= pageImgH;
+        if (remaining > 0) { pdf.addPage(); srcY += pageImgH; }
+      }
+    }
+    const invNo = (document.getElementById('inv-number')||{}).value || 'invoice';
+    pdf.save(`${invNo}.pdf`);
+    hideLoading();
+    showToast('✅ ดาวน์โหลด PDF สำเร็จ', 'success');
+  } catch (e) {
+    hideLoading();
+    showToast('❌ Export PDF ล้มเหลว: ' + e.message, 'error');
+  }
 }
 
 // ─── ALERT ─────────────────────────────────────────────────────────────────
@@ -9098,7 +9226,40 @@ function renderTruckList(items) {
     const amt = parseFloat(inc.amount) || _detectAmount(inc) || 0;
     incomeByTrip[tripId] = (incomeByTrip[tripId] || 0) + amt;
   });
-  return sorted.map(r=>{
+  // v14.16 — build expense lookup for header
+  const expenseByTrip = {};
+  (_master.expenseHistory || []).forEach(ex => {
+    const tripId = ex.linkedTripRowId;
+    if (!tripId) return;
+    const amt = parseFloat(ex.amount) || 0;
+    expenseByTrip[tripId] = (expenseByTrip[tripId] || 0) + amt;
+  });
+  // v14.16 — summary header: total income / expense / trip rounds
+  let sumIncome = 0, sumExpense = 0;
+  const roundSet = new Set();
+  sorted.forEach(r => {
+    const freight = parseFloat(r.freightCost) || 0;
+    const linkedInc = incomeByTrip[r.rowId] || 0;
+    sumIncome += freight > 0 ? freight : linkedInc;
+    sumExpense += expenseByTrip[r.rowId] || 0;
+    if (r.tripRound) roundSet.add(r.tripRound);
+  });
+  const headerHtml = `
+    <div class="sw-trip-header" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+      <div style="padding:12px 14px;border-radius:12px;background:linear-gradient(135deg,#dcfce7,#bbf7d0);border:1.5px solid #86efac">
+        <div style="font-size:.7rem;font-weight:700;color:#166534">💰 รายรับรวม</div>
+        <div class="priv-amt" style="font-size:1.15rem;font-weight:900;color:#15803d;margin-top:2px;font-variant-numeric:tabular-nums">${fmtBaht(sumIncome)}</div>
+      </div>
+      <div style="padding:12px 14px;border-radius:12px;background:linear-gradient(135deg,#fee2e2,#fecaca);border:1.5px solid #fca5a5">
+        <div style="font-size:.7rem;font-weight:700;color:#991b1b">💸 รายจ่ายรวม</div>
+        <div class="priv-amt" style="font-size:1.15rem;font-weight:900;color:#b91c1c;margin-top:2px;font-variant-numeric:tabular-nums">${fmtBaht(sumExpense)}</div>
+      </div>
+      <div style="padding:12px 14px;border-radius:12px;background:linear-gradient(135deg,#dbeafe,#bfdbfe);border:1.5px solid #93c5fd">
+        <div style="font-size:.7rem;font-weight:700;color:#1e40af">🔄 รอบเที่ยว</div>
+        <div style="font-size:1.15rem;font-weight:900;color:#1d4ed8;margin-top:2px;font-variant-numeric:tabular-nums">${sorted.length} เที่ยว · ${roundSet.size} รอบ</div>
+      </div>
+    </div>`;
+  return headerHtml + sorted.map(r=>{
     // Auto-derive status — "ส่งแล้ว" if has newer record, else "กำลังขนส่ง"
     const auto = _autoTripStatus(r);
     const s = statusInfo[auto] || statusInfo['กำลังขนส่ง'];
@@ -10761,7 +10922,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.15';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.16';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate(opts) {
@@ -10839,9 +11000,62 @@ function tickLiveClock() {
   const sepBlink = d.getSeconds() % 2 ? ':' : ' ';
   el.innerHTML = `${day}/${mo}/${yy} <span style="margin:0 4px;opacity:.4">·</span> ${hh}<span style="opacity:.6">${sepBlink}</span>${mm}<span style="opacity:.5">${sepBlink}</span><span style="font-size:.78em;opacity:.7">${ss}</span>`;
 }
+// ═══════════════════════════════════════════════════════════════════
+// v14.16 — MONEY INPUT FORMATTING (comma separator while typing)
+// ═══════════════════════════════════════════════════════════════════
+function formatMoneyDisplay(raw) {
+  if (raw == null) return '';
+  let s = String(raw).replace(/[^0-9.]/g, '');
+  // keep only first dot
+  const i = s.indexOf('.');
+  if (i >= 0) s = s.slice(0, i + 1) + s.slice(i + 1).replace(/\./g, '');
+  if (!s) return '';
+  const [intPart, decPart] = s.split('.');
+  const intFmt = intPart ? Number(intPart).toLocaleString('en-US') : '0';
+  return decPart !== undefined ? intFmt + '.' + decPart.slice(0, 2) : intFmt;
+}
+function attachMoneyInput(el) {
+  if (!el || el._moneyBound) return;
+  el._moneyBound = true;
+  el.addEventListener('input', () => {
+    const prev = el.value;
+    const caretEnd = el.selectionStart === el.value.length;
+    const formatted = formatMoneyDisplay(prev);
+    if (formatted !== prev) {
+      el.value = formatted;
+      if (caretEnd) {
+        try { el.setSelectionRange(formatted.length, formatted.length); } catch(_){}
+      }
+    }
+  });
+  el.addEventListener('blur', () => {
+    if (el.value) el.value = formatMoneyDisplay(el.value);
+  });
+}
+function initAllMoneyInputs() {
+  document.querySelectorAll('input[data-money="1"]').forEach(attachMoneyInput);
+}
+
+// v14.16 — Freight cost UX: placeholder changes based on payment status
+function onFreightStatusChange(sel) {
+  const inp = document.getElementById('t-freightCost');
+  if (!inp) return;
+  if (sel.value === 'ค้างจ่าย') {
+    inp.placeholder = '⚠️ ค้างจ่าย — คลิกเพื่อกรอกตัวเลข';
+    inp.style.background = 'var(--sw-warning-soft, #fef3c7)';
+  } else {
+    inp.placeholder = 'กรอกจำนวนเงิน';
+    inp.style.background = '';
+  }
+}
+
 window.addEventListener('DOMContentLoaded', () => {
   tickLiveClock();
   setInterval(tickLiveClock, 1000);
+  // v14.16 — money inputs + freight status init
+  initAllMoneyInputs();
+  const statusSel = document.getElementById('t-paymentStatus');
+  if (statusSel) onFreightStatusChange(statusSel);
   // Auto-update check — aggressive polling early, then back off
   setTimeout(checkForUpdate, 2000);   // first check after 2s
   setTimeout(checkForUpdate, 10000);  // then 10s
