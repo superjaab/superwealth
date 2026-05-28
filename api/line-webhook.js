@@ -566,19 +566,20 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  // Respond 200 immediately so LINE doesn't retry; process events after
-  res.status(200).json({ ok: true });
-
   const events = req.body?.events || [];
-  if (!events.length) return;
 
-  try {
-    const sheets  = getSheetsClient();
-    const sheetId = process.env.SHEET_ID;
-    for (const ev of events) {
-      await handleEvent(ev, sheets, sheetId);
+  if (events.length) {
+    try {
+      const sheets  = getSheetsClient();
+      const sheetId = process.env.SHEET_ID;
+      for (const ev of events) {
+        await handleEvent(ev, sheets, sheetId);
+      }
+    } catch (e) {
+      console.error('line-webhook error:', e.message);
     }
-  } catch (e) {
-    console.error('line-webhook error:', e.message);
   }
+
+  // Respond 200 after processing so Vercel keeps function alive until done
+  return res.status(200).json({ ok: true });
 };
