@@ -101,12 +101,8 @@ async function writeState(sheets, sheetId, userId, state, data, rowNum) {
 
 // ─── Reference data (vehicles, drivers, customers) ─────────────
 async function getRef(sheets, sheetId) {
-  const [vehicles, drivers, customers] = await Promise.all([
-    sheetRows(sheets, sheetId, 'Vehicles'),
-    sheetRows(sheets, sheetId, 'Drivers'),
-    sheetRows(sheets, sheetId, 'Customers')
-  ]);
-  return { vehicles, drivers, customers };
+  const vehicles = await sheetRows(sheets, sheetId, 'Vehicles');
+  return { vehicles };
 }
 function uniq(arr, key, limit=10) {
   return [...new Set(arr.map(r => r[key]).filter(Boolean))].slice(0, limit);
@@ -137,54 +133,41 @@ function qPb(label, data)   { return { type:'action', action:{ type:'postback', 
 function qUri(label, uri)   { return { type:'action', action:{ type:'uri', label, uri } }; }
 
 // ─── Step definitions ──────────────────────────────────────────
-const TRUCK_SEQ   = ['truck_1','truck_2','truck_3','truck_4','truck_5','truck_6','truck_7','truck_8','truck_9','truck_10','truck_11','truck_12','truck_confirm'];
-const INCOME_SEQ  = ['inc_1','inc_2','inc_3','inc_4','inc_5','inc_6','inc_confirm'];
-const EXPENSE_SEQ = ['exp_1','exp_2','exp_3','exp_4','exp_5','exp_6','exp_confirm'];
+const TRUCK_SEQ   = ['truck_1','truck_2','truck_3','truck_4','truck_5','truck_6','truck_confirm'];
+const INCOME_SEQ  = ['inc_1','inc_2','inc_3','inc_4','inc_confirm'];
+const EXPENSE_SEQ = ['exp_1','exp_2','exp_3','exp_4','exp_confirm'];
 
 // Maps state → formData key
 const FIELD = {
-  truck_1:'pickupDate', truck_2:'deliveryDate', truck_3:'plateNumber', truck_4:'driverName',
-  truck_5:'origin',     truck_6:'destination',  truck_7:'customerName', truck_8:'cargoList',
-  truck_9:'cargoWeight',truck_10:'freightCost',  truck_11:'paymentStatus', truck_12:'remark',
-  inc_1:'incomeDate', inc_2:'incomeItem', inc_3:'amount', inc_4:'customerName', inc_5:'paymentMethod', inc_6:'remark',
-  exp_1:'expenseDate', exp_2:'category', exp_3:'amount', exp_4:'plateNumber', exp_5:'paymentMethod', exp_6:'remark',
+  truck_1:'pickupDate', truck_2:'plateNumber', truck_3:'origin',
+  truck_4:'destination', truck_5:'freightCost', truck_6:'paymentStatus',
+  inc_1:'incomeDate', inc_2:'incomeItem', inc_3:'amount', inc_4:'paymentMethod',
+  exp_1:'expenseDate', exp_2:'category', exp_3:'amount', exp_4:'paymentMethod',
 };
 
 function buildStep(step, ref) {
-  const { vehicles, drivers, customers } = ref;
-  const plates   = uniq(vehicles, 'plateNumber');
-  const drvNames = drivers.filter(d => d.status!=='ลาออก').map(d=>d.driverName).filter(Boolean).slice(0,10);
-  const custNames = uniq(customers, 'customerName');
-  const dateQR   = [qMsg('วันนี้',todayStr()), qMsg('พรุ่งนี้',tomorrowStr())];
+  const { vehicles } = ref;
+  const plates = uniq(vehicles, 'plateNumber');
+  const dateQR = [qMsg('วันนี้',todayStr()), qMsg('พรุ่งนี้',tomorrowStr())];
 
   const STEPS = {
-    // ── Truck ──
-    truck_1:  { q:'📅 วันที่รับสินค้า (เลือกหรือพิมพ์ วว/ดด/ปปปป)', qr: dateQR },
-    truck_2:  { q:'📅 วันที่ส่งสินค้า', qr: dateQR },
-    truck_3:  { q:'🚛 ทะเบียนรถ (เลือกหรือพิมพ์)', qr: plates.map(p=>qMsg(p,p)) },
-    truck_4:  { q:'👤 ชื่อคนขับ (เลือกหรือพิมพ์)', qr: drvNames.map(n=>qMsg(n,n)) },
-    truck_5:  { q:'📍 ต้นทาง (จังหวัด/สถานที่)', qr: PROVINCES.map(p=>qMsg(p,p)) },
-    truck_6:  { q:'📍 ปลายทาง', qr: PROVINCES.map(p=>qMsg(p,p)) },
-    truck_7:  { q:'🏢 ชื่อลูกค้า (เลือกหรือพิมพ์)', qr: custNames.map(n=>qMsg(n,n)) },
-    truck_8:  { q:'📦 รายการสินค้า (พิมพ์)', qr: [] },
-    truck_9:  { q:'⚖️ น้ำหนัก (กก.) พิมพ์เป็นตัวเลข', qr: [] },
-    truck_10: { q:'💵 ค่าขนส่ง (บาท) พิมพ์เป็นตัวเลข', qr: [] },
-    truck_11: { q:'💳 สถานะค่าขนส่ง', qr:[qMsg('✅ ชำระแล้ว','ชำระแล้ว'), qMsg('⚠️ ค้างจ่าย','ค้างจ่าย')] },
-    truck_12: { q:'📝 หมายเหตุ (พิมพ์หรือกด "ข้าม")', qr:[qMsg('ข้าม','-')] },
-    // ── Income ──
+    // ── Truck (6 steps) ──
+    truck_1: { q:'📅 วันที่รับสินค้า (เลือกหรือพิมพ์ วว/ดด/ปปปป)', qr: dateQR },
+    truck_2: { q:'🚛 ทะเบียนรถ (เลือกหรือพิมพ์)', qr: plates.map(p=>qMsg(p,p)) },
+    truck_3: { q:'📍 ต้นทาง (จังหวัด/สถานที่)', qr: PROVINCES.map(p=>qMsg(p,p)) },
+    truck_4: { q:'📍 ปลายทาง', qr: PROVINCES.map(p=>qMsg(p,p)) },
+    truck_5: { q:'💵 ค่าขนส่ง (บาท) พิมพ์เป็นตัวเลข', qr: [] },
+    truck_6: { q:'💳 สถานะค่าขนส่ง', qr:[qMsg('✅ ชำระแล้ว','ชำระแล้ว'), qMsg('⚠️ ค้างจ่าย','ค้างจ่าย')] },
+    // ── Income (4 steps) ──
     inc_1: { q:'📅 วันที่รับเงิน', qr: dateQR },
     inc_2: { q:'💰 ประเภทรายรับ', qr:[qMsg('ค่าขนส่ง','ค่าขนส่ง'),qMsg('ค่ามัดจำ','ค่ามัดจำ'),qMsg('อื่นๆ','อื่นๆ')] },
     inc_3: { q:'💵 จำนวนเงิน (บาท) พิมพ์เป็นตัวเลข', qr: [] },
-    inc_4: { q:'🏢 ชื่อลูกค้า / แหล่งที่มา', qr: custNames.map(n=>qMsg(n,n)) },
-    inc_5: { q:'💳 ช่องทางรับเงิน', qr:[qMsg('เงินสด','เงินสด'),qMsg('โอน','โอน'),qMsg('เช็ค','เช็ค')] },
-    inc_6: { q:'📝 หมายเหตุ (พิมพ์หรือกด "ข้าม")', qr:[qMsg('ข้าม','-')] },
-    // ── Expense ──
+    inc_4: { q:'💳 ช่องทางรับเงิน', qr:[qMsg('เงินสด','เงินสด'),qMsg('โอน','โอน'),qMsg('เช็ค','เช็ค')] },
+    // ── Expense (4 steps) ──
     exp_1: { q:'📅 วันที่จ่ายเงิน', qr: dateQR },
     exp_2: { q:'💸 ประเภทรายจ่าย', qr:[qMsg('น้ำมัน','น้ำมัน'),qMsg('ซ่อมบำรุง','ซ่อมบำรุง'),qMsg('ค่าทางด่วน','ค่าทางด่วน'),qMsg('เบี้ยเลี้ยง','เบี้ยเลี้ยง'),qMsg('อื่นๆ','อื่นๆ')] },
     exp_3: { q:'💵 จำนวนเงิน (บาท) พิมพ์เป็นตัวเลข', qr: [] },
-    exp_4: { q:'🚛 ทะเบียนรถที่เกี่ยวข้อง (เลือกหรือพิมพ์)', qr:[...plates.map(p=>qMsg(p,p)), qMsg('ไม่ระบุ','-')] },
-    exp_5: { q:'💳 ช่องทางจ่ายเงิน', qr:[qMsg('เงินสด','เงินสด'),qMsg('โอน','โอน'),qMsg('เช็ค','เช็ค')] },
-    exp_6: { q:'📝 หมายเหตุ (พิมพ์หรือกด "ข้าม")', qr:[qMsg('ข้าม','-')] },
+    exp_4: { q:'💳 ช่องทางจ่ายเงิน', qr:[qMsg('เงินสด','เงินสด'),qMsg('โอน','โอน'),qMsg('เช็ค','เช็ค')] },
   };
   return STEPS[step] || null;
 }
@@ -196,17 +179,12 @@ const num    = v => Number(v||0).toLocaleString('th-TH');
 function confirmTruck(f) {
   return `📋 ยืนยันข้อมูลรถบรรทุก\n` +
     `──────────────────\n` +
-    `📅 รับสินค้า: ${f.pickupDate||'-'}\n` +
-    `📅 ส่งสินค้า: ${f.deliveryDate||'-'}\n` +
+    `📅 วันที่รับ: ${f.pickupDate||'-'}\n` +
     `🚛 ทะเบียน: ${f.plateNumber||'-'}\n` +
-    `👤 คนขับ: ${f.driverName||'-'}${f.driverPhone?' ('+f.driverPhone+')':''}\n` +
+    `👤 คนขับ: ${f.driverName||'-'}\n` +
     `📍 เส้นทาง: ${f.origin||'-'} → ${f.destination||'-'}\n` +
-    `🏢 ลูกค้า: ${f.customerName||'-'}\n` +
-    `📦 สินค้า: ${f.cargoList||'-'}\n` +
-    `⚖️ น้ำหนัก: ${num(f.cargoWeight)} กก.\n` +
     `💵 ค่าขนส่ง: ${num(f.freightCost)} บาท\n` +
     `💳 สถานะ: ${f.paymentStatus||'-'}\n` +
-    `📝 หมายเหตุ: ${remark(f.remark)}\n` +
     `──────────────────\n✅ ยืนยันหรือ ❌ ยกเลิก?`;
 }
 function confirmIncome(f) {
@@ -215,9 +193,7 @@ function confirmIncome(f) {
     `📅 วันที่: ${f.incomeDate||'-'}\n` +
     `💰 ประเภท: ${f.incomeItem||'-'}\n` +
     `💵 จำนวน: ${num(f.amount)} บาท\n` +
-    `🏢 ลูกค้า: ${f.customerName||'-'}\n` +
     `💳 ช่องทาง: ${f.paymentMethod||'-'}\n` +
-    `📝 หมายเหตุ: ${remark(f.remark)}\n` +
     `──────────────────\n✅ ยืนยันหรือ ❌ ยกเลิก?`;
 }
 function confirmExpense(f) {
@@ -226,9 +202,7 @@ function confirmExpense(f) {
     `📅 วันที่: ${f.expenseDate||'-'}\n` +
     `💸 ประเภท: ${f.category||'-'}\n` +
     `💵 จำนวน: ${num(f.amount)} บาท\n` +
-    `🚛 ทะเบียน: ${f.plateNumber==='-'?'ไม่ระบุ':f.plateNumber||'-'}\n` +
     `💳 ช่องทาง: ${f.paymentMethod||'-'}\n` +
-    `📝 หมายเหตุ: ${remark(f.remark)}\n` +
     `──────────────────\n✅ ยืนยันหรือ ❌ ยกเลิก?`;
 }
 const CONFIRM_QR = [qMsg('✅ ยืนยัน','✅ ยืนยัน'), qMsg('❌ ยกเลิก','❌ ยกเลิก')];
@@ -512,12 +486,13 @@ async function handleEvent(event, sheets, sheetId) {
     const field = FIELD[state];
     if (field) formData[field] = text;
 
-    // Auto-fill driver phone when driver name selected
-    if (state === 'truck_4') {
+    // Auto-fill driver name/phone from vehicle's assignedDriver when plate selected
+    if (state === 'truck_2') {
       try {
-        const drivers = await sheetRows(sheets, sheetId, 'Drivers');
-        const drv = drivers.find(d => d.driverName === text);
-        if (drv?.driverPhone) formData.driverPhone = drv.driverPhone;
+        const vehicles = await sheetRows(sheets, sheetId, 'Vehicles');
+        const veh = vehicles.find(v => v.plateNumber === text);
+        if (veh?.assignedDriver) formData.driverName = veh.assignedDriver;
+        if (veh?.assignedDriverPhone) formData.driverPhone = veh.assignedDriverPhone;
       } catch { /* ignore */ }
     }
 
