@@ -4268,7 +4268,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.28 | 29/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.29 | 29/05/2026</span>
   </div>
 </aside>
 
@@ -4892,9 +4892,9 @@
         </div>
       </div>
       <div style="background:#ecfeff;border:1px solid #a5f3fc;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:.78rem;color:#155e75">
-        💡 รายการดีฟอลต์ (ลบไม่ได้): ค่าเที่ยวคนขับ, เงินเดือน, ค่าเดินทางเพิ่มเติม, ค่าซ่อมแซมยาง, ค่าเบี้ยเลี้ยง, ค่าใช้จ่ายอื่นๆ
+        💡 คลิก <b>✏️ แก้ไข</b> เพื่อเปลี่ยนชื่อ หรือ <b>🗑 ลบ</b> เพื่อเอาออก (กดทีเดียวลบทันที — รีเซ็ตคืนได้)
       </div>
-      <div id="admin-inv-items-list" style="color:#94a3b8;text-align:center;padding:14px">— ไม่มีรายการเพิ่มเติม —</div>
+      <div id="admin-inv-items-list" style="color:#94a3b8;text-align:center;padding:14px">⏳ กำลังโหลด...</div>
     </div>
 
     <!-- v14.28 — Income items management -->
@@ -4913,9 +4913,9 @@
         </div>
       </div>
       <div style="background:#dcfce7;border:1px solid #86efac;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:.78rem;color:#166534">
-        💡 รายการดีฟอลต์ (ลบไม่ได้): ค่าขนส่ง, ค่าบริการ, ค่าเที่ยวรถ, ค่าปรับ, รายได้พิเศษ, ค่ามัดจำ, รายรับอื่นๆ
+        💡 คลิก <b>✏️ แก้ไข</b> เพื่อเปลี่ยนชื่อ หรือ <b>🗑 ลบ</b> เพื่อเอาออก (กดทีเดียวลบทันที — รีเซ็ตคืนได้)
       </div>
-      <div id="admin-inc-items-list" style="color:#94a3b8;text-align:center;padding:14px">— ไม่มีรายการเพิ่มเติม —</div>
+      <div id="admin-inc-items-list" style="color:#94a3b8;text-align:center;padding:14px">⏳ กำลังโหลด...</div>
     </div>
   </div>
 </div>
@@ -6459,90 +6459,222 @@ async function initAdminTab() {
   loadAdminIncItems();   // v14.28
 }
 
-// v14.20 — Admin: manage invoice item presets
+// v14.29 — Admin: manage invoice item presets (full CRUD on defaults + extras)
 function loadAdminInvItems() {
   const el = document.getElementById('admin-inv-items-list');
   if (!el) return;
-  let extras = [];
-  try { extras = JSON.parse(localStorage.getItem(INV_ITEMS_KEY) || '[]'); } catch(_){}
-  if (!extras.length) {
-    el.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:18px;font-size:.85rem">📭 ยังไม่มีรายการเพิ่มเติม (ใช้ดีฟอลต์ 6 รายการ)</div>';
+  const items = getInvItemPresets();
+  const extras = new Set(_readJSON(INV_ITEMS_KEY, []));
+  if (!items.length) {
+    el.innerHTML = `<div style="text-align:center;color:#94a3b8;padding:18px;font-size:.85rem">📭 ลบหมดแล้ว — <a href="#" onclick="event.preventDefault();adminResetInvItems()" style="color:#0891b2;font-weight:700">🔄 รีเซ็ตเป็นค่าเริ่มต้น</a></div>`;
     return;
   }
-  el.innerHTML = extras.map((name, i) => `
+  el.innerHTML = items.map((name, i) => {
+    const isDefault = DEFAULT_INV_ITEMS.includes(name) && !extras.has(name);
+    const badge = isDefault
+      ? '<span style="font-size:.62rem;padding:2px 7px;border-radius:9px;background:#e0f2fe;color:#0369a1;font-weight:700">ค่าเริ่มต้น</span>'
+      : '<span style="font-size:.62rem;padding:2px 7px;border-radius:9px;background:#fef3c7;color:#92400e;font-weight:700">กำหนดเอง</span>';
+    return `
     <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #f1f5f9">
       <span style="font-size:1rem">🧾</span>
-      <div style="flex:1;font-weight:600;color:#0f172a;font-size:.88rem">${escHtml(name)}</div>
-      <button onclick="adminRemoveInvItem(${i})" style="background:#fee2e2;color:#b91c1c;border:none;border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:.78rem">🗑 ลบ</button>
-    </div>`).join('');
+      <div style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-weight:600;color:#0f172a;font-size:.88rem">${escHtml(name)}</span>
+        ${badge}
+      </div>
+      <button onclick="adminEditInvItem(${i})" title="แก้ไข" style="background:#dbeafe;color:#1d4ed8;border:none;border-radius:6px;padding:6px 10px;font-weight:700;cursor:pointer;font-size:.78rem">✏️ แก้ไข</button>
+      <button onclick="adminRemoveInvItem(${i})" title="ลบทันที (ไม่ถาม)" style="background:#fee2e2;color:#b91c1c;border:none;border-radius:6px;padding:6px 10px;font-weight:700;cursor:pointer;font-size:.78rem">🗑 ลบ</button>
+    </div>`;
+  }).join('') + `
+    <div style="padding:10px 12px;text-align:center;border-top:1.5px dashed #cbd5e1;margin-top:6px">
+      <button onclick="adminResetInvItems()" style="background:#f8fafc;color:#475569;border:1px solid #cbd5e1;border-radius:6px;padding:6px 14px;font-weight:600;cursor:pointer;font-size:.76rem">🔄 รีเซ็ตเป็นค่าเริ่มต้น</button>
+    </div>`;
 }
 function adminAddInvItem() {
   const input = document.getElementById('admin-inv-item-name');
   if (!input) return;
   const name = (input.value || '').trim();
   if (!name) { showToast('กรุณากรอกชื่อรายการ', 'warning'); return; }
-  if (DEFAULT_INV_ITEMS.includes(name)) { showToast('รายการนี้มีในดีฟอลต์อยู่แล้ว', 'warning'); return; }
-  let extras = [];
-  try { extras = JSON.parse(localStorage.getItem(INV_ITEMS_KEY) || '[]'); } catch(_){}
-  if (extras.includes(name)) { showToast('รายการนี้มีอยู่แล้ว', 'warning'); return; }
-  extras.push(name);
-  setInvItemPresetsExtras(extras);
+  const current = getInvItemPresets();
+  if (current.includes(name)) { showToast('รายการนี้มีอยู่แล้ว', 'warning'); return; }
+  const extras = _readJSON(INV_ITEMS_KEY, []);
+  // If user is re-adding a default that was removed, just un-hide it
+  const removed = _readJSON(INV_REMOVED_KEY, []);
+  if (DEFAULT_INV_ITEMS.includes(name) && removed.includes(name)) {
+    _writeJSON(INV_REMOVED_KEY, removed.filter(x => x !== name));
+  } else {
+    extras.push(name);
+    _writeJSON(INV_ITEMS_KEY, extras);
+  }
+  refreshInvItemDatalist();
   input.value = '';
   loadAdminInvItems();
   showToast(`✅ เพิ่ม "${name}" แล้ว`, 'success');
 }
 function adminRemoveInvItem(i) {
-  let extras = [];
-  try { extras = JSON.parse(localStorage.getItem(INV_ITEMS_KEY) || '[]'); } catch(_){}
-  const name = extras[i];
-  if (!confirm(`ลบรายการ "${name}" ออก?`)) return;
-  extras.splice(i, 1);
-  setInvItemPresetsExtras(extras);
+  const items = getInvItemPresets();
+  const name = items[i];
+  if (!name) return;
+  // No confirm — one-click delete as requested
+  const extras = _readJSON(INV_ITEMS_KEY, []);
+  if (DEFAULT_INV_ITEMS.includes(name)) {
+    // Hide the default
+    const removed = _readJSON(INV_REMOVED_KEY, []);
+    if (!removed.includes(name)) removed.push(name);
+    _writeJSON(INV_REMOVED_KEY, removed);
+  }
+  // Also remove from extras if it's there (user-added)
+  const newExtras = extras.filter(x => x !== name);
+  if (newExtras.length !== extras.length) _writeJSON(INV_ITEMS_KEY, newExtras);
+  refreshInvItemDatalist();
   loadAdminInvItems();
   showToast(`🗑 ลบ "${name}" แล้ว`, 'success');
 }
+function adminEditInvItem(i) {
+  const items = getInvItemPresets();
+  const oldName = items[i];
+  if (!oldName) return;
+  const newName = prompt('แก้ไขรายการ:', oldName);
+  if (newName == null) return; // canceled
+  const trimmed = newName.trim();
+  if (!trimmed) { showToast('ชื่อว่างไม่ได้', 'warning'); return; }
+  if (trimmed === oldName) return; // unchanged
+  if (items.includes(trimmed)) { showToast('ชื่อนี้มีอยู่แล้ว', 'warning'); return; }
+  // Apply: hide oldName if default + add trimmed to extras
+  const extras = _readJSON(INV_ITEMS_KEY, []);
+  if (DEFAULT_INV_ITEMS.includes(oldName)) {
+    const removed = _readJSON(INV_REMOVED_KEY, []);
+    if (!removed.includes(oldName)) removed.push(oldName);
+    _writeJSON(INV_REMOVED_KEY, removed);
+  } else {
+    // remove from extras
+    const idx = extras.indexOf(oldName);
+    if (idx >= 0) extras.splice(idx, 1);
+  }
+  // If new name is a removed default, un-hide it. Else add to extras.
+  const removed = _readJSON(INV_REMOVED_KEY, []);
+  if (DEFAULT_INV_ITEMS.includes(trimmed) && removed.includes(trimmed)) {
+    _writeJSON(INV_REMOVED_KEY, removed.filter(x => x !== trimmed));
+  } else if (!extras.includes(trimmed)) {
+    extras.push(trimmed);
+  }
+  _writeJSON(INV_ITEMS_KEY, extras);
+  refreshInvItemDatalist();
+  loadAdminInvItems();
+  showToast(`✏️ แก้ไขเป็น "${trimmed}" แล้ว`, 'success');
+}
+function adminResetInvItems() {
+  if (!confirm('รีเซ็ตรายการในใบเสร็จกลับเป็นค่าเริ่มต้นทั้งหมด?\n(จะลบรายการที่เพิ่มเอง + คืนรายการที่ลบไปด้วย)')) return;
+  _writeJSON(INV_ITEMS_KEY, []);
+  _writeJSON(INV_REMOVED_KEY, []);
+  refreshInvItemDatalist();
+  loadAdminInvItems();
+  showToast('🔄 รีเซ็ตแล้ว', 'success');
+}
 
-// v14.28 — Admin: manage income item presets (same pattern as invoice items)
+// v14.29 — Admin: manage income item presets (full CRUD on defaults + extras)
 function loadAdminIncItems() {
   const el = document.getElementById('admin-inc-items-list');
   if (!el) return;
-  let extras = [];
-  try { extras = JSON.parse(localStorage.getItem(INC_ITEMS_KEY) || '[]'); } catch(_){}
-  if (!extras.length) {
-    el.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:18px;font-size:.85rem">📭 ยังไม่มีรายการเพิ่มเติม (ใช้ดีฟอลต์ 7 รายการ)</div>';
+  const items = getIncItemPresets();
+  const extras = new Set(_readJSON(INC_ITEMS_KEY, []));
+  if (!items.length) {
+    el.innerHTML = `<div style="text-align:center;color:#94a3b8;padding:18px;font-size:.85rem">📭 ลบหมดแล้ว — <a href="#" onclick="event.preventDefault();adminResetIncItems()" style="color:#059669;font-weight:700">🔄 รีเซ็ตเป็นค่าเริ่มต้น</a></div>`;
     return;
   }
-  el.innerHTML = extras.map((name, i) => `
+  el.innerHTML = items.map((name, i) => {
+    const isDefault = DEFAULT_INC_ITEMS.includes(name) && !extras.has(name);
+    const badge = isDefault
+      ? '<span style="font-size:.62rem;padding:2px 7px;border-radius:9px;background:#dcfce7;color:#166534;font-weight:700">ค่าเริ่มต้น</span>'
+      : '<span style="font-size:.62rem;padding:2px 7px;border-radius:9px;background:#fef3c7;color:#92400e;font-weight:700">กำหนดเอง</span>';
+    return `
     <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #f1f5f9">
       <span style="font-size:1rem">💰</span>
-      <div style="flex:1;font-weight:600;color:#0f172a;font-size:.88rem">${escHtml(name)}</div>
-      <button onclick="adminRemoveIncItem(${i})" style="background:#fee2e2;color:#b91c1c;border:none;border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:.78rem">🗑 ลบ</button>
-    </div>`).join('');
+      <div style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-weight:600;color:#0f172a;font-size:.88rem">${escHtml(name)}</span>
+        ${badge}
+      </div>
+      <button onclick="adminEditIncItem(${i})" title="แก้ไข" style="background:#dbeafe;color:#1d4ed8;border:none;border-radius:6px;padding:6px 10px;font-weight:700;cursor:pointer;font-size:.78rem">✏️ แก้ไข</button>
+      <button onclick="adminRemoveIncItem(${i})" title="ลบทันที (ไม่ถาม)" style="background:#fee2e2;color:#b91c1c;border:none;border-radius:6px;padding:6px 10px;font-weight:700;cursor:pointer;font-size:.78rem">🗑 ลบ</button>
+    </div>`;
+  }).join('') + `
+    <div style="padding:10px 12px;text-align:center;border-top:1.5px dashed #cbd5e1;margin-top:6px">
+      <button onclick="adminResetIncItems()" style="background:#f8fafc;color:#475569;border:1px solid #cbd5e1;border-radius:6px;padding:6px 14px;font-weight:600;cursor:pointer;font-size:.76rem">🔄 รีเซ็ตเป็นค่าเริ่มต้น</button>
+    </div>`;
 }
 function adminAddIncItem() {
   const input = document.getElementById('admin-inc-item-name');
   if (!input) return;
   const name = (input.value || '').trim();
   if (!name) { showToast('กรุณากรอกชื่อรายการ', 'warning'); return; }
-  if (DEFAULT_INC_ITEMS.includes(name)) { showToast('รายการนี้มีในดีฟอลต์อยู่แล้ว', 'warning'); return; }
-  let extras = [];
-  try { extras = JSON.parse(localStorage.getItem(INC_ITEMS_KEY) || '[]'); } catch(_){}
-  if (extras.includes(name)) { showToast('รายการนี้มีอยู่แล้ว', 'warning'); return; }
-  extras.push(name);
-  setIncItemPresetsExtras(extras);
+  const current = getIncItemPresets();
+  if (current.includes(name)) { showToast('รายการนี้มีอยู่แล้ว', 'warning'); return; }
+  const extras = _readJSON(INC_ITEMS_KEY, []);
+  const removed = _readJSON(INC_REMOVED_KEY, []);
+  if (DEFAULT_INC_ITEMS.includes(name) && removed.includes(name)) {
+    _writeJSON(INC_REMOVED_KEY, removed.filter(x => x !== name));
+  } else {
+    extras.push(name);
+    _writeJSON(INC_ITEMS_KEY, extras);
+  }
+  refreshIncItemDatalist();
   input.value = '';
   loadAdminIncItems();
   showToast(`✅ เพิ่ม "${name}" แล้ว`, 'success');
 }
 function adminRemoveIncItem(i) {
-  let extras = [];
-  try { extras = JSON.parse(localStorage.getItem(INC_ITEMS_KEY) || '[]'); } catch(_){}
-  const name = extras[i];
-  if (!confirm(`ลบรายการ "${name}" ออก?`)) return;
-  extras.splice(i, 1);
-  setIncItemPresetsExtras(extras);
+  const items = getIncItemPresets();
+  const name = items[i];
+  if (!name) return;
+  // No confirm — one-click delete as requested
+  const extras = _readJSON(INC_ITEMS_KEY, []);
+  if (DEFAULT_INC_ITEMS.includes(name)) {
+    const removed = _readJSON(INC_REMOVED_KEY, []);
+    if (!removed.includes(name)) removed.push(name);
+    _writeJSON(INC_REMOVED_KEY, removed);
+  }
+  const newExtras = extras.filter(x => x !== name);
+  if (newExtras.length !== extras.length) _writeJSON(INC_ITEMS_KEY, newExtras);
+  refreshIncItemDatalist();
   loadAdminIncItems();
   showToast(`🗑 ลบ "${name}" แล้ว`, 'success');
+}
+function adminEditIncItem(i) {
+  const items = getIncItemPresets();
+  const oldName = items[i];
+  if (!oldName) return;
+  const newName = prompt('แก้ไขรายการ:', oldName);
+  if (newName == null) return;
+  const trimmed = newName.trim();
+  if (!trimmed) { showToast('ชื่อว่างไม่ได้', 'warning'); return; }
+  if (trimmed === oldName) return;
+  if (items.includes(trimmed)) { showToast('ชื่อนี้มีอยู่แล้ว', 'warning'); return; }
+  const extras = _readJSON(INC_ITEMS_KEY, []);
+  if (DEFAULT_INC_ITEMS.includes(oldName)) {
+    const removed = _readJSON(INC_REMOVED_KEY, []);
+    if (!removed.includes(oldName)) removed.push(oldName);
+    _writeJSON(INC_REMOVED_KEY, removed);
+  } else {
+    const idx = extras.indexOf(oldName);
+    if (idx >= 0) extras.splice(idx, 1);
+  }
+  const removed = _readJSON(INC_REMOVED_KEY, []);
+  if (DEFAULT_INC_ITEMS.includes(trimmed) && removed.includes(trimmed)) {
+    _writeJSON(INC_REMOVED_KEY, removed.filter(x => x !== trimmed));
+  } else if (!extras.includes(trimmed)) {
+    extras.push(trimmed);
+  }
+  _writeJSON(INC_ITEMS_KEY, extras);
+  refreshIncItemDatalist();
+  loadAdminIncItems();
+  showToast(`✏️ แก้ไขเป็น "${trimmed}" แล้ว`, 'success');
+}
+function adminResetIncItems() {
+  if (!confirm('รีเซ็ตรายการรายรับกลับเป็นค่าเริ่มต้นทั้งหมด?\n(จะลบรายการที่เพิ่มเอง + คืนรายการที่ลบไปด้วย)')) return;
+  _writeJSON(INC_ITEMS_KEY, []);
+  _writeJSON(INC_REMOVED_KEY, []);
+  refreshIncItemDatalist();
+  loadAdminIncItems();
+  showToast('🔄 รีเซ็ตแล้ว', 'success');
 }
 async function loadAdminCodes() {
   const el = document.getElementById('admin-codes-list');
@@ -9467,16 +9599,25 @@ const DEFAULT_INV_ITEMS = [
   'ค่าเบี้ยเลี้ยงกรณีรอรับ-ส่งสินค้า / ค้างคืน',
   'ค่าใช้จ่ายอื่นๆ'
 ];
-const INV_ITEMS_KEY = 'sw_inv_items_v1'; // localStorage key for user-added
+const INV_ITEMS_KEY = 'sw_inv_items_v1';          // user-added extras
+const INV_REMOVED_KEY = 'sw_inv_removed_v1';      // v14.29 — removed/hidden defaults
+
+function _readJSON(key, fallback) {
+  try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); }
+  catch(_) { return fallback; }
+}
+function _writeJSON(key, val) {
+  localStorage.setItem(key, JSON.stringify(val));
+}
 
 function getInvItemPresets() {
-  let extras = [];
-  try { extras = JSON.parse(localStorage.getItem(INV_ITEMS_KEY) || '[]'); } catch(_){}
-  return [...DEFAULT_INV_ITEMS, ...extras.filter(x => !DEFAULT_INV_ITEMS.includes(x))];
-}
-function setInvItemPresetsExtras(extras) {
-  localStorage.setItem(INV_ITEMS_KEY, JSON.stringify(extras));
-  refreshInvItemDatalist();
+  const extras = _readJSON(INV_ITEMS_KEY, []);
+  const removed = new Set(_readJSON(INV_REMOVED_KEY, []));
+  const visibleDefaults = DEFAULT_INV_ITEMS.filter(x => !removed.has(x));
+  // Dedupe (extras might overlap visible defaults if user re-added)
+  const all = [...visibleDefaults];
+  extras.forEach(x => { if (!all.includes(x)) all.push(x); });
+  return all;
 }
 function refreshInvItemDatalist() {
   const dl = document.getElementById('inv-item-dl');
@@ -9495,15 +9636,15 @@ const DEFAULT_INC_ITEMS = [
   'รายรับอื่นๆ'
 ];
 const INC_ITEMS_KEY = 'sw_inc_items_v1';
+const INC_REMOVED_KEY = 'sw_inc_removed_v1';      // v14.29 — removed/hidden defaults
 
 function getIncItemPresets() {
-  let extras = [];
-  try { extras = JSON.parse(localStorage.getItem(INC_ITEMS_KEY) || '[]'); } catch(_){}
-  return [...DEFAULT_INC_ITEMS, ...extras.filter(x => !DEFAULT_INC_ITEMS.includes(x))];
-}
-function setIncItemPresetsExtras(extras) {
-  localStorage.setItem(INC_ITEMS_KEY, JSON.stringify(extras));
-  refreshIncItemDatalist();
+  const extras = _readJSON(INC_ITEMS_KEY, []);
+  const removed = new Set(_readJSON(INC_REMOVED_KEY, []));
+  const visibleDefaults = DEFAULT_INC_ITEMS.filter(x => !removed.has(x));
+  const all = [...visibleDefaults];
+  extras.forEach(x => { if (!all.includes(x)) all.push(x); });
+  return all;
 }
 function refreshIncItemDatalist() {
   const dl = document.getElementById('inc-item-dl');
@@ -11728,7 +11869,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.28';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.29';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
