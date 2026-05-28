@@ -1,10 +1,12 @@
 {
   "version": 2,
   "functions": {
-    "api/upload-images.js": { "maxDuration": 30 },
-    "api/save.js":          { "maxDuration": 30 },
-    "api/ocr.js":           { "maxDuration": 20 },
-    "api/get-data.js":      { "maxDuration": 30 }
+    "api/upload-images.js":  { "maxDuration": 30 },
+    "api/save.js":           { "maxDuration": 30 },
+    "api/ocr.js":            { "maxDuration": 20 },
+    "api/get-data.js":       { "maxDuration": 30 },
+    "api/line-webhook.js":   { "maxDuration": 30 },
+    "api/line-setup.js":     { "maxDuration": 30 }
   },
   "headers": [
     {

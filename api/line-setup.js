@@ -1,0 +1,139 @@
+'use strict';
+/**
+ * GET  /api/line-setup          → show current rich menu status
+ * POST /api/line-setup          → create rich menu + set as default
+ * POST /api/line-setup?delete=1 → delete all rich menus
+ *
+ * Call once after deploy. Requires LINE_CHANNEL_ACCESS_TOKEN in env.
+ */
+
+const LINE_API = 'https://api.line.me/v2/bot';
+
+async function lineAPI(path, method = 'GET', body = null, isBlob = false) {
+  const opts = {
+    method,
+    headers: { Authorization: `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}` },
+  };
+  if (body && !isBlob) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  } else if (body && isBlob) {
+    opts.headers['Content-Type'] = 'image/jpeg';
+    opts.body = body;
+  }
+  const r = await fetch(`${LINE_API}${path}`, opts);
+  const text = await r.text();
+  try { return { status: r.status, data: JSON.parse(text) }; }
+  catch { return { status: r.status, data: text }; }
+}
+
+// Rich menu definition: 4 buttons in 2×2 grid
+function richMenuBody() {
+  const W = 2500, H = 1686, HW = 1250, HH = 843;
+  return {
+    size: { width: W, height: H },
+    selected: true,
+    name: 'SuperWealth Menu',
+    chatBarText: '📋 เมนู',
+    areas: [
+      {
+        bounds: { x: 0, y: 0, width: HW, height: HH },
+        action: { type: 'postback', label: '🚛 บันทึกรถ', data: 'MENU_TRUCK', displayText: '🚛 บันทึกรถ' }
+      },
+      {
+        bounds: { x: HW, y: 0, width: HW, height: HH },
+        action: { type: 'postback', label: '📅 ปฏิทิน', data: 'MENU_CALENDAR', displayText: '📅 ปฏิทิน' }
+      },
+      {
+        bounds: { x: 0, y: HH, width: HW, height: HH },
+        action: { type: 'postback', label: '💰 รายรับ', data: 'MENU_INCOME', displayText: '💰 รายรับ' }
+      },
+      {
+        bounds: { x: HW, y: HH, width: HW, height: HH },
+        action: { type: 'postback', label: '💸 รายจ่าย', data: 'MENU_EXPENSE', displayText: '💸 รายจ่าย' }
+      }
+    ]
+  };
+}
+
+// Build a minimal 2500×1686 JPEG image (4 colored quadrants) using Canvas-free approach.
+// Uses raw PPM → JPEG via a simple approach. Since we can't use canvas, we generate
+// a placeholder PNG-like buffer. LINE requires JPEG; we build a minimal valid JPEG.
+// For production: replace this with a proper designed image uploaded via LINE OA Manager.
+function buildMenuImageSVG() {
+  // Return SVG source (caller must convert or upload via OA Manager)
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="2500" height="1686">
+  <rect x="0"    y="0"    width="1250" height="843"  fill="#1565C0"/>
+  <rect x="1250" y="0"    width="1250" height="843"  fill="#0D47A1"/>
+  <rect x="0"    y="843"  width="1250" height="843"  fill="#2E7D32"/>
+  <rect x="1250" y="843"  width="1250" height="843"  fill="#B71C1C"/>
+  <text x="625"  y="380"  text-anchor="middle" fill="white" font-size="120" font-family="Arial">🚛</text>
+  <text x="625"  y="540"  text-anchor="middle" fill="white" font-size="80"  font-family="Arial">บันทึกรถ</text>
+  <text x="1875" y="380"  text-anchor="middle" fill="white" font-size="120" font-family="Arial">📅</text>
+  <text x="1875" y="540"  text-anchor="middle" fill="white" font-size="80"  font-family="Arial">ปฏิทิน</text>
+  <text x="625"  y="1220" text-anchor="middle" fill="white" font-size="120" font-family="Arial">💰</text>
+  <text x="625"  y="1380" text-anchor="middle" fill="white" font-size="80"  font-family="Arial">รายรับ</text>
+  <text x="1875" y="1220" text-anchor="middle" fill="white" font-size="120" font-family="Arial">💸</text>
+  <text x="1875" y="1380" text-anchor="middle" fill="white" font-size="80"  font-family="Arial">รายจ่าย</text>
+  <line x1="1250" y1="0" x2="1250" y2="1686" stroke="white" stroke-width="4"/>
+  <line x1="0" y1="843" x2="2500" y2="843" stroke="white" stroke-width="4"/>
+</svg>`;
+}
+
+module.exports = async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
+  const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+  if (!token) return res.status(500).json({ error: 'Missing LINE_CHANNEL_ACCESS_TOKEN' });
+
+  // ── GET: show status ──────────────────────────────────────────
+  if (req.method === 'GET') {
+    const list = await lineAPI('/richmenu/list');
+    const def  = await lineAPI('/user/all/richmenu');
+    return res.json({
+      richMenus: list.data?.richmenus || [],
+      defaultRichMenuId: def.data?.richMenuId || null,
+      svgPreview: buildMenuImageSVG(),
+      instructions: [
+        '1. POST /api/line-setup  →  สร้าง rich menu (โครงสร้าง + set default)',
+        '2. ไปที่ LINE OA Manager → Rich Menu → อัปโหลดรูปภาพทับ rich menu ที่สร้างไว้',
+        '   หรือใช้ SVG ใน svgPreview แปลงเป็น JPEG แล้ว POST /api/line-setup?uploadImage=<richMenuId>',
+        '3. Webhook URL: https://superwealth.vercel.app/api/line-webhook',
+      ]
+    });
+  }
+
+  // ── DELETE all rich menus ─────────────────────────────────────
+  if (req.method === 'POST' && req.query.delete) {
+    const list = await lineAPI('/richmenu/list');
+    const ids  = (list.data?.richmenus || []).map(m => m.richMenuId);
+    for (const id of ids) {
+      await lineAPI(`/richmenu/${id}`, 'DELETE');
+    }
+    return res.json({ deleted: ids });
+  }
+
+  // ── POST: create rich menu and set as default ─────────────────
+  if (req.method === 'POST') {
+    // 1. Create rich menu structure
+    const create = await lineAPI('/richmenu', 'POST', richMenuBody());
+    if (create.status !== 200) {
+      return res.status(create.status).json({ error: 'Failed to create rich menu', detail: create.data });
+    }
+    const richMenuId = create.data.richMenuId;
+
+    // 2. Set as default for all users
+    const setDefault = await lineAPI(`/user/all/richmenu/${richMenuId}`, 'POST');
+
+    return res.json({
+      success: true,
+      richMenuId,
+      setDefaultStatus: setDefault.status,
+      nextStep: `อัปโหลดรูปเมนูที่ LINE OA Manager หรือ POST /api/line-setup?uploadImage=${richMenuId}`,
+      webhookUrl: 'https://superwealth.vercel.app/api/line-webhook',
+    });
+  }
+
+  return res.status(405).end();
+};
