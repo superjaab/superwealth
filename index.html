@@ -3378,7 +3378,7 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v14.1</span>
+    <span style="opacity:.7">v14.3</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
@@ -4096,29 +4096,19 @@
 <!-- ══ TAB 6: สรุปผล ══ -->
 <div class="tab-panel" id="tab-summary">
 
-  <!-- ══ HERO BANNER ══ -->
-  <div class="hero-banner">
-    <div class="hero-brand">🚛 SuperWealth Transport</div>
-    <div class="hero-title-text">ภาพรวมธุรกิจ</div>
-    <div class="hero-kpi-row">
-      <div class="hero-kpi">
-        <div class="hero-kpi-label">กำไรสุทธิ</div>
-        <div class="hero-kpi-val" id="hero-profit">฿0</div>
+  <!-- ══ COMPACT HERO BANNER (v14.2 — sleek gradient header, no redundant KPIs) ══ -->
+  <div class="hero-banner" style="padding:18px 22px 16px;margin-bottom:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <div class="hero-brand" style="margin-bottom:0">🚛 SuperWealth Transport</div>
+        <div class="hero-title-text" style="font-size:1.4rem;margin-bottom:0">ภาพรวมธุรกิจ</div>
       </div>
-      <div class="hero-kpi">
-        <div class="hero-kpi-label">รายรับ</div>
-        <div class="hero-kpi-val" id="hero-income">฿0</div>
+      <div class="hero-date-row" style="margin:0;background:rgba(0,0,0,.22);flex-wrap:nowrap">
+        <input type="date" id="sum-dateFrom">
+        <span class="hero-date-sep">→</span>
+        <input type="date" id="sum-dateTo">
+        <button type="button" class="hero-load-btn" onclick="loadSummary()">🔄 โหลด</button>
       </div>
-      <div class="hero-kpi">
-        <div class="hero-kpi-label">เที่ยวรถ</div>
-        <div class="hero-kpi-val" id="hero-trips">0 เที่ยว</div>
-      </div>
-    </div>
-    <div class="hero-date-row">
-      <input type="date" id="sum-dateFrom">
-      <span class="hero-date-sep">→</span>
-      <input type="date" id="sum-dateTo">
-      <button type="button" class="hero-load-btn" onclick="loadSummary()">🔄 โหลด</button>
     </div>
   </div>
 
@@ -4289,9 +4279,10 @@
       <div id="cap-insight-body" style="font-size:.85rem;line-height:1.7"></div>
     </div>
 
-    <!-- Tabs: Accounts list / Movement history -->
+    <!-- Tabs: Accounts list / Vehicle Assets / Analytics -->
     <div class="inner-nav" style="margin-bottom:14px">
       <button class="inner-btn active" onclick="capInnerTab('accounts',this)">🏦 บัญชี</button>
+      <button class="inner-btn" onclick="capInnerTab('assets',this)">🚚 ทรัพย์สินรถ</button>
       <button class="inner-btn" onclick="capInnerTab('analytics',this)">📊 วิเคราะห์</button>
     </div>
 
@@ -4321,6 +4312,51 @@
           <a class="dash-card-action" href="#" onclick="event.preventDefault();loadCapital()">🔄 รีเฟรช</a>
         </div>
         <div id="cap-accounts-list" style="display:flex;flex-direction:column;gap:10px">
+          <div style="text-align:center;color:#94a3b8;padding:18px">⏳ กำลังโหลด...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Vehicle Assets view (separate from Working Capital) ── -->
+    <div id="cap-view-assets" style="display:none">
+      <!-- Notice banner -->
+      <div class="dash-card" style="padding:14px 16px;margin-bottom:14px;border-left:4px solid #7c3aed;background:linear-gradient(90deg,#faf5ff 0%,#ffffff 100%)">
+        <div style="font-size:.95rem;font-weight:800;color:#5b21b6;margin-bottom:4px">🚚 ROI ทรัพย์สินรถ (แยก)</div>
+        <div style="font-size:.78rem;color:#64748b;line-height:1.6">
+          ส่วนนี้แสดง ROI ของแต่ละคันจาก <b>มูลค่ารถ vs รายได้/รายจ่ายของรถ</b>
+          <br>⚠️ <b>ไม่นำมาคำนวณกำไรขาดทุนหลัก</b> (ทุน vs cash flow)
+        </div>
+      </div>
+      <!-- Assets summary KPIs -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px">
+        <div class="dash-card" style="padding:14px">
+          <div style="font-size:.7rem;color:#64748b;font-weight:700">มูลค่าทรัพย์สินรวม</div>
+          <div class="priv-amt" id="assets-total-value" style="font-size:1.3rem;font-weight:800;color:#7c3aed;margin-top:4px">฿0</div>
+          <div id="assets-vehicle-count" style="font-size:.7rem;color:#94a3b8;margin-top:2px">— คัน</div>
+        </div>
+        <div class="dash-card" style="padding:14px">
+          <div style="font-size:.7rem;color:#64748b;font-weight:700">รายได้รวมจากรถ</div>
+          <div class="priv-amt" id="assets-total-revenue" style="font-size:1.3rem;font-weight:800;color:#059669;margin-top:4px">฿0</div>
+          <div style="font-size:.7rem;color:#94a3b8;margin-top:2px">จาก freightCost</div>
+        </div>
+        <div class="dash-card" style="padding:14px">
+          <div style="font-size:.7rem;color:#64748b;font-weight:700">ค่าใช้จ่ายรวมรถ</div>
+          <div class="priv-amt" id="assets-total-expenses" style="font-size:1.3rem;font-weight:800;color:#dc2626;margin-top:4px">฿0</div>
+          <div style="font-size:.7rem;color:#94a3b8;margin-top:2px">รายจ่าย+ซ่อม+น้ำมัน</div>
+        </div>
+        <div class="dash-card" style="padding:14px">
+          <div style="font-size:.7rem;color:#64748b;font-weight:700">ROI ทรัพย์สินเฉลี่ย</div>
+          <div id="assets-avg-roi" style="font-size:1.3rem;font-weight:800;color:#7c3aed;margin-top:4px">—</div>
+          <div style="font-size:.7rem;color:#94a3b8;margin-top:2px">(รายได้-รายจ่าย)÷มูลค่า</div>
+        </div>
+      </div>
+      <!-- Vehicle list -->
+      <div class="dash-card" style="padding:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div style="font-weight:800;font-size:.95rem">📊 ROI ต่อคัน — เรียงตามผลตอบแทน</div>
+          <a class="dash-card-action" href="#" onclick="event.preventDefault();loadVehicleAssets()">🔄 รีเฟรช</a>
+        </div>
+        <div id="assets-vehicle-list" style="display:flex;flex-direction:column;gap:10px">
           <div style="text-align:center;color:#94a3b8;padding:18px">⏳ กำลังโหลด...</div>
         </div>
       </div>
@@ -4388,6 +4424,22 @@
           <label>📞 เบอร์โทรคนขับ</label>
           <input type="tel" id="v-driver-phone" placeholder="081-234-5678" maxlength="20">
         </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="color:#7C3AED">💰 มูลค่ารถ (สำหรับคำนวณ ROI)</div>
+      <div class="form-row-2">
+        <div class="form-row">
+          <label>มูลค่าซื้อ (บาท)</label>
+          <input type="number" id="v-value" placeholder="เช่น 850000" step="1000" min="0">
+        </div>
+        <div class="form-row">
+          <label>วันที่ซื้อ</label>
+          <input type="date" id="v-purchaseDate">
+        </div>
+      </div>
+      <div style="font-size:.72rem;color:#94a3b8;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:6px;padding:8px 10px;margin-top:4px">
+        💡 ข้อมูลนี้ใช้คำนวณ <b>ROI ต่อคัน</b> แยกในหน้าเงินทุน — <b>ไม่นำไปคำนวณกำไรขาดทุนปกติ</b>
       </div>
     </div>
     <div class="card">
@@ -5058,7 +5110,15 @@ let gpsSession = { id: '', url: '', user: '' };
 // ════════════════════════════════════════════════════════════════
 // AUTH — Login/Logout (server-side via /api/auth)
 // ════════════════════════════════════════════════════════════════
+// 🛠️ LOCAL DEV BYPASS — เมื่อรันจาก localhost/127.0.0.1 ให้ login เป็น admin อัตโนมัติ
+// (UI preview เท่านั้น — API calls อาจ fail ถ้าไม่มี backend)
+const _IS_LOCAL_DEV = (function() {
+  try {
+    return ['localhost','127.0.0.1','0.0.0.0'].includes(location.hostname);
+  } catch { return false; }
+})();
 function getSessionId() {
+  if (_IS_LOCAL_DEV) return 'local-dev-bypass';
   return localStorage.getItem('auth_sid') || sessionStorage.getItem('auth_sid') || '';
 }
 function setSessionId(sid, remember) {
@@ -5070,9 +5130,11 @@ function setSessionId(sid, remember) {
   else          sessionStorage.setItem('auth_sid', sid);
 }
 function isAuthed() {
+  if (_IS_LOCAL_DEV) return true;
   return !!getSessionId();
 }
 function isAdmin() {
+  if (_IS_LOCAL_DEV) return true;
   return localStorage.getItem('auth_admin') === '1' || sessionStorage.getItem('auth_admin') === '1';
 }
 function setIsAdmin(flag) {
@@ -5138,6 +5200,7 @@ async function doLogout() {
 }
 // Background session verification (called on app focus + periodically)
 async function verifySession() {
+  if (_IS_LOCAL_DEV) return;  // skip on local dev
   const sid = getSessionId();
   if (!sid) return;
   try {
@@ -5353,8 +5416,174 @@ function capInnerTab(view, btn) {
   document.querySelectorAll('#tab-capital .inner-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('cap-view-accounts').style.display  = view === 'accounts'  ? '' : 'none';
+  document.getElementById('cap-view-assets').style.display    = view === 'assets'    ? '' : 'none';
   document.getElementById('cap-view-analytics').style.display = view === 'analytics' ? '' : 'none';
   if (view === 'analytics') renderCapitalAnalytics();
+  if (view === 'assets')    loadVehicleAssets();
+}
+
+// ─── Vehicle Assets ROI (separate from Working Capital cash flow) ───
+async function loadVehicleAssets() {
+  const list = document.getElementById('assets-vehicle-list');
+  if (!list) return;
+  if (_IS_LOCAL_DEV && !(_master.vehicles||[]).length) {
+    list.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:18px">🛠️ Local dev — ไม่มี data ในเครื่อง</div>';
+    return;
+  }
+  list.innerHTML = skeletonList(3);
+  try {
+    // Use cached master data + fetch fresh
+    const vehicles = _master.vehicles || [];
+    const trucks   = _master.truckHistory || [];
+    const expenses = _master.expenseHistory || [];
+    renderVehicleAssets(vehicles, trucks, expenses);
+  } catch (e) {
+    list.innerHTML = `<div style="text-align:center;color:#dc2626;padding:18px">❌ ${escHtml(e.message)}</div>`;
+  }
+}
+
+function renderVehicleAssets(vehicles, trucks, expenses) {
+  // ── Aggregate revenue/expenses per plate ──
+  const stats = {};  // plateNumber → { revenue, expenses, tripCount }
+  vehicles.forEach(v => {
+    const plate = (v.plateNumber||'').trim();
+    if (!plate) return;
+    stats[plate] = {
+      vehicle: v,
+      value: parseFloat(v.vehicleValue) || 0,
+      revenue: 0,
+      expenses: 0,
+      tripCount: 0
+    };
+  });
+  // Revenue = sum freightCost of trips with this plate
+  trucks.forEach(t => {
+    const plate = (t.plateNumber||'').trim();
+    if (stats[plate]) {
+      stats[plate].revenue += parseFloat(t.freightCost) || 0;
+      stats[plate].tripCount++;
+    }
+  });
+  // Expenses = sum expense.amount where plateNumber matches
+  expenses.forEach(e => {
+    const plate = (e.plateNumber||'').trim();
+    if (stats[plate]) {
+      stats[plate].expenses += _detectAmount(e);
+    }
+  });
+  // Also include fuel + maintenance if loaded
+  ((_master.fuelHistory)||[]).forEach(f => {
+    const plate = (f.plateNumber||'').trim();
+    if (stats[plate]) stats[plate].expenses += parseFloat(f.totalCost) || _detectAmount(f);
+  });
+  ((_master.maintenanceHistory)||[]).forEach(m => {
+    const plate = (m.plateNumber||'').trim();
+    if (stats[plate]) stats[plate].expenses += parseFloat(m.cost) || 0;
+  });
+
+  // Compute KPIs
+  let totalValue = 0, totalRev = 0, totalExp = 0, countWithValue = 0;
+  Object.values(stats).forEach(s => {
+    totalValue += s.value;
+    totalRev   += s.revenue;
+    totalExp   += s.expenses;
+    if (s.value > 0) countWithValue++;
+  });
+  const netRevenue = totalRev - totalExp;
+  const avgROI = totalValue > 0 ? ((netRevenue / totalValue) * 100).toFixed(1) : '—';
+
+  document.getElementById('assets-total-value').textContent    = fmtBaht(totalValue);
+  document.getElementById('assets-total-revenue').textContent  = fmtBaht(totalRev);
+  document.getElementById('assets-total-expenses').textContent = fmtBaht(totalExp);
+  document.getElementById('assets-avg-roi').textContent        = avgROI === '—' ? '—' : (avgROI >= 0 ? '+' : '') + avgROI + '%';
+  document.getElementById('assets-vehicle-count').textContent  = vehicles.length + ' คัน · ' + countWithValue + ' มีมูลค่า';
+
+  // Sort by ROI desc
+  const sorted = Object.values(stats).sort((a,b) => {
+    const aROI = a.value > 0 ? (a.revenue - a.expenses) / a.value : -Infinity;
+    const bROI = b.value > 0 ? (b.revenue - b.expenses) / b.value : -Infinity;
+    return bROI - aROI;
+  });
+
+  const list = document.getElementById('assets-vehicle-list');
+  if (!sorted.length) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="empty-state-icon">🚛</div>
+      <div class="empty-state-title">ยังไม่มีรถในระบบ</div>
+      <div class="empty-state-sub">เพิ่มทะเบียนรถ + ใส่มูลค่าเพื่อดู ROI ต่อคัน</div>
+    </div>`;
+    return;
+  }
+  list.innerHTML = sorted.map((s, idx) => {
+    const v = s.vehicle;
+    const net = s.revenue - s.expenses;
+    const roi = s.value > 0 ? ((net / s.value) * 100) : null;
+    const roiColor = roi === null ? '#94a3b8' : roi >= 0 ? '#059669' : '#dc2626';
+    const roiText = roi === null ? '— (ยังไม่ใส่มูลค่า)' : (roi >= 0 ? '+' : '') + roi.toFixed(1) + '%';
+    const rank = idx + 1;
+    const rankBadge = rank <= 3 && s.value > 0
+      ? `<span style="background:linear-gradient(135deg,#f59e0b,#d97706);color:white;padding:2px 8px;border-radius:6px;font-size:.65rem;font-weight:800;letter-spacing:.3px">#${rank}</span>`
+      : `<span style="background:#f1f5f9;color:#64748b;padding:2px 8px;border-radius:6px;font-size:.65rem;font-weight:700">#${rank}</span>`;
+    return `
+    <div class="record-card" style="padding:14px;border-left:4px solid ${roiColor}">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+        ${rankBadge}
+        <span style="font-weight:800;font-size:1.05rem;color:#0f172a">🚚 ${escHtml(v.plateNumber||'-')}</span>
+        ${v.brand ? `<span style="font-size:.78rem;color:#64748b">· ${escHtml(v.brand)} ${escHtml(v.model||'')}</span>` : ''}
+        ${v.assignedDriver ? `<span style="font-size:.74rem;color:#94a3b8">· 👤 ${escHtml(v.assignedDriver)}</span>` : ''}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:8px">
+        <div style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:8px;padding:8px 10px">
+          <div style="font-size:.65rem;color:#7c3aed;font-weight:700">มูลค่ารถ</div>
+          <div class="priv-amt" style="font-size:.95rem;font-weight:800;color:#7c3aed">${s.value > 0 ? fmtBaht(s.value) : '—'}</div>
+        </div>
+        <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:8px 10px">
+          <div style="font-size:.65rem;color:#059669;font-weight:700">รายได้รวม</div>
+          <div class="priv-amt" style="font-size:.95rem;font-weight:800;color:#059669">${fmtBaht(s.revenue)}</div>
+          <div style="font-size:.6rem;color:#94a3b8">${s.tripCount} เที่ยว</div>
+        </div>
+        <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 10px">
+          <div style="font-size:.65rem;color:#dc2626;font-weight:700">ค่าใช้จ่าย</div>
+          <div class="priv-amt" style="font-size:.95rem;font-weight:800;color:#dc2626">${fmtBaht(s.expenses)}</div>
+        </div>
+        <div style="background:${roi !== null && roi >= 0 ? '#f0fdf4' : roi !== null ? '#fef2f2' : '#f8fafc'};border:1px solid ${roi !== null && roi >= 0 ? '#bbf7d0' : roi !== null ? '#fecaca' : '#e2e8f0'};border-radius:8px;padding:8px 10px">
+          <div style="font-size:.65rem;color:${roiColor};font-weight:700">ROI ทรัพย์สิน</div>
+          <div style="font-size:.95rem;font-weight:800;color:${roiColor}">${roiText}</div>
+          <div style="font-size:.6rem;color:#94a3b8">กำไรสุทธิ: ${net >= 0 ? '+' : ''}${fmtBaht(net)}</div>
+        </div>
+      </div>
+      ${!s.value ? `
+        <button onclick="quickSetVehicleValue('${escAttr(v.rowId)}','${escAttr(v.plateNumber)}')" style="background:#faf5ff;border:1px dashed #c4b5fd;color:#7c3aed;border-radius:6px;padding:6px 12px;font-size:.74rem;font-weight:700;cursor:pointer;font-family:inherit;width:100%">
+          💰 + ใส่มูลค่ารถเพื่อดู ROI
+        </button>
+      ` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function quickSetVehicleValue(rowId, plate) {
+  if (!requireAuth()) return;
+  const v = prompt(`ใส่มูลค่ารถ "${plate}" (บาท):\n\nเช่น 850000 = 8.5 แสน`, '');
+  if (v === null) return;
+  const value = parseFloat(v);
+  if (isNaN(value) || value < 0) { showToast('มูลค่าไม่ถูกต้อง', 'error'); return; }
+  const vehicle = (_master.vehicles||[]).find(x => x.rowId === rowId);
+  if (!vehicle) return;
+  showLoading('กำลังบันทึก...');
+  try {
+    const r = await api('/api/update', {
+      type: 'vehicle', rowId,
+      data: { ...vehicle, vehicleValue: value, purchaseDate: vehicle.purchaseDate || new Date().toISOString().slice(0,10) }
+    });
+    hideLoading();
+    if (!r.success) { showToast('ไม่สำเร็จ: ' + (r.error||''), 'error'); return; }
+    showToast(`✅ บันทึกมูลค่ารถ ${plate} = ${fmtBaht(value)}`, 'success');
+    await loadMasterData();
+    loadVehicleAssets();
+  } catch (e) {
+    hideLoading();
+    showToast('ผิดพลาด: ' + e.message, 'error');
+  }
 }
 
 function capToggleBankFields() {
@@ -5951,6 +6180,11 @@ const _master = {
 };
 
 async function loadMasterData() {
+  // Skip on local dev (no API server) — prevents 404 console spam
+  if (_IS_LOCAL_DEV) {
+    console.log('[local-dev] skip loadMasterData');
+    return;
+  }
   try {
     const [vehRes, custRes, drvRes, truckRes, incRes, expRes] = await Promise.all([
       fetch('/api/get-data?type=vehicle').then(r => r.json()).catch(() => ({})),
@@ -7037,7 +7271,8 @@ const _PREFILL_MAP = {
     year:'v-year', loadCapacity:'v-load', color:'v-color', chassisNo:'v-chassis',
     regExpiry:'v-reg', prbExpiry:'v-prb', insuranceExpiry:'v-ins', inspectionExpiry:'v-inspect',
     assignedDriver:'v-driver', assignedDriverPhone:'v-driver-phone',
-    notes:'v-notes'
+    notes:'v-notes',
+    vehicleValue:'v-value', purchaseDate:'v-purchaseDate'
   },
   driver: {
     driverName:'d-name', driverPhone:'d-phone', idCard:'d-idcard',
@@ -9491,6 +9726,12 @@ const FAB_TABS_AVAILABLE = [
 let _fabItems = [];
 
 async function loadFabItems() {
+  // On local dev: use defaults directly (no API)
+  if (_IS_LOCAL_DEV) {
+    _fabItems = FAB_DEFAULT_ITEMS;
+    renderFabMenu();
+    return;
+  }
   // Try cache first (instant)
   try {
     const cached = JSON.parse(localStorage.getItem('fab_items_cache') || 'null');
@@ -9621,11 +9862,16 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.1';   // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.3';   // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate(opts) {
   opts = opts || {};
+  // Skip on local dev (no API server)
+  if (_IS_LOCAL_DEV) {
+    if (opts.manual) showToast('🛠️ Local dev mode — ข้าม update check', 'info');
+    return;
+  }
   try {
     // Use lightweight /api/version endpoint (fast + reliable)
     const res = await fetch('/api/version?_t=' + Date.now(), {

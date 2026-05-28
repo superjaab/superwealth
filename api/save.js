@@ -68,7 +68,8 @@ const CONFIGS = {
     headers: ['timestamp','plateNumber','vehicleType','brand','model','year',
       'loadCapacity','color','chassisNo','regExpiry','prbExpiry',
       'insuranceExpiry','inspectionExpiry','notes','rowId',
-      'assignedDriver','assignedDriverPhone'],
+      'assignedDriver','assignedDriverPhone',
+      'vehicleValue','purchaseDate'],
     data: (d, now, id) => ({
       timestamp: now,
       plateNumber: d.plateNumber||'', vehicleType: d.vehicleType||'',
@@ -78,7 +79,9 @@ const CONFIGS = {
       regExpiry: d.regExpiry||'', prbExpiry: d.prbExpiry||'',
       insuranceExpiry: d.insuranceExpiry||'', inspectionExpiry: d.inspectionExpiry||'',
       notes: d.notes||'', rowId: id,
-      assignedDriver: d.assignedDriver||'', assignedDriverPhone: d.assignedDriverPhone||''
+      assignedDriver: d.assignedDriver||'', assignedDriverPhone: d.assignedDriverPhone||'',
+      vehicleValue: +d.vehicleValue||0,
+      purchaseDate: d.purchaseDate||''
     })
   },
   driver: {
