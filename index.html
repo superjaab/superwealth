@@ -3382,7 +3382,7 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v14.6</span>
+    <span style="opacity:.7">v14.7</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
@@ -4955,20 +4955,6 @@
           <span class="tm-lwear"><span class="tm-ldot g"></span><span class="tm-ldot y"></span><span class="tm-ldot r"></span></span>
           <span>อายุยาง</span>
         </span>
-      </div>
-
-      <!-- Cost summary -->
-      <div class="tm-cost-box">
-        <div class="tm-cost-row">
-          <label for="tm-price-per">ราคา / เส้น</label>
-          <input class="tm-cost-input" id="tm-price-per" type="number" value="5500" min="0" step="100" oninput="updateTireModalSummary()">
-          <span class="tm-baht">บาท</span>
-        </div>
-        <div class="tm-cost-formula" id="tm-cost-formula">0 เส้น × ฿5,500 / เส้น</div>
-        <div class="tm-cost-total">
-          <span class="tm-cost-total-label">รวม</span>
-          <span class="tm-cost-total-val" id="tm-cost-total">฿0</span>
-        </div>
       </div>
 
       <!-- Selected list -->
@@ -9932,7 +9918,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.6';   // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.7';   // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate(opts) {
