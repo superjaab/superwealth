@@ -4268,7 +4268,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.31 | 29/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.32 | 29/05/2026</span>
   </div>
 </aside>
 
@@ -7596,6 +7596,8 @@ window.addEventListener('DOMContentLoaded', () => {
   });
   // Periodic background check (every 5 minutes)
   setInterval(verifySession, 5 * 60 * 1000);
+  // v14.32 — initialize Flatpickr BEFORE setDefaultDates so inputs are wrapped
+  if (typeof initFlatpickr === 'function') initFlatpickr();
   setDefaultDates();
   buildUploadArea('truck',       'truck-upload-area');
   buildUploadArea('income',      'income-upload-area');
@@ -11920,7 +11922,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.31';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.32';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
@@ -12121,6 +12123,35 @@ function initFlatpickr() {
     return `${d} ${m} ${y}`;
   };
 
+  // v14.32 — Parse Thai BE text back to Date (so user can TYPE the date)
+  const TH_MONTH_TO_NUM = {};
+  thMonthsShort.forEach((m, i) => TH_MONTH_TO_NUM[m.replace(/\./g,'')] = i);
+  thMonthsLong.forEach((m, i)  => TH_MONTH_TO_NUM[m] = i);
+  function parseThaiBE(str) {
+    if (!str) return null;
+    const s = String(str).trim();
+    // ISO YYYY-MM-DD first
+    let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (m) return new Date(+m[1], +m[2]-1, +m[3]);
+    // Thai BE: "28 พ.ค. 2569" or "28 พฤษภาคม 2569"
+    m = s.match(/^(\d{1,2})[\s\-/]+([^\d\s\-/]+)[\s\-/]+(\d{4})$/);
+    if (m) {
+      const day = +m[1];
+      const monName = m[2].replace(/\./g, '');
+      const yr = +m[3];
+      const monIdx = TH_MONTH_TO_NUM[monName];
+      if (monIdx !== undefined && yr > 2400) return new Date(yr - 543, monIdx, day);
+      if (monIdx !== undefined && yr < 2400) return new Date(yr, monIdx, day);
+    }
+    // Numeric DD/MM/YYYY or DD-MM-YYYY (interpret YYYY as BE if > 2400)
+    m = s.match(/^(\d{1,2})[\s\-/]+(\d{1,2})[\s\-/]+(\d{4})$/);
+    if (m) {
+      const day = +m[1], mon = +m[2] - 1, yr = +m[3];
+      return new Date(yr > 2400 ? yr - 543 : yr, mon, day);
+    }
+    return null;
+  }
+
   // Apply to all date inputs
   document.querySelectorAll('input[type="date"]').forEach(el => {
     if (el._fpBound) return; el._fpBound = true;
@@ -12137,10 +12168,21 @@ function initFlatpickr() {
         }
         return formatBE(date); // altFormat (Thai BE)
       },
+      // v14.32 — parse user-typed Thai BE back to Date
+      parseDate: (datestr) => parseThaiBE(datestr) || new Date(),
       disableMobile: true,  // always use Flatpickr UI (not native)
-      allowInput: false,
+      // v14.32 — let user TYPE the date OR click to pick
+      allowInput: true,
+      clickOpens: true,
       plugins: [ _fpQuickButtonsPlugin()() ]
     });
+    // v14.32 — When user clicks the altInput (Thai BE display), select all so they can overwrite or open picker
+    if (el._flatpickr && el._flatpickr.altInput) {
+      el._flatpickr.altInput.addEventListener('focus', () => {
+        // Open picker by default; user can still type if they want
+        setTimeout(() => el._flatpickr.open(), 0);
+      });
+    }
   });
 
   // Apply to all time inputs (cleaner time picker)
