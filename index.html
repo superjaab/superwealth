@@ -384,31 +384,76 @@
 
     /* ═════ v14.11 — MATCH Claude Design DEMO closely ═════ */
 
-    /* ── COMPACT stat cards (138px height, smaller fonts) ── */
+    /* ── COMPACT stat cards (Claude Design demo exact match) ── */
     .dash-stat {
       min-height: 130px !important;
       padding: 16px 14px !important;
       border-radius: 14px !important;
+      cursor: pointer !important;
+      transition:
+        transform .25s cubic-bezier(.34,1.56,.64,1),
+        box-shadow .25s ease-out !important;
     }
+    /* Hover effect — Claude Design exact */
+    .dash-stat:hover {
+      transform: translateY(-4px) !important;
+    }
+    .dash-stat:active {
+      transform: translateY(-2px) scale(.99) !important;
+    }
+    .dash-stat.green:hover   { box-shadow: 0 18px 38px -10px rgba(5,150,105,.6) !important; }
+    .dash-stat.red:hover     { box-shadow: 0 18px 38px -10px rgba(220,38,38,.6) !important; }
+    .dash-stat.blue:hover    { box-shadow: 0 18px 38px -10px rgba(37,99,235,.6) !important; }
+    .dash-stat.orange:hover  { box-shadow: 0 18px 38px -10px rgba(234,88,12,.6) !important; }
+    .dash-stat.purple:hover  { box-shadow: 0 18px 38px -10px rgba(124,58,237,.6) !important; }
+    .dash-stat.teal:hover    { box-shadow: 0 18px 38px -10px rgba(13,148,136,.6) !important; }
+    .dash-stat.indigo:hover  { box-shadow: 0 18px 38px -10px rgba(79,70,229,.6) !important; }
+    .dash-stat.pink:hover    { box-shadow: 0 18px 38px -10px rgba(219,39,119,.6) !important; }
+    /* Icon — animated rotate + scale on card hover */
     .dash-stat-icon {
       width: 32px !important;
       height: 32px !important;
       border-radius: 7px !important;
       font-size: 1rem !important;
       margin-bottom: 10px !important;
+      background: rgba(255,255,255,.22) !important;
+      border: 1px solid rgba(255,255,255,.3) !important;
+      backdrop-filter: blur(10px) !important;
+      -webkit-backdrop-filter: blur(10px) !important;
+      box-shadow: 0 4px 12px rgba(0,0,0,.15) !important;
+      transition: transform .5s cubic-bezier(.34,1.56,.64,1) !important;
+    }
+    .dash-stat:hover .dash-stat-icon {
+      transform: rotate(8deg) scale(1.08) !important;
     }
     .dash-stat-label {
       font-size: .58rem !important;
       letter-spacing: .08em !important;
       margin-bottom: 3px !important;
+      text-transform: uppercase !important;
+      font-weight: 700 !important;
+      opacity: .85 !important;
+      color: #fff !important;
     }
     .dash-stat-value {
       font-size: 1.35rem !important;
       letter-spacing: -.3px !important;
+      font-weight: 800 !important;
+      line-height: 1.15 !important;
+      font-variant-numeric: tabular-nums !important;
+      text-shadow: 0 1px 2px rgba(0,0,0,.15) !important;
+      background: linear-gradient(180deg,#ffffff 0%,rgba(255,255,255,.85) 100%) !important;
+      -webkit-background-clip: text !important;
+      background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      color: transparent !important;
     }
     .dash-stat-sub {
       font-size: .68rem !important;
       padding-top: 8px !important;
+      opacity: .9 !important;
+      color: rgba(255,255,255,.95) !important;
+      margin-top: auto !important;
     }
     .summary-grid { gap: 12px !important; }
 
@@ -3878,7 +3923,7 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v14.11</span>
+    <span style="opacity:.7">v14.12</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
@@ -10704,7 +10749,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.11';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.12';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate(opts) {
