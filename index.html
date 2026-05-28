@@ -2549,6 +2549,466 @@
     body .dash-stat.teal    { background: linear-gradient(135deg,#0d9488 0%,#0f766e 100%) !important; box-shadow: 0 4px 12px -2px rgba(13,148,136,0.35) !important; }
     body .dash-stat.indigo  { background: linear-gradient(135deg,#4f46e5 0%,#4338ca 100%) !important; box-shadow: 0 4px 12px -2px rgba(79,70,229,0.35) !important; }
 
+    /* ═══════════════════════════════════════════════════════════════
+       v13.1 — REFINED PALETTE (GitHub/Linear-inspired)
+       Light: warm whites + clean blue · Dark: clear layer hierarchy
+       ═══════════════════════════════════════════════════════════════ */
+
+    /* ──────────────── LIGHT MODE (Polished) ──────────────── */
+    body:not(.dark) {
+      --bg-app:           #f6f8fb !important;   /* cool light gray (เห็น card ขาวเด่น) */
+      --bg-card:          #ffffff !important;
+      --bg-elevated:      #ffffff !important;
+      --bg-subtle:        #eef1f6 !important;
+      --t-primary:        #1a1f2e !important;   /* warm black */
+      --t-secondary:      #5a6577 !important;   /* warm gray */
+      --t-tertiary:       #98a1b0 !important;
+      --b-default:        #e4e8ee !important;
+      --b-strong:         #cdd3dc !important;
+      --c-primary:        #2563eb !important;   /* clean blue */
+      --c-primary-hover:  #1d4ed8 !important;
+      background: #f6f8fb !important;
+      color: #1a1f2e !important;
+    }
+    /* LIGHT body — soft warm gradient bg */
+    body:not(.dark) #main-content {
+      background:
+        radial-gradient(at 80% 0%, rgba(99,102,241,0.04) 0%, transparent 60%),
+        radial-gradient(at 0% 100%, rgba(236,72,153,0.03) 0%, transparent 60%),
+        #f6f8fb !important;
+    }
+    /* LIGHT Sidebar — slightly off-white (สีต่างกับ main ชัด) */
+    body:not(.dark) #sidebar {
+      background: #fdfdfe !important;
+      border-right: 1px solid #e4e8ee !important;
+    }
+    body:not(.dark) .sb-logo {
+      border-bottom: 1px solid #eef1f6 !important;
+    }
+    body:not(.dark) .sb-logo:hover { background: #f6f8fb !important; }
+    body:not(.dark) .sb-logo-icon {
+      background: linear-gradient(135deg,#3b82f6 0%,#2563eb 100%) !important;
+      box-shadow: 0 6px 16px -4px rgba(37,99,235,0.4) !important;
+    }
+    body:not(.dark) .sb-brand { color: #1a1f2e !important; font-weight: 800; }
+    body:not(.dark) .sb-sub   { color: #8b94a3 !important; }
+    body:not(.dark) .sb-section {
+      color: #98a1b0 !important;
+      font-size: .6rem !important;
+      letter-spacing: 1.2px !important;
+      font-weight: 700 !important;
+      padding: 12px 6px 4px !important;
+    }
+    body:not(.dark) .tab-btn {
+      color: #4a5568 !important;
+      font-weight: 500 !important;
+      padding: 9px 12px !important;
+      border-radius: 8px !important;
+    }
+    body:not(.dark) .tab-btn:hover {
+      background: #f1f3f7 !important;
+      color: #1a1f2e !important;
+    }
+    body:not(.dark) .tab-btn.active {
+      background: linear-gradient(90deg, #eff6ff 0%, #f8fafc 100%) !important;
+      color: #1d4ed8 !important;
+      font-weight: 600 !important;
+      box-shadow: inset 3px 0 0 #2563eb !important;
+    }
+    body:not(.dark) .sb-footer { border-top: 1px solid #eef1f6 !important; }
+
+    /* LIGHT Header — clean white */
+    body:not(.dark) .app-header {
+      background: rgba(253,253,254,0.92) !important;
+      backdrop-filter: saturate(180%) blur(10px) !important;
+      -webkit-backdrop-filter: saturate(180%) blur(10px) !important;
+      border-bottom: 1px solid #e4e8ee !important;
+    }
+    body:not(.dark) #page-title { color: #1a1f2e !important; font-weight: 700; }
+    body:not(.dark) .app-header .version {
+      background: #f1f3f7 !important;
+      border: 1px solid #e4e8ee !important;
+      color: #5a6577 !important;
+    }
+
+    /* LIGHT Cards — white with depth */
+    body:not(.dark) .dash-card,
+    body:not(.dark) .card,
+    body:not(.dark) .cal-grid,
+    body:not(.dark) .cal-modal-box,
+    body:not(.dark) .record-card,
+    body:not(.dark) .gps-login-card,
+    body:not(.dark) .skeleton-card {
+      background: #ffffff !important;
+      border: 1px solid #e4e8ee !important;
+      border-radius: 12px !important;
+      box-shadow:
+        0 1px 2px rgba(15,23,42,0.04),
+        0 1px 1px rgba(15,23,42,0.02) !important;
+    }
+    body:not(.dark) .dash-card:hover,
+    body:not(.dark) .record-card:hover {
+      border-color: #cdd3dc !important;
+      box-shadow:
+        0 8px 24px -8px rgba(15,23,42,0.12),
+        0 2px 4px rgba(15,23,42,0.04) !important;
+      transform: translateY(-1px);
+    }
+
+    /* LIGHT Card title — blue accent */
+    body:not(.dark) .card .card-title,
+    body:not(.dark) .dash-card-title {
+      color: #1a1f2e !important;
+      font-weight: 700 !important;
+    }
+    body:not(.dark) .dash-card-sub { color: #5a6577 !important; }
+
+    /* LIGHT Inputs — refined */
+    body:not(.dark) input[type=text],
+    body:not(.dark) input[type=number],
+    body:not(.dark) input[type=date],
+    body:not(.dark) input[type=time],
+    body:not(.dark) input[type=tel],
+    body:not(.dark) input[type=email],
+    body:not(.dark) input[type=password],
+    body:not(.dark) textarea,
+    body:not(.dark) select {
+      background: #ffffff !important;
+      border: 1px solid #cdd3dc !important;
+      color: #1a1f2e !important;
+      border-radius: 8px !important;
+      transition: all .15s !important;
+    }
+    body:not(.dark) input:hover, body:not(.dark) textarea:hover, body:not(.dark) select:hover {
+      border-color: #98a1b0 !important;
+    }
+    body:not(.dark) input:focus, body:not(.dark) textarea:focus, body:not(.dark) select:focus {
+      border-color: #2563eb !important;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.12) !important;
+    }
+    body:not(.dark) label {
+      color: #1a1f2e !important;
+      font-weight: 600 !important;
+    }
+
+    /* LIGHT Inner-nav (tab toggle) */
+    body:not(.dark) .inner-nav {
+      background: #f1f3f7 !important;
+      border: 1px solid #e4e8ee !important;
+      padding: 4px !important;
+      border-radius: 10px !important;
+    }
+    body:not(.dark) .inner-btn {
+      color: #5a6577 !important;
+      border-radius: 7px !important;
+      background: transparent !important;
+      border: none !important;
+    }
+    body:not(.dark) .inner-btn:hover { color: #1a1f2e !important; }
+    body:not(.dark) .inner-btn.active {
+      background: #ffffff !important;
+      color: #1d4ed8 !important;
+      box-shadow:
+        0 1px 3px rgba(15,23,42,0.08),
+        0 0 0 0.5px #e4e8ee !important;
+    }
+
+    /* LIGHT Buttons */
+    body:not(.dark) .btn-primary, body:not(.dark) .submit-btn {
+      background: linear-gradient(135deg,#3b82f6,#2563eb) !important;
+      color: white !important;
+      box-shadow: 0 4px 12px -2px rgba(37,99,235,0.4) !important;
+      border-radius: 8px !important;
+    }
+    body:not(.dark) .btn-primary:hover, body:not(.dark) .submit-btn:hover {
+      box-shadow: 0 6px 16px -2px rgba(37,99,235,0.5) !important;
+      transform: translateY(-1px);
+    }
+
+    /* LIGHT Header buttons */
+    body:not(.dark) .header-bell {
+      background: #f1f3f7 !important;
+      border: 1px solid #e4e8ee !important;
+      color: #4a5568 !important;
+      border-radius: 8px !important;
+    }
+    body:not(.dark) .header-bell:hover {
+      background: #ffffff !important;
+      border-color: #cdd3dc !important;
+      color: #1a1f2e !important;
+      box-shadow: 0 2px 6px rgba(15,23,42,0.06) !important;
+    }
+    body:not(.dark) #auth-btn {
+      background: linear-gradient(135deg,#eff6ff,#dbeafe) !important;
+      border: 1px solid #bfdbfe !important;
+      color: #1d4ed8 !important;
+    }
+
+    /* LIGHT Empty state */
+    body:not(.dark) .empty-state-icon {
+      background: linear-gradient(135deg,#eff6ff,#e0e7ff) !important;
+      color: #1d4ed8;
+    }
+    body:not(.dark) .empty-state-title { color: #1a1f2e !important; }
+    body:not(.dark) .empty-state-sub { color: #5a6577 !important; }
+
+    /* LIGHT Calendar */
+    body:not(.dark) .cal-daycell { border-color: #eef1f6 !important; }
+    body:not(.dark) .cal-daycell:hover { background: #f6f8fb !important; }
+    body:not(.dark) .cal-daycell.today {
+      background: #eff6ff !important;
+      box-shadow: inset 0 0 0 1.5px #2563eb !important;
+    }
+    body:not(.dark) .cal-weekday {
+      color: #5a6577 !important;
+      background: #f1f3f7 !important;
+      font-weight: 700;
+    }
+
+    /* LIGHT FAB */
+    body:not(.dark) #fab {
+      background: linear-gradient(135deg,#3b82f6,#1d4ed8) !important;
+      box-shadow:
+        0 8px 24px -4px rgba(37,99,235,0.5),
+        0 4px 12px rgba(37,99,235,0.3) !important;
+    }
+
+    /* LIGHT Tables */
+    body:not(.dark) .sum-table th {
+      background: #f6f8fb !important;
+      color: #5a6577 !important;
+      border-bottom: 1px solid #e4e8ee !important;
+      letter-spacing: .4px;
+    }
+    body:not(.dark) .sum-table tr:hover td { background: #f9fafb !important; }
+
+    /* ──────────────── DARK MODE (Better Layer Hierarchy) ──────────────── */
+    body.dark {
+      --bg-app:           #0a0d14 !important;     /* deeper base */
+      --bg-card:          #141826 !important;     /* clearer step up */
+      --bg-elevated:      #1a1f31 !important;     /* hover/focus */
+      --bg-subtle:        #1f2538 !important;
+      --t-primary:        #f0f3f9 !important;     /* warmer white */
+      --t-secondary:      #b7c0d0 !important;
+      --t-tertiary:       #7a8499 !important;
+      --b-default:        #252b3d !important;     /* more visible */
+      --b-strong:         #3a4256 !important;
+      --c-primary:        #4493f8 !important;
+      --c-primary-hover:  #3b82f6 !important;
+      background: #0a0d14 !important;
+      color: #f0f3f9 !important;
+    }
+    /* DARK body — subtle glow */
+    body.dark #main-content {
+      background:
+        radial-gradient(at 80% 0%, rgba(59,130,246,0.06) 0%, transparent 60%),
+        radial-gradient(at 0% 100%, rgba(139,92,246,0.04) 0%, transparent 60%),
+        #0a0d14 !important;
+    }
+    /* DARK Sidebar — even deeper */
+    body.dark #sidebar {
+      background: #06080f !important;
+      border-right: 1px solid #1a1f31 !important;
+    }
+    body.dark .sb-logo-icon {
+      background: linear-gradient(135deg,#3b82f6 0%,#1d4ed8 100%) !important;
+      box-shadow: 0 6px 16px -4px rgba(59,130,246,0.5) !important;
+    }
+    body.dark .sb-brand { color: #f0f3f9 !important; font-weight: 800; }
+    body.dark .sb-sub   { color: #5b677e !important; }
+    body.dark .sb-section {
+      color: #5b677e !important;
+      font-size: .6rem !important;
+      letter-spacing: 1.2px !important;
+      font-weight: 700 !important;
+    }
+    body.dark .tab-btn {
+      color: #98a3b8 !important;
+      padding: 9px 12px !important;
+      border-radius: 8px !important;
+    }
+    body.dark .tab-btn:hover {
+      background: #141826 !important;
+      color: #f0f3f9 !important;
+    }
+    body.dark .tab-btn.active {
+      background: linear-gradient(90deg, rgba(59,130,246,0.18) 0%, rgba(59,130,246,0.06) 100%) !important;
+      color: #f0f3f9 !important;
+      font-weight: 600 !important;
+      box-shadow: inset 3px 0 0 #4493f8 !important;
+    }
+    body.dark .sb-footer { border-top: 1px solid #1a1f31 !important; }
+
+    /* DARK Header */
+    body.dark .app-header {
+      background: rgba(10,13,20,0.88) !important;
+      backdrop-filter: saturate(180%) blur(12px) !important;
+      -webkit-backdrop-filter: saturate(180%) blur(12px) !important;
+      border-bottom: 1px solid #1a1f31 !important;
+    }
+    body.dark #page-title { color: #f0f3f9 !important; font-weight: 700; }
+    body.dark .app-header .version {
+      background: #141826 !important;
+      border: 1px solid #252b3d !important;
+      color: #b7c0d0 !important;
+    }
+    body.dark #live-clock { color: #f0f3f9 !important; }
+
+    /* DARK Cards — clearer step-up from body */
+    body.dark .dash-card,
+    body.dark .card,
+    body.dark .cal-grid,
+    body.dark .cal-modal-box,
+    body.dark .record-card,
+    body.dark .gps-login-card,
+    body.dark .skeleton-card {
+      background: #141826 !important;
+      border: 1px solid #252b3d !important;
+      border-radius: 12px !important;
+      box-shadow:
+        0 1px 3px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.03) !important;
+    }
+    body.dark .dash-card:hover,
+    body.dark .record-card:hover {
+      background: #1a1f31 !important;
+      border-color: #3a4256 !important;
+      box-shadow:
+        0 8px 24px -8px rgba(0,0,0,0.5),
+        inset 0 1px 0 rgba(255,255,255,0.05) !important;
+      transform: translateY(-1px);
+    }
+
+    body.dark .card .card-title { color: #4493f8 !important; font-weight: 700 !important; }
+    body.dark .dash-card-title { color: #f0f3f9 !important; font-weight: 700 !important; }
+    body.dark .dash-card-sub { color: #7a8499 !important; }
+
+    /* DARK Inputs */
+    body.dark input[type=text],
+    body.dark input[type=number],
+    body.dark input[type=date],
+    body.dark input[type=time],
+    body.dark input[type=tel],
+    body.dark input[type=email],
+    body.dark input[type=password],
+    body.dark textarea,
+    body.dark select {
+      background: #0a0d14 !important;
+      border: 1px solid #252b3d !important;
+      color: #f0f3f9 !important;
+      border-radius: 8px !important;
+    }
+    body.dark input:hover, body.dark textarea:hover, body.dark select:hover {
+      border-color: #3a4256 !important;
+    }
+    body.dark input:focus, body.dark textarea:focus, body.dark select:focus {
+      border-color: #4493f8 !important;
+      box-shadow: 0 0 0 3px rgba(68,147,248,0.18) !important;
+      background: #141826 !important;
+    }
+    body.dark label { color: #f0f3f9 !important; font-weight: 600 !important; }
+    body.dark input::placeholder, body.dark textarea::placeholder {
+      color: #5b677e !important;
+    }
+
+    /* DARK Inner-nav */
+    body.dark .inner-nav {
+      background: #06080f !important;
+      border: 1px solid #1a1f31 !important;
+      padding: 4px !important;
+      border-radius: 10px !important;
+    }
+    body.dark .inner-btn {
+      color: #98a3b8 !important;
+      border-radius: 7px !important;
+      background: transparent !important;
+      border: none !important;
+    }
+    body.dark .inner-btn:hover { color: #f0f3f9 !important; }
+    body.dark .inner-btn.active {
+      background: linear-gradient(135deg,#3b82f6,#2563eb) !important;
+      color: white !important;
+      box-shadow: 0 4px 12px -2px rgba(59,130,246,0.45) !important;
+    }
+
+    /* DARK Buttons */
+    body.dark .btn-primary, body.dark .submit-btn {
+      background: linear-gradient(135deg,#3b82f6,#1d4ed8) !important;
+      color: white !important;
+      box-shadow: 0 4px 14px -2px rgba(59,130,246,0.45) !important;
+    }
+    body.dark .btn-primary:hover, body.dark .submit-btn:hover {
+      filter: brightness(1.1);
+      box-shadow: 0 6px 18px -2px rgba(59,130,246,0.55) !important;
+    }
+
+    /* DARK Header buttons */
+    body.dark .header-bell {
+      background: #141826 !important;
+      border: 1px solid #252b3d !important;
+      color: #b7c0d0 !important;
+      border-radius: 8px !important;
+    }
+    body.dark .header-bell:hover {
+      background: #1a1f31 !important;
+      border-color: #3a4256 !important;
+      color: #f0f3f9 !important;
+    }
+    body.dark #auth-btn {
+      background: linear-gradient(135deg,rgba(59,130,246,0.15),rgba(59,130,246,0.05)) !important;
+      border: 1px solid rgba(59,130,246,0.3) !important;
+      color: #93c5fd !important;
+    }
+
+    /* DARK Calendar */
+    body.dark .cal-daycell { border-color: #1a1f31 !important; }
+    body.dark .cal-daycell:hover { background: #141826 !important; }
+    body.dark .cal-daycell.today {
+      background: rgba(59,130,246,0.15) !important;
+      box-shadow: inset 0 0 0 1.5px #4493f8 !important;
+    }
+    body.dark .cal-weekday {
+      color: #b7c0d0 !important;
+      background: #141826 !important;
+      font-weight: 700;
+    }
+
+    /* DARK FAB */
+    body.dark #fab {
+      background: linear-gradient(135deg,#3b82f6,#1d4ed8) !important;
+      box-shadow:
+        0 8px 28px -4px rgba(59,130,246,0.6),
+        0 4px 14px rgba(59,130,246,0.4) !important;
+    }
+
+    /* DARK Tables */
+    body.dark .sum-table th {
+      background: #1a1f31 !important;
+      color: #b7c0d0 !important;
+      border-bottom: 1px solid #252b3d !important;
+    }
+    body.dark .sum-table tr:hover td { background: #141826 !important; }
+    body.dark .sum-table td { color: #f0f3f9 !important; }
+
+    /* DARK Empty state */
+    body.dark .empty-state-icon {
+      background: linear-gradient(135deg,rgba(59,130,246,0.2),rgba(59,130,246,0.05)) !important;
+      color: #93c5fd;
+    }
+    body.dark .empty-state-title { color: #f0f3f9 !important; }
+    body.dark .empty-state-sub { color: #98a3b8 !important; }
+
+    /* DARK Action chip */
+    body.dark .dash-card-action {
+      background: rgba(59,130,246,0.12) !important;
+      border: 1px solid rgba(59,130,246,0.2) !important;
+      color: #93c5fd !important;
+    }
+    body.dark .dash-card-action:hover {
+      background: rgba(59,130,246,0.2) !important;
+      color: #bfdbfe !important;
+    }
+
     /* ═══════════════════════════════════════════════════════════
        v12.4 — REFINED COLOR & CONTRAST
        Stat cards ให้ดู premium + cards มี contrast ชัด ไม่กลมกลืน
@@ -2797,7 +3257,7 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v13.0</span>
+    <span style="opacity:.7">v13.1</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
@@ -8578,7 +9038,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v13.0';   // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v13.1';   // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate(opts) {
