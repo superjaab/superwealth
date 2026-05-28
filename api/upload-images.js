@@ -46,10 +46,14 @@ module.exports = async function handler(req, res) {
         body:    params.toString()
       });
 
-      const json = await resp.json();
+      let json;
+      try { json = await resp.json(); }
+      catch { json = { success:false, error:{ message:`HTTP ${resp.status} (ImgBB)` } }; }
 
       if (!json.success) {
-        results.push({ filename: img.filename, url: '', error: json.error?.message || 'อัปโหลดไม่สำเร็จ' });
+        const errMsg = json.error?.message || json.error || `อัปโหลดไม่สำเร็จ (HTTP ${resp.status})`;
+        console.error('ImgBB upload failed:', errMsg, 'status:', resp.status);
+        results.push({ filename: img.filename, url: '', error: errMsg });
         continue;
       }
 

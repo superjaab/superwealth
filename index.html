@@ -926,7 +926,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v9.2 | 28/05/2026 16:40</span>
+  <span class="version" style="margin-left:auto">v9.3 | 28/05/2026 17:10</span>
   <!-- Login/Logout button -->
   <button class="header-bell" id="auth-btn" onclick="handleAuthClick()" title="เข้าสู่ระบบ" style="margin-left:10px;width:auto;padding:0 14px;font-weight:700;font-size:.78rem;display:flex;align-items:center;gap:6px">
     <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
@@ -2445,7 +2445,7 @@ const state = {
   maintenance: { images: [], ocrText: '', ocrParsed: null }
 };
 const REG = { vehicles:[], customers:[] };
-const MAX_FILE_SIZE = 4 * 1024 * 1024;   // 4 MB (Vercel body limit ~4.5 MB)
+const MAX_FILE_SIZE = 15 * 1024 * 1024;   // 15 MB (จะถูกบีบอัดอัตโนมัติก่อนอัพโหลด)
 const ALLOWED_TYPES = ['image/jpeg','image/jpg','image/png','image/gif','image/webp','image/heic','image/heif'];
 let gpsSession = { id: '', url: '', user: '' };
 
@@ -3378,7 +3378,7 @@ function buildUploadArea(formKey, containerId) {
          ondragleave="handleDragLeave(event,'${formKey}')"
          ondrop="handleDrop(event,'${formKey}')">
       <div class="upload-icon">📁</div>
-      <p>ลากไฟล์มาวางที่นี่ หรือกดปุ่มด้านล่าง<br>รองรับ JPG, PNG, HEIC ขนาดสูงสุด 4MB/ไฟล์</p>
+      <p>ลากไฟล์มาวางที่นี่ หรือกดปุ่มด้านล่าง<br>รองรับ JPG, PNG, HEIC ขนาดสูงสุด 15MB/ไฟล์ (บีบอัดอัตโนมัติ)</p>
       <div class="upload-btns">
         <label class="btn-upload-action" for="${formKey}-file-input">
           🖼 เลือกจากอัลบั้ม
@@ -3679,14 +3679,76 @@ async function submitForm(formKey) {
 async function uploadAllImages(formKey) {
   const imgs = state[formKey].images;
   if (imgs.length === 0) return [];
-  const imagePayloads = await Promise.all(imgs.map(async item => ({
-    base64:   await fileToBase64(item.file),
-    mimeType: item.file.type,
-    filename: `${formKey}-${Date.now()}-${Math.random().toString(36).substr(2,4).toUpperCase()}.${item.file.name.split('.').pop()||'jpg'}`
-  })));
-  const result = await api('/api/upload-images', { images: imagePayloads });
-  if (!result.success) throw new Error(result.error);
-  return result.urls.map(u => u.url).filter(Boolean);
+
+  const urls = [];
+  const failed = [];
+
+  // อัพทีละรูป — เลี่ยง Vercel 4.5MB body limit + บีบอัดก่อนส่ง
+  for (let i = 0; i < imgs.length; i++) {
+    const item = imgs[i];
+    setLoadingText(`📤 กำลังอัพโหลดรูปที่ ${i+1}/${imgs.length}...`);
+    try {
+      // 1) บีบอัด/แปลงเป็น JPEG (max 1920px, quality 85%)
+      const { base64, mimeType } = await compressForUpload(item.file);
+      const filename = `${formKey}-${Date.now()}-${i}-${Math.random().toString(36).substr(2,4).toUpperCase()}.jpg`;
+
+      // 2) ส่ง 1 รูป/request
+      const result = await api('/api/upload-images', {
+        images: [{ base64, mimeType, filename }]
+      });
+
+      if (!result.success || !result.urls?.[0]?.url) {
+        const err = result.urls?.[0]?.error || result.error || 'ไม่ทราบสาเหตุ';
+        failed.push(`รูปที่ ${i+1}: ${err}`);
+        console.warn('Upload failed for image', i+1, err);
+        continue;
+      }
+      urls.push(result.urls[0].url);
+    } catch (e) {
+      failed.push(`รูปที่ ${i+1}: ${e.message}`);
+      console.warn('Upload exception for image', i+1, e);
+    }
+  }
+
+  if (failed.length && urls.length === 0) {
+    throw new Error('อัพโหลดรูปไม่สำเร็จ:\n' + failed.join('\n'));
+  }
+  if (failed.length) {
+    showToast(`⚠️ บางรูปอัพไม่สำเร็จ (${failed.length}/${imgs.length}) — จะบันทึกเฉพาะที่อัพได้`, 'warning');
+  }
+  return urls;
+}
+
+// บีบอัดรูป + แปลงเป็น JPEG ก่อนส่ง (รองรับ HEIC/PNG/ใหญ่)
+async function compressForUpload(file) {
+  const MAX_PX  = 1920;
+  const QUALITY = 0.85;
+  try {
+    const bitmap = await createImageBitmap(file);
+    let { width, height } = bitmap;
+    if (width > MAX_PX || height > MAX_PX) {
+      const scale = MAX_PX / Math.max(width, height);
+      width  = Math.round(width  * scale);
+      height = Math.round(height * scale);
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width  = width;
+    canvas.height = height;
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, width, height);
+    return await new Promise((resolve, reject) => {
+      canvas.toBlob(blob => {
+        if (!blob) return reject(new Error('compress failed'));
+        const r = new FileReader();
+        r.onload  = e => resolve({ base64: e.target.result.split(',')[1], mimeType: 'image/jpeg' });
+        r.onerror = reject;
+        r.readAsDataURL(blob);
+      }, 'image/jpeg', QUALITY);
+    });
+  } catch (e) {
+    // fallback (ไฟล์เล็ก ๆ ที่บีบไม่ได้ — เช่น GIF) → ส่งดิบ
+    console.warn('compressForUpload fallback:', e.message);
+    return { base64: await fileToBase64(file), mimeType: file.type || 'image/jpeg' };
+  }
 }
 
 // ─── COLLECT FORM DATA ────────────────────
