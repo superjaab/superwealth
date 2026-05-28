@@ -878,6 +878,391 @@
     .bell-item.lv-warning { background:#fffbeb; border-left:3px solid #f59e0b }
     .bell-item.lv-info    { background:#eff6ff; border-left:3px solid #3b82f6 }
   </style>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       MODERN UI ENHANCEMENTS — v10.0
+       Design tokens, animations, command palette, FAB, skeleton, etc.
+       ═══════════════════════════════════════════════════════════════ -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ─── DESIGN TOKENS ────────────────────────── */
+    :root {
+      /* Brand colors */
+      --c-primary:        #4f46e5;
+      --c-primary-hover:  #4338ca;
+      --c-primary-soft:   #eef2ff;
+      --c-primary-tint:   #e0e7ff;
+      --c-accent:         #8b5cf6;
+
+      /* Semantic */
+      --c-success:        #10b981;
+      --c-success-soft:   #d1fae5;
+      --c-warning:        #f59e0b;
+      --c-warning-soft:   #fef3c7;
+      --c-danger:         #ef4444;
+      --c-danger-soft:    #fee2e2;
+      --c-info:           #3b82f6;
+      --c-info-soft:      #dbeafe;
+
+      /* Surface */
+      --bg-app:           #f8fafc;
+      --bg-card:          #ffffff;
+      --bg-elevated:      #ffffff;
+      --bg-subtle:        #f1f5f9;
+
+      /* Text */
+      --t-primary:        #0f172a;
+      --t-secondary:      #475569;
+      --t-tertiary:       #94a3b8;
+      --t-disabled:       #cbd5e1;
+
+      /* Border */
+      --b-default:        #e2e8f0;
+      --b-strong:         #cbd5e1;
+      --b-focus:          var(--c-primary);
+
+      /* Shadows (layered, soft) */
+      --shadow-xs:  0 1px 2px rgba(15,23,42,0.04);
+      --shadow-sm:  0 1px 3px rgba(15,23,42,0.05), 0 1px 2px rgba(15,23,42,0.03);
+      --shadow-md:  0 4px 6px -1px rgba(15,23,42,0.06), 0 2px 4px -2px rgba(15,23,42,0.04);
+      --shadow-lg:  0 10px 20px -3px rgba(15,23,42,0.08), 0 4px 8px -4px rgba(15,23,42,0.05);
+      --shadow-xl:  0 20px 30px -6px rgba(15,23,42,0.12), 0 10px 16px -6px rgba(15,23,42,0.06);
+      --shadow-2xl: 0 32px 60px -16px rgba(15,23,42,0.18);
+      --shadow-glow: 0 0 0 3px rgba(79,70,229,0.18);
+
+      /* Radii */
+      --r-xs: 4px;
+      --r-sm: 6px;
+      --r-md: 10px;
+      --r-lg: 14px;
+      --r-xl: 18px;
+      --r-2xl: 24px;
+      --r-full: 9999px;
+
+      /* Motion */
+      --t-fast:     130ms cubic-bezier(0.4,0,0.2,1);
+      --t-base:     200ms cubic-bezier(0.4,0,0.2,1);
+      --t-slow:     320ms cubic-bezier(0.4,0,0.2,1);
+      --t-spring:   500ms cubic-bezier(0.34,1.56,0.64,1);
+    }
+    /* Dark-mode tokens override */
+    body.dark {
+      --bg-app:           #0b1220;
+      --bg-card:          #111827;
+      --bg-elevated:      #1f2937;
+      --bg-subtle:        #1e293b;
+      --t-primary:        #f1f5f9;
+      --t-secondary:      #cbd5e1;
+      --t-tertiary:       #94a3b8;
+      --t-disabled:       #475569;
+      --b-default:        #1f2937;
+      --b-strong:         #334155;
+      --c-primary-soft:   rgba(99,102,241,0.16);
+      --c-primary-tint:   rgba(99,102,241,0.24);
+      --c-success-soft:   rgba(16,185,129,0.16);
+      --c-warning-soft:   rgba(245,158,11,0.16);
+      --c-danger-soft:    rgba(239,68,68,0.16);
+      --c-info-soft:      rgba(59,130,246,0.16);
+      --shadow-sm:  0 1px 3px rgba(0,0,0,0.4);
+      --shadow-md:  0 4px 8px rgba(0,0,0,0.45);
+      --shadow-lg:  0 12px 24px rgba(0,0,0,0.55);
+      --shadow-xl:  0 24px 40px rgba(0,0,0,0.65);
+    }
+
+    /* ─── TYPOGRAPHY UPGRADE ─── */
+    body, .tab-btn, input, textarea, select, button {
+      font-family: 'Inter','IBM Plex Sans Thai','Noto Sans Thai','Segoe UI',system-ui,-apple-system,sans-serif !important;
+      font-feature-settings: 'cv02','cv03','cv04','cv11','tnum';
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      letter-spacing: -0.01em;
+    }
+
+    /* ─── GLOBAL SMOOTH SCROLL + SELECTION ─── */
+    html { scroll-behavior: smooth; }
+    ::selection { background: var(--c-primary-tint); color: var(--c-primary); }
+    /* Modern scrollbar (WebKit) */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+      background: var(--b-strong);
+      border-radius: 10px;
+      border: 2px solid var(--bg-app);
+      transition: background var(--t-base);
+    }
+    ::-webkit-scrollbar-thumb:hover { background: var(--t-tertiary); }
+
+    /* ─── MICRO INTERACTIONS ─── */
+    button, .btn, .tab-btn {
+      transition: transform var(--t-fast), box-shadow var(--t-fast),
+                  background var(--t-fast), color var(--t-fast),
+                  border-color var(--t-fast), opacity var(--t-fast);
+    }
+    button:not(:disabled):active, .btn:not(:disabled):active {
+      transform: translateY(1px) scale(.98);
+    }
+    button:focus-visible, .btn:focus-visible,
+    input:focus-visible, textarea:focus-visible, select:focus-visible {
+      outline: none;
+      box-shadow: var(--shadow-glow);
+    }
+
+    /* ─── KEYFRAMES ─── */
+    @keyframes fadeIn        { from { opacity:0; transform: translateY(4px); } to { opacity:1; transform: translateY(0); } }
+    @keyframes scaleIn       { from { opacity:0; transform: scale(.95); } to { opacity:1; transform: scale(1); } }
+    @keyframes slideUp       { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); } }
+    @keyframes shimmer       { 0% { background-position: -1000px 0; } 100% { background-position: 1000px 0; } }
+    @keyframes pulseRing     { 0% { box-shadow: 0 0 0 0 rgba(79,70,229,0.5); } 70% { box-shadow: 0 0 0 14px rgba(79,70,229,0); } 100% { box-shadow: 0 0 0 0 rgba(79,70,229,0); } }
+    @keyframes bounceIn      { 0% { opacity:0; transform: scale(.5); } 60% { opacity:1; transform: scale(1.05); } 100% { transform: scale(1); } }
+    @keyframes spin360       { to { transform: rotate(360deg); } }
+
+    /* Page transition (tab switch) */
+    .tab-panel.active { animation: fadeIn var(--t-slow); }
+
+    /* Card lift on hover */
+    .dash-card, .card, .record-card {
+      transition: transform var(--t-base), box-shadow var(--t-base), border-color var(--t-base);
+    }
+    .dash-card:hover, .record-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    /* ─── SKELETON LOADER ─── */
+    .skeleton {
+      background: linear-gradient(90deg, var(--b-default) 25%, var(--bg-subtle) 50%, var(--b-default) 75%);
+      background-size: 1000px 100%;
+      animation: shimmer 1.6s infinite linear;
+      border-radius: var(--r-sm);
+      display: block;
+    }
+    .skeleton-text   { height: 14px; margin: 6px 0; }
+    .skeleton-title  { height: 22px; width: 60%; margin-bottom: 12px; }
+    .skeleton-line   { height: 12px; margin: 4px 0; }
+    .skeleton-card   {
+      padding: 16px; border: 1px solid var(--b-default); border-radius: var(--r-lg);
+      background: var(--bg-card); margin-bottom: 10px;
+    }
+    body.dark .skeleton { background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); background-size: 1000px 100%; }
+
+    /* ─── EMPTY STATE ─── */
+    .empty-state {
+      padding: 48px 24px; text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      animation: fadeIn var(--t-slow);
+    }
+    .empty-state-icon {
+      width: 88px; height: 88px; border-radius: var(--r-full);
+      background: linear-gradient(135deg, var(--c-primary-soft), var(--c-primary-tint));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.4rem;
+      box-shadow: var(--shadow-md);
+    }
+    .empty-state-title  { font-size: 1.05rem; font-weight: 700; color: var(--t-primary); }
+    .empty-state-sub    { font-size: .85rem; color: var(--t-tertiary); max-width: 340px; line-height: 1.6; }
+    .empty-state-action {
+      margin-top: 6px; padding: 10px 20px;
+      background: linear-gradient(135deg, var(--c-primary), var(--c-primary-hover));
+      color: white; border: none; border-radius: var(--r-md);
+      font-weight: 700; font-size: .85rem; cursor: pointer;
+      box-shadow: var(--shadow-md);
+    }
+    .empty-state-action:hover { box-shadow: var(--shadow-lg); transform: translateY(-1px); }
+
+    /* ─── FLOATING ACTION BUTTON (FAB) ─── */
+    #fab {
+      position: fixed; right: 22px; bottom: 22px; z-index: 90;
+      display: none; align-items: center; justify-content: center;
+      width: 60px; height: 60px; border-radius: var(--r-full);
+      background: linear-gradient(135deg, var(--c-primary), var(--c-accent));
+      color: white; border: none; cursor: pointer;
+      font-size: 1.6rem; font-weight: 700;
+      box-shadow: 0 12px 28px -6px rgba(79,70,229,0.5), var(--shadow-lg);
+      transition: transform var(--t-spring), box-shadow var(--t-base);
+      animation: pulseRing 2.4s infinite;
+    }
+    #fab:hover  { transform: translateY(-2px) scale(1.05); box-shadow: 0 16px 36px -8px rgba(79,70,229,0.6); }
+    #fab:active { transform: translateY(0) scale(.96); }
+    #fab.show   { display: flex; animation: bounceIn var(--t-spring), pulseRing 2.4s 1s infinite; }
+    #fab-menu {
+      position: fixed; right: 22px; bottom: 96px; z-index: 89;
+      display: none; flex-direction: column; gap: 10px;
+      animation: slideUp var(--t-base);
+    }
+    #fab-menu.show { display: flex; }
+    .fab-menu-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 18px 11px 14px;
+      background: var(--bg-card); color: var(--t-primary);
+      border: 1px solid var(--b-default); border-radius: var(--r-full);
+      box-shadow: var(--shadow-lg);
+      font-size: .85rem; font-weight: 600; cursor: pointer;
+      transition: all var(--t-fast);
+    }
+    .fab-menu-item:hover {
+      background: var(--c-primary-soft);
+      color: var(--c-primary);
+      border-color: var(--c-primary-tint);
+      transform: translateX(-4px);
+    }
+    .fab-menu-item .fab-icon { font-size: 1.1rem; }
+    @media (max-width:640px) {
+      #fab { right: 16px; bottom: 16px; width: 54px; height: 54px; }
+      #fab-menu { right: 16px; bottom: 82px; }
+    }
+
+    /* ─── COMMAND PALETTE (Ctrl/Cmd + K) ─── */
+    #cmd-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(15,23,42,0.55);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: none; align-items: flex-start; justify-content: center;
+      padding-top: 12vh;
+      animation: fadeIn var(--t-base);
+    }
+    #cmd-overlay.show { display: flex; }
+    #cmd-box {
+      width: min(620px, 92vw);
+      background: var(--bg-card);
+      border-radius: var(--r-xl);
+      box-shadow: var(--shadow-2xl);
+      border: 1px solid var(--b-default);
+      overflow: hidden;
+      animation: scaleIn var(--t-base);
+      display: flex; flex-direction: column;
+      max-height: 70vh;
+    }
+    #cmd-search-wrap {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--b-default);
+    }
+    #cmd-search-wrap svg { width: 20px; height: 20px; color: var(--t-tertiary); flex-shrink: 0; }
+    #cmd-search {
+      flex: 1; border: none; outline: none; background: transparent;
+      font-size: 1rem; color: var(--t-primary);
+      font-weight: 500;
+    }
+    #cmd-search::placeholder { color: var(--t-tertiary); }
+    .cmd-kbd {
+      background: var(--bg-subtle); color: var(--t-secondary);
+      padding: 2px 7px; border-radius: var(--r-xs);
+      font-size: .72rem; font-weight: 600;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      border: 1px solid var(--b-default);
+      box-shadow: 0 1px 0 var(--b-strong);
+    }
+    #cmd-results {
+      flex: 1; overflow-y: auto; padding: 6px 0;
+    }
+    .cmd-section {
+      padding: 8px 18px 4px; font-size: .68rem; font-weight: 700;
+      color: var(--t-tertiary); text-transform: uppercase; letter-spacing: .6px;
+    }
+    .cmd-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 18px; cursor: pointer;
+      transition: background var(--t-fast);
+      border-left: 3px solid transparent;
+    }
+    .cmd-item:hover, .cmd-item.active {
+      background: var(--c-primary-soft);
+      border-left-color: var(--c-primary);
+    }
+    .cmd-item-icon {
+      width: 32px; height: 32px; border-radius: var(--r-sm);
+      background: var(--bg-subtle); display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; flex-shrink: 0;
+    }
+    .cmd-item-text { flex: 1; min-width: 0; }
+    .cmd-item-title { font-size: .88rem; font-weight: 600; color: var(--t-primary); }
+    .cmd-item-sub   { font-size: .72rem; color: var(--t-tertiary); margin-top: 1px;
+                      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cmd-item-meta  { font-size: .7rem; color: var(--t-tertiary); flex-shrink: 0; }
+    .cmd-empty {
+      padding: 36px 18px; text-align: center;
+      color: var(--t-tertiary); font-size: .85rem;
+    }
+    #cmd-footer {
+      padding: 8px 18px; border-top: 1px solid var(--b-default);
+      display: flex; align-items: center; gap: 12px;
+      font-size: .7rem; color: var(--t-tertiary);
+    }
+    #cmd-footer span { display: flex; align-items: center; gap: 4px; }
+
+    /* ─── HEADER SEARCH BUTTON ─── */
+    .header-search-btn {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 12px 7px 10px; border-radius: var(--r-md);
+      background: var(--bg-subtle); border: 1px solid var(--b-default);
+      color: var(--t-secondary); cursor: pointer;
+      font-size: .8rem; font-weight: 500;
+      transition: all var(--t-fast);
+      margin-left: 10px;
+    }
+    .header-search-btn:hover {
+      background: var(--c-primary-soft);
+      border-color: var(--c-primary-tint);
+      color: var(--c-primary);
+    }
+    .header-search-btn .kbd-mini {
+      background: var(--bg-card); padding: 1px 5px; border-radius: var(--r-xs);
+      font-size: .68rem; font-weight: 600; font-family: ui-monospace, monospace;
+      border: 1px solid var(--b-default); color: var(--t-tertiary);
+    }
+    @media (max-width:640px) { .header-search-btn span:not(.kbd-mini):not(.search-icon) { display:none; } }
+
+    /* ─── TOAST POLISH ─── */
+    #toast {
+      border-radius: var(--r-md) !important;
+      box-shadow: var(--shadow-xl) !important;
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      animation: slideUp var(--t-base) !important;
+      font-weight: 600 !important;
+    }
+
+    /* ─── BUTTON HOVER LIFT ─── */
+    .btn-primary, .submit-btn {
+      box-shadow: var(--shadow-md);
+      transition: transform var(--t-fast), box-shadow var(--t-base), filter var(--t-fast);
+    }
+    .btn-primary:hover, .submit-btn:hover { box-shadow: var(--shadow-lg); transform: translateY(-1px); filter: brightness(1.05); }
+
+    /* ─── DARK MODE — comprehensive overrides ─── */
+    body.dark { background: var(--bg-app) !important; color: var(--t-primary); }
+    body.dark .app-header { background: var(--bg-card) !important; border-bottom-color: var(--b-default) !important; }
+    body.dark #main-content { background: var(--bg-app) !important; }
+    body.dark .dash-card,
+    body.dark .card,
+    body.dark .record-card,
+    body.dark .cal-grid,
+    body.dark .cal-modal-box,
+    body.dark .gps-login-card {
+      background: var(--bg-card) !important;
+      border-color: var(--b-default) !important;
+      color: var(--t-primary) !important;
+    }
+    body.dark .skeleton-card { background: var(--bg-card); border-color: var(--b-default); }
+    body.dark .header-search-btn { background: var(--bg-elevated); border-color: var(--b-default); color: var(--t-secondary); }
+    body.dark #cmd-box { background: var(--bg-card); border-color: var(--b-default); }
+    body.dark #cmd-search { color: var(--t-primary); }
+    body.dark .cmd-item-icon { background: var(--bg-elevated); }
+    body.dark .cmd-kbd { background: var(--bg-elevated); color: var(--t-secondary); border-color: var(--b-default); }
+
+    /* ─── REDUCED MOTION ─── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+      #fab { animation: none !important; }
+    }
+  </style>
 </head>
 <body>
 <!-- Preview mode banner (only visible when logged out) -->
@@ -886,6 +1271,36 @@
   <span>โหมดพรีวิว — ข้อมูลถูกซ่อน คลิกเพื่อเข้าสู่ระบบ</span>
   <span style="background:rgba(255,255,255,.25);padding:2px 10px;border-radius:6px;font-size:.74rem;margin-left:6px">🔓 เข้าสู่ระบบ</span>
 </div>
+<!-- ══ COMMAND PALETTE (Ctrl+K) ══ -->
+<div id="cmd-overlay" onclick="if(event.target.id==='cmd-overlay')closeCmdPalette()">
+  <div id="cmd-box" role="dialog" aria-label="ค้นหา">
+    <div id="cmd-search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="cmd-search" type="text" placeholder="ค้นหาเที่ยวรถ, รายรับ, รายจ่าย, ลูกค้า หรือไปยังหน้า..." autocomplete="off" oninput="runCmdSearch()" onkeydown="cmdKeyNav(event)">
+      <span class="cmd-kbd">ESC</span>
+    </div>
+    <div id="cmd-results"></div>
+    <div id="cmd-footer">
+      <span><span class="cmd-kbd">↑↓</span> เลื่อน</span>
+      <span><span class="cmd-kbd">↵</span> เลือก</span>
+      <span><span class="cmd-kbd">ESC</span> ปิด</span>
+      <span style="margin-left:auto;opacity:.7">⌨️ Ctrl/⌘+K เปิดได้จากทุกหน้า</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FLOATING ACTION BUTTON (Quick add) ══ -->
+<div id="fab-menu">
+  <button class="fab-menu-item" onclick="fabAction('truck')"><span class="fab-icon">🚚</span> บันทึกเที่ยวรถ</button>
+  <button class="fab-menu-item" onclick="fabAction('income')"><span class="fab-icon">💰</span> เพิ่มรายรับ</button>
+  <button class="fab-menu-item" onclick="fabAction('expense')"><span class="fab-icon">💸</span> เพิ่มรายจ่าย</button>
+  <button class="fab-menu-item" onclick="fabAction('maintenance')"><span class="fab-icon">🔧</span> ซ่อมบำรุง</button>
+  <button class="fab-menu-item" onclick="fabAction('fuel')"><span class="fab-icon">⛽</span> เติมน้ำมัน</button>
+</div>
+<button id="fab" onclick="toggleFab()" title="เพิ่มข้อมูลเร็ว (Ctrl+N)" aria-label="เพิ่มข้อมูล">
+  <span id="fab-icon">+</span>
+</button>
+
 <div id="app-shell">
 
 <!-- ══ SIDEBAR ══ -->
@@ -926,7 +1341,13 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v9.3 | 28/05/2026 17:10</span>
+  <!-- Global Command Palette / Search trigger -->
+  <button class="header-search-btn" onclick="openCmdPalette()" title="ค้นหา (Ctrl+K)" style="margin-left:auto">
+    <span class="search-icon" aria-hidden="true">🔍</span>
+    <span>ค้นหา...</span>
+    <span class="kbd-mini">Ctrl K</span>
+  </button>
+  <span class="version" style="margin-left:14px">v10.0 | 28/05/2026 18:00</span>
   <!-- Login/Logout button -->
   <button class="header-bell" id="auth-btn" onclick="handleAuthClick()" title="เข้าสู่ระบบ" style="margin-left:10px;width:auto;padding:0 14px;font-weight:700;font-size:.78rem;display:flex;align-items:center;gap:6px">
     <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
@@ -6004,6 +6425,266 @@ function renderTruckTable(truck) {
 
   tbody.innerHTML = rowsHtml;
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// v10.0 — COMMAND PALETTE / GLOBAL SEARCH (Ctrl+K)
+// ═══════════════════════════════════════════════════════════════════
+const CMD_PAGES = [
+  { type:'page', icon:'📊', title:'สรุปผล',         sub:'Dashboard ภาพรวมรายรับ-รายจ่าย', tab:'summary' },
+  { type:'page', icon:'📅', title:'ปฏิทินเที่ยวรถ', sub:'ดูเที่ยวรถรายเดือน',              tab:'calendar' },
+  { type:'page', icon:'🚚', title:'บันทึกเที่ยวรถ', sub:'เพิ่มเที่ยวรถใหม่',               tab:'truck' },
+  { type:'page', icon:'💰', title:'รายรับ',          sub:'บันทึกรายรับ + ใบเสร็จ',          tab:'income' },
+  { type:'page', icon:'💸', title:'รายจ่าย',         sub:'บันทึกรายจ่าย/ค่าใช้จ่าย',        tab:'expense' },
+  { type:'page', icon:'🚛', title:'ทะเบียนรถ',       sub:'จัดการรถในระบบ',                   tab:'vehicle' },
+  { type:'page', icon:'👤', title:'คนขับ',           sub:'ข้อมูลคนขับรถ',                    tab:'driver' },
+  { type:'page', icon:'🏢', title:'ลูกค้า',           sub:'ข้อมูลลูกค้า',                     tab:'customer' },
+  { type:'page', icon:'🔧', title:'ซ่อมบำรุง',       sub:'บันทึกการซ่อม',                    tab:'maintenance' },
+  { type:'page', icon:'⛽', title:'น้ำมัน',           sub:'บันทึกการเติมน้ำมัน',              tab:'fuel' },
+  { type:'page', icon:'🧾', title:'ใบเสร็จรับเงิน', sub:'ออกใบเสร็จ',                       tab:'invoice' },
+  { type:'page', icon:'⚙️', title:'Admin',           sub:'จัดการรหัส Login',                 tab:'admin', adminOnly:true },
+  { type:'page', icon:'📡', title:'GPS',             sub:'ติดตามรถ',                         tab:'gps' },
+  { type:'page', icon:'🔍', title:'อ่านภาพ (OCR)',  sub:'อ่านข้อความจากภาพ',                tab:'ocr' },
+];
+const CMD_ACTIONS = [
+  { type:'action', icon:'🌙', title:'สลับโหมดมืด/สว่าง',  sub:'เปลี่ยน theme',           run:()=>toggleTheme() },
+  { type:'action', icon:'📤', title:'ส่งออก CSV — เที่ยวรถ',  sub:'ดาวน์โหลดข้อมูลเป็น CSV', run:()=>exportToCsv('truck') },
+  { type:'action', icon:'📤', title:'ส่งออก CSV — รายรับ',   sub:'ดาวน์โหลดข้อมูลเป็น CSV', run:()=>exportToCsv('income') },
+  { type:'action', icon:'📤', title:'ส่งออก CSV — รายจ่าย',  sub:'ดาวน์โหลดข้อมูลเป็น CSV', run:()=>exportToCsv('expense') },
+  { type:'action', icon:'🔄', title:'รีโหลดข้อมูลทั้งหมด',    sub:'โหลด master data ใหม่',   run:()=>{ loadMasterData(); showToast('🔄 รีโหลดข้อมูลแล้ว','info'); } },
+  { type:'action', icon:'🔒', title:'ออกจากระบบ',           sub:'Logout',                     run:()=>doLogout(), authOnly:true },
+];
+
+let _cmdIdx = 0;
+let _cmdFiltered = [];
+
+function openCmdPalette() {
+  document.getElementById('cmd-overlay').classList.add('show');
+  const inp = document.getElementById('cmd-search');
+  inp.value = '';
+  setTimeout(() => inp.focus(), 50);
+  runCmdSearch();
+}
+function closeCmdPalette() {
+  document.getElementById('cmd-overlay').classList.remove('show');
+}
+
+function runCmdSearch() {
+  const q = (document.getElementById('cmd-search').value || '').trim().toLowerCase();
+  const out = document.getElementById('cmd-results');
+  _cmdIdx = 0;
+
+  // Filter pages + actions
+  const visiblePages = CMD_PAGES.filter(p => !p.adminOnly || isAdmin());
+  const visibleActions = CMD_ACTIONS.filter(a => !a.authOnly || isAuthed());
+  const matchedPages   = q ? visiblePages.filter(p => p.title.toLowerCase().includes(q) || p.sub.toLowerCase().includes(q)) : visiblePages;
+  const matchedActions = q ? visibleActions.filter(a => a.title.toLowerCase().includes(q) || a.sub.toLowerCase().includes(q)) : visibleActions;
+
+  // Search records (only when query provided + authed)
+  let recordHits = [];
+  if (q && q.length >= 2 && isAuthed()) recordHits = searchAllRecords(q).slice(0, 12);
+
+  _cmdFiltered = [...matchedPages, ...matchedActions, ...recordHits];
+
+  let html = '';
+  if (matchedPages.length) {
+    html += `<div class="cmd-section">📂 หน้าเว็บ</div>`;
+    matchedPages.forEach(p => html += cmdRenderItem(p));
+  }
+  if (matchedActions.length) {
+    html += `<div class="cmd-section">⚡ คำสั่ง</div>`;
+    matchedActions.forEach(a => html += cmdRenderItem(a));
+  }
+  if (recordHits.length) {
+    html += `<div class="cmd-section">📦 ข้อมูล (พบ ${recordHits.length})</div>`;
+    recordHits.forEach(r => html += cmdRenderItem(r));
+  }
+  if (!html) html = `<div class="cmd-empty">😶 ไม่พบผลลัพธ์สำหรับ "<b>${escHtml(q)}</b>"</div>`;
+  out.innerHTML = html;
+  cmdHighlightActive();
+}
+function cmdRenderItem(item) {
+  const idx = _cmdFiltered.indexOf(item);
+  return `<div class="cmd-item" data-idx="${idx}" onclick="cmdSelect(${idx})" onmouseenter="_cmdIdx=${idx};cmdHighlightActive()">
+    <div class="cmd-item-icon">${item.icon}</div>
+    <div class="cmd-item-text">
+      <div class="cmd-item-title">${escHtml(item.title)}</div>
+      <div class="cmd-item-sub">${escHtml(item.sub||'')}</div>
+    </div>
+    <div class="cmd-item-meta">${item.meta||''}</div>
+  </div>`;
+}
+function cmdHighlightActive() {
+  document.querySelectorAll('.cmd-item').forEach((el,i) => {
+    el.classList.toggle('active', i === _cmdIdx);
+    if (i === _cmdIdx) el.scrollIntoView({ block:'nearest' });
+  });
+}
+function cmdKeyNav(e) {
+  if (e.key === 'ArrowDown') { e.preventDefault(); _cmdIdx = Math.min(_cmdIdx+1, _cmdFiltered.length-1); cmdHighlightActive(); }
+  else if (e.key === 'ArrowUp')   { e.preventDefault(); _cmdIdx = Math.max(_cmdIdx-1, 0); cmdHighlightActive(); }
+  else if (e.key === 'Enter')     { e.preventDefault(); cmdSelect(_cmdIdx); }
+  else if (e.key === 'Escape')    { closeCmdPalette(); }
+}
+function cmdSelect(i) {
+  const item = _cmdFiltered[i];
+  if (!item) return;
+  closeCmdPalette();
+  if (item.type === 'page') {
+    const btn = document.querySelector(`.tab-btn[onclick*="'${item.tab}'"]`);
+    if (btn) btn.click();
+  } else if (item.type === 'action') {
+    item.run();
+  } else if (item.type === 'record') {
+    // Navigate to the relevant tab + open record
+    const btn = document.querySelector(`.tab-btn[onclick*="'${item.tab}'"]`);
+    if (btn) btn.click();
+    setTimeout(() => {
+      // Try to switch to list view + scroll to record
+      const listBtn = document.querySelector(`.inner-btn[onclick*="'${item.tab}','list'"]`);
+      if (listBtn) listBtn.click();
+      setTimeout(() => {
+        const el = document.querySelector(`[data-row-id="${item.rowId}"]`);
+        if (el) { el.scrollIntoView({block:'center',behavior:'smooth'}); el.style.transition='background .4s'; el.style.background='#fef3c7'; setTimeout(()=>el.style.background='',1800); }
+      }, 300);
+    }, 100);
+  }
+}
+function searchAllRecords(q) {
+  const hits = [];
+  const tryMatch = (rec, fields, tab, type, iconMap) => {
+    const blob = fields.map(f => String(rec[f]||'')).join(' ').toLowerCase();
+    if (blob.includes(q)) {
+      hits.push({
+        type:'record', icon: iconMap, tab, rowId: rec.rowId,
+        title: fields.slice(0,2).map(f=>rec[f]).filter(Boolean).join(' • ') || '(ไม่มีชื่อ)',
+        sub: type + ' • ' + (rec.timestamp ? new Date(rec.timestamp).toLocaleDateString('th-TH') : ''),
+        meta: ''
+      });
+    }
+  };
+  (_master.truckHistory||[]).forEach   (r => tryMatch(r, ['plateNumber','customerName','origin','destination','cargoList'], 'truck',   'เที่ยวรถ', '🚚'));
+  (_master.incomeHistory||[]).forEach  (r => tryMatch(r, ['customerName','docNumber','incomeItem'],                          'income',  'รายรับ',   '💰'));
+  (_master.expenseHistory||[]).forEach (r => tryMatch(r, ['vendor','expenseDetail','category','plateNumber'],                'expense', 'รายจ่าย',  '💸'));
+  (_master.vehicles||[]).forEach  (r => tryMatch(r, ['plateNumber','brand','model'],                                    'vehicle', 'รถ',       '🚛'));
+  (_master.customers||[]).forEach (r => tryMatch(r, ['customerName','contactName','phone'],                             'customer','ลูกค้า',   '🏢'));
+  (_master.drivers||[]).forEach   (r => tryMatch(r, ['driverName','driverPhone','licenseNumber'],                       'driver',  'คนขับ',    '👤'));
+  return hits;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// v10.0 — FAB (Floating Action Button)
+// ═══════════════════════════════════════════════════════════════════
+function toggleFab() {
+  const menu = document.getElementById('fab-menu');
+  const open = menu.classList.toggle('show');
+  document.getElementById('fab-icon').textContent = open ? '✕' : '+';
+  document.getElementById('fab').style.transform = open ? 'rotate(45deg)' : '';
+}
+function closeFab() {
+  document.getElementById('fab-menu').classList.remove('show');
+  document.getElementById('fab-icon').textContent = '+';
+  document.getElementById('fab').style.transform = '';
+}
+function fabAction(tab) {
+  closeFab();
+  if (!requireAuth()) return;
+  const btn = document.querySelector(`.tab-btn[onclick*="'${tab}'"]`);
+  if (btn) btn.click();
+  // Switch to form view if list is showing
+  setTimeout(() => {
+    const formBtn = document.querySelector(`.inner-btn[onclick*="'${tab}','form'"]`);
+    if (formBtn) formBtn.click();
+  }, 80);
+}
+function updateFabVisibility() {
+  const fab = document.getElementById('fab');
+  if (!fab) return;
+  // Show FAB on summary, calendar, and main entry tabs
+  const showOn = ['tab-summary','tab-calendar','tab-truck','tab-income','tab-expense'];
+  const activePanel = document.querySelector('.tab-panel.active');
+  fab.classList.toggle('show', isAuthed() && activePanel && showOn.includes(activePanel.id));
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// v10.0 — EXPORT TO CSV
+// ═══════════════════════════════════════════════════════════════════
+function exportToCsv(type) {
+  if (!requireAuth()) return;
+  const map = {
+    truck:   { data: _master.truckHistory||[], name: 'เที่ยวรถ',
+               cols: ['pickupDate','deliveryDate','tripRound','plateNumber','driverName','customerName','origin','destination','cargoList','cargoWeight','freightCost','paymentStatus','jobStatus','remark'] },
+    income:  { data: _master.incomeHistory||[],   name: 'รายรับ',
+               cols: ['incomeDate','docNumber','customerName','incomeItem','amount','paymentMethod','linkedTripRound','remark'] },
+    expense: { data: _master.expenseHistory||[],  name: 'รายจ่าย',
+               cols: ['expenseDate','category','plateNumber','vendor','expenseDetail','amount','paymentMethod','linkedTripRound','remark'] }
+  };
+  const cfg = map[type];
+  if (!cfg) return;
+  if (!cfg.data.length) { showToast('ไม่มีข้อมูลให้ส่งออก','warning'); return; }
+
+  const headers = cfg.cols;
+  const escCell = v => {
+    const s = String(v==null?'':v).replace(/"/g,'""');
+    return /[",\n\r]/.test(s) ? `"${s}"` : s;
+  };
+  const lines = [headers.join(',')];
+  cfg.data.forEach(r => lines.push(headers.map(h => escCell(r[h])).join(',')));
+  // Prepend BOM so Excel reads UTF-8 properly
+  const csv = '﻿' + lines.join('\r\n');
+
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const ts = new Date().toISOString().slice(0,10);
+  a.download = `superwealth-${cfg.name}-${ts}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  showToast(`📤 ส่งออก "${cfg.name}" สำเร็จ (${cfg.data.length} แถว)`, 'success');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// v10.0 — GLOBAL KEYBOARD SHORTCUTS
+// ═══════════════════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  // Ctrl/Cmd + K → open command palette
+  if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault(); openCmdPalette(); return;
+  }
+  // Ctrl/Cmd + / → also opens palette (alt shortcut)
+  if ((e.ctrlKey||e.metaKey) && e.key === '/') {
+    e.preventDefault(); openCmdPalette(); return;
+  }
+  // Esc closes palette + FAB
+  if (e.key === 'Escape') {
+    if (document.getElementById('cmd-overlay').classList.contains('show')) closeCmdPalette();
+    if (document.getElementById('fab-menu').classList.contains('show')) closeFab();
+  }
+  // Ctrl/Cmd + N → toggle FAB (quick add)
+  if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase() === 'n') {
+    e.preventDefault(); toggleFab();
+  }
+});
+
+// Hook to update FAB visibility on tab switch + auth change
+const _origSwitchTab = window.switchTab;
+window.switchTab = function(tab, btnEl) {
+  if (_origSwitchTab) _origSwitchTab(tab, btnEl);
+  setTimeout(updateFabVisibility, 30);
+};
+const _origApplyAuthGating = window.applyAuthGating;
+window.applyAuthGating = function() {
+  if (_origApplyAuthGating) _origApplyAuthGating();
+  setTimeout(updateFabVisibility, 30);
+};
+
+// Init FAB visibility on load
+window.addEventListener('DOMContentLoaded', () => setTimeout(updateFabVisibility, 200));
+// Close FAB menu on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('#fab') && !e.target.closest('#fab-menu')) {
+    if (document.getElementById('fab-menu')?.classList.contains('show')) closeFab();
+  }
+});
 </script>
 
 </body>
