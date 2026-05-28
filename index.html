@@ -3930,7 +3930,7 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v14.14</span>
+    <span style="opacity:.7">v14.15</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
@@ -4798,7 +4798,7 @@
   <div style="max-width:1100px;margin:0 auto">
 
     <!-- Hero KPI cards -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:18px">
+    <div class="summary-grid">
       <div class="dash-stat indigo" style="cursor:default">
         <div class="dash-stat-icon">💼</div>
         <div class="dash-stat-label">เงินทุนรวม</div>
@@ -5009,7 +5009,7 @@
         </div>
       </div>
       <!-- Assets summary KPIs -->
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px">
+      <div class="summary-grid">
         <div class="dash-card" style="padding:14px">
           <div style="font-size:.7rem;color:#64748b;font-weight:700">มูลค่าทรัพย์สินรวม</div>
           <div class="priv-amt" id="assets-total-value" style="font-size:1.3rem;font-weight:800;color:#7c3aed;margin-top:4px">฿0</div>
@@ -10761,7 +10761,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.14';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.15';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate(opts) {
