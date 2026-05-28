@@ -3930,7 +3930,7 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v14.13</span>
+    <span style="opacity:.7">v14.14</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
@@ -5191,9 +5191,14 @@
   <div id="customer-form-view">
     <div class="card">
       <div class="card-title" style="color:#4A148C">🏢 ข้อมูลลูกค้า</div>
-      <div class="form-row-2">
-        <div class="form-row"><label>ชื่อบริษัท/ร้านค้า <span class="req">*</span></label><input type="text" id="c-name" placeholder="บริษัท / ร้าน / ชื่อบุคคล" maxlength="150"></div>
-        <div class="form-row"><label>ชื่อผู้ติดต่อ</label><input type="text" id="c-contact" maxlength="100"></div>
+      <!-- v14.14 — รวมชื่อบริษัท + ผู้ติดต่อ ในหัวข้อเดียว -->
+      <div class="form-row">
+        <label>ชื่อบริษัท / ร้านค้า & ผู้ติดต่อ <span class="req">*</span></label>
+        <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:8px">
+          <input type="text" id="c-name" placeholder="บริษัท / ร้าน / ชื่อบุคคล" maxlength="150">
+          <input type="text" id="c-contact" placeholder="ชื่อผู้ติดต่อ (ถ้ามี)" maxlength="100">
+        </div>
+        <p class="hint" style="font-size:.7rem;color:#94a3b8;margin-top:4px">💡 ชื่อบริษัทเป็นข้อบังคับ · ผู้ติดต่อใส่ถ้ามี (ผู้ประสานงาน, ฝ่ายจัดซื้อ ฯลฯ)</p>
       </div>
       <div class="form-row"><label>เบอร์โทร</label><input type="tel" id="c-phone" placeholder="02-XXX-XXXX (ไม่บังคับ)" maxlength="20"></div>
       <div class="form-row"><label>อีเมล</label><input type="email" id="c-email" placeholder="example@email.com" maxlength="200"></div>
@@ -10756,7 +10761,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.13';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.14';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate(opts) {
