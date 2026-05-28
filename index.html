@@ -4266,7 +4266,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.23 | 29/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.24 | 29/05/2026</span>
   </div>
 </aside>
 
@@ -6184,7 +6184,7 @@
       </button>
 
       <button type="button" onclick="closeLoginModal()" style="width:100%;margin-top:10px;padding:10px;background:transparent;color:#94a3b8;border:none;font-size:.82rem;cursor:pointer;font-family:inherit;font-weight:600">
-        ยกเลิก
+        👁 ดูพรีวิว (โดยไม่ login)
       </button>
     </div>
   </div>
@@ -7326,6 +7326,12 @@ window.addEventListener('DOMContentLoaded', () => {
   if (icon) icon.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
   // Apply auth gating (preview mode CSS blur)
   applyAuthGating();
+  // v14.24 — Auto-popup login modal if not authed (on first page load)
+  if (!isAuthed() && !_IS_LOCAL_DEV) {
+    setTimeout(() => {
+      if (!isAuthed()) showLoginModal();
+    }, 400); // small delay so the page renders first
+  }
   // Verify session against server (detects remote logout)
   verifySession();
   // Re-verify when tab regains focus
@@ -11521,7 +11527,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.23';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.24';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate(opts) {
