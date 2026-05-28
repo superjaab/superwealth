@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ระบบขนส่งรถบรรทุก</title>
+  <!-- ══ SuperWealth Design System v2 (Claude Design output) ══ -->
+  <!-- tokens first → defines all CSS variables · components.css → drop-in classes -->
+  <link rel="stylesheet" href="/tokens.css">
+  <link rel="stylesheet" href="/components.css">
   <style>
     /* ─── RESET & BASE ─── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -3378,7 +3382,7 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v14.5</span>
+    <span style="opacity:.7">v14.6</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
@@ -4699,302 +4703,289 @@
 </div><!-- /main-wrapper -->
 </div><!-- /app-shell -->
 
-<!-- ══ TIRE SELECTOR MODAL — v14.4 (Premium Redesign) ══ -->
+<!-- ══ TIRE SELECTOR MODAL — v14.6 (Claude Design — Premium Redesign) ══ -->
 <style>
-  #tire-modal { animation: tireModalIn .25s cubic-bezier(.4,0,.2,1); }
-  @keyframes tireModalIn { from{opacity:0;backdrop-filter:blur(0)} to{opacity:1;backdrop-filter:blur(8px)} }
-  .tire-modal-panel { animation: tirePanelIn .35s cubic-bezier(.34,1.56,.64,1); }
-  @keyframes tirePanelIn { from{opacity:0;transform:scale(.92) translateY(8px)} to{opacity:1;transform:scale(1) translateY(0)} }
-  .tire-quick-chip {
-    flex:1; padding:9px 8px; border:1px solid #334155; border-radius:10px;
-    background:rgba(99,102,241,0.06); color:#a5b4fc; font-size:.72rem;
-    font-weight:700; cursor:pointer; font-family:inherit;
-    transition:all .15s; display:flex; flex-direction:column; align-items:center; gap:3px;
+  /* Scoped under #tire-modal to avoid leaking */
+  #tire-modal { animation: tmBdIn .25s cubic-bezier(.4,0,.2,1); }
+  @keyframes tmBdIn  { from{opacity:0} to{opacity:1} }
+  @keyframes tmMdIn  { from{opacity:0;transform:scale(.94)} to{opacity:1;transform:scale(1)} }
+  @keyframes tmPulse { 0%,100%{filter:drop-shadow(0 0 6px rgba(167,139,250,.55))} 50%{filter:drop-shadow(0 0 12px rgba(167,139,250,.85))} }
+  @keyframes tmChipIn { from{opacity:0;transform:scale(.85)} to{opacity:1;transform:scale(1)} }
+  #tire-modal .tm-modal {
+    width:100%; max-width:440px; max-height:96dvh;
+    background:linear-gradient(180deg,#1e2440 0%,#141a2e 100%);
+    border:1px solid #485373; border-radius:20px;
+    box-shadow:0 32px 64px -16px rgba(0,0,0,.75),0 0 0 1px rgba(99,102,241,.08),inset 0 1px 0 rgba(255,255,255,.06);
+    display:flex; flex-direction:column; overflow:hidden;
+    animation: tmMdIn .35s cubic-bezier(.34,1.56,.64,1);
   }
-  .tire-quick-chip:hover { background:rgba(99,102,241,0.12); border-color:#6366f1; color:#c7d2fe; transform:translateY(-1px); }
-  .tire-quick-chip:active { transform:scale(.97); }
-  .tire-quick-chip .qc-count { font-size:.95rem; font-weight:900; color:#a78bfa; }
-  /* Tire pulse when selected */
-  @keyframes tirePulse { 0%,100% { filter:drop-shadow(0 0 0 rgba(167,139,250,0)); } 50% { filter:drop-shadow(0 0 4px rgba(167,139,250,.6)); } }
-  .tire-selected { animation: tirePulse 1.6s ease-in-out infinite; }
+  #tire-modal .tm-head { padding:16px 16px 12px; display:flex; align-items:flex-start; gap:10px; border-bottom:1px solid rgba(148,163,184,.1); flex-shrink:0; }
+  #tire-modal .tm-head h2 {
+    margin:0; font-size:1.05rem; font-weight:800; letter-spacing:-.01em;
+    background:linear-gradient(135deg,#c4b5fd 0%,#818cf8 50%,#6366f1 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  #tire-modal .tm-sub { font-size:.72rem; color:#94a3b8; margin-top:4px; display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  #tire-modal .tm-plate { background:rgba(99,102,241,.15); border:1px solid rgba(99,102,241,.3); color:#a5b4fc; padding:2px 8px; border-radius:6px; font-family:'JetBrains Mono',monospace; font-size:.68rem; font-weight:700; letter-spacing:1px; }
+  #tire-modal .tm-close { margin-left:auto; flex-shrink:0; width:30px; height:30px; border-radius:8px; background:rgba(148,163,184,.08); border:1px solid rgba(148,163,184,.15); color:#94a3b8; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; font-size:.85rem; transition:all .15s; font-family:inherit; }
+  #tire-modal .tm-close:hover { background:rgba(220,38,38,.18); border-color:rgba(220,38,38,.45); color:#fca5a5; }
+  #tire-modal .tm-body { padding:12px 14px 14px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:12px; }
+  #tire-modal .tm-chips { display:flex; gap:6px; }
+  #tire-modal .tm-qchip { flex:1; min-width:0; background:rgba(99,102,241,.08); border:1px solid rgba(99,102,241,.28); color:#c7d2fe; padding:9px 8px; border-radius:9999px; font-family:inherit; font-size:.72rem; font-weight:700; cursor:pointer; transition:all .15s; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; }
+  #tire-modal .tm-qchip:hover { background:rgba(99,102,241,.2); border-color:rgba(99,102,241,.55); transform:translateY(-1px); box-shadow:0 4px 14px -4px rgba(99,102,241,.4); color:#e0e7ff; }
+  #tire-modal .tm-qchip:active { transform:translateY(0) scale(.97); }
+  #tire-modal .tm-truck-wrap { background:radial-gradient(circle at center,rgba(99,102,241,.06) 0%,transparent 70%),rgba(15,23,42,.4); border:1px solid rgba(148,163,184,.1); border-radius:14px; padding:8px 4px 6px; display:flex; justify-content:center; }
+  #tire-modal .tm-truck-svg { width:100%; max-width:320px; height:auto; display:block; }
+  #tire-modal .tm-tire { cursor:pointer; transition:transform .2s ease-out; transform-origin:center; transform-box:fill-box; }
+  #tire-modal .tm-tire-body { fill:url(#tmTireNormal); stroke:rgba(148,163,184,.28); stroke-width:1; transition:all .2s ease-out; }
+  #tire-modal .tm-tire:hover .tm-tire-body { stroke:rgba(167,139,250,.7); filter:brightness(1.2); }
+  #tire-modal .tm-tire.sel .tm-tire-body { fill:url(#tmTireSel); stroke:#c4b5fd; stroke-width:1.5; animation: tmPulse 1.8s infinite ease-in-out; }
+  #tire-modal .tm-tread { stroke:rgba(0,0,0,.45); stroke-width:.8; stroke-linecap:round; pointer-events:none; }
+  #tire-modal .tm-tire.sel .tm-tread { stroke:rgba(255,255,255,.55); }
+  #tire-modal .tm-wear { pointer-events:none; stroke:rgba(0,0,0,.5); stroke-width:.6; }
+  #tire-modal .tm-axle-label { fill:#94a3b8; font-size:9px; font-weight:700; letter-spacing:.5px; pointer-events:none; }
+  #tire-modal .tm-arrow-label { fill:#64748b; font-size:11px; font-weight:700; pointer-events:none; }
+  #tire-modal .tm-legend { display:flex; gap:6px; flex-wrap:wrap; padding:0 2px; }
+  #tire-modal .tm-lpill { display:inline-flex; align-items:center; gap:6px; background:rgba(148,163,184,.08); border:1px solid rgba(148,163,184,.15); padding:4px 10px; border-radius:9999px; font-weight:600; font-size:.7rem; color:#cbd5e1; }
+  #tire-modal .tm-lsw { width:14px; height:18px; border-radius:4px; flex-shrink:0; }
+  #tire-modal .tm-lsw-normal { background:linear-gradient(135deg,#1e3a5f 0%,#0d1f33 100%); border:1px solid rgba(148,163,184,.25); }
+  #tire-modal .tm-lsw-sel    { background:linear-gradient(135deg,#a78bfa 0%,#7c3aed 100%); box-shadow:0 0 6px rgba(167,139,250,.5); }
+  #tire-modal .tm-lwear { display:flex; gap:3px; }
+  #tire-modal .tm-ldot { width:8px; height:8px; border-radius:50%; }
+  #tire-modal .tm-ldot.g { background:#10b981; } #tire-modal .tm-ldot.y { background:#f59e0b; } #tire-modal .tm-ldot.r { background:#dc2626; }
+  #tire-modal .tm-cost-box { background:linear-gradient(135deg,rgba(99,102,241,.10) 0%,rgba(124,58,237,.10) 100%); border:1px solid rgba(124,58,237,.28); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:6px; }
+  #tire-modal .tm-cost-row { display:flex; align-items:center; gap:8px; font-size:.8rem; }
+  #tire-modal .tm-cost-row label { color:#94a3b8; font-size:.72rem; font-weight:600; white-space:nowrap; }
+  #tire-modal .tm-cost-input { flex:1; min-width:70px; background:rgba(10,13,20,.6); border:1px solid rgba(148,163,184,.22); color:#f0f3f9; border-radius:8px; padding:7px 10px; font-family:'JetBrains Mono',monospace; font-size:.85rem; font-weight:700; text-align:right; outline:none; font-feature-settings:'tnum'; transition:border-color .15s, box-shadow .15s; }
+  #tire-modal .tm-cost-input:focus { border-color:#6366f1; box-shadow:0 0 0 3px rgba(99,102,241,.18); }
+  #tire-modal .tm-baht { font-size:.72rem; color:#94a3b8; font-weight:600; }
+  #tire-modal .tm-cost-formula { font-size:.68rem; color:#64748b; font-family:'JetBrains Mono',monospace; }
+  #tire-modal .tm-cost-total { display:flex; justify-content:space-between; align-items:baseline; padding-top:6px; border-top:1px solid rgba(148,163,184,.12); margin-top:2px; }
+  #tire-modal .tm-cost-total-label { font-size:.68rem; color:#94a3b8; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+  #tire-modal .tm-cost-total-val { font-family:'JetBrains Mono',monospace; font-size:1.45rem; font-weight:900; letter-spacing:-.02em; background:linear-gradient(135deg,#e0e7ff 0%,#a78bfa 100%); -webkit-background-clip:text; background-clip:text; color:transparent; font-variant-numeric:tabular-nums; }
+  #tire-modal .tm-sel-wrap { display:flex; flex-direction:column; gap:8px; }
+  #tire-modal .tm-sel-head { font-size:.65rem; letter-spacing:.08em; text-transform:uppercase; color:#64748b; font-weight:700; display:flex; justify-content:space-between; align-items:center; }
+  #tire-modal .tm-sel-empty { font-size:.78rem; color:#64748b; text-align:center; padding:14px 12px; background:rgba(15,23,42,.4); border:1px dashed rgba(148,163,184,.18); border-radius:10px; }
+  #tire-modal .tm-sel-chips { display:flex; flex-wrap:wrap; gap:5px; }
+  #tire-modal .tm-sel-chip { display:inline-flex; align-items:center; gap:5px; background:rgba(124,58,237,.18); border:1px solid rgba(167,139,250,.38); color:#ddd6fe; padding:4px 4px 4px 10px; border-radius:9999px; font-size:.7rem; font-weight:600; animation: tmChipIn .2s ease-out; }
+  #tire-modal .tm-sel-chip button { width:18px; height:18px; border-radius:50%; background:rgba(15,23,42,.5); border:none; color:#94a3b8; cursor:pointer; font-size:.7rem; display:inline-flex; align-items:center; justify-content:center; padding:0; transition:all .15s; font-family:inherit; line-height:1; }
+  #tire-modal .tm-sel-chip button:hover { background:rgba(220,38,38,.5); color:#fff; }
+  #tire-modal .tm-foot { padding:11px 14px 13px; display:flex; gap:8px; border-top:1px solid rgba(148,163,184,.1); background:rgba(10,13,20,.4); flex-shrink:0; }
+  #tire-modal .tm-btn { font-family:inherit; font-weight:700; border:none; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px; border-radius:10px; padding:11px 14px; font-size:.85rem; transition:all .15s ease-out; }
+  #tire-modal .tm-btn:active { transform:translateY(1px) scale(.98); }
+  #tire-modal .tm-btn-ghost { background:rgba(148,163,184,.08); border:1px solid rgba(148,163,184,.18); color:#94a3b8; }
+  #tire-modal .tm-btn-ghost:hover { background:rgba(148,163,184,.16); color:#f0f3f9; }
+  #tire-modal .tm-btn-primary { flex:1; background:linear-gradient(135deg,#6366f1 0%,#7c3aed 100%); color:#fff; box-shadow:0 6px 20px -4px rgba(99,102,241,.5); }
+  #tire-modal .tm-btn-primary:hover:not(:disabled) { box-shadow:0 10px 28px -4px rgba(99,102,241,.7); transform:translateY(-1px); }
+  #tire-modal .tm-btn-primary:disabled { opacity:.45; cursor:not-allowed; box-shadow:none; }
+  @media (max-width:380px) {
+    #tire-modal .tm-qchip { font-size:.68rem; padding:8px 6px; }
+    #tire-modal .tm-head h2 { font-size:.98rem; }
+  }
 </style>
-<div id="tire-modal" style="display:none;position:fixed;inset:0;background:rgba(2,6,18,.78);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:300;align-items:center;justify-content:center;padding:10px 8px">
-  <div class="tire-modal-panel" style="background:linear-gradient(180deg,#0f172a 0%,#0b1224 100%);border-radius:20px;padding:18px 16px 16px;max-width:440px;width:100%;max-height:96dvh;overflow-y:auto;box-shadow:0 40px 100px rgba(0,0,0,.85),inset 0 1px 0 rgba(255,255,255,.04);border:1px solid rgba(99,102,241,0.2)">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;gap:10px">
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:800;font-size:1.05rem;background:linear-gradient(135deg,#a78bfa 0%,#c4b5fd 60%,#f0abfc 100%);-webkit-background-clip:text;background-clip:text;color:transparent">🚛 แผนผังยาง 22 เส้น</div>
-        <div style="font-size:.7rem;color:#64748b;margin-top:3px">กดยางที่ต้องการเปลี่ยน · กดซ้ำเพื่อยกเลิก</div>
+<div id="tire-modal" style="display:none;position:fixed;inset:0;background:rgba(6,9,22,.65);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:300;align-items:center;justify-content:center;padding:8px">
+  <div class="tm-modal" role="dialog" aria-labelledby="tm-title">
+    <!-- Header -->
+    <header class="tm-head">
+      <div style="min-width:0;flex:1">
+        <h2 id="tm-title">🚛 แผนผังยาง 22 เส้น</h2>
+        <div class="tm-sub">
+          <span>กดยางที่ต้องการเปลี่ยน</span>
+          <span style="opacity:.4">·</span>
+          <span class="tm-plate" id="tm-plate-label">รถบรรทุก</span>
+        </div>
       </div>
-      <button onclick="closeTireModal()" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;width:34px;height:34px;cursor:pointer;color:#94a3b8;font-size:1.05rem;flex-shrink:0;transition:all .15s" onmouseover="this.style.background='rgba(239,68,68,.15)';this.style.color='#fca5a5';this.style.borderColor='rgba(239,68,68,.3)'" onmouseout="this.style.background='rgba(255,255,255,.04)';this.style.color='#94a3b8';this.style.borderColor='rgba(255,255,255,.08)'">✕</button>
-    </div>
+      <button class="tm-close" onclick="closeTireModal()" aria-label="ปิด">✕</button>
+    </header>
 
-    <!-- Quick action chips — เปลี่ยนทั้งกลุ่ม -->
-    <div style="display:flex;gap:6px;margin-bottom:14px">
-      <button class="tire-quick-chip" onclick="selectTireGroup('head')">
-        <span style="font-size:.68rem;opacity:.85">🚛 ทั้งหัวลาก</span>
-        <span class="qc-count">10 ล้อ</span>
-      </button>
-      <button class="tire-quick-chip" onclick="selectTireGroup('trailer')">
-        <span style="font-size:.68rem;opacity:.85">🚌 ทั้งหาง</span>
-        <span class="qc-count">12 ล้อ</span>
-      </button>
-      <button class="tire-quick-chip" onclick="selectTireGroup('all')">
-        <span style="font-size:.68rem;opacity:.85">⚡ ทั้งคัน</span>
-        <span class="qc-count">22 ล้อ</span>
-      </button>
-    </div>
-    <!-- SVG TRUCK DIAGRAM: top-down view, industry-standard layout -->
-    <!-- Coordinates: viewBox 0 0 280 395, Center x=140                -->
-    <!-- Frame rails: L x=96-104, R x=176-184. Body fill x=104-176     -->
-    <!-- Dual tires: Linner x=78-94, Louter x=58-74 (4px gap)          -->
-    <!--             Rinner x=186-202, Router x=206-222 (4px gap)       -->
-    <!-- Steer tire: L x=59-77 (18px), R x=203-221                     -->
-    <svg id="truck-svg" viewBox="0 0 280 395" xmlns="http://www.w3.org/2000/svg"
-         style="width:100%;max-width:340px;margin:0 auto;display:block;font-family:'Noto Sans Thai','Segoe UI',sans-serif">
-      <defs>
-        <!-- Head tire gradient (3D depth effect) -->
-        <linearGradient id="htg" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%"   stop-color="#112236"/>
-          <stop offset="35%"  stop-color="#1e3a5f"/>
-          <stop offset="65%"  stop-color="#1e3a5f"/>
-          <stop offset="100%" stop-color="#112236"/>
-        </linearGradient>
-        <!-- Trailer tire gradient -->
-        <linearGradient id="ttg2" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%"   stop-color="#06111e"/>
-          <stop offset="35%"  stop-color="#0d1f33"/>
-          <stop offset="65%"  stop-color="#0d1f33"/>
-          <stop offset="100%" stop-color="#06111e"/>
-        </linearGradient>
-        <!-- Selected tire gradient -->
-        <linearGradient id="stg" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%"   stop-color="#c2400c"/>
-          <stop offset="35%"  stop-color="#f97316"/>
-          <stop offset="65%"  stop-color="#f97316"/>
-          <stop offset="100%" stop-color="#c2400c"/>
-        </linearGradient>
-        <filter id="glow"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-      </defs>
-
-      <!-- ── Background ── -->
-      <rect width="280" height="395" fill="#0b1422" rx="10"/>
-
-      <!-- ── FRONT LABEL ── -->
-      <text x="140" y="13" text-anchor="middle" font-size="7.5" fill="#334155" font-weight="700" letter-spacing="3">▲ หน้ารถ</text>
-
-      <!-- ══ TRACTOR / หัวลาก ══ -->
-      <!-- Cab exterior -->
-      <rect x="86" y="17" width="108" height="42" rx="11" fill="#1d4ed8" stroke="#3b82f6" stroke-width="1.5"/>
-      <!-- Windshield -->
-      <rect x="108" y="21" width="64" height="9" rx="3" fill="rgba(147,197,253,0.32)"/>
-      <!-- Grille bottom -->
-      <rect x="108" y="51" width="64" height="5" rx="0" fill="rgba(0,0,0,0.4)"/>
-      <!-- Cab label -->
-      <text x="140" y="44" text-anchor="middle" font-size="9" font-weight="800" fill="white">🚛 หัวลาก</text>
-
-      <!-- Head frame rails L+R -->
-      <rect x="96"  y="59" width="8"  height="112" fill="#1e40af"/>
-      <rect x="176" y="59" width="8"  height="112" fill="#1e40af"/>
-      <!-- Head body fill -->
-      <rect x="104" y="59" width="72" height="112" fill="#17304f"/>
-      <!-- Chassis spine -->
-      <rect x="136" y="59" width="8"  height="112" fill="#1a2d4a"/>
-      <!-- Chassis cross-members -->
-      <line x1="104" y1="97"  x2="176" y2="97"  stroke="#1a2d4a" stroke-width="1.5"/>
-      <line x1="104" y1="134" x2="176" y2="134" stroke="#1a2d4a" stroke-width="1.5"/>
-
-      <!-- ── Steer axle (หน้า) y=84 ── -->
-      <!-- Axle shaft stubs -->
-      <line x1="32"  y1="84" x2="59"  y2="84" stroke="#243a56" stroke-width="2"/>
-      <line x1="221" y1="84" x2="248" y2="84" stroke="#243a56" stroke-width="2"/>
-      <!-- L steer tire (18px wide, 30px tall) -->
-      <rect id="t-H1L" x="59" y="69" width="18" height="30" rx="5"
-            fill="url(#htg)" stroke="#2d5282" stroke-width="1.5" style="cursor:pointer"/>
-      <!-- tread detail -->
-      <rect x="62" y="73" width="12" height="22" rx="3" fill="none" stroke="rgba(255,255,255,0.09)" stroke-width="1" pointer-events="none"/>
-      <!-- R steer tire -->
-      <rect id="t-H1R" x="203" y="69" width="18" height="30" rx="5"
-            fill="url(#htg)" stroke="#2d5282" stroke-width="1.5" style="cursor:pointer"/>
-      <rect x="206" y="73" width="12" height="22" rx="3" fill="none" stroke="rgba(255,255,255,0.09)" stroke-width="1" pointer-events="none"/>
-      <!-- Onclick overlays (invisible, full tire size) -->
-      <rect x="59" y="69" width="18" height="30" fill="transparent" onclick="togTire('H1L','หน้าซ้าย')" style="cursor:pointer"/>
-      <rect x="203" y="69" width="18" height="30" fill="transparent" onclick="togTire('H1R','หน้าขวา')" style="cursor:pointer"/>
-      <!-- Labels -->
-      <text x="55"  y="87" text-anchor="end"   font-size="7.5" fill="#475569" font-weight="700">หน้า</text>
-      <text x="225" y="87" text-anchor="start" font-size="7.5" fill="#475569" font-weight="700">หน้า</text>
-
-      <!-- ── Drive axle 1 (กลาง1) y=122 ── -->
-      <line x1="10"  y1="122" x2="58"  y2="122" stroke="#243a56" stroke-width="2"/>
-      <line x1="222" y1="122" x2="270" y2="122" stroke="#243a56" stroke-width="2"/>
-      <!-- L outer -->
-      <rect id="t-H2LO" x="58" y="108" width="16" height="28" rx="4"
-            fill="url(#htg)" stroke="#2d5282" stroke-width="1.5" style="cursor:pointer"/>
-      <rect x="61" y="112" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" pointer-events="none"/>
-      <!-- L inner -->
-      <rect id="t-H2LI" x="78" y="108" width="16" height="28" rx="4"
-            fill="url(#htg)" stroke="#2d5282" stroke-width="1.5" style="cursor:pointer"/>
-      <rect x="81" y="112" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" pointer-events="none"/>
-      <!-- R inner -->
-      <rect id="t-H2RI" x="186" y="108" width="16" height="28" rx="4"
-            fill="url(#htg)" stroke="#2d5282" stroke-width="1.5" style="cursor:pointer"/>
-      <rect x="189" y="112" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" pointer-events="none"/>
-      <!-- R outer -->
-      <rect id="t-H2RO" x="206" y="108" width="16" height="28" rx="4"
-            fill="url(#htg)" stroke="#2d5282" stroke-width="1.5" style="cursor:pointer"/>
-      <rect x="209" y="112" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" pointer-events="none"/>
-      <!-- Click zones -->
-      <rect x="58"  y="108" width="16" height="28" fill="transparent" onclick="togTire('H2LO','กลาง1-ซ้ายนอก')" style="cursor:pointer"/>
-      <rect x="78"  y="108" width="16" height="28" fill="transparent" onclick="togTire('H2LI','กลาง1-ซ้ายใน')" style="cursor:pointer"/>
-      <rect x="186" y="108" width="16" height="28" fill="transparent" onclick="togTire('H2RI','กลาง1-ขวาใน')" style="cursor:pointer"/>
-      <rect x="206" y="108" width="16" height="28" fill="transparent" onclick="togTire('H2RO','กลาง1-ขวานอก')" style="cursor:pointer"/>
-      <text x="54"  y="125" text-anchor="end"   font-size="7.5" fill="#475569" font-weight="700">กลาง1</text>
-      <text x="226" y="125" text-anchor="start" font-size="7.5" fill="#475569" font-weight="700">กลาง1</text>
-
-      <!-- ── Drive axle 2 (กลาง2) y=158 ── -->
-      <line x1="10"  y1="158" x2="58"  y2="158" stroke="#243a56" stroke-width="2"/>
-      <line x1="222" y1="158" x2="270" y2="158" stroke="#243a56" stroke-width="2"/>
-      <rect id="t-H3LO" x="58"  y="144" width="16" height="28" rx="4" fill="url(#htg)" stroke="#2d5282" stroke-width="1.5" style="cursor:pointer"/>
-      <rect x="61"  y="148" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" pointer-events="none"/>
-      <rect id="t-H3LI" x="78"  y="144" width="16" height="28" rx="4" fill="url(#htg)" stroke="#2d5282" stroke-width="1.5" style="cursor:pointer"/>
-      <rect x="81"  y="148" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" pointer-events="none"/>
-      <rect id="t-H3RI" x="186" y="144" width="16" height="28" rx="4" fill="url(#htg)" stroke="#2d5282" stroke-width="1.5" style="cursor:pointer"/>
-      <rect x="189" y="148" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" pointer-events="none"/>
-      <rect id="t-H3RO" x="206" y="144" width="16" height="28" rx="4" fill="url(#htg)" stroke="#2d5282" stroke-width="1.5" style="cursor:pointer"/>
-      <rect x="209" y="148" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" pointer-events="none"/>
-      <rect x="58"  y="144" width="16" height="28" fill="transparent" onclick="togTire('H3LO','กลาง2-ซ้ายนอก')" style="cursor:pointer"/>
-      <rect x="78"  y="144" width="16" height="28" fill="transparent" onclick="togTire('H3LI','กลาง2-ซ้ายใน')" style="cursor:pointer"/>
-      <rect x="186" y="144" width="16" height="28" fill="transparent" onclick="togTire('H3RI','กลาง2-ขวาใน')" style="cursor:pointer"/>
-      <rect x="206" y="144" width="16" height="28" fill="transparent" onclick="togTire('H3RO','กลาง2-ขวานอก')" style="cursor:pointer"/>
-      <text x="54"  y="161" text-anchor="end"   font-size="7.5" fill="#475569" font-weight="700">กลาง2</text>
-      <text x="226" y="161" text-anchor="start" font-size="7.5" fill="#475569" font-weight="700">กลาง2</text>
-
-      <!-- Head rear bumper -->
-      <rect x="96"  y="171" width="88" height="8" rx="0" fill="#1a2e50"/>
-      <rect x="100" y="171" width="80" height="5" rx="0" fill="#0f1e33"/>
-
-      <!-- ══ COUPLING / KING PIN ══ -->
-      <!-- 5th wheel plate -->
-      <rect x="116" y="179" width="48" height="7" rx="3" fill="#2a3a50" stroke="#3d5270" stroke-width="1"/>
-      <!-- King pin housing -->
-      <ellipse cx="140" cy="193" rx="12" ry="9" fill="#243246" stroke="#3d5270" stroke-width="1.5"/>
-      <!-- King pin bolt -->
-      <circle cx="140" cy="193" r="5" fill="#1a2535" stroke="#4a6080" stroke-width="1.2"/>
-      <circle cx="140" cy="193" r="2" fill="#0a1320" stroke="#607090" stroke-width="0.8"/>
-      <!-- Lower coupling beam -->
-      <rect x="116" y="199" width="48" height="7" rx="3" fill="#2a3a50" stroke="#3d5270" stroke-width="1"/>
-
-      <!-- ══ TRAILER / หางพ่วง ══ -->
-      <!-- Section label -->
-      <text x="140" y="217" text-anchor="middle" font-size="8" font-weight="700" fill="#3b82f6" letter-spacing="1">🚌 หางพ่วงพื้นเรียบ</text>
-
-      <!-- Trailer frame rails -->
-      <rect x="96"  y="221" width="8"   height="152" fill="#1e3a5f"/>
-      <rect x="176" y="221" width="8"   height="152" fill="#1e3a5f"/>
-      <!-- Trailer deck fill -->
-      <rect x="104" y="221" width="72"  height="152" fill="#0d1f33"/>
-      <!-- Trailer spine -->
-      <rect x="136" y="221" width="8"   height="152" fill="#0a1a2c"/>
-      <!-- Deck planks (flatbed detail) -->
-      <line x1="104" y1="230" x2="176" y2="230" stroke="#0a1828" stroke-width="1.5"/>
-      <line x1="104" y1="238" x2="176" y2="238" stroke="#0a1828" stroke-width="1.5"/>
-      <line x1="104" y1="246" x2="176" y2="246" stroke="#0a1828" stroke-width="1.5"/>
-      <!-- Front cap -->
-      <rect x="96"  y="219" width="88" height="5" rx="2" fill="#1e3a5f"/>
-
-      <!-- ── Trailer axle 1 (หาง1) y=268 ── -->
-      <line x1="10"  y1="268" x2="58"  y2="268" stroke="#162538" stroke-width="2"/>
-      <line x1="222" y1="268" x2="270" y2="268" stroke="#162538" stroke-width="2"/>
-      <rect id="t-T1LO" x="58"  y="254" width="16" height="28" rx="4" fill="url(#ttg2)" stroke="#1e3a5f" stroke-width="1.5" style="cursor:pointer"/>
-      <rect x="61"  y="258" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" pointer-events="none"/>
-      <rect id="t-T1LI" x="78"  y="254" width="16" height="28" rx="4" fill="url(#ttg2)" stroke="#1e3a5f" stroke-width="1.5" style="cursor:pointer"/>
-      <rect x="81"  y="258" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" pointer-events="none"/>
-      <rect id="t-T1RI" x="186" y="254" width="16" height="28" rx="4" fill="url(#ttg2)" stroke="#1e3a5f" stroke-width="1.5" style="cursor:pointer"/>
-      <rect x="189" y="258" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" pointer-events="none"/>
-      <rect id="t-T1RO" x="206" y="254" width="16" height="28" rx="4" fill="url(#ttg2)" stroke="#1e3a5f" stroke-width="1.5" style="cursor:pointer"/>
-      <rect x="209" y="258" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" pointer-events="none"/>
-      <rect x="58"  y="254" width="16" height="28" fill="transparent" onclick="togTire('T1LO','หาง1-ซ้ายนอก')" style="cursor:pointer"/>
-      <rect x="78"  y="254" width="16" height="28" fill="transparent" onclick="togTire('T1LI','หาง1-ซ้ายใน')" style="cursor:pointer"/>
-      <rect x="186" y="254" width="16" height="28" fill="transparent" onclick="togTire('T1RI','หาง1-ขวาใน')" style="cursor:pointer"/>
-      <rect x="206" y="254" width="16" height="28" fill="transparent" onclick="togTire('T1RO','หาง1-ขวานอก')" style="cursor:pointer"/>
-      <text x="54"  y="271" text-anchor="end"   font-size="7.5" fill="#3b82f6" font-weight="700">หาง1</text>
-      <text x="226" y="271" text-anchor="start" font-size="7.5" fill="#3b82f6" font-weight="700">หาง1</text>
-
-      <!-- Deck planks mid -->
-      <line x1="104" y1="297" x2="176" y2="297" stroke="#0a1828" stroke-width="1.5"/>
-
-      <!-- ── Trailer axle 2 (หาง2) y=307 ── -->
-      <line x1="10"  y1="307" x2="58"  y2="307" stroke="#162538" stroke-width="2"/>
-      <line x1="222" y1="307" x2="270" y2="307" stroke="#162538" stroke-width="2"/>
-      <rect id="t-T2LO" x="58"  y="293" width="16" height="28" rx="4" fill="url(#ttg2)" stroke="#1e3a5f" stroke-width="1.5" style="cursor:pointer"/>
-      <rect x="61"  y="297" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" pointer-events="none"/>
-      <rect id="t-T2LI" x="78"  y="293" width="16" height="28" rx="4" fill="url(#ttg2)" stroke="#1e3a5f" stroke-width="1.5" style="cursor:pointer"/>
-      <rect x="81"  y="297" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" pointer-events="none"/>
-      <rect id="t-T2RI" x="186" y="293" width="16" height="28" rx="4" fill="url(#ttg2)" stroke="#1e3a5f" stroke-width="1.5" style="cursor:pointer"/>
-      <rect x="189" y="297" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" pointer-events="none"/>
-      <rect id="t-T2RO" x="206" y="293" width="16" height="28" rx="4" fill="url(#ttg2)" stroke="#1e3a5f" stroke-width="1.5" style="cursor:pointer"/>
-      <rect x="209" y="297" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" pointer-events="none"/>
-      <rect x="58"  y="293" width="16" height="28" fill="transparent" onclick="togTire('T2LO','หาง2-ซ้ายนอก')" style="cursor:pointer"/>
-      <rect x="78"  y="293" width="16" height="28" fill="transparent" onclick="togTire('T2LI','หาง2-ซ้ายใน')" style="cursor:pointer"/>
-      <rect x="186" y="293" width="16" height="28" fill="transparent" onclick="togTire('T2RI','หาง2-ขวาใน')" style="cursor:pointer"/>
-      <rect x="206" y="293" width="16" height="28" fill="transparent" onclick="togTire('T2RO','หาง2-ขวานอก')" style="cursor:pointer"/>
-      <text x="54"  y="310" text-anchor="end"   font-size="7.5" fill="#3b82f6" font-weight="700">หาง2</text>
-      <text x="226" y="310" text-anchor="start" font-size="7.5" fill="#3b82f6" font-weight="700">หาง2</text>
-
-      <!-- Deck plank lower -->
-      <line x1="104" y1="336" x2="176" y2="336" stroke="#0a1828" stroke-width="1.5"/>
-
-      <!-- ── Trailer axle 3 (หาง3) y=346 ── -->
-      <line x1="10"  y1="346" x2="58"  y2="346" stroke="#162538" stroke-width="2"/>
-      <line x1="222" y1="346" x2="270" y2="346" stroke="#162538" stroke-width="2"/>
-      <rect id="t-T3LO" x="58"  y="332" width="16" height="28" rx="4" fill="url(#ttg2)" stroke="#1e3a5f" stroke-width="1.5" style="cursor:pointer"/>
-      <rect x="61"  y="336" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" pointer-events="none"/>
-      <rect id="t-T3LI" x="78"  y="332" width="16" height="28" rx="4" fill="url(#ttg2)" stroke="#1e3a5f" stroke-width="1.5" style="cursor:pointer"/>
-      <rect x="81"  y="336" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" pointer-events="none"/>
-      <rect id="t-T3RI" x="186" y="332" width="16" height="28" rx="4" fill="url(#ttg2)" stroke="#1e3a5f" stroke-width="1.5" style="cursor:pointer"/>
-      <rect x="189" y="336" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" pointer-events="none"/>
-      <rect id="t-T3RO" x="206" y="332" width="16" height="28" rx="4" fill="url(#ttg2)" stroke="#1e3a5f" stroke-width="1.5" style="cursor:pointer"/>
-      <rect x="209" y="336" width="10" height="20" rx="3" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" pointer-events="none"/>
-      <rect x="58"  y="332" width="16" height="28" fill="transparent" onclick="togTire('T3LO','หาง3-ซ้ายนอก')" style="cursor:pointer"/>
-      <rect x="78"  y="332" width="16" height="28" fill="transparent" onclick="togTire('T3LI','หาง3-ซ้ายใน')" style="cursor:pointer"/>
-      <rect x="186" y="332" width="16" height="28" fill="transparent" onclick="togTire('T3RI','หาง3-ขวาใน')" style="cursor:pointer"/>
-      <rect x="206" y="332" width="16" height="28" fill="transparent" onclick="togTire('T3RO','หาง3-ขวานอก')" style="cursor:pointer"/>
-      <text x="54"  y="349" text-anchor="end"   font-size="7.5" fill="#3b82f6" font-weight="700">หาง3</text>
-      <text x="226" y="349" text-anchor="start" font-size="7.5" fill="#3b82f6" font-weight="700">หาง3</text>
-
-      <!-- Trailer rear bumper -->
-      <rect x="96"  y="373" width="88" height="5" rx="2" fill="#1e3a5f"/>
-      <rect x="104" y="360" width="72" height="15" fill="#0d1f33"/>
-      <!-- Tail lights -->
-      <rect x="98"  y="362" width="6"  height="10" rx="2" fill="#7f1d1d" stroke="#dc2626" stroke-width="0.5"/>
-      <rect x="176" y="362" width="6"  height="10" rx="2" fill="#7f1d1d" stroke="#dc2626" stroke-width="0.5"/>
-
-      <!-- ── REAR LABEL ── -->
-      <text x="140" y="388" text-anchor="middle" font-size="7.5" fill="#334155" font-weight="700" letter-spacing="3">▼ ท้ายรถ</text>
-    </svg>
-
-    <!-- Legend -->
-    <div style="display:flex;align-items:center;gap:14px;justify-content:center;margin-top:10px;padding:7px 12px;background:#1e293b;border-radius:8px">
-      <div style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:#64748b">
-        <svg width="12" height="24" viewBox="0 0 12 24" style="flex-shrink:0"><defs><linearGradient id="leg1" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#112236"/><stop offset="50%" stop-color="#1e3a5f"/><stop offset="100%" stop-color="#112236"/></linearGradient></defs><rect width="12" height="24" rx="3" fill="url(#leg1)" stroke="#2d5282" stroke-width="1.5"/></svg>
-        ปกติ
+    <!-- Body -->
+    <div class="tm-body">
+      <!-- Quick chips -->
+      <div class="tm-chips">
+        <button class="tm-qchip" onclick="selectTireGroup('head')">🚛 ทั้งหัวลาก (10)</button>
+        <button class="tm-qchip" onclick="selectTireGroup('trailer')">🚌 ทั้งหาง (12)</button>
+        <button class="tm-qchip" onclick="selectTireGroup('all')">⚡ ทั้งคัน (22)</button>
       </div>
-      <div style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:#f97316">
-        <svg width="12" height="24" viewBox="0 0 12 24" style="flex-shrink:0"><defs><linearGradient id="leg2" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#c2400c"/><stop offset="50%" stop-color="#f97316"/><stop offset="100%" stop-color="#c2400c"/></linearGradient></defs><rect width="12" height="24" rx="3" fill="url(#leg2)" stroke="#fb923c" stroke-width="1.5"/></svg>
-        เปลี่ยนยาง
+
+      <!-- Truck SVG (Claude Design v14.6) -->
+      <div class="tm-truck-wrap">
+        <svg class="tm-truck-svg" viewBox="0 0 340 760" xmlns="http://www.w3.org/2000/svg" aria-label="ผังรถบรรทุก 22 ล้อ">
+          <defs>
+            <linearGradient id="tmTireNormal" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#1e3a5f"/><stop offset="1" stop-color="#0d1f33"/>
+            </linearGradient>
+            <linearGradient id="tmTireSel" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#c4b5fd"/><stop offset=".5" stop-color="#a78bfa"/><stop offset="1" stop-color="#7c3aed"/>
+            </linearGradient>
+            <linearGradient id="tmCabGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#2549a8"/><stop offset="1" stop-color="#0b1d4e"/>
+            </linearGradient>
+            <linearGradient id="tmWinGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#cbd5e1" stop-opacity=".8"/><stop offset="1" stop-color="#818cf8" stop-opacity=".35"/>
+            </linearGradient>
+            <linearGradient id="tmDeckGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#1e293b"/><stop offset=".5" stop-color="#0f172a"/><stop offset="1" stop-color="#1e293b"/>
+            </linearGradient>
+            <filter id="tmCabShadow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceAlpha" stdDeviation="3"/><feOffset dx="0" dy="2"/>
+              <feComponentTransfer><feFuncA type="linear" slope=".4"/></feComponentTransfer>
+              <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+
+          <text class="tm-arrow-label" x="170" y="20" text-anchor="middle">▲ หน้ารถ</text>
+
+          <!-- Tractor cab -->
+          <g filter="url(#tmCabShadow)">
+            <rect x="115" y="32" width="110" height="120" rx="12" fill="url(#tmCabGrad)" stroke="rgba(148,163,184,.28)" stroke-width="1"/>
+            <path d="M 132 50 L 208 50 L 213 78 L 127 78 Z" fill="url(#tmWinGrad)"/>
+            <line x1="170" y1="50" x2="170" y2="78" stroke="rgba(255,255,255,.1)" stroke-width=".5"/>
+            <rect x="130" y="120" width="80" height="22" rx="3" fill="rgba(15,23,42,.75)" stroke="rgba(148,163,184,.22)"/>
+            <line x1="134" y1="124" x2="206" y2="124" stroke="rgba(148,163,184,.32)" stroke-width=".6"/>
+            <line x1="134" y1="128" x2="206" y2="128" stroke="rgba(148,163,184,.32)" stroke-width=".6"/>
+            <line x1="134" y1="132" x2="206" y2="132" stroke="rgba(148,163,184,.32)" stroke-width=".6"/>
+            <line x1="134" y1="136" x2="206" y2="136" stroke="rgba(148,163,184,.32)" stroke-width=".6"/>
+            <line x1="134" y1="140" x2="206" y2="140" stroke="rgba(148,163,184,.32)" stroke-width=".6"/>
+            <circle cx="128" cy="98" r="4.5" fill="#fef3c7" opacity=".9"/>
+            <circle cx="212" cy="98" r="4.5" fill="#fef3c7" opacity=".9"/>
+            <circle cx="128" cy="98" r="2" fill="#fffbeb"/>
+            <circle cx="212" cy="98" r="2" fill="#fffbeb"/>
+            <rect x="106" y="62" width="7" height="16" rx="1.5" fill="#1e293b" stroke="rgba(148,163,184,.25)"/>
+            <rect x="227" y="62" width="7" height="16" rx="1.5" fill="#1e293b" stroke="rgba(148,163,184,.25)"/>
+          </g>
+
+          <rect x="148" y="152" width="44" height="180" fill="#1e293b" stroke="rgba(148,163,184,.12)"/>
+          <rect x="164" y="152" width="12" height="180" fill="#0a0f1c" opacity=".7"/>
+          <line x1="148" y1="180" x2="192" y2="180" stroke="rgba(148,163,184,.16)" stroke-width=".8"/>
+          <line x1="148" y1="252" x2="192" y2="252" stroke="rgba(148,163,184,.16)" stroke-width=".8"/>
+          <line x1="148" y1="312" x2="192" y2="312" stroke="rgba(148,163,184,.16)" stroke-width=".8"/>
+
+          <!-- STEER axle -->
+          <rect x="92" y="105" width="156" height="3" fill="#1e293b" opacity=".7"/>
+          <text class="tm-axle-label" x="40" y="115" text-anchor="end">หน้า</text>
+          <line x1="44" y1="108" x2="74" y2="108" stroke="rgba(148,163,184,.2)" stroke-width=".6" stroke-dasharray="2 2"/>
+
+          <g class="tm-tire" data-id="H1L" onclick="togTire('H1L','หน้าซ้าย')">
+            <rect class="tm-tire-body" x="78" y="86" width="30" height="44" rx="8"/>
+            <line class="tm-tread" x1="84" y1="93" x2="102" y2="93"/><line class="tm-tread" x1="84" y1="101" x2="102" y2="101"/><line class="tm-tread" x1="84" y1="109" x2="102" y2="109"/><line class="tm-tread" x1="84" y1="117" x2="102" y2="117"/><line class="tm-tread" x1="84" y1="125" x2="102" y2="125"/>
+            <circle class="tm-wear" cx="82" cy="90" r="2.6" fill="#10b981"/>
+          </g>
+          <g class="tm-tire" data-id="H1R" onclick="togTire('H1R','หน้าขวา')">
+            <rect class="tm-tire-body" x="232" y="86" width="30" height="44" rx="8"/>
+            <line class="tm-tread" x1="238" y1="93" x2="256" y2="93"/><line class="tm-tread" x1="238" y1="101" x2="256" y2="101"/><line class="tm-tread" x1="238" y1="109" x2="256" y2="109"/><line class="tm-tread" x1="238" y1="117" x2="256" y2="117"/><line class="tm-tread" x1="238" y1="125" x2="256" y2="125"/>
+            <circle class="tm-wear" cx="258" cy="90" r="2.6" fill="#10b981"/>
+          </g>
+
+          <!-- DRIVE 1 -->
+          <rect x="60" y="220" width="220" height="3" fill="#1e293b" opacity=".7"/>
+          <text class="tm-axle-label" x="40" y="225" text-anchor="end">กลาง1</text>
+
+          <g class="tm-tire" data-id="H2LO" onclick="togTire('H2LO','กลาง1-ซ้ายนอก')"><rect class="tm-tire-body" x="62" y="200" width="28" height="42" rx="8"/><line class="tm-tread" x1="68" y1="207" x2="84" y2="207"/><line class="tm-tread" x1="68" y1="214" x2="84" y2="214"/><line class="tm-tread" x1="68" y1="221" x2="84" y2="221"/><line class="tm-tread" x1="68" y1="228" x2="84" y2="228"/><line class="tm-tread" x1="68" y1="235" x2="84" y2="235"/><circle class="tm-wear" cx="66" cy="204" r="2.4" fill="#10b981"/></g>
+          <g class="tm-tire" data-id="H2LI" onclick="togTire('H2LI','กลาง1-ซ้ายใน')"><rect class="tm-tire-body" x="96" y="200" width="28" height="42" rx="8"/><line class="tm-tread" x1="102" y1="207" x2="118" y2="207"/><line class="tm-tread" x1="102" y1="214" x2="118" y2="214"/><line class="tm-tread" x1="102" y1="221" x2="118" y2="221"/><line class="tm-tread" x1="102" y1="228" x2="118" y2="228"/><line class="tm-tread" x1="102" y1="235" x2="118" y2="235"/><circle class="tm-wear" cx="120" cy="204" r="2.4" fill="#10b981"/></g>
+          <g class="tm-tire" data-id="H2RI" onclick="togTire('H2RI','กลาง1-ขวาใน')"><rect class="tm-tire-body" x="216" y="200" width="28" height="42" rx="8"/><line class="tm-tread" x1="222" y1="207" x2="238" y2="207"/><line class="tm-tread" x1="222" y1="214" x2="238" y2="214"/><line class="tm-tread" x1="222" y1="221" x2="238" y2="221"/><line class="tm-tread" x1="222" y1="228" x2="238" y2="228"/><line class="tm-tread" x1="222" y1="235" x2="238" y2="235"/><circle class="tm-wear" cx="220" cy="204" r="2.4" fill="#10b981"/></g>
+          <g class="tm-tire" data-id="H2RO" onclick="togTire('H2RO','กลาง1-ขวานอก')"><rect class="tm-tire-body" x="250" y="200" width="28" height="42" rx="8"/><line class="tm-tread" x1="256" y1="207" x2="272" y2="207"/><line class="tm-tread" x1="256" y1="214" x2="272" y2="214"/><line class="tm-tread" x1="256" y1="221" x2="272" y2="221"/><line class="tm-tread" x1="256" y1="228" x2="272" y2="228"/><line class="tm-tread" x1="256" y1="235" x2="272" y2="235"/><circle class="tm-wear" cx="274" cy="204" r="2.4" fill="#10b981"/></g>
+
+          <!-- DRIVE 2 -->
+          <rect x="60" y="280" width="220" height="3" fill="#1e293b" opacity=".7"/>
+          <text class="tm-axle-label" x="40" y="285" text-anchor="end">กลาง2</text>
+
+          <g class="tm-tire" data-id="H3LO" onclick="togTire('H3LO','กลาง2-ซ้ายนอก')"><rect class="tm-tire-body" x="62" y="260" width="28" height="42" rx="8"/><line class="tm-tread" x1="68" y1="267" x2="84" y2="267"/><line class="tm-tread" x1="68" y1="274" x2="84" y2="274"/><line class="tm-tread" x1="68" y1="281" x2="84" y2="281"/><line class="tm-tread" x1="68" y1="288" x2="84" y2="288"/><line class="tm-tread" x1="68" y1="295" x2="84" y2="295"/><circle class="tm-wear" cx="66" cy="264" r="2.4" fill="#f59e0b"/></g>
+          <g class="tm-tire" data-id="H3LI" onclick="togTire('H3LI','กลาง2-ซ้ายใน')"><rect class="tm-tire-body" x="96" y="260" width="28" height="42" rx="8"/><line class="tm-tread" x1="102" y1="267" x2="118" y2="267"/><line class="tm-tread" x1="102" y1="274" x2="118" y2="274"/><line class="tm-tread" x1="102" y1="281" x2="118" y2="281"/><line class="tm-tread" x1="102" y1="288" x2="118" y2="288"/><line class="tm-tread" x1="102" y1="295" x2="118" y2="295"/><circle class="tm-wear" cx="120" cy="264" r="2.4" fill="#f59e0b"/></g>
+          <g class="tm-tire" data-id="H3RI" onclick="togTire('H3RI','กลาง2-ขวาใน')"><rect class="tm-tire-body" x="216" y="260" width="28" height="42" rx="8"/><line class="tm-tread" x1="222" y1="267" x2="238" y2="267"/><line class="tm-tread" x1="222" y1="274" x2="238" y2="274"/><line class="tm-tread" x1="222" y1="281" x2="238" y2="281"/><line class="tm-tread" x1="222" y1="288" x2="238" y2="288"/><line class="tm-tread" x1="222" y1="295" x2="238" y2="295"/><circle class="tm-wear" cx="220" cy="264" r="2.4" fill="#f59e0b"/></g>
+          <g class="tm-tire" data-id="H3RO" onclick="togTire('H3RO','กลาง2-ขวานอก')"><rect class="tm-tire-body" x="250" y="260" width="28" height="42" rx="8"/><line class="tm-tread" x1="256" y1="267" x2="272" y2="267"/><line class="tm-tread" x1="256" y1="274" x2="272" y2="274"/><line class="tm-tread" x1="256" y1="281" x2="272" y2="281"/><line class="tm-tread" x1="256" y1="288" x2="272" y2="288"/><line class="tm-tread" x1="256" y1="295" x2="272" y2="295"/><circle class="tm-wear" cx="274" cy="264" r="2.4" fill="#f59e0b"/></g>
+
+          <!-- 5th wheel -->
+          <g>
+            <circle cx="170" cy="332" r="15" fill="#0f172a" stroke="rgba(148,163,184,.4)" stroke-width="1.5"/>
+            <circle cx="170" cy="332" r="9" fill="rgba(99,102,241,.15)" stroke="rgba(167,139,250,.55)" stroke-width="1"/>
+            <circle cx="170" cy="332" r="3.5" fill="#a78bfa"/>
+            <text x="170" y="358" text-anchor="middle" fill="#64748b" font-size="7.5" font-weight="600">5th wheel</text>
+          </g>
+
+          <!-- TRAILER deck -->
+          <g>
+            <rect x="100" y="368" width="140" height="350" rx="10" fill="url(#tmDeckGrad)" stroke="rgba(148,163,184,.22)" stroke-width="1"/>
+            <line x1="105" y1="395" x2="235" y2="395" stroke="rgba(148,163,184,.08)" stroke-width=".7"/>
+            <line x1="105" y1="423" x2="235" y2="423" stroke="rgba(148,163,184,.08)" stroke-width=".7"/>
+            <line x1="105" y1="500" x2="235" y2="500" stroke="rgba(148,163,184,.08)" stroke-width=".7"/>
+            <line x1="105" y1="585" x2="235" y2="585" stroke="rgba(148,163,184,.08)" stroke-width=".7"/>
+            <line x1="105" y1="670" x2="235" y2="670" stroke="rgba(148,163,184,.08)" stroke-width=".7"/>
+            <rect x="164" y="368" width="12" height="350" fill="#0a0f1c" opacity=".7"/>
+          </g>
+
+          <!-- TRAILER 1 -->
+          <rect x="60" y="465" width="220" height="3" fill="#1e293b" opacity=".7"/>
+          <text class="tm-axle-label" x="40" y="470" text-anchor="end">หาง1</text>
+
+          <g class="tm-tire" data-id="T1LO" onclick="togTire('T1LO','หาง1-ซ้ายนอก')"><rect class="tm-tire-body" x="62" y="445" width="28" height="42" rx="8"/><line class="tm-tread" x1="68" y1="452" x2="84" y2="452"/><line class="tm-tread" x1="68" y1="459" x2="84" y2="459"/><line class="tm-tread" x1="68" y1="466" x2="84" y2="466"/><line class="tm-tread" x1="68" y1="473" x2="84" y2="473"/><line class="tm-tread" x1="68" y1="480" x2="84" y2="480"/><circle class="tm-wear" cx="60" cy="449" r="2.4" fill="#f59e0b"/></g>
+          <g class="tm-tire" data-id="T1LI" onclick="togTire('T1LI','หาง1-ซ้ายใน')"><rect class="tm-tire-body" x="96" y="445" width="28" height="42" rx="8"/><line class="tm-tread" x1="102" y1="452" x2="118" y2="452"/><line class="tm-tread" x1="102" y1="459" x2="118" y2="459"/><line class="tm-tread" x1="102" y1="466" x2="118" y2="466"/><line class="tm-tread" x1="102" y1="473" x2="118" y2="473"/><line class="tm-tread" x1="102" y1="480" x2="118" y2="480"/><circle class="tm-wear" cx="126" cy="449" r="2.4" fill="#f59e0b"/></g>
+          <g class="tm-tire" data-id="T1RI" onclick="togTire('T1RI','หาง1-ขวาใน')"><rect class="tm-tire-body" x="216" y="445" width="28" height="42" rx="8"/><line class="tm-tread" x1="222" y1="452" x2="238" y2="452"/><line class="tm-tread" x1="222" y1="459" x2="238" y2="459"/><line class="tm-tread" x1="222" y1="466" x2="238" y2="466"/><line class="tm-tread" x1="222" y1="473" x2="238" y2="473"/><line class="tm-tread" x1="222" y1="480" x2="238" y2="480"/><circle class="tm-wear" cx="214" cy="449" r="2.4" fill="#f59e0b"/></g>
+          <g class="tm-tire" data-id="T1RO" onclick="togTire('T1RO','หาง1-ขวานอก')"><rect class="tm-tire-body" x="250" y="445" width="28" height="42" rx="8"/><line class="tm-tread" x1="256" y1="452" x2="272" y2="452"/><line class="tm-tread" x1="256" y1="459" x2="272" y2="459"/><line class="tm-tread" x1="256" y1="466" x2="272" y2="466"/><line class="tm-tread" x1="256" y1="473" x2="272" y2="473"/><line class="tm-tread" x1="256" y1="480" x2="272" y2="480"/><circle class="tm-wear" cx="280" cy="449" r="2.4" fill="#f59e0b"/></g>
+
+          <!-- TRAILER 2 -->
+          <rect x="60" y="555" width="220" height="3" fill="#1e293b" opacity=".7"/>
+          <text class="tm-axle-label" x="40" y="560" text-anchor="end">หาง2</text>
+
+          <g class="tm-tire" data-id="T2LO" onclick="togTire('T2LO','หาง2-ซ้ายนอก')"><rect class="tm-tire-body" x="62" y="535" width="28" height="42" rx="8"/><line class="tm-tread" x1="68" y1="542" x2="84" y2="542"/><line class="tm-tread" x1="68" y1="549" x2="84" y2="549"/><line class="tm-tread" x1="68" y1="556" x2="84" y2="556"/><line class="tm-tread" x1="68" y1="563" x2="84" y2="563"/><line class="tm-tread" x1="68" y1="570" x2="84" y2="570"/><circle class="tm-wear" cx="60" cy="539" r="2.4" fill="#dc2626"/></g>
+          <g class="tm-tire" data-id="T2LI" onclick="togTire('T2LI','หาง2-ซ้ายใน')"><rect class="tm-tire-body" x="96" y="535" width="28" height="42" rx="8"/><line class="tm-tread" x1="102" y1="542" x2="118" y2="542"/><line class="tm-tread" x1="102" y1="549" x2="118" y2="549"/><line class="tm-tread" x1="102" y1="556" x2="118" y2="556"/><line class="tm-tread" x1="102" y1="563" x2="118" y2="563"/><line class="tm-tread" x1="102" y1="570" x2="118" y2="570"/><circle class="tm-wear" cx="126" cy="539" r="2.4" fill="#dc2626"/></g>
+          <g class="tm-tire" data-id="T2RI" onclick="togTire('T2RI','หาง2-ขวาใน')"><rect class="tm-tire-body" x="216" y="535" width="28" height="42" rx="8"/><line class="tm-tread" x1="222" y1="542" x2="238" y2="542"/><line class="tm-tread" x1="222" y1="549" x2="238" y2="549"/><line class="tm-tread" x1="222" y1="556" x2="238" y2="556"/><line class="tm-tread" x1="222" y1="563" x2="238" y2="563"/><line class="tm-tread" x1="222" y1="570" x2="238" y2="570"/><circle class="tm-wear" cx="214" cy="539" r="2.4" fill="#dc2626"/></g>
+          <g class="tm-tire" data-id="T2RO" onclick="togTire('T2RO','หาง2-ขวานอก')"><rect class="tm-tire-body" x="250" y="535" width="28" height="42" rx="8"/><line class="tm-tread" x1="256" y1="542" x2="272" y2="542"/><line class="tm-tread" x1="256" y1="549" x2="272" y2="549"/><line class="tm-tread" x1="256" y1="556" x2="272" y2="556"/><line class="tm-tread" x1="256" y1="563" x2="272" y2="563"/><line class="tm-tread" x1="256" y1="570" x2="272" y2="570"/><circle class="tm-wear" cx="280" cy="539" r="2.4" fill="#dc2626"/></g>
+
+          <!-- TRAILER 3 -->
+          <rect x="60" y="625" width="220" height="3" fill="#1e293b" opacity=".7"/>
+          <text class="tm-axle-label" x="40" y="630" text-anchor="end">หาง3</text>
+
+          <g class="tm-tire" data-id="T3LO" onclick="togTire('T3LO','หาง3-ซ้ายนอก')"><rect class="tm-tire-body" x="62" y="605" width="28" height="42" rx="8"/><line class="tm-tread" x1="68" y1="612" x2="84" y2="612"/><line class="tm-tread" x1="68" y1="619" x2="84" y2="619"/><line class="tm-tread" x1="68" y1="626" x2="84" y2="626"/><line class="tm-tread" x1="68" y1="633" x2="84" y2="633"/><line class="tm-tread" x1="68" y1="640" x2="84" y2="640"/><circle class="tm-wear" cx="60" cy="609" r="2.4" fill="#10b981"/></g>
+          <g class="tm-tire" data-id="T3LI" onclick="togTire('T3LI','หาง3-ซ้ายใน')"><rect class="tm-tire-body" x="96" y="605" width="28" height="42" rx="8"/><line class="tm-tread" x1="102" y1="612" x2="118" y2="612"/><line class="tm-tread" x1="102" y1="619" x2="118" y2="619"/><line class="tm-tread" x1="102" y1="626" x2="118" y2="626"/><line class="tm-tread" x1="102" y1="633" x2="118" y2="633"/><line class="tm-tread" x1="102" y1="640" x2="118" y2="640"/><circle class="tm-wear" cx="126" cy="609" r="2.4" fill="#10b981"/></g>
+          <g class="tm-tire" data-id="T3RI" onclick="togTire('T3RI','หาง3-ขวาใน')"><rect class="tm-tire-body" x="216" y="605" width="28" height="42" rx="8"/><line class="tm-tread" x1="222" y1="612" x2="238" y2="612"/><line class="tm-tread" x1="222" y1="619" x2="238" y2="619"/><line class="tm-tread" x1="222" y1="626" x2="238" y2="626"/><line class="tm-tread" x1="222" y1="633" x2="238" y2="633"/><line class="tm-tread" x1="222" y1="640" x2="238" y2="640"/><circle class="tm-wear" cx="214" cy="609" r="2.4" fill="#10b981"/></g>
+          <g class="tm-tire" data-id="T3RO" onclick="togTire('T3RO','หาง3-ขวานอก')"><rect class="tm-tire-body" x="250" y="605" width="28" height="42" rx="8"/><line class="tm-tread" x1="256" y1="612" x2="272" y2="612"/><line class="tm-tread" x1="256" y1="619" x2="272" y2="619"/><line class="tm-tread" x1="256" y1="626" x2="272" y2="626"/><line class="tm-tread" x1="256" y1="633" x2="272" y2="633"/><line class="tm-tread" x1="256" y1="640" x2="272" y2="640"/><circle class="tm-wear" cx="280" cy="609" r="2.4" fill="#10b981"/></g>
+
+          <!-- Tail lights + label -->
+          <rect x="110" y="696" width="24" height="14" rx="3" fill="rgba(220,38,38,.75)" stroke="rgba(252,165,165,.55)"/>
+          <rect x="206" y="696" width="24" height="14" rx="3" fill="rgba(220,38,38,.75)" stroke="rgba(252,165,165,.55)"/>
+          <text class="tm-arrow-label" x="170" y="742" text-anchor="middle">▼ ท้ายรถ</text>
+        </svg>
       </div>
-      <div style="font-size:.67rem;color:#334155">• กดซ้ำเพื่อยกเลิก</div>
+
+      <!-- Legend -->
+      <div class="tm-legend">
+        <span class="tm-lpill"><span class="tm-lsw tm-lsw-normal"></span><span>ปกติ</span></span>
+        <span class="tm-lpill"><span class="tm-lsw tm-lsw-sel"></span><span>เปลี่ยนยาง</span></span>
+        <span class="tm-lpill">
+          <span class="tm-lwear"><span class="tm-ldot g"></span><span class="tm-ldot y"></span><span class="tm-ldot r"></span></span>
+          <span>อายุยาง</span>
+        </span>
+      </div>
+
+      <!-- Cost summary -->
+      <div class="tm-cost-box">
+        <div class="tm-cost-row">
+          <label for="tm-price-per">ราคา / เส้น</label>
+          <input class="tm-cost-input" id="tm-price-per" type="number" value="5500" min="0" step="100" oninput="updateTireModalSummary()">
+          <span class="tm-baht">บาท</span>
+        </div>
+        <div class="tm-cost-formula" id="tm-cost-formula">0 เส้น × ฿5,500 / เส้น</div>
+        <div class="tm-cost-total">
+          <span class="tm-cost-total-label">รวม</span>
+          <span class="tm-cost-total-val" id="tm-cost-total">฿0</span>
+        </div>
+      </div>
+
+      <!-- Selected list -->
+      <div class="tm-sel-wrap">
+        <div class="tm-sel-head">
+          <span>ยางที่เลือก (<span id="tm-sel-count">0</span>/22)</span>
+        </div>
+        <div id="tire-modal-summary" class="tm-sel-empty">ยังไม่ได้เลือกยาง — กดที่ผังด้านบน</div>
+      </div>
     </div>
 
-    <!-- Summary -->
-    <div style="background:#1e293b;border:1px solid #334155;border-radius:10px;padding:10px 14px;margin-top:10px">
-      <div style="font-size:.7rem;color:#f97316;font-weight:700;margin-bottom:3px">🔧 ยางที่เลือก</div>
-      <div id="tire-modal-summary" style="font-size:.75rem;color:#94a3b8;line-height:1.7">ยังไม่เลือก</div>
-    </div>
-
-    <!-- Buttons -->
-    <div style="display:flex;gap:8px;margin-top:12px">
-      <button onclick="clearTires()" style="flex:1;padding:11px;background:#1e293b;border:1.5px solid #334155;border-radius:8px;color:#64748b;font-size:.82rem;cursor:pointer;font-family:inherit">🗑 ล้าง</button>
-      <button onclick="confirmTires()" style="flex:2;padding:11px;background:linear-gradient(135deg,#f97316,#ea580c);border:none;border-radius:8px;color:white;font-weight:700;font-size:.85rem;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(249,115,22,.4)">✅ ยืนยัน (เพิ่มลงรายละเอียด)</button>
+    <!-- Footer -->
+    <div class="tm-foot">
+      <button class="tm-btn tm-btn-ghost" onclick="clearTires()">🗑 ล้างทั้งหมด</button>
+      <button class="tm-btn tm-btn-primary" id="tm-confirm-btn" disabled onclick="confirmTires()">
+        ✅ ยืนยัน <span id="tm-confirm-count">(0 เส้น)</span>
+      </button>
     </div>
   </div>
 </div>
@@ -8480,58 +8471,103 @@ const TIRE_LABELS = {
   T2LO:'หาง2-ซ้ายนอก',T2LI:'หาง2-ซ้ายใน',T2RI:'หาง2-ขวาใน',T2RO:'หาง2-ขวานอก',
   T3LO:'หาง3-ซ้ายนอก',T3LI:'หาง3-ซ้ายใน',T3RI:'หาง3-ขวาใน',T3RO:'หาง3-ขวานอก'
 };
+// ─── Tire Modal — v14.6 (Claude Design refresh) ───
+const HEAD_TIRE_IDS    = ['H1L','H1R','H2LO','H2LI','H2RI','H2RO','H3LO','H3LI','H3RI','H3RO'];
+const TRAILER_TIRE_IDS = ['T1LO','T1LI','T1RI','T1RO','T2LO','T2LI','T2RI','T2RO','T3LO','T3LI','T3RI','T3RO'];
+
 function openTireModal() {
-  document.getElementById('tire-modal').style.display = 'flex';
+  const m = document.getElementById('tire-modal');
+  if (!m) return;
+  m.style.display = 'flex';
+  const plateEl = document.getElementById('tm-plate-label');
+  const plate = (document.getElementById('mnt-plate') || {}).value || '';
+  if (plateEl) plateEl.textContent = plate || 'รถบรรทุก';
   updateTireModalSummary();
 }
 function closeTireModal() {
-  document.getElementById('tire-modal').style.display = 'none';
+  const m = document.getElementById('tire-modal');
+  if (m) m.style.display = 'none';
 }
 function togTire(id, label) {
-  const btn = document.getElementById('t-'+id);
-  if (!btn) return;
-  const isTrailer = id.startsWith('T');
-  const normalFill   = isTrailer ? 'url(#ttg2)' : 'url(#htg)';
-  const normalStroke = isTrailer ? '#1e3a5f' : '#2d5282';
+  const el = document.querySelector(`#tire-modal .tm-tire[data-id="${id}"]`);
+  if (!el) return;
   if (selectedTires[id]) {
     delete selectedTires[id];
-    btn.setAttribute('fill', normalFill);
-    btn.setAttribute('stroke', normalStroke);
-    btn.removeAttribute('filter');
+    el.classList.remove('sel');
   } else {
     selectedTires[id] = label;
-    btn.setAttribute('fill', 'url(#stg)');
-    btn.setAttribute('stroke', '#fb923c');
-    btn.setAttribute('filter', 'url(#glow)');
+    el.classList.add('sel');
   }
   updateTireModalSummary();
 }
+function selectTireGroup(group) {
+  const ids = group === 'head' ? HEAD_TIRE_IDS
+            : group === 'trailer' ? TRAILER_TIRE_IDS
+            : [...HEAD_TIRE_IDS, ...TRAILER_TIRE_IDS];
+  const allSelected = ids.every(id => selectedTires[id]);
+  ids.forEach(id => {
+    const el = document.querySelector(`#tire-modal .tm-tire[data-id="${id}"]`);
+    if (allSelected) {
+      delete selectedTires[id];
+      if (el) el.classList.remove('sel');
+    } else {
+      const onclickAttr = (el && el.getAttribute('onclick')) || '';
+      const m = onclickAttr.match(/togTire\('[^']+','([^']+)'/);
+      const label = m ? m[1] : (TIRE_LABELS[id] || id);
+      selectedTires[id] = label;
+      if (el) el.classList.add('sel');
+    }
+  });
+  updateTireModalSummary();
+}
+function fmtTireBaht(n) { return '฿' + Math.max(0, n).toLocaleString('en-US'); }
 function updateTireModalSummary() {
   const keys = Object.keys(selectedTires);
-  const el = document.getElementById('tire-modal-summary');
-  if (!el) return;
-  el.textContent = keys.length===0 ? 'ยังไม่เลือก' : `${keys.length} เส้น: ` + keys.map(k=>selectedTires[k]).join(', ');
+  const count = keys.length;
+  const priceEl = document.getElementById('tm-price-per');
+  const price = priceEl ? (parseInt(priceEl.value || '0', 10) || 0) : 0;
+  const total = count * price;
+  const cEl = document.getElementById('tm-sel-count');         if (cEl) cEl.textContent = count;
+  const fEl = document.getElementById('tm-cost-formula');      if (fEl) fEl.textContent = `${count} เส้น × ${fmtTireBaht(price)} / เส้น`;
+  const tEl = document.getElementById('tm-cost-total');        if (tEl) tEl.textContent = fmtTireBaht(total);
+  const ccEl = document.getElementById('tm-confirm-count');    if (ccEl) ccEl.textContent = `(${count} เส้น)`;
+  const cbEl = document.getElementById('tm-confirm-btn');      if (cbEl) cbEl.disabled = count === 0;
+  const sBox = document.getElementById('tire-modal-summary');
+  if (sBox) {
+    if (count === 0) {
+      sBox.className = 'tm-sel-empty';
+      sBox.textContent = 'ยังไม่ได้เลือกยาง — กดที่ผังด้านบน';
+    } else {
+      sBox.className = 'tm-sel-chips';
+      sBox.innerHTML = keys.map(id => {
+        const label = selectedTires[id];
+        return `<span class="tm-sel-chip">${escHtml(label)}<button onclick="togTire('${id}','${escAttr(label)}')" aria-label="ลบ">×</button></span>`;
+      }).join('');
+    }
+  }
 }
 function clearTires() {
   selectedTires = {};
-  Object.keys(TIRE_LABELS).forEach(id => {
-    const btn = document.getElementById('t-'+id);
-    if (!btn) return;
-    const isTrailer = id.startsWith('T');
-    btn.setAttribute('fill', isTrailer ? 'url(#ttg2)' : 'url(#htg)');
-    btn.setAttribute('stroke', isTrailer ? '#1e3a5f' : '#2d5282');
-    btn.removeAttribute('filter');
-  });
+  document.querySelectorAll('#tire-modal .tm-tire.sel').forEach(el => el.classList.remove('sel'));
   updateTireModalSummary();
-  document.getElementById('selected-tires-display').textContent = 'ยังไม่ได้เลือกยาง — กดปุ่มด้านล่างเพื่อเลือก';
+  const disp = document.getElementById('selected-tires-display');
+  if (disp) disp.textContent = 'ยังไม่ได้เลือกยาง — กดปุ่มด้านล่างเพื่อเลือก';
 }
 function confirmTires() {
   const keys = Object.keys(selectedTires);
-  if (keys.length===0) { showToast('กรุณาเลือกยางอย่างน้อย 1 เส้น','warning'); return; }
-  const desc = 'เปลี่ยนยาง ' + keys.length + ' เส้น: ' + keys.map(k=>selectedTires[k]).join(', ');
+  if (keys.length === 0) { showToast('กรุณาเลือกยางอย่างน้อย 1 เส้น','warning'); return; }
+  const priceEl = document.getElementById('tm-price-per');
+  const price = priceEl ? (parseInt(priceEl.value || '0', 10) || 0) : 0;
+  const total = keys.length * price;
+  const labels = keys.map(k => selectedTires[k]).join(', ');
+  let desc = `เปลี่ยนยาง ${keys.length} เส้น: ${labels}`;
+  if (total > 0) desc += ` · รวม ฿${total.toLocaleString('en-US')}`;
   const descEl = document.getElementById('mnt-desc');
-  if (descEl) { descEl.value = desc; }
-  document.getElementById('selected-tires-display').textContent = `✅ เลือก ${keys.length} เส้น: ` + keys.map(k=>selectedTires[k]).join(', ');
+  if (descEl) descEl.value = desc;
+  const costEl = document.getElementById('mnt-cost');
+  if (costEl && (!costEl.value || costEl.value === '0') && total > 0) costEl.value = total;
+  const disp = document.getElementById('selected-tires-display');
+  if (disp) disp.textContent = `✅ เลือก ${keys.length} เส้น: ${labels}`;
   closeTireModal();
   showToast(`เพิ่มข้อมูลยาง ${keys.length} เส้นแล้ว`, 'success');
 }
@@ -9896,7 +9932,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.5';   // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.6';   // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate(opts) {

@@ -1,0 +1,345 @@
+/* ════════════════════════════════════════════════════════════
+   SuperWealth Design System — Foundational tokens
+   Truck transport management · Working Capital · LINE Bot
+   Source: web app codebase (index.html v12.4+, v4.1)
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Web fonts (Inter + IBM Plex Sans Thai) ── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* ──────────────────────────────────────────────
+     BRAND COLORS
+     Primary: clean SaaS blue (Linear/Stripe vibe)
+     Accent : purple = working capital / "เงินทุน"
+  ────────────────────────────────────────────── */
+  --sw-primary:        #2563eb;
+  --sw-primary-hover:  #1d4ed8;
+  --sw-primary-soft:   #eff6ff;
+  --sw-primary-tint:   #dbeafe;
+  --sw-primary-deep:   #1e40af;
+
+  --sw-accent:         #7c3aed;  /* purple — working capital */
+  --sw-accent-hover:   #6d28d9;
+  --sw-accent-soft:    #ede9fe;
+  --sw-accent-tint:    #ddd6fe;
+
+  /* ── Semantic palette ── */
+  --sw-success:        #16a34a;
+  --sw-success-hover:  #15803d;
+  --sw-success-soft:   #dcfce7;
+  --sw-success-tint:   #bbf7d0;
+
+  --sw-danger:         #dc2626;
+  --sw-danger-hover:   #b91c1c;
+  --sw-danger-soft:    #fee2e2;
+  --sw-danger-tint:    #fecaca;
+
+  --sw-warning:        #f59e0b;
+  --sw-warning-hover:  #d97706;
+  --sw-warning-soft:   #fef3c7;
+  --sw-warning-tint:   #fde68a;
+
+  --sw-info:           #0ea5e9;
+  --sw-info-soft:      #e0f2fe;
+
+  /* ── KTB hero navy (banner gradient) ── */
+  --sw-navy-900:       #0d47a1;
+  --sw-navy-800:       #1565c0;
+  --sw-navy-700:       #1976d2;
+  --sw-hero-grad:      linear-gradient(145deg,#0d47a1 0%,#1565c0 45%,#1976d2 100%);
+
+  /* ──────────────────────────────────────────────
+     SURFACE / TEXT / BORDER (LIGHT — soft pastel)
+     Light mode = cool-tinted sidebar, white cards
+  ────────────────────────────────────────────── */
+  --sw-bg-app:         #fdfdfe;
+  --sw-bg-card:        #ffffff;
+  --sw-bg-elevated:    #ffffff;
+  --sw-bg-subtle:      #f1f3f7;
+  --sw-bg-sidebar:     linear-gradient(180deg,#eef2f9 0%,#e8edf5 100%);
+  --sw-bg-overlay:
+      radial-gradient(at 80% 0%, rgba(99,102,241,0.04) 0%, transparent 60%),
+      radial-gradient(at 0%  100%, rgba(236,72,153,0.03) 0%, transparent 60%),
+      #fdfdfe;
+
+  --sw-fg-primary:     #1a1f2e;
+  --sw-fg-secondary:   #4a5568;
+  --sw-fg-tertiary:    #5a6577;
+  --sw-fg-muted:       #98a1b0;
+  --sw-fg-disabled:    #cdd3dc;
+  --sw-fg-on-brand:    #ffffff;
+
+  --sw-border:         #e4e8ee;
+  --sw-border-strong:  #cdd3dc;
+  --sw-border-focus:   var(--sw-primary);
+
+  /* ──────────────────────────────────────────────
+     RADII — soft, 12–16px on cards
+  ────────────────────────────────────────────── */
+  --sw-r-xs:   4px;
+  --sw-r-sm:   6px;
+  --sw-r-md:   8px;
+  --sw-r-lg:   12px;   /* default card */
+  --sw-r-xl:   16px;   /* hero / stat */
+  --sw-r-2xl:  20px;   /* hero banner */
+  --sw-r-3xl:  24px;
+  --sw-r-full: 9999px;
+
+  /* ──────────────────────────────────────────────
+     SHADOWS — layered, soft
+  ────────────────────────────────────────────── */
+  --sw-shadow-xs:  0 1px 2px rgba(15,23,42,.04);
+  --sw-shadow-sm:  0 1px 3px rgba(15,23,42,.05), 0 1px 2px rgba(15,23,42,.03);
+  --sw-shadow-md:  0 4px 12px -4px rgba(15,23,42,.08), 0 1px 3px rgba(15,23,42,.04);
+  --sw-shadow-lg:  0 8px 24px -8px rgba(15,23,42,.12), 0 2px 4px rgba(15,23,42,.04);
+  --sw-shadow-xl:  0 20px 30px -6px rgba(15,23,42,.12), 0 10px 16px -6px rgba(15,23,42,.06);
+  --sw-shadow-2xl: 0 32px 60px -16px rgba(15,23,42,.18);
+
+  /* Brand-tinted glow shadows */
+  --sw-glow-primary: 0 8px 24px -4px rgba(37,99,235,.5), 0 4px 12px rgba(37,99,235,.3);
+  --sw-glow-accent:  0 8px 24px -4px rgba(124,58,237,.45), 0 4px 12px rgba(124,58,237,.25);
+  --sw-glow-success: 0 10px 28px -8px rgba(5,150,105,.45);
+  --sw-glow-danger:  0 10px 28px -8px rgba(220,38,38,.45);
+  --sw-focus-ring:   0 0 0 3px rgba(37,99,235,.18);
+
+  /* ──────────────────────────────────────────────
+     SPACING SCALE (4-pt)
+  ────────────────────────────────────────────── */
+  --sw-s-0:   0;
+  --sw-s-1:   4px;
+  --sw-s-2:   8px;
+  --sw-s-3:   12px;
+  --sw-s-4:   16px;
+  --sw-s-5:   20px;
+  --sw-s-6:   24px;
+  --sw-s-8:   32px;
+  --sw-s-10:  40px;
+  --sw-s-12:  48px;
+  --sw-s-16:  64px;
+
+  --sw-sidebar-w: 220px;
+  --sw-header-h:  56px;
+
+  /* ──────────────────────────────────────────────
+     MOTION
+  ────────────────────────────────────────────── */
+  --sw-t-fast:   130ms cubic-bezier(.4,0,.2,1);
+  --sw-t-base:   200ms cubic-bezier(.4,0,.2,1);
+  --sw-t-slow:   320ms cubic-bezier(.4,0,.2,1);
+  --sw-t-spring: 500ms cubic-bezier(.34,1.56,.64,1);
+
+  /* ──────────────────────────────────────────────
+     STAT-CARD GRADIENTS (paired)
+     Used on KPI cards on dashboard and capital views.
+  ────────────────────────────────────────────── */
+  --sw-grad-green:  linear-gradient(135deg,#047857 0%,#065f46 100%);
+  --sw-grad-red:    linear-gradient(135deg,#b91c1c 0%,#991b1b 100%);
+  --sw-grad-blue:   linear-gradient(135deg,#1d4ed8 0%,#1e40af 100%);
+  --sw-grad-orange: linear-gradient(135deg,#c2410c 0%,#9a3412 100%);
+  --sw-grad-purple: linear-gradient(135deg,#6d28d9 0%,#5b21b6 100%);
+  --sw-grad-pink:   linear-gradient(135deg,#be185d 0%,#9d174d 100%);
+  --sw-grad-teal:   linear-gradient(135deg,#0f766e 0%,#115e59 100%);
+  --sw-grad-indigo: linear-gradient(135deg,#4338ca 0%,#3730a3 100%);
+
+  /* ──────────────────────────────────────────────
+     TYPOGRAPHY
+     Inter — Latin · IBM Plex Sans Thai — Thai
+     Numbers always tabular-nums.
+  ────────────────────────────────────────────── */
+  --sw-font-sans: 'Inter','IBM Plex Sans Thai','Noto Sans Thai','Segoe UI',system-ui,-apple-system,sans-serif;
+  --sw-font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+
+  /* Size scale */
+  --sw-fs-2xs:  0.65rem;   /* 10.4 — uppercase eyebrow */
+  --sw-fs-xs:   0.72rem;   /* 11.5 — meta, sub */
+  --sw-fs-sm:   0.82rem;   /* 13   — body small / nav */
+  --sw-fs-base: 0.92rem;   /* 14.7 — body */
+  --sw-fs-md:   1rem;      /* card title */
+  --sw-fs-lg:   1.15rem;   /* page title */
+  --sw-fs-xl:   1.55rem;   /* stat value */
+  --sw-fs-2xl:  1.7rem;
+  --sw-fs-3xl:  2.25rem;
+  --sw-fs-display: 2.75rem;
+
+  /* Weight */
+  --sw-fw-regular: 400;
+  --sw-fw-medium:  500;
+  --sw-fw-semi:    600;
+  --sw-fw-bold:    700;
+  --sw-fw-heavy:   800;
+  --sw-fw-black:   900;
+
+  /* Line height */
+  --sw-lh-tight:  1.15;
+  --sw-lh-snug:   1.3;
+  --sw-lh-normal: 1.5;
+  --sw-lh-relaxed: 1.7;
+
+  /* Letter spacing */
+  --sw-ls-tighter: -0.03em;
+  --sw-ls-tight:   -0.01em;
+  --sw-ls-normal:  0;
+  --sw-ls-wide:    0.04em;
+  --sw-ls-wider:   0.08em;
+}
+
+/* ════════════════════════════════════════════════════════════
+   DARK MODE TOKENS (Round 6 refinement)
+   Default for the product. Warmer base · stronger borders ·
+   WCAG AAA text · explicit glass + glow tokens · lifted modal.
+   ════════════════════════════════════════════════════════════ */
+body.dark, [data-theme="dark"] {
+  /* Surface hierarchy — warmer base, lifted modal */
+  --sw-bg-app:        #0a0e1a;                  /* warmer than #0a0d14 (more navy, less neutral) */
+  --sw-bg-card:       #131826;                  /* card · ~3% lighter than app */
+  --sw-bg-elevated:   #1a1f31;                  /* hover/focus · ~5% lighter */
+  --sw-bg-subtle:     #1f2538;                  /* chip / button rest */
+  --sw-bg-modal:      #1e2440;                  /* NEW — modals lift one step above elevated */
+  --sw-bg-sidebar:    linear-gradient(180deg,#0a1024 0%,#060912 60%,#04060d 100%);
+  --sw-bg-overlay:
+      radial-gradient(at 80% 0%, rgba(59,130,246,.06) 0%, transparent 60%),
+      radial-gradient(at 0% 100%, rgba(139,92,246,.04) 0%, transparent 60%),
+      #0a0e1a;
+
+  /* Glass — subtle white-tint for floating panels */
+  --sw-bg-glass:      rgba(255,255,255,0.04);
+  --sw-bg-glass-strong: rgba(255,255,255,0.06);
+
+  /* Text — WCAG AAA on dark base */
+  --sw-fg-primary:    #f8fafc;                  /* bumped from #f0f3f9 */
+  --sw-fg-secondary:  #b7c0d0;
+  --sw-fg-tertiary:   #94a3b8;                  /* bumped from #98a3b8 */
+  --sw-fg-muted:      #94a3b8;                  /* bumped from #7a8499 for readability */
+  --sw-fg-disabled:   #5b677e;
+
+  /* Borders — subtle bump for better contrast */
+  --sw-border:        #2d3548;                  /* bumped from #252b3d */
+  --sw-border-strong: #485373;                  /* bumped from #3a4256 */
+
+  /* Brand on dark */
+  --sw-primary:       #4493f8;
+  --sw-primary-hover: #3b82f6;
+  --sw-primary-soft:  rgba(68,147,248,0.16);
+  --sw-primary-tint:  rgba(68,147,248,0.28);
+
+  --sw-success-soft:  rgba(22,163,74,0.16);
+  --sw-danger-soft:   rgba(220,38,38,0.16);
+  --sw-warning-soft:  rgba(245,158,11,0.16);
+  --sw-accent-soft:   rgba(124,58,237,0.18);
+
+  /* Shadows + glows */
+  --sw-shadow-sm:  0 1px 3px rgba(0,0,0,.4);
+  --sw-shadow-md:  0 4px 8px rgba(0,0,0,.45);
+  --sw-shadow-lg:  0 12px 24px rgba(0,0,0,.55);
+  --sw-shadow-xl:  0 24px 40px rgba(0,0,0,.65);
+
+  /* NEW — explicit glow tokens for focused inputs + active cards */
+  --sw-glow-primary-soft: 0 0 0 3px rgba(68,147,248,.15), 0 4px 12px -4px rgba(68,147,248,.25);
+  --sw-glow-accent-soft:  0 0 0 3px rgba(167,139,250,.15), 0 4px 12px -4px rgba(167,139,250,.25);
+  --sw-focus-ring:        0 0 0 3px rgba(68,147,248,.22);
+
+  /* Inset highlight — applied to stat cards + raised surfaces */
+  --sw-inset-hi:      inset 0 1px 0 rgba(255,255,255,0.06);
+
+  /* Code/mono — violet-tinted */
+  --sw-bg-mono:       rgba(255,255,255,0.06);
+  --sw-fg-mono:       #c0c8d6;
+}
+
+/* ════════════════════════════════════════════════════════════
+   BASE + SEMANTIC TYPE
+   ════════════════════════════════════════════════════════════ */
+
+html, body {
+  font-family: var(--sw-font-sans);
+  font-feature-settings: 'cv02','cv03','cv04','cv11','tnum';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: var(--sw-ls-tight);
+  color: var(--sw-fg-primary);
+  background: var(--sw-bg-app);
+}
+
+/* Headings — 700–900, tight tracking. h1/h2 are heavy. */
+.sw-display {
+  font-size: var(--sw-fs-display);
+  font-weight: var(--sw-fw-black);
+  line-height: var(--sw-lh-tight);
+  letter-spacing: var(--sw-ls-tighter);
+  color: var(--sw-fg-primary);
+}
+.sw-h1 {
+  font-size: var(--sw-fs-3xl);
+  font-weight: var(--sw-fw-heavy);
+  line-height: var(--sw-lh-tight);
+  letter-spacing: var(--sw-ls-tight);
+  color: var(--sw-fg-primary);
+}
+.sw-h2 {
+  font-size: var(--sw-fs-2xl);
+  font-weight: var(--sw-fw-heavy);
+  line-height: var(--sw-lh-snug);
+  letter-spacing: var(--sw-ls-tight);
+  color: var(--sw-fg-primary);
+}
+.sw-h3 {
+  font-size: var(--sw-fs-xl);
+  font-weight: var(--sw-fw-bold);
+  line-height: var(--sw-lh-snug);
+  color: var(--sw-fg-primary);
+}
+.sw-page-title {
+  font-size: var(--sw-fs-lg);
+  font-weight: var(--sw-fw-bold);
+  color: var(--sw-fg-primary);
+}
+.sw-card-title {
+  font-size: var(--sw-fs-md);
+  font-weight: var(--sw-fw-heavy);
+  color: var(--sw-fg-primary);
+}
+
+.sw-body {
+  font-size: var(--sw-fs-base);
+  line-height: var(--sw-lh-normal);
+  color: var(--sw-fg-secondary);
+}
+.sw-body-sm {
+  font-size: var(--sw-fs-sm);
+  line-height: var(--sw-lh-normal);
+  color: var(--sw-fg-secondary);
+}
+.sw-meta {
+  font-size: var(--sw-fs-xs);
+  color: var(--sw-fg-tertiary);
+}
+.sw-eyebrow {
+  font-size: var(--sw-fs-2xs);
+  font-weight: var(--sw-fw-bold);
+  letter-spacing: var(--sw-ls-wider);
+  text-transform: uppercase;
+  color: var(--sw-fg-muted);
+}
+
+/* Numbers should always be tabular */
+.sw-num, .sw-stat-value, .sw-kpi-val {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+.sw-mono {
+  font-family: var(--sw-font-mono);
+  font-feature-settings: 'tnum';
+}
+
+/* KPI / stat value type */
+.sw-stat-value {
+  font-size: var(--sw-fs-2xl);
+  font-weight: var(--sw-fw-heavy);
+  line-height: var(--sw-lh-tight);
+  letter-spacing: -0.3px;
+}
+
+a { color: var(--sw-primary); text-decoration: none; }
+a:hover { color: var(--sw-primary-hover); text-decoration: underline; }
