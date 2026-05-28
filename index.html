@@ -4272,6 +4272,136 @@
     body.dark .swdp-clear { background: #0f172a; border-top-color: #334155; }
 
     /* ═══════════════════════════════════════════════════════════
+       v14.37 — Project-wide polish: skeletons, image errors,
+                  tap targets, mobile, busy buttons, toasts
+       ═══════════════════════════════════════════════════════════ */
+
+    /* Spinner animation for buttons during submit */
+    @keyframes sw-spin { to { transform: rotate(360deg); } }
+    .sw-spin { display: inline-block; animation: sw-spin 1s linear infinite; }
+
+    /* Skeleton loader (use class .sw-skeleton for empty/loading states) */
+    @keyframes sw-shimmer {
+      0%   { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .sw-skeleton {
+      background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+      background-size: 200% 100%;
+      animation: sw-shimmer 1.4s ease-in-out infinite;
+      border-radius: 8px;
+      color: transparent !important;
+    }
+    body.dark .sw-skeleton {
+      background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+      background-size: 200% 100%;
+    }
+    .sw-skeleton-line {
+      height: 14px; margin: 6px 0; border-radius: 6px;
+      background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+      background-size: 200% 100%;
+      animation: sw-shimmer 1.4s ease-in-out infinite;
+    }
+    body.dark .sw-skeleton-line {
+      background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+      background-size: 200% 100%;
+    }
+    .sw-skeleton-card {
+      padding: 16px; border-radius: 12px; border: 1px solid var(--sw-border, #e2e8f0);
+      background: var(--sw-bg-card, #fff);
+    }
+
+    /* Broken image fallback (used via img onerror) */
+    img.sw-img-broken {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: #f1f5f9 url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2394a3b8"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/></svg>') center/40% no-repeat;
+      color: transparent; min-width: 56px; min-height: 56px;
+      border: 1.5px dashed #cbd5e1; border-radius: 8px;
+    }
+    body.dark img.sw-img-broken {
+      background-color: #1e293b; border-color: #475569;
+    }
+
+    /* Disabled buttons everywhere */
+    button:disabled, .btn:disabled, .btn-primary:disabled, .btn-secondary:disabled {
+      opacity: .55; cursor: not-allowed !important;
+      filter: grayscale(.2);
+    }
+
+    /* ── Mobile tap target minimum 44x44 (WCAG AA) ── */
+    @media (max-width: 640px) {
+      .btn, button.btn, button.btn-primary, button.btn-secondary,
+      .inner-btn, .tab-btn, .header-bell, .swdp-icon {
+        min-height: 44px;
+      }
+      .btn-small, button.btn-small { min-height: 36px; }
+      /* Make form rows stack on small screens */
+      .form-row-2, .form-row-3 {
+        grid-template-columns: 1fr !important;
+      }
+      /* Reduce padding on small screens */
+      .card { padding: 14px !important; }
+      /* Make modals fit screen */
+      #login-modal, .modal {
+        padding: 10px !important;
+      }
+      /* Larger touch font in inputs */
+      input, select, textarea {
+        font-size: 16px !important; /* prevents iOS zoom on focus */
+      }
+    }
+
+    /* ── Tablet (640-900px): form-row-3 stays 2 cols, then 3 ── */
+    @media (min-width: 641px) and (max-width: 900px) {
+      .form-row-3 { grid-template-columns: 1fr 1fr !important; }
+      .form-row-3 > .form-row:last-child { grid-column: 1 / -1; }
+    }
+
+    /* ── Improved toast (queue + dismissible) ── */
+    #sw-toast-stack {
+      position: fixed; top: 16px; right: 16px;
+      z-index: 99998;
+      display: flex; flex-direction: column; gap: 8px;
+      max-width: calc(100vw - 32px); pointer-events: none;
+    }
+    .sw-toast {
+      pointer-events: auto;
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px; border-radius: 12px;
+      background: rgba(15, 23, 42, 0.95);
+      color: white; font-weight: 600; font-size: .88rem;
+      box-shadow: 0 12px 28px rgba(15,23,42,.25);
+      backdrop-filter: blur(10px);
+      min-width: 240px; max-width: 420px;
+      animation: swToastIn .25s ease-out;
+      border-left: 4px solid #3b82f6;
+    }
+    .sw-toast.success { border-left-color: #22c55e; }
+    .sw-toast.warning { border-left-color: #f59e0b; }
+    .sw-toast.error   { border-left-color: #ef4444; }
+    .sw-toast.info    { border-left-color: #3b82f6; }
+    .sw-toast .sw-toast-close {
+      margin-left: auto; background: rgba(255,255,255,.12); border: none;
+      color: white; width: 24px; height: 24px;
+      border-radius: 6px; cursor: pointer; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .sw-toast.sw-toast-leaving { animation: swToastOut .2s ease-in forwards; }
+    @keyframes swToastIn  { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes swToastOut { to   { opacity:0; transform:translateY(-12px); } }
+    @media (max-width: 640px) {
+      #sw-toast-stack { top: 10px; left: 10px; right: 10px; }
+      .sw-toast { min-width: 0; width: 100%; }
+    }
+
+    /* ARIA live region for screen readers (visually hidden) */
+    .sw-sr-only {
+      position: absolute !important; width: 1px; height: 1px;
+      padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
+      white-space: nowrap; border: 0;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
        v14.19 — Elegant clock pill (replaces version stamp)
        ═══════════════════════════════════════════════════════════ */
     .sw-clock-pill {
@@ -4390,7 +4520,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.36 | 29/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.37 | 29/05/2026</span>
   </div>
 </aside>
 
@@ -8720,14 +8850,25 @@ function fillFormFromOCR(formKey) {
 }
 
 // ─── SUBMIT (fetch → /api/upload-images + /api/save) ──────
+// v14.37 — Double-submit guard (per-form)
+const _submitInFlight = new Set();
 async function submitForm(formKey) {
   if (!requireAuth()) return;
+  // Block rapid double-clicks
+  if (_submitInFlight.has(formKey)) {
+    showToast('⏳ กำลังบันทึก... กรุณารอสักครู่', 'warning');
+    return;
+  }
   const data = collectFormData(formKey);
   if (!data) return;
   // Hook: if editing existing record, route to update instead
   if (_editingMode[formKey]) {
-    return performEditUpdate(formKey, data);
+    _submitInFlight.add(formKey);
+    try { return await performEditUpdate(formKey, data); }
+    finally { _submitInFlight.delete(formKey); _setSubmitButtonState(formKey, false); }
   }
+  _submitInFlight.add(formKey);
+  _setSubmitButtonState(formKey, true);
   showLoading('กำลังอัปโหลดภาพ...');
   try {
     // Step 1: upload images
@@ -8766,7 +8907,34 @@ async function submitForm(formKey) {
   } catch (e) {
     hideLoading();
     showToast('เกิดข้อผิดพลาด: ' + e.message, 'error');
+  } finally {
+    // v14.37 — always release the lock + re-enable button
+    _submitInFlight.delete(formKey);
+    _setSubmitButtonState(formKey, false);
   }
+}
+
+// v14.37 — Toggle disabled state + spinner on the submit button(s) of a form
+function _setSubmitButtonState(formKey, busy) {
+  const tab = document.getElementById('tab-' + formKey);
+  if (!tab) return;
+  tab.querySelectorAll('.btn-primary').forEach(btn => {
+    if (busy) {
+      if (!btn.dataset._origHtml) btn.dataset._origHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.style.opacity = '.65';
+      btn.style.cursor = 'not-allowed';
+      btn.innerHTML = '<span class="sw-spin" aria-hidden="true">⏳</span> กำลังบันทึก...';
+    } else {
+      btn.disabled = false;
+      btn.style.opacity = '';
+      btn.style.cursor = '';
+      if (btn.dataset._origHtml) {
+        btn.innerHTML = btn.dataset._origHtml;
+        delete btn.dataset._origHtml;
+      }
+    }
+  });
 }
 
 async function uploadAllImages(formKey) {
@@ -9334,12 +9502,44 @@ function setLoadingText(txt) { document.getElementById('loading-text').textConte
 function hideLoading()       { document.getElementById('loading-overlay').classList.add('hidden'); }
 
 let _toastTimer;
+// v14.37 — Toast queue + dismissible + ARIA live
+function _toastStack() {
+  let stack = document.getElementById('sw-toast-stack');
+  if (!stack) {
+    stack = document.createElement('div');
+    stack.id = 'sw-toast-stack';
+    stack.setAttribute('role', 'status');
+    stack.setAttribute('aria-live', 'polite');
+    stack.setAttribute('aria-atomic', 'false');
+    document.body.appendChild(stack);
+  }
+  return stack;
+}
 function showToast(msg, type) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className   = type || '';
-  clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(() => t.classList.add('hidden'), 3500);
+  const validType = ['success','warning','error','info'].includes(type) ? type : 'info';
+  // Fallback to legacy single-toast div for older calls (already in DOM)
+  const legacy = document.getElementById('toast');
+  if (legacy) {
+    legacy.textContent = msg;
+    legacy.className   = validType;
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => legacy.classList.add('hidden'), 3500);
+  }
+  // Also push to the new stack
+  const stack = _toastStack();
+  const t = document.createElement('div');
+  t.className = 'sw-toast ' + validType;
+  t.innerHTML = `<span style="flex:1">${escHtml(String(msg))}</span>
+    <button type="button" class="sw-toast-close" aria-label="ปิด">✕</button>`;
+  stack.appendChild(t);
+  const dismiss = () => {
+    t.classList.add('sw-toast-leaving');
+    setTimeout(() => t.remove(), 200);
+  };
+  t.querySelector('.sw-toast-close').addEventListener('click', dismiss);
+  // Auto-dismiss (longer for errors/warnings)
+  const ttl = (validType === 'error') ? 6000 : (validType === 'warning' ? 5000 : 3500);
+  setTimeout(dismiss, ttl);
 }
 
 // ─── OCR STANDALONE TAB ────────────────────────────────
@@ -12047,7 +12247,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.36';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.37';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
@@ -12156,8 +12356,8 @@ function tickLiveClock() {
 // ═══════════════════════════════════════════════════════════════════
 function formatMoneyDisplay(raw) {
   if (raw == null) return '';
+  // v14.37 — strip negative sign too (money inputs reject negatives)
   let s = String(raw).replace(/[^0-9.]/g, '');
-  // keep only first dot
   const i = s.indexOf('.');
   if (i >= 0) s = s.slice(0, i + 1) + s.slice(i + 1).replace(/\./g, '');
   if (!s) return '';
@@ -12221,6 +12421,63 @@ function _fpQuickButtonsPlugin() {
     };
   };
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// v14.37 — Global polish: image errors, debounce, dirty form guard
+// ═══════════════════════════════════════════════════════════════════
+
+// Global image error fallback — never show broken icons
+document.addEventListener('error', (e) => {
+  const t = e.target;
+  if (t && t.tagName === 'IMG' && !t.dataset._fallbackDone) {
+    t.dataset._fallbackDone = '1';
+    t.classList.add('sw-img-broken');
+    t.alt = 'รูปโหลดไม่ได้';
+    // Use 1x1 transparent gif to suppress browser broken-icon
+    t.src = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+  }
+}, true);
+
+// Generic debounce util
+function _debounce(fn, ms) {
+  let t = null;
+  return function(...args) {
+    clearTimeout(t);
+    t = setTimeout(() => fn.apply(this, args), ms);
+  };
+}
+
+// Dirty-form tracking (prompts before leaving page with unsaved changes)
+const _dirtyForms = new Set();
+function markFormDirty(formKey) { _dirtyForms.add(formKey); }
+function markFormClean(formKey) { _dirtyForms.delete(formKey); }
+window.addEventListener('beforeunload', (e) => {
+  if (_dirtyForms.size === 0) return;
+  // Modern browsers ignore custom message but still show their default dialog
+  e.preventDefault();
+  e.returnValue = '';
+  return '';
+});
+// Track typing in any form-row input as "dirty"
+document.addEventListener('input', (e) => {
+  const t = e.target;
+  if (!t || !t.id) return;
+  const prefix = t.id.split('-')[0];
+  if (['t','i','e','v','d','c','mnt','inv','fuel'].includes(prefix)) {
+    const map = { t:'truck', i:'income', e:'expense', v:'vehicle', d:'driver',
+                  c:'customer', mnt:'maintenance', inv:'invoice', fuel:'fuel' };
+    if (map[prefix]) markFormDirty(map[prefix]);
+  }
+});
+// Clear dirty flags after successful save/reset
+const _origShowToast = showToast;
+window.showToast = function(msg, type) {
+  _origShowToast(msg, type);
+  if (type === 'success' && typeof msg === 'string' &&
+      (msg.includes('บันทึก') || msg.includes('อัปเดต') || msg.includes('สำเร็จ'))) {
+    _dirtyForms.clear();
+  }
+};
 
 // ═══════════════════════════════════════════════════════════════════
 // v14.34 — Custom Thai/BE Date Picker (NO CDN dependency)
