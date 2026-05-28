@@ -588,22 +588,26 @@
     body.logged-out #auth-btn { background:#dbeafe !important; color:#1d4ed8 !important; }
     body.logged-in  #auth-btn { background:#fef2f2 !important; color:#dc2626 !important; }
 
-    /* Preview mode banner */
+    /* Preview mode banner — fixed at top, push #app-shell down */
     body.logged-out #preview-banner { display:flex !important; }
     #preview-banner {
       display: none;
-      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
       background: linear-gradient(90deg, #f59e0b, #ea580c);
       color: white; padding: 9px 16px;
       font-weight: 700; font-size: .82rem;
       align-items: center; justify-content: center; gap: 10px;
       box-shadow: 0 2px 12px rgba(234,88,12,.3);
       cursor: pointer;
+      height: 38px; box-sizing: border-box;
     }
-    body.logged-out .app-header { top: 38px; }
-    body.logged-out #app-shell { padding-top: 38px; }
+    body.logged-out #app-shell {
+      margin-top: 38px !important;
+      height: calc(100dvh - 38px) !important;
+    }
     @media (max-width:600px) {
-      #preview-banner { font-size:.72rem; padding:7px 10px }
+      #preview-banner { font-size:.72rem; padding:7px 10px; height:36px }
+      body.logged-out #app-shell { margin-top: 36px !important; height: calc(100dvh - 36px) !important; }
     }
 
     /* Blur sensitive data when logged out */
@@ -916,7 +920,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v8.2 | 28/05/2026 12:50</span>
+  <span class="version" style="margin-left:auto">v8.3 | 28/05/2026 13:00</span>
   <!-- Login/Logout button -->
   <button class="header-bell" id="auth-btn" onclick="handleAuthClick()" title="เข้าสู่ระบบ" style="margin-left:10px;width:auto;padding:0 14px;font-weight:700;font-size:.78rem;display:flex;align-items:center;gap:6px">
     <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
