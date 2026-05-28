@@ -4154,11 +4154,12 @@
        ═══════════════════════════════════════════════════════════ */
     .swdp-wrapper { position: relative; display: block; width: 100%; }
     .swdp-display {
-      width: 100%; padding: 9px 12px; border-radius: 8px;
+      width: 100%; padding: 9px 38px 9px 12px;   /* room for icon on right */
+      border-radius: 8px;
       border: 1.5px solid var(--sw-border, #e4e8ee);
       background: var(--sw-bg-card, #fff);
       font-family: inherit; font-size: .9rem;
-      cursor: pointer;
+      cursor: text;
       color: var(--sw-fg-primary, #1a1f2e);
       transition: border-color .15s, box-shadow .15s;
     }
@@ -4168,11 +4169,22 @@
       outline: none;
     }
     .swdp-display::placeholder { color: #94a3b8; }
+    .swdp-icon {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      width: 30px; height: 30px;
+      display: flex; align-items: center; justify-content: center;
+      background: transparent; border: none; cursor: pointer;
+      border-radius: 6px; font-size: 1.05rem;
+      transition: background .15s;
+      color: #64748b;
+    }
+    .swdp-icon:hover { background: #eff6ff; color: #1d4ed8; }
     .swdp-pop {
-      position: absolute; z-index: 9000; top: calc(100% + 6px); left: 0;
+      position: fixed;  /* v14.35 — fixed escapes all stacking contexts */
+      z-index: 99999;
       width: 290px; max-width: 95vw;
       background: white; border-radius: 14px;
-      box-shadow: 0 20px 50px rgba(15,23,42,.2), 0 8px 20px rgba(15,23,42,.08);
+      box-shadow: 0 20px 50px rgba(15,23,42,.25), 0 8px 20px rgba(15,23,42,.1);
       border: 1px solid #e2e8f0;
       overflow: hidden;
       font-family: 'Noto Sans Thai', system-ui, sans-serif;
@@ -4375,7 +4387,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.34 | 29/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.35 | 29/05/2026</span>
   </div>
 </aside>
 
@@ -12032,7 +12044,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.34';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.35';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
@@ -12231,28 +12243,60 @@ function _swdpAttach(input) {
   if (input.type !== 'date') return;
   input._swdpAttached = true;
 
-  // Create wrapper + display input + hidden popover
+  // Create wrapper + display input + calendar icon
   const wrap = document.createElement('div');
   wrap.className = 'swdp-wrapper';
   const display = document.createElement('input');
   display.type = 'text';
-  display.readOnly = true;
   display.className = 'swdp-display';
-  display.placeholder = 'คลิกเพื่อเลือกวันที่...';
+  display.placeholder = 'คลิกที่ปฏิทิน 📅 หรือพิมพ์เช่น "28 พ.ค. 2569"';
+  display.inputMode = 'numeric';
   if (input.required) display.required = true;
+
+  // v14.35 — Calendar icon button (only this triggers picker)
+  const icon = document.createElement('button');
+  icon.type = 'button';
+  icon.className = 'swdp-icon';
+  icon.innerHTML = '📅';
+  icon.title = 'เปิดปฏิทิน';
+  icon.setAttribute('aria-label', 'เปิดปฏิทิน');
 
   // Hide original (still in DOM so form submission works)
   input.type = 'hidden';
   input.parentNode.insertBefore(wrap, input);
   wrap.appendChild(display);
+  wrap.appendChild(icon);
   wrap.appendChild(input);
 
   const updateDisplay = () => { display.value = _swdpFmt(input.value); };
   updateDisplay();
 
-  // Open popover on click
-  display.addEventListener('click', () => _swdpOpen(input, display, wrap));
-  display.addEventListener('focus', () => _swdpOpen(input, display, wrap));
+  // v14.35 — Click ICON only opens picker (NOT clicking the text)
+  icon.addEventListener('click', (e) => {
+    e.preventDefault(); e.stopPropagation();
+    _swdpOpen(input, display, wrap);
+  });
+  // Click on EMPTY display also opens (UX from user request)
+  display.addEventListener('click', () => {
+    if (!display.value) _swdpOpen(input, display, wrap);
+  });
+  // v14.35 — Allow TYPING — parse Thai BE / ISO / numeric on blur/enter
+  display.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); display.blur(); }
+  });
+  display.addEventListener('blur', () => {
+    const txt = (display.value || '').trim();
+    if (!txt) { input.value = ''; return; }
+    const parsed = _swdpParseInput(txt);
+    if (parsed) {
+      input.value = _swdpToISO(parsed);
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      updateDisplay();
+    } else {
+      // invalid — revert to last known good
+      updateDisplay();
+    }
+  });
 
   // Watch external changes (e.g. setDate from JS)
   const origDescriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
@@ -12261,26 +12305,59 @@ function _swdpAttach(input) {
     get() { return origDescriptor.get.call(this); },
     set(v) { origDescriptor.set.call(this, v); updateDisplay(); }
   });
-  // Mirror Flatpickr API so old code (setDefaultDates etc.) still works
   input._flatpickr = {
     setDate: (val, fire) => { input.value = (val instanceof Date) ? _swdpToISO(val) : String(val||''); updateDisplay(); if (fire) input.dispatchEvent(new Event('change', { bubbles:true })); },
     clear: () => { input.value = ''; updateDisplay(); }
   };
 }
 
+// v14.35 — Parse user-typed date: '28 พ.ค. 2569', '28/05/2569', '2026-05-28', '28-5-26'
+function _swdpParseInput(str) {
+  if (!str) return null;
+  const s = String(str).trim();
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (m) return new Date(+m[1], +m[2]-1, +m[3]);
+  // Thai month text
+  m = s.match(/^(\d{1,2})[\s\-/]+([^\d\s\-/]+)[\s\-/]+(\d{2,4})$/);
+  if (m) {
+    const day = +m[1];
+    const monName = m[2].replace(/\./g,'').toLowerCase();
+    let yr = +m[3];
+    if (yr < 100) yr += 2500; // 2-digit BE
+    const monIdx = SWDP_MONTHS_LONG.findIndex(n => n.toLowerCase() === monName)
+                ?? SWDP_MONTHS_SHORT.findIndex(n => n.replace(/\./g,'').toLowerCase() === monName);
+    const finalIdx = SWDP_MONTHS_LONG.findIndex(n => n.toLowerCase() === monName);
+    const alt      = SWDP_MONTHS_SHORT.findIndex(n => n.replace(/\./g,'').toLowerCase() === monName);
+    const mi = finalIdx >= 0 ? finalIdx : alt;
+    if (mi >= 0) return new Date(yr > 2400 ? yr - 543 : yr, mi, day);
+  }
+  m = s.match(/^(\d{1,2})[\s\-/]+(\d{1,2})[\s\-/]+(\d{2,4})$/);
+  if (m) {
+    const day = +m[1], mon = +m[2] - 1;
+    let yr = +m[3];
+    if (yr < 100) yr += 2500;
+    return new Date(yr > 2400 ? yr - 543 : yr, mon, day);
+  }
+  return null;
+}
+
 let _swdpCurrentPop = null;
+let _swdpAnchor = null;
 function _swdpClose() {
-  if (_swdpCurrentPop) { _swdpCurrentPop.remove(); _swdpCurrentPop = null; }
+  if (_swdpCurrentPop) { _swdpCurrentPop.remove(); _swdpCurrentPop = null; _swdpAnchor = null; }
 }
 document.addEventListener('mousedown', (e) => {
-  if (_swdpCurrentPop && !_swdpCurrentPop.contains(e.target) && !e.target.classList.contains('swdp-display')) {
+  if (_swdpCurrentPop && !_swdpCurrentPop.contains(e.target) && !_swdpAnchor?.contains(e.target)) {
     _swdpClose();
   }
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') _swdpClose(); });
+window.addEventListener('scroll', _swdpClose, true);
+window.addEventListener('resize', _swdpClose);
 
 function _swdpOpen(input, display, wrap) {
   _swdpClose();
+  _swdpAnchor = wrap;
   // State
   let viewDate = input.value ? new Date(input.value + 'T00:00:00') : new Date();
   if (isNaN(viewDate)) viewDate = new Date();
@@ -12288,8 +12365,29 @@ function _swdpOpen(input, display, wrap) {
 
   const pop = document.createElement('div');
   pop.className = 'swdp-pop';
-  wrap.appendChild(pop);
+  // v14.35 — Append to BODY (escapes any stacking context / overflow:hidden parents)
+  document.body.appendChild(pop);
   _swdpCurrentPop = pop;
+
+  // Position relative to display input
+  function positionPop() {
+    const rect = display.getBoundingClientRect();
+    const popW = 290;
+    const popH = pop.offsetHeight || 350;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    let left = rect.left;
+    let top = rect.bottom + 6;
+    // Clamp horizontal
+    if (left + popW > vw - 8) left = vw - popW - 8;
+    if (left < 8) left = 8;
+    // Flip vertical if not enough space below
+    if (top + popH > vh - 8 && rect.top > popH) {
+      top = rect.top - popH - 6;
+    }
+    pop.style.left = left + 'px';
+    pop.style.top  = top + 'px';
+  }
+  setTimeout(positionPop, 0);
 
   function render() {
     const today = new Date();
@@ -12368,6 +12466,8 @@ function _swdpOpen(input, display, wrap) {
     }));
     const clearBtn = pop.querySelector('[data-clear]');
     if (clearBtn) clearBtn.addEventListener('click', () => { input.value = ''; input.dispatchEvent(new Event('change', { bubbles: true })); _swdpClose(); });
+    // v14.35 — Re-position after content rendered (height may have changed)
+    requestAnimationFrame(positionPop);
   }
   render();
 }
