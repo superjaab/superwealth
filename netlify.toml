@@ -1,0 +1,85 @@
+## Netlify config — Static UI + proxy API to Vercel backend
+## v14.20 — backup deployment when Vercel hits daily deploy limit
+
+[build]
+  publish = "."
+  # No build command needed (pure static)
+  command = ""
+
+[build.processing]
+  skip_processing = false
+
+[build.processing.html]
+  pretty_urls = true
+
+# v14.20 — Proxy all /api/* requests to Vercel backend
+# This keeps the API on Vercel (with all env vars + serverless functions)
+# while Netlify serves the static UI as a redundant CDN
+[[redirects]]
+  from = "/api/*"
+  to = "https://superwealth.vercel.app/api/:splat"
+  status = 200
+  force = true
+
+# v14.20 — Pretty URLs (same as Vercel routing)
+[[redirects]]
+  from = "/capital"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/summary"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/truck"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/income"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/expense"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/invoice"
+  to = "/index.html"
+  status = 200
+
+# Fallback for any unknown route → index.html (SPA-style)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Force fresh content (no caching of index.html)
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-store, no-cache, must-revalidate, max-age=0"
+    Pragma = "no-cache"
+
+# Cache static assets aggressively (they have hashes)
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+# Security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

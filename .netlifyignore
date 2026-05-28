@@ -1,0 +1,10 @@
+api/
+node_modules/
+scripts/
+.env.local
+.vercel/
+*.png
+rich-menu*
+package.json
+package-lock.json
+vercel.json
