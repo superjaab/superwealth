@@ -3352,6 +3352,7 @@
     <button class="tab-btn active" onclick="switchTab('truck',this)"><span class="icon">🚚</span>บันทึกรถ</button>
     <button class="tab-btn" onclick="switchTab('income',this)"><span class="icon">💰</span>รายรับ</button>
     <button class="tab-btn" onclick="switchTab('expense',this)"><span class="icon">💸</span>รายจ่าย</button>
+    <button class="tab-btn" onclick="switchTab('capital',this);initCapitalTab()"><span class="icon">💼</span>เงินทุน</button>
     <div class="sb-section">ข้อมูลหลัก</div>
     <button class="tab-btn" onclick="switchTab('vehicle',this)"><span class="icon">🚛</span>ทะเบียนรถ</button>
     <button class="tab-btn" onclick="switchTab('driver',this)"><span class="icon">👤</span>คนขับ</button>
@@ -3377,7 +3378,7 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v13.2</span>
+    <span style="opacity:.7">v14.0</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
@@ -4299,6 +4300,109 @@
     <div style="color:#94a3b8;font-size:.78rem">เพื่อดู Dashboard สรุปรายรับ-รายจ่าย กำไร และเที่ยวรถ</div>
   </div>
 
+</div>
+
+<!-- ══ TAB: 💼 เงินทุน — Working Capital Dashboard ══ -->
+<div class="tab-panel" id="tab-capital">
+  <div style="max-width:1100px;margin:0 auto">
+
+    <!-- Hero KPI cards -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:18px">
+      <div class="dash-stat indigo" style="cursor:default">
+        <div class="dash-stat-icon">💼</div>
+        <div class="dash-stat-label">เงินทุนรวม</div>
+        <div class="dash-stat-value priv-amt" id="cap-total">฿0</div>
+        <div class="dash-stat-sub" id="cap-accounts-count">— บัญชี</div>
+      </div>
+      <div class="dash-stat blue" style="cursor:default">
+        <div class="dash-stat-icon">🏦</div>
+        <div class="dash-stat-label">เงินในธนาคาร</div>
+        <div class="dash-stat-value priv-amt" id="cap-bank">฿0</div>
+        <div class="dash-stat-sub" id="cap-bank-count">— บัญชี</div>
+      </div>
+      <div class="dash-stat green" style="cursor:default">
+        <div class="dash-stat-icon">💵</div>
+        <div class="dash-stat-label">เงินสดในมือ</div>
+        <div class="dash-stat-value priv-amt" id="cap-cash">฿0</div>
+        <div class="dash-stat-sub" id="cap-cash-count">— บัญชี</div>
+      </div>
+      <div class="dash-stat purple" style="cursor:default">
+        <div class="dash-stat-icon">📈</div>
+        <div class="dash-stat-label">ROI (กำไร ÷ ทุน)</div>
+        <div class="dash-stat-value" id="cap-roi">—</div>
+        <div class="dash-stat-sub" id="cap-roi-sub">ทั้งหมด</div>
+      </div>
+    </div>
+
+    <!-- Capital Insight Banner -->
+    <div id="cap-insight" class="dash-card" style="margin-bottom:14px;padding:16px;display:none">
+      <div style="font-size:.95rem;font-weight:800;margin-bottom:6px">💡 วิเคราะห์ทุน vs กำไร</div>
+      <div id="cap-insight-body" style="font-size:.85rem;line-height:1.7"></div>
+    </div>
+
+    <!-- Tabs: Accounts list / Movement history -->
+    <div class="inner-nav" style="margin-bottom:14px">
+      <button class="inner-btn active" onclick="capInnerTab('accounts',this)">🏦 บัญชี</button>
+      <button class="inner-btn" onclick="capInnerTab('analytics',this)">📊 วิเคราะห์</button>
+    </div>
+
+    <!-- ── Accounts view ── -->
+    <div id="cap-view-accounts">
+      <!-- Add new account form -->
+      <div class="dash-card" style="padding:16px;margin-bottom:14px">
+        <div style="font-weight:800;margin-bottom:12px;font-size:.95rem">➕ เพิ่มบัญชีเงินทุน</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:10px">
+          <select id="cap-new-type" onchange="capToggleBankFields()">
+            <option value="bank">🏦 บัญชีธนาคาร</option>
+            <option value="cash">💵 เงินสด</option>
+            <option value="loan">📋 เงินกู้ (หนี้)</option>
+          </select>
+          <input id="cap-new-name" type="text" placeholder="ชื่อบัญชี (เช่น บัญชีหลัก, เงินสดในออฟฟิศ)">
+          <input id="cap-new-bank" type="text" placeholder="ชื่อธนาคาร (กสิกร, SCB, ฯลฯ)">
+          <input id="cap-new-accountno" type="text" placeholder="เลขบัญชี (ถ้ามี)">
+          <input id="cap-new-balance" type="number" step="0.01" placeholder="ยอดเริ่มต้น (บาท)">
+        </div>
+        <textarea id="cap-new-notes" placeholder="หมายเหตุ (ไม่บังคับ)" style="width:100%;min-height:50px;margin-bottom:10px"></textarea>
+        <button onclick="capAddAccount()" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:white;border:none;border-radius:8px;padding:10px 24px;font-weight:700;cursor:pointer;font-family:inherit">➕ เพิ่มบัญชี</button>
+      </div>
+      <!-- Accounts list -->
+      <div class="dash-card" style="padding:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div style="font-weight:800;font-size:.95rem">🏦 บัญชีทั้งหมด</div>
+          <a class="dash-card-action" href="#" onclick="event.preventDefault();loadCapital()">🔄 รีเฟรช</a>
+        </div>
+        <div id="cap-accounts-list" style="display:flex;flex-direction:column;gap:10px">
+          <div style="text-align:center;color:#94a3b8;padding:18px">⏳ กำลังโหลด...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Analytics view ── -->
+    <div id="cap-view-analytics" style="display:none">
+      <div class="dash-card" style="padding:18px;margin-bottom:14px">
+        <div class="dash-card-title" style="margin-bottom:14px">📈 แนวโน้ม: เงินทุน vs รายรับ-รายจ่าย</div>
+        <div style="position:relative;height:280px"><canvas id="cap-trend-chart"></canvas></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">
+        <div class="dash-card" style="padding:16px">
+          <div class="dash-card-title" style="margin-bottom:10px">⚡ Burn Rate (ค่าใช้จ่ายเฉลี่ย)</div>
+          <div id="cap-burn-rate" style="font-size:1.4rem;font-weight:800;color:#dc2626" class="priv-amt">฿0/วัน</div>
+          <div id="cap-burn-sub" style="font-size:.78rem;color:#64748b;margin-top:4px">จากค่าใช้จ่าย 30 วันล่าสุด</div>
+        </div>
+        <div class="dash-card" style="padding:16px">
+          <div class="dash-card-title" style="margin-bottom:10px">🛡️ Runway (ทุนหมุนได้กี่วัน)</div>
+          <div id="cap-runway" style="font-size:1.4rem;font-weight:800;color:#059669">— วัน</div>
+          <div id="cap-runway-sub" style="font-size:.78rem;color:#64748b;margin-top:4px">เงินสด ÷ Burn rate</div>
+        </div>
+        <div class="dash-card" style="padding:16px">
+          <div class="dash-card-title" style="margin-bottom:10px">💎 Capital Efficiency</div>
+          <div id="cap-efficiency" style="font-size:1.4rem;font-weight:800;color:#7c3aed">—</div>
+          <div id="cap-efficiency-sub" style="font-size:.78rem;color:#64748b;margin-top:4px">รายรับเฉลี่ย ÷ เงินทุน</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <!-- ══ TAB 4: ทะเบียนรถ ══ -->
@@ -5285,6 +5389,332 @@ function fmtDateTime(iso) {
   } catch { return iso; }
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// 💼 CAPITAL — Working Capital Management
+// ═══════════════════════════════════════════════════════════════════
+let _capitalAccounts = [];
+let _capTrendChart = null;
+
+async function initCapitalTab() {
+  if (!requireAuth()) return;
+  await loadCapital();
+}
+
+function capInnerTab(view, btn) {
+  document.querySelectorAll('#tab-capital .inner-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('cap-view-accounts').style.display  = view === 'accounts'  ? '' : 'none';
+  document.getElementById('cap-view-analytics').style.display = view === 'analytics' ? '' : 'none';
+  if (view === 'analytics') renderCapitalAnalytics();
+}
+
+function capToggleBankFields() {
+  const isBank = document.getElementById('cap-new-type').value === 'bank';
+  document.getElementById('cap-new-bank').style.display      = isBank ? '' : 'none';
+  document.getElementById('cap-new-accountno').style.display = isBank ? '' : 'none';
+}
+
+async function loadCapital() {
+  const list = document.getElementById('cap-accounts-list');
+  if (!list) return;
+  list.innerHTML = skeletonList(3);
+  try {
+    const res = await fetch('/api/get-data?type=capital');
+    const json = await res.json();
+    _capitalAccounts = ((json.data || {}).capital || []).filter(a => a.active !== 'false');
+    renderCapitalKPIs();
+    renderCapitalList();
+  } catch (e) {
+    list.innerHTML = `<div style="text-align:center;color:#dc2626;padding:18px">❌ ${escHtml(e.message)}</div>`;
+  }
+}
+
+function renderCapitalKPIs() {
+  let totalBank = 0, totalCash = 0, totalLoan = 0;
+  let cBank = 0, cCash = 0;
+  _capitalAccounts.forEach(a => {
+    const bal = parseFloat(a.currentBalance) || 0;
+    if (a.accountType === 'bank') { totalBank += bal; cBank++; }
+    else if (a.accountType === 'cash') { totalCash += bal; cCash++; }
+    else if (a.accountType === 'loan') { totalLoan += bal; }
+  });
+  const totalCapital = totalBank + totalCash - totalLoan;
+  document.getElementById('cap-total').textContent = fmtBaht(totalCapital);
+  document.getElementById('cap-bank').textContent  = fmtBaht(totalBank);
+  document.getElementById('cap-cash').textContent  = fmtBaht(totalCash);
+  document.getElementById('cap-accounts-count').textContent = _capitalAccounts.length + ' บัญชี' + (totalLoan>0 ? ` · หนี้ ${fmtBaht(totalLoan)}` : '');
+  document.getElementById('cap-bank-count').textContent     = cBank + ' บัญชี';
+  document.getElementById('cap-cash-count').textContent     = cCash + ' จุด';
+
+  // Compute ROI (profit ÷ initial capital invested)
+  const initialCapital = _capitalAccounts.reduce((s,a) => {
+    if (a.accountType === 'loan') return s;
+    return s + (parseFloat(a.initialBalance) || 0);
+  }, 0);
+  const totalIncome  = (_master.incomeHistory || []).reduce((s,r) => s + _detectAmount(r), 0);
+  const totalExpense = (_master.expenseHistory|| []).reduce((s,r) => s + _detectAmount(r), 0);
+  const netProfit = totalIncome - totalExpense;
+  if (initialCapital > 0) {
+    const roi = (netProfit / initialCapital) * 100;
+    document.getElementById('cap-roi').textContent = (roi >= 0 ? '+' : '') + roi.toFixed(1) + '%';
+    document.getElementById('cap-roi-sub').textContent = `กำไรสุทธิ ${fmtBaht(netProfit)} ÷ ทุน ${fmtBaht(initialCapital)}`;
+  } else {
+    document.getElementById('cap-roi').textContent = '—';
+    document.getElementById('cap-roi-sub').textContent = 'ตั้งทุนเริ่มต้นก่อน';
+  }
+  renderCapitalInsight(initialCapital, totalCapital, netProfit, totalIncome, totalExpense);
+}
+
+function renderCapitalInsight(initialCap, currentCap, netProfit, income, expense) {
+  const el = document.getElementById('cap-insight');
+  const body = document.getElementById('cap-insight-body');
+  if (!el || !body) return;
+  if (initialCap <= 0) { el.style.display = 'none'; return; }
+  el.style.display = '';
+  const capGrowth = ((currentCap - initialCap) / initialCap) * 100;
+  const profitRate = (netProfit / initialCap) * 100;
+  const lines = [];
+  // Capital growth assessment
+  if (capGrowth > 0) {
+    lines.push(`✅ <b>เงินทุนเติบโต +${capGrowth.toFixed(1)}%</b> จาก ${fmtBaht(initialCap)} → ${fmtBaht(currentCap)}`);
+  } else if (capGrowth < -5) {
+    lines.push(`⚠️ <b>เงินทุนลดลง ${capGrowth.toFixed(1)}%</b> — ควรเช็คกระแสเงินสด`);
+  } else {
+    lines.push(`📊 เงินทุนปัจจุบัน ${fmtBaht(currentCap)} ใกล้เคียงทุนเริ่มต้น`);
+  }
+  // Profit vs capital
+  if (profitRate >= 30)      lines.push(`🏆 <b>กำไรสุทธิ +${profitRate.toFixed(1)}% ของทุน</b> — ผลตอบแทนดีมาก`);
+  else if (profitRate >= 10) lines.push(`👍 กำไรสุทธิ ${profitRate.toFixed(1)}% ของทุน — ดี`);
+  else if (profitRate >= 0)  lines.push(`📈 กำไรสุทธิ ${profitRate.toFixed(1)}% ของทุน — ยังเติบโต`);
+  else                        lines.push(`🚨 <b>ขาดทุน ${Math.abs(profitRate).toFixed(1)}% ของทุน</b> — ต้องลดต้นทุนหรือเพิ่มรายรับ`);
+  // Capital efficiency
+  if (income > 0 && initialCap > 0) {
+    const turnover = income / initialCap;
+    lines.push(`🔄 <b>หมุนทุน ${turnover.toFixed(2)} รอบ</b> (รายรับ ${fmtBaht(income)} ÷ ทุน ${fmtBaht(initialCap)})`);
+  }
+  body.innerHTML = lines.map(l => `<div style="padding:4px 0">${l}</div>`).join('');
+}
+
+function renderCapitalList() {
+  const list = document.getElementById('cap-accounts-list');
+  if (!list) return;
+  if (!_capitalAccounts.length) {
+    list.innerHTML = emptyStateHtml('capital');
+    return;
+  }
+  const typeMeta = {
+    bank:  { icon:'🏦', label:'ธนาคาร',  color:'#2563eb', bg:'#eff6ff' },
+    cash:  { icon:'💵', label:'เงินสด',  color:'#059669', bg:'#ecfdf5' },
+    loan:  { icon:'📋', label:'เงินกู้',  color:'#dc2626', bg:'#fef2f2' }
+  };
+  list.innerHTML = _capitalAccounts.map(a => {
+    const m = typeMeta[a.accountType] || typeMeta.bank;
+    const balance = parseFloat(a.currentBalance) || 0;
+    const initial = parseFloat(a.initialBalance) || 0;
+    const diff = balance - initial;
+    const diffPct = initial > 0 ? ((diff/initial)*100).toFixed(1) : 0;
+    const diffColor = diff >= 0 ? '#059669' : '#dc2626';
+    const diffSign  = diff >= 0 ? '+' : '';
+    return `
+    <div class="record-card" style="padding:14px;border-left:4px solid ${m.color}">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+        <span style="background:${m.bg};color:${m.color};padding:4px 10px;border-radius:8px;font-weight:700;font-size:.8rem">${m.icon} ${m.label}</span>
+        <span style="font-weight:800;font-size:1rem">${escHtml(a.accountName||'(ไม่ระบุชื่อ)')}</span>
+        ${a.bankName ? `<span style="font-size:.78rem;color:#64748b">· ${escHtml(a.bankName)}</span>` : ''}
+        ${a.accountNumber ? `<span style="font-size:.78rem;color:#94a3b8;font-family:monospace">· ${escHtml(a.accountNumber)}</span>` : ''}
+      </div>
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:.7rem;color:#64748b;font-weight:600">ยอดปัจจุบัน</div>
+          <div class="priv-amt" style="font-size:1.4rem;font-weight:800;color:${m.color}">${fmtBaht(balance)}</div>
+          ${initial > 0 ? `<div style="font-size:.72rem;color:#64748b;margin-top:2px">เริ่มต้น ${fmtBaht(initial)} <span style="color:${diffColor};font-weight:700">${diffSign}${fmtBaht(diff)} (${diffSign}${diffPct}%)</span></div>` : ''}
+        </div>
+        <div style="display:flex;gap:6px">
+          <button onclick="capEditBalance('${escAttr(a.rowId)}','${escAttr(a.accountName)}',${balance})" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:6px;padding:6px 12px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit">✏️ ปรับยอด</button>
+          <button onclick="capDeleteAccount('${escAttr(a.rowId)}','${escAttr(a.accountName)}')" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;border-radius:6px;padding:6px 12px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit">🗑</button>
+        </div>
+      </div>
+      ${a.notes ? `<div style="font-size:.78rem;color:#64748b;margin-top:8px;padding-top:8px;border-top:1px dashed #e2e8f0">📝 ${escHtml(a.notes)}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function capAddAccount() {
+  if (!requireAuth()) return;
+  const name = document.getElementById('cap-new-name').value.trim();
+  if (!name) { showToast('กรุณากรอกชื่อบัญชี', 'warning'); return; }
+  const type = document.getElementById('cap-new-type').value;
+  const data = {
+    accountType: type,
+    accountName: name,
+    bankName: document.getElementById('cap-new-bank').value.trim(),
+    accountNumber: document.getElementById('cap-new-accountno').value.trim(),
+    currentBalance: parseFloat(document.getElementById('cap-new-balance').value) || 0,
+    initialBalance: parseFloat(document.getElementById('cap-new-balance').value) || 0,
+    notes: document.getElementById('cap-new-notes').value.trim()
+  };
+  showLoading('กำลังเพิ่มบัญชี...');
+  try {
+    const r = await api('/api/save', { type: 'capital', data });
+    hideLoading();
+    if (!r.success) { showToast('ไม่สำเร็จ: ' + (r.error||''), 'error'); return; }
+    showToast('✅ เพิ่มบัญชี "' + name + '" สำเร็จ', 'success');
+    // Clear form
+    document.getElementById('cap-new-name').value = '';
+    document.getElementById('cap-new-bank').value = '';
+    document.getElementById('cap-new-accountno').value = '';
+    document.getElementById('cap-new-balance').value = '';
+    document.getElementById('cap-new-notes').value = '';
+    loadCapital();
+  } catch (e) {
+    hideLoading();
+    showToast('ผิดพลาด: ' + e.message, 'error');
+  }
+}
+
+async function capEditBalance(rowId, name, currentBalance) {
+  if (!requireAuth()) return;
+  const v = prompt(`ปรับยอดบัญชี "${name}"\nยอดปัจจุบัน: ${fmtBaht(currentBalance)}\n\nกรอกยอดใหม่:`, currentBalance);
+  if (v === null) return;
+  const newBalance = parseFloat(v);
+  if (isNaN(newBalance)) { showToast('ยอดไม่ถูกต้อง', 'error'); return; }
+  // Find account to preserve other fields
+  const acc = _capitalAccounts.find(a => a.rowId === rowId);
+  if (!acc) return;
+  showLoading('กำลังปรับยอด...');
+  try {
+    const r = await api('/api/update', {
+      type: 'capital', rowId,
+      data: { ...acc, currentBalance: newBalance }
+    });
+    hideLoading();
+    if (!r.success) { showToast('ไม่สำเร็จ: ' + (r.error||''), 'error'); return; }
+    showToast('✅ ปรับยอดแล้ว', 'success');
+    loadCapital();
+  } catch (e) {
+    hideLoading();
+    showToast('ผิดพลาด: ' + e.message, 'error');
+  }
+}
+
+async function capDeleteAccount(rowId, name) {
+  if (!requireAuth()) return;
+  if (!confirm(`ลบบัญชี "${name}"?`)) return;
+  showLoading('กำลังลบ...');
+  try {
+    const r = await api('/api/delete', { type: 'capital', rowId });
+    hideLoading();
+    if (!r.success) { showToast('ลบไม่สำเร็จ: ' + (r.error||''), 'error'); return; }
+    showToast('🗑 ลบแล้ว', 'success');
+    loadCapital();
+  } catch (e) {
+    hideLoading();
+    showToast('ผิดพลาด: ' + e.message, 'error');
+  }
+}
+
+// ─── Analytics ──────────────────────────────────────────
+function renderCapitalAnalytics() {
+  // Burn rate (30-day average expense)
+  const now = new Date();
+  const cutoff = new Date(now.getTime() - 30*86400000).toISOString().slice(0,10);
+  const recent30Expense = (_master.expenseHistory || [])
+    .filter(r => (r.expenseDate || '') >= cutoff)
+    .reduce((s, r) => s + _detectAmount(r), 0);
+  const burnPerDay = recent30Expense / 30;
+  document.getElementById('cap-burn-rate').textContent = fmtBaht(burnPerDay) + '/วัน';
+
+  // Runway = total cash ÷ burn
+  const totalLiquid = _capitalAccounts
+    .filter(a => a.accountType !== 'loan')
+    .reduce((s,a) => s + (parseFloat(a.currentBalance) || 0), 0);
+  if (burnPerDay > 0 && totalLiquid > 0) {
+    const days = Math.floor(totalLiquid / burnPerDay);
+    document.getElementById('cap-runway').textContent = days.toLocaleString('th-TH') + ' วัน';
+    document.getElementById('cap-runway-sub').textContent =
+      `${fmtBaht(totalLiquid)} ÷ ${fmtBaht(burnPerDay)}/วัน`;
+  } else {
+    document.getElementById('cap-runway').textContent = '∞';
+    document.getElementById('cap-runway-sub').textContent = 'ไม่มีค่าใช้จ่ายล่าสุด';
+  }
+
+  // Capital efficiency = monthly avg income ÷ total capital
+  const recent30Income = (_master.incomeHistory || [])
+    .filter(r => (r.incomeDate || '') >= cutoff)
+    .reduce((s, r) => s + _detectAmount(r), 0);
+  if (totalLiquid > 0) {
+    const eff = (recent30Income / totalLiquid) * 100;
+    document.getElementById('cap-efficiency').textContent = eff.toFixed(1) + '%/เดือน';
+    document.getElementById('cap-efficiency-sub').textContent =
+      `รายรับ 30 วัน ${fmtBaht(recent30Income)} ÷ ทุน ${fmtBaht(totalLiquid)}`;
+  } else {
+    document.getElementById('cap-efficiency').textContent = '—';
+  }
+
+  // Trend chart — monthly capital vs income vs expense (last 6 months)
+  renderCapitalTrendChart();
+}
+
+function renderCapitalTrendChart() {
+  const ctx = document.getElementById('cap-trend-chart');
+  if (!ctx) return;
+  const months = [];
+  const now = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push(d.toISOString().slice(0,7));
+  }
+  const incomeByMonth = {}, expenseByMonth = {};
+  months.forEach(m => { incomeByMonth[m]=0; expenseByMonth[m]=0; });
+  (_master.incomeHistory||[]).forEach(r => {
+    const m = (r.incomeDate||'').slice(0,7);
+    if (incomeByMonth[m] !== undefined) incomeByMonth[m] += _detectAmount(r);
+  });
+  (_master.expenseHistory||[]).forEach(r => {
+    const m = (r.expenseDate||'').slice(0,7);
+    if (expenseByMonth[m] !== undefined) expenseByMonth[m] += _detectAmount(r);
+  });
+  // Compute cumulative capital
+  const totalLiquid = _capitalAccounts.filter(a => a.accountType !== 'loan')
+    .reduce((s,a) => s + (parseFloat(a.currentBalance) || 0), 0);
+  // Project capital backward by subtracting net profit
+  const capByMonth = {};
+  let runningCap = totalLiquid;
+  for (let i = months.length - 1; i >= 0; i--) {
+    capByMonth[months[i]] = runningCap;
+    runningCap -= (incomeByMonth[months[i]] - expenseByMonth[months[i]]);
+  }
+  const moNames = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const labels = months.map(m => {
+    const [y,mo] = m.split('-');
+    return moNames[parseInt(mo)-1] + ' ' + (parseInt(y)+543).toString().slice(-2);
+  });
+  if (_capTrendChart) _capTrendChart.destroy();
+  _capTrendChart = new Chart(ctx.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label:'เงินทุน', data: months.map(m=>capByMonth[m]),     borderColor:'#7c3aed', backgroundColor:'rgba(124,58,237,0.1)', tension:0.3, borderWidth:3, fill:true, pointRadius:4 },
+        { label:'รายรับ',  data: months.map(m=>incomeByMonth[m]),  borderColor:'#10b981', backgroundColor:'rgba(16,185,129,0.06)', tension:0.3, borderWidth:2.5, fill:false, pointRadius:3 },
+        { label:'รายจ่าย', data: months.map(m=>expenseByMonth[m]), borderColor:'#ef4444', backgroundColor:'rgba(239,68,68,0.06)', tension:0.3, borderWidth:2.5, fill:false, pointRadius:3 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode:'index', intersect:false },
+      plugins: {
+        legend: { position:'top', labels:{ font:{size:11}, usePointStyle:true } },
+        tooltip: { callbacks: { label: c => c.dataset.label + ': ฿' + (c.raw||0).toLocaleString('th-TH',{maximumFractionDigits:0}) } }
+      },
+      scales: {
+        y: { ticks: { callback: v => '฿' + (v/1000).toFixed(0) + 'K', font:{size:10} } },
+        x: { ticks: { font:{size:10} } }
+      }
+    }
+  });
+}
+
 // ─── FAB MENU MANAGEMENT (Admin) ───
 async function loadAdminFab() {
   const el = document.getElementById('admin-fab-list');
@@ -5988,6 +6418,7 @@ function setDefaultDates() {
 // ─── TAB ──────────────────────────────────
 const PAGE_NAMES = {
   truck:'บันทึกรถบรรทุก', income:'รายรับ', expense:'รายจ่าย',
+  capital:'💼 เงินทุน — Working Capital',
   vehicle:'ทะเบียนรถ', driver:'คนขับ', customer:'ลูกค้า',
   maintenance:'ซ่อมบำรุง', fuel:'น้ำมัน', invoice:'ใบเสร็จรับเงิน',
   summary:'สรุปผล', calendar:'ปฏิทินเที่ยวรถ', alert:'แจ้งเตือน', gps:'GPS', ocr:'อ่านภาพ',
@@ -6000,7 +6431,7 @@ function goToCalendar() {
 }
 // ─── ROUTER ────────────────────────
 // Valid tabs that can be in URL
-const VALID_TABS = ['summary','calendar','truck','income','expense','vehicle','driver','customer',
+const VALID_TABS = ['summary','calendar','truck','income','expense','capital','vehicle','driver','customer',
                     'maintenance','fuel','invoice','admin','gps','ocr'];
 // Default tab when URL is "/"
 const DEFAULT_TAB = 'summary';
@@ -7160,7 +7591,8 @@ const EMPTY_META = {
   customer:    { icon:'🏢',  title:'ยังไม่มีลูกค้า',           sub:'เพิ่มข้อมูลลูกค้าเพื่อบันทึกเที่ยวรถ',                            action:{label:'➕ เพิ่มลูกค้า',       tab:'customer'} },
   maintenance: { icon:'🔧',  title:'ยังไม่มีรายการซ่อมบำรุง', sub:'บันทึกการซ่อมเพื่อติดตามค่าใช้จ่ายรถ',                            action:{label:'➕ เพิ่มซ่อมบำรุง',    tab:'maintenance'} },
   fuel:        { icon:'⛽',  title:'ยังไม่มีบันทึกน้ำมัน',     sub:'บันทึกการเติมน้ำมันเพื่อคิดต้นทุน',                              action:{label:'➕ เพิ่มน้ำมัน',       tab:'fuel'} },
-  invoice:     { icon:'🧾',  title:'ยังไม่มีใบเสร็จ',          sub:'ออกใบเสร็จรับเงินสำหรับลูกค้า',                                 action:{label:'➕ ออกใบเสร็จ',         tab:'invoice'} }
+  invoice:     { icon:'🧾',  title:'ยังไม่มีใบเสร็จ',          sub:'ออกใบเสร็จรับเงินสำหรับลูกค้า',                                 action:{label:'➕ ออกใบเสร็จ',         tab:'invoice'} },
+  capital:     { icon:'💼',  title:'ยังไม่มีบัญชีเงินทุน',     sub:'เพิ่มบัญชีธนาคาร/เงินสด/เงินกู้ เพื่อติดตามทุนหมุนเวียน',          action:{label:'➕ เพิ่มบัญชี',         tab:'capital'} }
 };
 function skeletonList(count = 5) {
   let html = '';
@@ -8946,6 +9378,7 @@ const CMD_PAGES = [
   { type:'page', icon:'🚚', title:'บันทึกเที่ยวรถ', sub:'เพิ่มเที่ยวรถใหม่',               tab:'truck' },
   { type:'page', icon:'💰', title:'รายรับ',          sub:'บันทึกรายรับ + ใบเสร็จ',          tab:'income' },
   { type:'page', icon:'💸', title:'รายจ่าย',         sub:'บันทึกรายจ่าย/ค่าใช้จ่าย',        tab:'expense' },
+  { type:'page', icon:'💼', title:'เงินทุน',          sub:'บัญชีธนาคาร/เงินสด · ROI · Runway', tab:'capital' },
   { type:'page', icon:'🚛', title:'ทะเบียนรถ',       sub:'จัดการรถในระบบ',                   tab:'vehicle' },
   { type:'page', icon:'👤', title:'คนขับ',           sub:'ข้อมูลคนขับรถ',                    tab:'driver' },
   { type:'page', icon:'🏢', title:'ลูกค้า',           sub:'ข้อมูลลูกค้า',                     tab:'customer' },
@@ -9096,6 +9529,7 @@ const FAB_TABS_AVAILABLE = [
   { tab:'truck',       label:'🚚 บันทึกเที่ยวรถ' },
   { tab:'income',      label:'💰 รายรับ' },
   { tab:'expense',     label:'💸 รายจ่าย' },
+  { tab:'capital',     label:'💼 เงินทุน' },
   { tab:'vehicle',     label:'🚛 ทะเบียนรถ' },
   { tab:'driver',      label:'👤 คนขับ' },
   { tab:'customer',    label:'🏢 ลูกค้า' },
@@ -9238,7 +9672,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v13.2';   // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.0';   // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate(opts) {

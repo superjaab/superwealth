@@ -123,6 +123,23 @@ const CONFIGS = {
       dueDate: d.dueDate||'', status: d.status||'รอชำระ',
       notes: d.notes||'', rowId: id
     })
+  },
+  capital: {
+    name: 'Capital',
+    data: (d, ts, id) => ({
+      timestamp: ts,
+      accountType: d.accountType || 'bank',
+      accountName: d.accountName || '',
+      bankName: d.bankName || '',
+      accountNumber: d.accountNumber || '',
+      currentBalance: +d.currentBalance || 0,
+      initialBalance: +d.initialBalance || +d.currentBalance || 0,
+      startDate: d.startDate || '',
+      color: d.color || '#3b82f6',
+      notes: d.notes || '',
+      active: d.active === false ? 'false' : 'true',
+      rowId: id
+    })
   }
 };
 

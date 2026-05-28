@@ -154,6 +154,40 @@ const CONFIGS = {
       dueDate: d.dueDate||'', status: d.status||'รอชำระ',
       notes: d.notes||'', rowId: id
     })
+  },
+  capital: {
+    name: 'Capital', color: '#7c3aed', prefix: 'CAP',
+    headers: ['timestamp','accountType','accountName','bankName','accountNumber',
+      'currentBalance','initialBalance','startDate','color','notes','active','rowId'],
+    data: (d, now, id) => ({
+      timestamp: now,
+      accountType: d.accountType || 'bank',  // 'bank' | 'cash' | 'loan'
+      accountName: d.accountName || '',
+      bankName: d.bankName || '',
+      accountNumber: d.accountNumber || '',
+      currentBalance: +d.currentBalance || 0,
+      initialBalance: +d.initialBalance || +d.currentBalance || 0,
+      startDate: d.startDate || new Date().toISOString().slice(0,10),
+      color: d.color || '#3b82f6',
+      notes: d.notes || '',
+      active: d.active === false ? 'false' : 'true',
+      rowId: id
+    })
+  },
+  capitalMovement: {
+    name: 'CapitalMovements', color: '#a855f7', prefix: 'MOV',
+    headers: ['timestamp','movementDate','accountRowId','accountName',
+      'movementType','amount','note','rowId'],
+    data: (d, now, id) => ({
+      timestamp: now,
+      movementDate: d.movementDate || new Date().toISOString().slice(0,10),
+      accountRowId: d.accountRowId || '',
+      accountName: d.accountName || '',
+      movementType: d.movementType || 'deposit',  // deposit|withdraw|transfer|loan_in|loan_out
+      amount: +d.amount || 0,
+      note: d.note || '',
+      rowId: id
+    })
   }
 };
 
@@ -162,7 +196,8 @@ const MSG = {
   expense:'บันทึกรายจ่ายสำเร็จ', vehicle:'บันทึกข้อมูลรถสำเร็จ',
   driver:'บันทึกข้อมูลคนขับสำเร็จ', customer:'บันทึกข้อมูลลูกค้าสำเร็จ',
   maintenance:'บันทึกการซ่อมบำรุงสำเร็จ', fuel:'บันทึกข้อมูลน้ำมันสำเร็จ',
-  invoice:'บันทึกใบเสร็จสำเร็จ'
+  invoice:'บันทึกใบเสร็จสำเร็จ',
+  capital:'บันทึกบัญชีเงินทุนสำเร็จ', capitalMovement:'บันทึกการเคลื่อนไหวเงินสำเร็จ'
 };
 
 module.exports = async function handler(req, res) {

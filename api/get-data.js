@@ -6,15 +6,17 @@
 const { google } = require('googleapis');
 
 const SHEET_MAP = {
-  income:      { name:'Income',      dateCol:'incomeDate'      },
-  expense:     { name:'Expense',     dateCol:'expenseDate'     },
-  truck:       { name:'TruckJobs',   dateCol:'jobDate'         },
-  vehicle:     { name:'Vehicles',    dateCol:null              },
-  driver:      { name:'Drivers',     dateCol:null              },
-  customer:    { name:'Customers',   dateCol:null              },
-  maintenance: { name:'Maintenance', dateCol:'maintenanceDate' },
-  fuel:        { name:'FuelLog',     dateCol:'fuelDate'        },
-  invoice:     { name:'Invoices',    dateCol:'invoiceDate'     }
+  income:          { name:'Income',           dateCol:'incomeDate'      },
+  expense:         { name:'Expense',          dateCol:'expenseDate'     },
+  truck:           { name:'TruckJobs',        dateCol:'jobDate'         },
+  vehicle:         { name:'Vehicles',         dateCol:null              },
+  driver:          { name:'Drivers',          dateCol:null              },
+  customer:        { name:'Customers',        dateCol:null              },
+  maintenance:     { name:'Maintenance',      dateCol:'maintenanceDate' },
+  fuel:            { name:'FuelLog',          dateCol:'fuelDate'        },
+  invoice:         { name:'Invoices',         dateCol:'invoiceDate'     },
+  capital:         { name:'Capital',          dateCol:null              },
+  capitalMovement: { name:'CapitalMovements', dateCol:'movementDate'    }
 };
 
 // 'all' = the three main transaction sheets (used by summary tab)

@@ -24,6 +24,7 @@
     { "source": "/truck",       "destination": "/index.html" },
     { "source": "/income",      "destination": "/index.html" },
     { "source": "/expense",     "destination": "/index.html" },
+    { "source": "/capital",     "destination": "/index.html" },
     { "source": "/vehicle",     "destination": "/index.html" },
     { "source": "/driver",      "destination": "/index.html" },
     { "source": "/customer",    "destination": "/index.html" },
