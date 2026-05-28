@@ -320,10 +320,83 @@
     .parsed-value { font-size: 0.9rem; font-weight: 700; color: var(--text); }
     @media (max-width: 380px) { .parsed-data-grid { grid-template-columns: 1fr; } }
 
-    /* ─── SUMMARY TAB ─── */
+    /* ─── SUMMARY TAB — DASHBOARD STYLE ─── */
     .summary-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;
     }
+    @media (min-width: 768px) {
+      .summary-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+    /* Stat cards — clean Photowork-style */
+    .dash-stat {
+      background: white; border-radius: 14px; padding: 16px;
+      border: 1px solid #e2e8f0; transition: box-shadow .15s, transform .15s;
+      position: relative; overflow: hidden;
+    }
+    .dash-stat:hover { box-shadow: 0 8px 20px rgba(0,0,0,.06); transform: translateY(-1px); }
+    .dash-stat-icon {
+      width: 38px; height: 38px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; margin-bottom: 10px;
+    }
+    .dash-stat-label { font-size: .72rem; color: #64748b; font-weight: 600; margin-bottom: 4px; }
+    .dash-stat-value { font-size: 1.55rem; font-weight: 800; color: #0f172a; line-height: 1.1; letter-spacing: -.3px; }
+    .dash-stat-sub { font-size: .68rem; color: #94a3b8; margin-top: 6px; }
+    .dash-stat-sub .up { color: #10b981; font-weight: 700; } .dash-stat-sub .down { color: #ef4444; font-weight: 700; }
+    .dash-stat.green   .dash-stat-icon { background: #d1fae5; color: #059669; }
+    .dash-stat.red     .dash-stat-icon { background: #fee2e2; color: #dc2626; }
+    .dash-stat.blue    .dash-stat-icon { background: #dbeafe; color: #2563eb; }
+    .dash-stat.orange  .dash-stat-icon { background: #fed7aa; color: #ea580c; }
+    .dash-stat.purple  .dash-stat-icon { background: #ede9fe; color: #7c3aed; }
+    .dash-stat.green  .dash-stat-value { color: #059669; }
+    .dash-stat.red    .dash-stat-value { color: #dc2626; }
+    .dash-stat.blue   .dash-stat-value { color: #2563eb; }
+    .dash-stat.orange .dash-stat-value { color: #ea580c; }
+    .dash-stat.purple .dash-stat-value { color: #7c3aed; }
+
+    /* Chart cards */
+    .dash-card {
+      background: white; border-radius: 14px; padding: 16px;
+      border: 1px solid #e2e8f0; margin-bottom: 12px;
+    }
+    .dash-card-head {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
+    }
+    .dash-card-title { font-size: .95rem; font-weight: 800; color: #0f172a; }
+    .dash-card-sub { font-size: .7rem; color: #94a3b8; margin-top: 2px; }
+    .dash-card-action { font-size: .72rem; color: #2563eb; font-weight: 600; }
+    .dash-charts-row { display: grid; gap: 12px; grid-template-columns: 1fr; margin-bottom: 12px; }
+    @media (min-width: 900px) {
+      .dash-charts-row { grid-template-columns: 1.4fr 1fr; }
+    }
+    .dash-3col { display: grid; gap: 12px; grid-template-columns: 1fr; margin-bottom: 12px; }
+    @media (min-width: 768px) { .dash-3col { grid-template-columns: 1fr 1fr; } }
+    @media (min-width: 1100px) { .dash-3col { grid-template-columns: 1fr 1fr 1fr; } }
+
+    /* List items with progress bars */
+    .dash-list { display: flex; flex-direction: column; gap: 10px; }
+    .dash-list-item { font-size: .8rem; }
+    .dash-list-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .dash-list-name { display: flex; align-items: center; gap: 6px; color: #1e293b; font-weight: 500; }
+    .dash-list-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dash-list-value { font-weight: 700; color: #0f172a; }
+    .dash-bar { height: 6px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
+    .dash-bar-fill { height: 100%; border-radius: 4px; transition: width .3s; }
+
+    /* Top customers list */
+    .dash-cust { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
+    .dash-cust:last-child { border-bottom: none; }
+    .dash-cust-avatar {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 800; font-size: .75rem; flex-shrink: 0;
+    }
+    .dash-cust-info { flex: 1; min-width: 0; }
+    .dash-cust-name { font-size: .82rem; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dash-cust-sub { font-size: .68rem; color: #94a3b8; margin-top: 2px; }
+    .dash-cust-amount { font-size: .85rem; font-weight: 800; color: #059669; flex-shrink: 0; }
+
+    /* Old sum-card legacy (still used elsewhere) */
     .sum-card {
       background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow);
       padding: 14px 12px; text-align: center; border-top: 4px solid var(--gray2);
@@ -701,7 +774,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v6.7 | 28/05/2026 09:20</span>
+  <span class="version" style="margin-left:auto">v7.0 | 28/05/2026 09:50</span>
   <div style="position:relative;margin-left:10px">
     <button class="header-bell" onclick="toggleBell(event)" title="แจ้งเตือน">
       🔔<span class="bell-badge" id="bell-badge" style="display:none">0</span>
@@ -1343,63 +1416,108 @@
 <!-- ══ TAB 6: สรุปผล ══ -->
 <div class="tab-panel" id="tab-summary">
 
-  <!-- Date range picker -->
-  <div class="card">
-    <div class="card-title">📅 เลือกช่วงเวลา</div>
-    <div class="form-row-2">
-      <div class="form-row">
-        <label>จากวันที่</label>
-        <input type="date" id="sum-dateFrom">
+  <!-- Date range picker (compact) -->
+  <div class="dash-card" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px">
+    <span style="font-weight:700;color:#0f172a;font-size:.85rem">📅 ช่วงเวลา:</span>
+    <input type="date" id="sum-dateFrom" style="flex:1;min-width:130px;max-width:170px">
+    <span style="color:#94a3b8">→</span>
+    <input type="date" id="sum-dateTo" style="flex:1;min-width:130px;max-width:170px">
+    <button type="button" onclick="loadSummary()" style="background:linear-gradient(135deg,#1d4ed8,#2563eb);color:white;border:none;border-radius:8px;padding:9px 16px;font-weight:700;font-size:.82rem;cursor:pointer;font-family:inherit">🔄 โหลด</button>
+  </div>
+
+  <!-- TOP STAT CARDS -->
+  <div class="summary-grid">
+    <div class="dash-stat green">
+      <div class="dash-stat-icon">💰</div>
+      <div class="dash-stat-label">รายรับรวม</div>
+      <div class="dash-stat-value" id="sum-total-income">฿0</div>
+      <div class="dash-stat-sub" id="sum-income-count">— รายการ</div>
+    </div>
+    <div class="dash-stat red">
+      <div class="dash-stat-icon">💸</div>
+      <div class="dash-stat-label">รายจ่ายรวม</div>
+      <div class="dash-stat-value" id="sum-total-expense">฿0</div>
+      <div class="dash-stat-sub" id="sum-expense-count">— รายการ</div>
+    </div>
+    <div class="dash-stat blue">
+      <div class="dash-stat-icon">📊</div>
+      <div class="dash-stat-label">กำไรสุทธิ</div>
+      <div class="dash-stat-value" id="sum-profit">฿0</div>
+      <div class="dash-stat-sub" id="sum-profit-sub">—</div>
+    </div>
+    <div class="dash-stat orange">
+      <div class="dash-stat-icon">🚚</div>
+      <div class="dash-stat-label">เที่ยวรถ</div>
+      <div class="dash-stat-value" id="sum-truck-count">0</div>
+      <div class="dash-stat-sub" id="sum-truck-sub">฿0</div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW: bar (left) + donut (right) -->
+  <div class="dash-charts-row" id="sum-charts-row" style="display:none">
+    <div class="dash-card">
+      <div class="dash-card-head">
+        <div>
+          <div class="dash-card-title">📈 รายรับ-รายจ่าย รายเดือน</div>
+          <div class="dash-card-sub" id="sum-chart-range">—</div>
+        </div>
       </div>
-      <div class="form-row">
-        <label>ถึงวันที่</label>
-        <input type="date" id="sum-dateTo">
+      <div class="chart-wrap"><canvas id="sum-chart-bar" height="200"></canvas></div>
+    </div>
+    <div class="dash-card" id="sum-doughnut-card">
+      <div class="dash-card-head">
+        <div>
+          <div class="dash-card-title">🍩 สัดส่วนรายจ่าย</div>
+          <div class="dash-card-sub">แยกตามหมวด</div>
+        </div>
       </div>
-    </div>
-    <button type="button" class="btn btn-primary btn-block" onclick="loadSummary()" style="padding:13px">
-      🔄 โหลดข้อมูลสรุป
-    </button>
-  </div>
-
-  <!-- Summary cards -->
-  <div class="summary-grid" id="sum-cards">
-    <div class="sum-card green">
-      <div class="sum-label">รายรับรวม</div>
-      <div class="sum-value green" id="sum-total-income">-</div>
-      <div class="sum-sub" id="sum-income-count">-</div>
-    </div>
-    <div class="sum-card red">
-      <div class="sum-label">รายจ่ายรวม</div>
-      <div class="sum-value red" id="sum-total-expense">-</div>
-      <div class="sum-sub" id="sum-expense-count">-</div>
-    </div>
-    <div class="sum-card blue">
-      <div class="sum-label">กำไรสุทธิ</div>
-      <div class="sum-value blue" id="sum-profit">-</div>
-      <div class="sum-sub" id="sum-profit-sub">-</div>
-    </div>
-    <div class="sum-card orange">
-      <div class="sum-label">งานรถ</div>
-      <div class="sum-value orange" id="sum-truck-count">-</div>
-      <div class="sum-sub" id="sum-truck-sub">-</div>
+      <div class="chart-wrap" style="max-width:240px"><canvas id="sum-chart-doughnut"></canvas></div>
     </div>
   </div>
 
-  <!-- Bar chart: monthly income vs expense -->
-  <div class="card" id="sum-bar-card" style="display:none">
-    <div class="card-title">📊 รายรับ-รายจ่าย รายเดือน</div>
-    <div class="chart-wrap"><canvas id="sum-chart-bar" height="200"></canvas></div>
+  <!-- 3-COLUMN INSIGHTS: top customers / top vehicles / top expense categories -->
+  <div class="dash-3col" id="sum-3col" style="display:none">
+    <!-- Top expense categories with bars -->
+    <div class="dash-card">
+      <div class="dash-card-head">
+        <div>
+          <div class="dash-card-title">💸 หมวดรายจ่ายสูงสุด</div>
+          <div class="dash-card-sub">เรียงตามยอด</div>
+        </div>
+      </div>
+      <div class="dash-list" id="sum-top-categories"></div>
+    </div>
+    <!-- Top customers by revenue -->
+    <div class="dash-card">
+      <div class="dash-card-head">
+        <div>
+          <div class="dash-card-title">🏢 ลูกค้ารายได้สูงสุด</div>
+          <div class="dash-card-sub">All time</div>
+        </div>
+      </div>
+      <div id="sum-top-customers"></div>
+    </div>
+    <!-- Top vehicles by trip count -->
+    <div class="dash-card">
+      <div class="dash-card-head">
+        <div>
+          <div class="dash-card-title">🚛 ทะเบียนที่ใช้บ่อย</div>
+          <div class="dash-card-sub">นับจากจำนวนเที่ยว</div>
+        </div>
+      </div>
+      <div id="sum-top-vehicles"></div>
+    </div>
   </div>
 
-  <!-- Doughnut chart: expense by category -->
-  <div class="card" id="sum-doughnut-card" style="display:none">
-    <div class="card-title">🍩 สัดส่วนรายจ่ายตามหมวด</div>
-    <div class="chart-wrap" style="max-width:280px"><canvas id="sum-chart-doughnut"></canvas></div>
-  </div>
-
-  <!-- Truck trips breakdown -->
-  <div class="card" id="sum-truck-card" style="display:none">
-    <div class="card-title">🚚 สรุปรายเที่ยวรถ</div>
+  <!-- RECENT TRIPS TABLE -->
+  <div class="dash-card" id="sum-truck-card" style="display:none">
+    <div class="dash-card-head">
+      <div>
+        <div class="dash-card-title">🚚 รายเที่ยวรถ</div>
+        <div class="dash-card-sub" id="sum-truck-sub-count">—</div>
+      </div>
+      <a class="dash-card-action" href="#" onclick="event.preventDefault();const t=document.querySelector('[onclick*=\"switchTab(\\u0027truck\\u0027\"]');if(t){t.click();setTimeout(()=>document.querySelector('#tab-truck .inner-btn[onclick*=list]')?.click(),100)}">ดูทั้งหมด →</a>
+    </div>
     <table class="sum-table" id="sum-truck-table">
       <thead><tr><th>รอบเที่ยว / งาน</th><th style="text-align:center">สถานะ</th><th style="text-align:right">ค่าขนส่ง</th></tr></thead>
       <tbody id="sum-truck-tbody"></tbody>
@@ -1407,8 +1525,10 @@
   </div>
 
   <!-- Placeholder when not yet loaded -->
-  <div id="sum-placeholder" class="card">
-    <div class="sum-empty">📊 กด <b>โหลดข้อมูลสรุป</b> เพื่อดูสถิติรายรับ-รายจ่ายและกราฟ</div>
+  <div id="sum-placeholder" class="dash-card" style="text-align:center;padding:36px 16px">
+    <div style="font-size:2.5rem;margin-bottom:8px">📊</div>
+    <div style="font-weight:700;color:#0f172a;font-size:.95rem;margin-bottom:4px">เลือกช่วงเวลาแล้วกด "โหลด"</div>
+    <div style="color:#94a3b8;font-size:.78rem">เพื่อดู Dashboard สรุปรายรับ-รายจ่าย กำไร และเที่ยวรถ</div>
   </div>
 
 </div>
@@ -4828,47 +4948,155 @@ function renderSummary(data, dateFrom, dateTo) {
   const expense = data.expense || [];
   const truck   = data.truck   || [];
 
-  // ── คำนวณยอดรวม (with heuristic for misaligned legacy records) ──
   const totalIncome  = income.reduce((s, r)  => s + _detectAmount(r), 0);
   const totalExpense = expense.reduce((s, r) => s + _detectAmount(r), 0);
   const totalFreight = truck.reduce((s, r)   => s + (parseFloat(r.freightCost)  || 0), 0);
   const profit       = totalIncome - totalExpense;
+  const profitMargin = totalIncome > 0 ? (profit / totalIncome * 100) : 0;
 
-  const fmt = n => n.toLocaleString('th-TH', { maximumFractionDigits: 2 });
+  const fmt = n => n.toLocaleString('th-TH', { maximumFractionDigits: 0 });
 
-  // ── Summary cards ──
+  // ── Top stat cards ──
   document.getElementById('sum-total-income').textContent  = '฿' + fmt(totalIncome);
-  document.getElementById('sum-income-count').textContent  = `${income.length} รายการ`;
+  document.getElementById('sum-income-count').textContent  = `📥 ${income.length} รายการ`;
   document.getElementById('sum-total-expense').textContent = '฿' + fmt(totalExpense);
-  document.getElementById('sum-expense-count').textContent = `${expense.length} รายการ`;
+  document.getElementById('sum-expense-count').textContent = `📤 ${expense.length} รายการ`;
 
   const profitEl    = document.getElementById('sum-profit');
   const profitSubEl = document.getElementById('sum-profit-sub');
   profitEl.textContent    = (profit >= 0 ? '+' : '') + '฿' + fmt(profit);
-  profitEl.className      = 'sum-value ' + (profit >= 0 ? 'green' : 'red');
-  profitSubEl.textContent = profit >= 0 ? 'กำไร' : 'ขาดทุน';
+  profitEl.style.color    = profit >= 0 ? '#059669' : '#dc2626';
+  const marginTxt = (profitMargin >= 0 ? '+' : '') + profitMargin.toFixed(1) + '%';
+  profitSubEl.innerHTML   = profit >= 0
+    ? `<span class="up">▲ ${marginTxt}</span> กำไร`
+    : `<span class="down">▼ ${marginTxt}</span> ขาดทุน`;
 
-  document.getElementById('sum-truck-count').textContent = truck.length + ' งาน';
-  document.getElementById('sum-truck-sub').textContent   = '฿' + fmt(totalFreight);
+  // Trip stats
+  const driving = truck.filter(r => _autoTripStatus(r) === 'กำลังขนส่ง').length;
+  const done    = truck.length - driving;
+  document.getElementById('sum-truck-count').textContent = truck.length;
+  document.getElementById('sum-truck-sub').innerHTML     =
+    `<span class="up">🔵 ${driving}</span> • <span class="up" style="color:#059669">🟢 ${done}</span> • ฿${fmt(totalFreight)}`;
 
-  // ── Bar chart: income vs expense by month ──
+  // ── Date range subtitle ──
+  document.getElementById('sum-chart-range').textContent =
+    `${fmtDate(dateFrom)} → ${fmtDate(dateTo)}`;
+
+  // ── Charts ──
+  document.getElementById('sum-charts-row').style.display = '';
   renderBarChart(income, expense, dateFrom, dateTo);
-
-  // ── Doughnut: expense by category ──
   if (expense.length > 0) {
     renderDoughnutChart(expense);
-    document.getElementById('sum-doughnut-card').style.display = 'block';
+    document.getElementById('sum-doughnut-card').style.display = '';
   } else {
     document.getElementById('sum-doughnut-card').style.display = 'none';
   }
 
-  // ── Truck job status breakdown ──
+  // ── 3-col insights ──
+  document.getElementById('sum-3col').style.display = '';
+  renderTopCategories(expense);
+  renderTopCustomers(income);
+  renderTopVehicles(truck);
+
+  // ── Truck table ──
   if (truck.length > 0) {
     renderTruckTable(truck);
-    document.getElementById('sum-truck-card').style.display = 'block';
+    document.getElementById('sum-truck-card').style.display = '';
+    document.getElementById('sum-truck-sub-count').textContent = `${truck.length} เที่ยว • ฿${fmt(totalFreight)} ทั้งหมด`;
   } else {
     document.getElementById('sum-truck-card').style.display = 'none';
   }
+}
+
+// ─── TOP CATEGORIES (expense) ──────────────────────────────────────────────
+function renderTopCategories(expense) {
+  const el = document.getElementById('sum-top-categories');
+  if (!el) return;
+  const catMap = {};
+  expense.forEach(r => {
+    const cat = r.category || 'อื่นๆ';
+    catMap[cat] = (catMap[cat] || 0) + _detectAmount(r);
+  });
+  const sorted = Object.entries(catMap).sort((a,b) => b[1] - a[1]).slice(0, 8);
+  const max = sorted[0]?.[1] || 1;
+  const colors = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#f43f5e','#84cc16'];
+  const fmt = n => '฿' + n.toLocaleString('th-TH',{maximumFractionDigits:0});
+  if (sorted.length === 0) {
+    el.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:.78rem;padding:14px">📭 ไม่มีข้อมูล</div>';
+    return;
+  }
+  el.innerHTML = sorted.map(([cat, amt], i) => {
+    const pct = (amt / max) * 100;
+    const c = colors[i % colors.length];
+    return `<div class="dash-list-item">
+      <div class="dash-list-row">
+        <div class="dash-list-name"><span class="dash-list-dot" style="background:${c}"></span>${escHtml(cat)}</div>
+        <div class="dash-list-value">${fmt(amt)}</div>
+      </div>
+      <div class="dash-bar"><div class="dash-bar-fill" style="width:${pct}%;background:${c}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+// ─── TOP CUSTOMERS (income/freight) ────────────────────────────────────────
+function renderTopCustomers(income) {
+  const el = document.getElementById('sum-top-customers');
+  if (!el) return;
+  const map = {};
+  income.forEach(r => {
+    const name = r.customerName || '(ไม่ระบุ)';
+    map[name] = (map[name] || 0) + _detectAmount(r);
+  });
+  const sorted = Object.entries(map).sort((a,b) => b[1] - a[1]).slice(0, 6);
+  const colors = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4'];
+  const fmt = n => '฿' + n.toLocaleString('th-TH',{maximumFractionDigits:0});
+  if (sorted.length === 0) {
+    el.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:.78rem;padding:14px">📭 ไม่มีข้อมูล</div>';
+    return;
+  }
+  el.innerHTML = sorted.map(([name, amt], i) => {
+    const initials = (name.match(/\S+/g) || []).slice(0,2).map(w => w[0]).join('').toUpperCase().slice(0,2) || '?';
+    const c = colors[i % colors.length];
+    return `<div class="dash-cust">
+      <div class="dash-cust-avatar" style="background:${c}">${escHtml(initials)}</div>
+      <div class="dash-cust-info">
+        <div class="dash-cust-name">${escHtml(name)}</div>
+        <div class="dash-cust-sub">${income.filter(r => (r.customerName||'(ไม่ระบุ)') === name).length} รายการ</div>
+      </div>
+      <div class="dash-cust-amount">${fmt(amt)}</div>
+    </div>`;
+  }).join('');
+}
+
+// ─── TOP VEHICLES (by trip count) ─────────────────────────────────────────
+function renderTopVehicles(truck) {
+  const el = document.getElementById('sum-top-vehicles');
+  if (!el) return;
+  const map = {};
+  truck.forEach(r => {
+    const plate = r.plateNumber || '(ไม่ระบุ)';
+    if (!map[plate]) map[plate] = { count:0, freight:0 };
+    map[plate].count++;
+    map[plate].freight += parseFloat(r.freightCost) || 0;
+  });
+  const sorted = Object.entries(map).sort((a,b) => b[1].count - a[1].count).slice(0, 6);
+  const colors = ['#1d4ed8','#059669','#d97706','#7c3aed','#db2777','#0891b2'];
+  const fmt = n => '฿' + n.toLocaleString('th-TH',{maximumFractionDigits:0});
+  if (sorted.length === 0) {
+    el.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:.78rem;padding:14px">📭 ไม่มีข้อมูล</div>';
+    return;
+  }
+  el.innerHTML = sorted.map(([plate, v], i) => {
+    const c = colors[i % colors.length];
+    return `<div class="dash-cust">
+      <div class="dash-cust-avatar" style="background:${c}">🚛</div>
+      <div class="dash-cust-info">
+        <div class="dash-cust-name">${escHtml(plate)}</div>
+        <div class="dash-cust-sub">${v.count} เที่ยว</div>
+      </div>
+      <div class="dash-cust-amount">${fmt(v.freight)}</div>
+    </div>`;
+  }).join('');
 }
 
 function renderBarChart(income, expense, dateFrom, dateTo) {
@@ -4991,15 +5219,14 @@ function renderTruckTable(truck) {
   const fmt = n => '฿' + (n||0).toLocaleString('th-TH', { maximumFractionDigits: 0 });
   const tbody = document.getElementById('sum-truck-tbody');
 
-  // Sort by tripRound DESC (latest first)
+  // Sort by tripRound DESC (latest first) + show only 5 most recent in summary
   const sorted = [...truck].sort((a, b) => {
     const ar = parseInt(a.tripRound) || 0;
     const br = parseInt(b.tripRound) || 0;
     if (br !== ar) return br - ar;
     return (b.timestamp || '').localeCompare(a.timestamp || '');
-  });
+  }).slice(0, 5);
 
-  // Each trip = 1 row showing round + dates + plate/customer + status + freight
   let rowsHtml = sorted.map(r => {
     const status = _autoTripStatus(r);
     const info   = statusMap[status] || { cls: 'driving', label: status };
