@@ -268,6 +268,7 @@ function qUri(label, uri)   { return { type:'action', action:{ type:'uri', label
 const TRUCK_SEQ   = ['truck_1','truck_2','truck_3','truck_4','truck_5','truck_6','truck_confirm'];
 const INCOME_SEQ  = ['inc_1','inc_2','inc_3','inc_4','inc_confirm'];
 const EXPENSE_SEQ = ['exp_1','exp_2','exp_3','exp_4','exp_confirm'];
+const MAINT_SEQ   = ['maint_1','maint_2','maint_3','maint_4','maint_confirm'];
 
 // Maps state → formData key
 const FIELD = {
@@ -275,6 +276,7 @@ const FIELD = {
   truck_4:'destination', truck_5:'freightCost', truck_6:'paymentStatus',
   inc_1:'incomeDate', inc_2:'incomeItem', inc_3:'amount', inc_4:'paymentMethod',
   exp_1:'expenseDate', exp_2:'category', exp_3:'amount', exp_4:'paymentMethod',
+  maint_1:'maintenanceDate', maint_2:'plateNumber', maint_3:'maintenanceType', maint_4:'cost',
 };
 
 function buildStep(step, ref) {
@@ -300,6 +302,16 @@ function buildStep(step, ref) {
     exp_2: { q:'💸 ประเภทรายจ่าย', qr:[qMsg('น้ำมัน','น้ำมัน'),qMsg('ซ่อมบำรุง','ซ่อมบำรุง'),qMsg('ค่าทางด่วน','ค่าทางด่วน'),qMsg('เบี้ยเลี้ยง','เบี้ยเลี้ยง'),qMsg('อื่นๆ','อื่นๆ')] },
     exp_3: { q:'💵 จำนวนเงิน (บาท) พิมพ์เป็นตัวเลข', qr: [] },
     exp_4: { q:'💳 ช่องทางจ่ายเงิน', qr:[qMsg('เงินสด','เงินสด'),qMsg('โอน','โอน'),qMsg('เช็ค','เช็ค')] },
+    // ── Maintenance (4 steps) ──
+    maint_1: { q:'📅 วันที่ซ่อม', qr: dateQR },
+    maint_2: { q:'🚛 ทะเบียนรถ (เลือกหรือพิมพ์)', qr: plates.map(p=>qMsg(p,p)) },
+    maint_3: { q:'🔧 ประเภทการซ่อม',
+               qr:[ qMsg('เปลี่ยนยาง','เปลี่ยนยาง'), qMsg('น้ำมันเครื่อง','น้ำมันเครื่อง'),
+                    qMsg('เบรค','เบรค'), qMsg('ช่วงล่าง','ช่วงล่าง'),
+                    qMsg('แอร์','แอร์'), qMsg('ไฟฟ้า','ไฟฟ้า'),
+                    qMsg('ตรวจสภาพ','ตรวจสภาพ'), qMsg('ล้างรถ','ล้างรถ'),
+                    qMsg('อื่นๆ','อื่นๆ') ] },
+    maint_4: { q:'💵 ค่าซ่อม (บาท) พิมพ์เป็นตัวเลข', qr: [] },
   };
   return STEPS[step] || null;
 }
@@ -390,6 +402,10 @@ async function buildWelcomeFlex(sheets, sheetId) {
               action:{ type:'postback', label:'💰 รายรับ',   data:'MENU_INCOME', displayText:'💰 รายรับ' } },
             { type:'button', height:'sm', style:'primary', color: C.danger,
               action:{ type:'postback', label:'💸 รายจ่าย',  data:'MENU_EXPENSE', displayText:'💸 รายจ่าย' } }
+          ]},
+          { type:'box', layout:'horizontal', spacing:'sm', contents:[
+            { type:'button', height:'sm', style:'primary', color: C.warningDark,
+              action:{ type:'postback', label:'🔧 ซ่อมบำรุง', data:'MENU_MAINTENANCE', displayText:'🔧 ซ่อมบำรุง' } }
           ]}
         ]
       },
@@ -432,6 +448,13 @@ function buildConfirmFlex(type, f) {
                  ['💸 ประเภท',     f.category],
                  ['💵 จำนวน',      `${num(f.amount)} บาท`, C.danger],
                  ['💳 ช่องทาง',    f.paymentMethod]
+               ]},
+    maintenance: { icon:'🔧', title:'ยืนยันซ่อมบำรุง', color: C.warningDark,
+               rows:[
+                 ['📅 วันที่ซ่อม', f.maintenanceDate],
+                 ['🚛 ทะเบียน',    f.plateNumber],
+                 ['🔧 ประเภท',     f.maintenanceType],
+                 ['💵 ค่าซ่อม',    `${num(f.cost)} บาท`, C.warningDark]
                ]}
   };
   const m = meta[type] || meta.truck;
@@ -471,7 +494,9 @@ function buildSuccessFlex(type, rowId, f) {
     income:  { icon:'💰', title:'บันทึกรายรับสำเร็จ', nextLabel:'➕ บันทึกรายรับอีก', nextData:'MENU_INCOME',
                summary: `${f.incomeItem||''} · ฿${num(f.amount)} · ${f.paymentMethod||''}` },
     expense: { icon:'💸', title:'บันทึกรายจ่ายสำเร็จ', nextLabel:'➕ บันทึกรายจ่ายอีก', nextData:'MENU_EXPENSE',
-               summary: `${f.category||''} · ฿${num(f.amount)} · ${f.paymentMethod||''}` }
+               summary: `${f.category||''} · ฿${num(f.amount)} · ${f.paymentMethod||''}` },
+    maintenance: { icon:'🔧', title:'บันทึกซ่อมบำรุงสำเร็จ', nextLabel:'➕ บันทึกซ่อมอีก', nextData:'MENU_MAINTENANCE',
+               summary: `${f.plateNumber||''} · ${f.maintenanceType||''} · ฿${num(f.cost)}` }
   };
   const m = meta[type] || meta.truck;
   return {
@@ -544,11 +569,15 @@ function buildFullMenuFlex() {
       contents:[
         row(
           item('🚛', 'บันทึกรถ', '#2563EB', 'MENU_TRUCK'),
+          item('💰', 'รายรับ',   '#16A34A', 'MENU_INCOME')
+        ),
+        row(
+          item('💸', 'รายจ่าย',  '#DC2626', 'MENU_EXPENSE'),
           item('📅', 'ปฏิทิน',  '#0D9488', 'MENU_CALENDAR')
         ),
         row(
-          item('💰', 'รายรับ',   '#16A34A', 'MENU_INCOME'),
-          item('💸', 'รายจ่าย',  '#DC2626', 'MENU_EXPENSE')
+          item('🔧', 'ซ่อมบำรุง', '#E65100', 'MENU_MAINTENANCE'),
+          item('📊', 'สรุปเดือนนี้', '#6A1B9A', '/สรุป', 'สรุปผล')
         )
       ] }
   };
@@ -585,8 +614,8 @@ function buildFullMenuFlex() {
     body: { type:'box', layout:'vertical', paddingAll:'md', backgroundColor:'#F5F7FB', spacing:'none',
       contents:[
         row(
-          item('🔧', 'ซ่อมบำรุง',  '#F59E0B', 'MENU_MAINTENANCE', 'ซ่อมบำรุง — ดูในเว็บ'),
-          item('⛽', 'น้ำมัน',      '#EAB308', 'MENU_FUEL',        'น้ำมัน — ดูในเว็บ')
+          item('⛽', 'น้ำมัน',      '#EAB308', 'MENU_FUEL',        'น้ำมัน — ดูในเว็บ'),
+          item('🚗', 'ยานพาหนะ', '#6366F1', 'MENU_VEHICLE',  'ยานพาหนะ — ดูในเว็บ')
         ),
         row(
           item('🧾', 'ใบเสร็จ',     '#06B6D4', 'MENU_INVOICE',     'ใบเสร็จ — ดูในเว็บ'),
@@ -753,6 +782,31 @@ async function saveIncome(sheets, sheetId, f) {
   const headers = ['timestamp','incomeDate','incomeTime','docNumber','customerName','incomeItem','amount','paymentMethod','remark','imageUrls','ocrText','userAgent','rowId','linkedTripRowId','linkedTripRound'];
   await sheets.spreadsheets.values.append({
     spreadsheetId: sheetId, range: 'Income!A:A', valueInputOption: 'USER_ENTERED',
+    requestBody: { values: [headers.map(h => data[h]!==undefined ? data[h] : '')] }
+  });
+  return rowId;
+}
+
+async function saveMaintenance(sheets, sheetId, f) {
+  const now = new Date().toISOString();
+  const rowId = genId('MNT');
+  const data = {
+    timestamp: now,
+    maintenanceDate: toISO(f.maintenanceDate)||'',
+    plateNumber: f.plateNumber||'',
+    maintenanceType: f.maintenanceType||'',
+    description: f.description||f.maintenanceType||'',
+    cost: parseFloat(f.cost)||0,
+    vendor: f.vendor||'',
+    odometerKm: f.odometerKm||'',
+    nextDueDate: f.nextDueDate||'',
+    notes: f.notes==='-'?'':(f.notes||''),
+    imageUrls: JSON.stringify(Array.isArray(f.imageUrls) ? f.imageUrls : []),
+    userAgent: 'LINE Bot', rowId,
+  };
+  const headers = ['timestamp','maintenanceDate','plateNumber','maintenanceType','description','cost','vendor','odometerKm','nextDueDate','notes','imageUrls','userAgent','rowId'];
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: sheetId, range: 'Maintenance!A:A', valueInputOption: 'USER_ENTERED',
     requestBody: { values: [headers.map(h => data[h]!==undefined ? data[h] : '')] }
   });
   return rowId;
@@ -995,6 +1049,12 @@ async function handleEvent(event, sheets, sheetId) {
     await writeState(sheets, sheetId, userId, 'exp_1', {}, rowNum);
     return reply(token, txt(s.q, s.qr));
   }
+  if (text==='MENU_MAINTENANCE' || text==='🔧 ซ่อมบำรุง') {
+    const ref = await getRef(sheets, sheetId);
+    const s = buildStep('maint_1', ref);
+    await writeState(sheets, sheetId, userId, 'maint_1', {}, rowNum);
+    return reply(token, txt(s.q, s.qr));
+  }
   if (text==='MENU_CALENDAR' || text==='📅 ปฏิทิน' || text==='cal_now' || pb==='cal_now') {
     const now = bkkNow();
     const flex = await buildCalendar(sheets, sheetId, now.getFullYear(), now.getMonth()+1);
@@ -1055,9 +1115,10 @@ async function handleEvent(event, sheets, sheetId) {
     if (text === '✅ ยืนยัน') {
       try {
         let id;
-        if (kind === 'truck')   id = await saveTruck(sheets,   sheetId, formData);
-        else if (kind === 'income')  id = await saveIncome(sheets,  sheetId, formData);
-        else if (kind === 'expense') id = await saveExpense(sheets, sheetId, formData);
+        if (kind === 'truck')         id = await saveTruck(sheets,       sheetId, formData);
+        else if (kind === 'income')   id = await saveIncome(sheets,      sheetId, formData);
+        else if (kind === 'expense')  id = await saveExpense(sheets,     sheetId, formData);
+        else if (kind === 'maintenance') id = await saveMaintenance(sheets, sheetId, formData);
         await writeState(sheets, sheetId, userId, 'idle', {}, rowNum);
         return reply(token, buildSuccessFlex(kind, id, formData));
       } catch(e) {
@@ -1071,9 +1132,10 @@ async function handleEvent(event, sheets, sheetId) {
   if (state === 'truck_confirm') return handleConfirm('truck');
   if (state === 'inc_confirm')   return handleConfirm('income');
   if (state === 'exp_confirm')   return handleConfirm('expense');
+  if (state === 'maint_confirm') return handleConfirm('maintenance');
 
   // ── Form steps ─────────────────────────────────────────────────
-  const allSeqs = { truck: TRUCK_SEQ, inc: INCOME_SEQ, exp: EXPENSE_SEQ };
+  const allSeqs = { truck: TRUCK_SEQ, inc: INCOME_SEQ, exp: EXPENSE_SEQ, maint: MAINT_SEQ };
   let activeSeq = null;
   let seqKey    = '';
   for (const [k, seq] of Object.entries(allSeqs)) {
@@ -1100,7 +1162,8 @@ async function handleEvent(event, sheets, sheetId) {
 
     if (nextState.endsWith('_confirm')) {
       // Send Flex confirm card instead of plain text (v13.3-style)
-      const kind = seqKey==='truck' ? 'truck' : seqKey==='inc' ? 'income' : 'expense';
+      const kindMap = { truck:'truck', inc:'income', exp:'expense', maint:'maintenance' };
+      const kind = kindMap[seqKey] || 'truck';
       await writeState(sheets, sheetId, userId, nextState, formData, rowNum);
       return reply(token, buildConfirmFlex(kind, formData));
     } else {
