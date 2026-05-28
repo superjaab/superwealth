@@ -3378,7 +3378,7 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v14.0</span>
+    <span style="opacity:.7">v14.1</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
@@ -4122,60 +4122,9 @@
     </div>
   </div>
 
-  <!-- ══ QUICK MENU GRID (KTB style) ══ -->
-  <div class="quick-menu-wrap">
-    <div class="quick-menu-head">⚡ เมนูลัด</div>
-    <div class="quick-menu">
-      <button class="qm-item" onclick="switchTab('truck')">
-        <div class="qm-icon qm-blue">🚛</div>
-        <span class="qm-label">บันทึกรถ</span>
-      </button>
-      <button class="qm-item" onclick="switchTab('calendar')">
-        <div class="qm-icon qm-teal">📅</div>
-        <span class="qm-label">ปฏิทิน</span>
-      </button>
-      <button class="qm-item" onclick="switchTab('income')">
-        <div class="qm-icon qm-green">💰</div>
-        <span class="qm-label">รายรับ</span>
-      </button>
-      <button class="qm-item" onclick="switchTab('expense')">
-        <div class="qm-icon qm-red">💸</div>
-        <span class="qm-label">รายจ่าย</span>
-      </button>
-      <button class="qm-item" onclick="switchTab('vehicle')">
-        <div class="qm-icon qm-indigo">🚗</div>
-        <span class="qm-label">ยานพาหนะ</span>
-      </button>
-      <button class="qm-item" onclick="switchTab('driver')">
-        <div class="qm-icon qm-orange">👤</div>
-        <span class="qm-label">คนขับ</span>
-      </button>
-      <button class="qm-item" onclick="switchTab('customer')">
-        <div class="qm-icon qm-purple">🏢</div>
-        <span class="qm-label">ลูกค้า</span>
-      </button>
-      <button class="qm-item" onclick="switchTab('maintenance')">
-        <div class="qm-icon qm-amber">🔧</div>
-        <span class="qm-label">ซ่อมบำรุง</span>
-      </button>
-      <button class="qm-item" onclick="switchTab('fuel')">
-        <div class="qm-icon qm-fuel">⛽</div>
-        <span class="qm-label">น้ำมัน</span>
-      </button>
-      <button class="qm-item" onclick="switchTab('invoice')">
-        <div class="qm-icon qm-cyan">🧾</div>
-        <span class="qm-label">ใบเสร็จ</span>
-      </button>
-      <button class="qm-item" onclick="switchTab('gps')">
-        <div class="qm-icon qm-slate">🗺️</div>
-        <span class="qm-label">GPS</span>
-      </button>
-      <button class="qm-item" onclick="switchTab('ocr')">
-        <div class="qm-icon qm-emerald">📷</div>
-        <span class="qm-label">อ่านภาพ</span>
-      </button>
-    </div>
-  </div>
+  <!-- Quick Menu grid removed (v14.1) — moved to LINE Bot full menu carousel
+       Reason: redundant with sidebar on web (already shows all options).
+       LINE Bot has limited UI → menu grid more useful there. -->
 
   <!-- TOP STAT CARDS (6 cards, gradient) -->
   <div class="summary-grid">
@@ -9672,7 +9621,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.0';   // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.1';   // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate(opts) {

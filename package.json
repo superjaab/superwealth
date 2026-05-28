@@ -1,6 +1,7 @@
 {
-  "name": "truck-transport-app",
-  "version": "1.0.0",
+  "name": "superwealth",
+  "version": "14.0.0",
+  "description": "SuperWealth — Truck transport management with working capital tracking",
   "private": true,
   "dependencies": {
     "googleapis": "^140.0.0"
