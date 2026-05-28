@@ -15,9 +15,13 @@
 const { google } = require('googleapis');
 const crypto = require('crypto');
 
-// v14.23 — Admin code now comes from env var (with fallback for backward compat)
-// To change: set ADMIN_CODE in Vercel/Netlify environment variables, then redeploy
-const HARDCODED_ADMIN_CODE = process.env.ADMIN_CODE || '787898';
+// v14.26 — Admin code MUST come from env var (no source-code fallback)
+// MUST set ADMIN_CODE in Vercel/Netlify environment variables before deploy.
+// If unset, admin login is COMPLETELY DISABLED (returns invalid code error).
+const HARDCODED_ADMIN_CODE = process.env.ADMIN_CODE || '';
+if (!HARDCODED_ADMIN_CODE) {
+  console.warn('[auth] ADMIN_CODE env var not set — admin built-in login disabled');
+}
 const CODES_SHEET     = 'AuthCodes';
 const SESSIONS_SHEET  = 'AuthSessions';
 const FAB_SHEET       = 'FabMenu';
@@ -117,7 +121,8 @@ async function doLogin(sheets, sheetId, { code, device, honeypot }, res, ip) {
   let valid = false;
   let isAdmin = false;
   // v14.23 — constant-time comparison for admin code to prevent timing attacks
-  if (constantTimeEqual(trimmed, HARDCODED_ADMIN_CODE)) {
+  // v14.26 — additionally require HARDCODED_ADMIN_CODE to be non-empty (env var set)
+  if (HARDCODED_ADMIN_CODE && constantTimeEqual(trimmed, HARDCODED_ADMIN_CODE)) {
     valid = true;
     isAdmin = true;
     label = 'ผู้ดูแลระบบ (Built-in)';
@@ -201,7 +206,7 @@ async function doVerify(sheets, sheetId, { sessionId }, res) {
   const s = sessions.find(r => r.sessionId === sessionId);
   if (!s) return res.json({ valid: false });
   if (String(s.revoked) === 'true') return res.json({ valid: false, revoked: true });
-  const isAdmin = String(s.code).trim() === HARDCODED_ADMIN_CODE;
+  const isAdmin = (HARDCODED_ADMIN_CODE && String(s.code).trim() === HARDCODED_ADMIN_CODE);
   // Update lastSeenAt (best-effort, ignore errors)
   try {
     const rowIdx = sessions.indexOf(s) + 2; // +1 for header, +1 for 1-based
@@ -302,7 +307,7 @@ async function doListSessions(sheets, sheetId, { sessionId }, res) {
     lastSeenAt: s.lastSeenAt,
     revoked: String(s.revoked) === 'true',
     isCurrent: s.sessionId === sessionId,
-    isAdmin: String(s.code).trim() === HARDCODED_ADMIN_CODE
+    isAdmin: (HARDCODED_ADMIN_CODE && String(s.code).trim() === HARDCODED_ADMIN_CODE)
   }));
   return res.json({ success: true, sessions: safe });
 }
@@ -435,7 +440,8 @@ async function verifyAdmin(sheets, sheetId, sessionId) {
   const sessions = await readSheet(sheets, sheetId, SESSIONS_SHEET);
   const s = sessions.find(r => r.sessionId === sessionId);
   if (!s || String(s.revoked) === 'true') return false;
-  return String(s.code).trim() === HARDCODED_ADMIN_CODE;
+  // v14.26 — require non-empty admin code; if env not set, no one is admin
+  return HARDCODED_ADMIN_CODE && (HARDCODED_ADMIN_CODE && String(s.code).trim() === HARDCODED_ADMIN_CODE);
 }
 function getClientIp(req) {
   const xff = req.headers['x-forwarded-for'];
