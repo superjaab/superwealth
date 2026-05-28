@@ -381,6 +381,128 @@
       backdrop-filter: blur(20px) saturate(180%);
       -webkit-backdrop-filter: blur(20px) saturate(180%);
     }
+
+    /* ═════ v14.11 — MATCH Claude Design DEMO closely ═════ */
+
+    /* ── COMPACT stat cards (138px height, smaller fonts) ── */
+    .dash-stat {
+      min-height: 130px !important;
+      padding: 16px 14px !important;
+      border-radius: 14px !important;
+    }
+    .dash-stat-icon {
+      width: 32px !important;
+      height: 32px !important;
+      border-radius: 7px !important;
+      font-size: 1rem !important;
+      margin-bottom: 10px !important;
+    }
+    .dash-stat-label {
+      font-size: .58rem !important;
+      letter-spacing: .08em !important;
+      margin-bottom: 3px !important;
+    }
+    .dash-stat-value {
+      font-size: 1.35rem !important;
+      letter-spacing: -.3px !important;
+    }
+    .dash-stat-sub {
+      font-size: .68rem !important;
+      padding-top: 8px !important;
+    }
+    .summary-grid { gap: 12px !important; }
+
+    /* ── COMPACT Hero banner (smaller padding, kpi size) ── */
+    .hero-banner { padding: 18px 20px 16px !important; }
+    .hero-brand { font-size: .68rem !important; }
+    .hero-title-text { font-size: 1.25rem !important; margin-bottom: 12px !important; }
+    .hero-kpi { padding: 8px 10px !important; }
+    .hero-kpi-label { font-size: .58rem !important; }
+    .hero-kpi-val { font-size: 1.1rem !important; }
+
+    /* ── CODE CHIPS — for record IDs (TRUCK-XXX, INC-XXX, EXP-XXX) ── */
+    .sw-code-chip {
+      font-family: var(--sw-font-mono, 'JetBrains Mono', monospace);
+      font-weight: 800;
+      font-size: .68rem;
+      letter-spacing: .5px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: inline-block;
+      white-space: nowrap;
+    }
+    .sw-code-chip--trip    { background: var(--sw-primary-tint, #dbeafe); color: var(--sw-primary-hover, #1d4ed8); }
+    .sw-code-chip--income  { background: var(--sw-success-soft, #dcfce7); color: var(--sw-success-hover, #15803d); }
+    .sw-code-chip--expense { background: var(--sw-danger-soft, #fee2e2);  color: var(--sw-danger-hover, #b91c1c); }
+    .sw-code-chip--pending { background: var(--sw-warning-soft, #fef3c7); color: #92400e; }
+
+    /* ── STATUS PILLS — payment/job status ── */
+    .sw-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      font-size: .7rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .sw-status--paid       { background: var(--sw-success-soft, #dcfce7); color: var(--sw-success-hover, #15803d); }
+    .sw-status--pending    { background: var(--sw-warning-soft, #fef3c7); color: #b45309; }
+    .sw-status--intransit  { background: var(--sw-primary-tint, #dbeafe); color: var(--sw-primary-hover, #1d4ed8); }
+    .sw-status--cancel     { background: var(--sw-danger-soft, #fee2e2);  color: var(--sw-danger-hover, #b91c1c); }
+    .sw-status--income     { background: var(--sw-success-soft, #dcfce7); color: var(--sw-success-hover, #15803d); }
+    .sw-status--expense    { background: var(--sw-danger-soft, #fee2e2);  color: var(--sw-danger-hover, #b91c1c); }
+
+    /* ── RECORD CARDS — Claude Design layout ── */
+    .sw-record-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+    .sw-record-chips {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .sw-record-amount {
+      font-family: var(--sw-font-mono, monospace);
+      font-weight: 900;
+      font-size: 1.05rem;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -.01em;
+      white-space: nowrap;
+    }
+    .sw-record-title {
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--sw-fg-primary, #1a1f2e);
+      letter-spacing: -.01em;
+    }
+    .sw-record-sub {
+      font-size: .8rem;
+      color: var(--sw-fg-tertiary, #5a6577);
+      line-height: 1.45;
+    }
+    body.dark .sw-record-title { color: #f8fafc; }
+    body.dark .sw-record-sub { color: #94a3b8; }
+
+    /* ── 3-column bottom analysis cards layout ── */
+    .sum-analysis-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    /* ── CHARTS row — make sure 2-column on desktop ── */
+    @media (min-width: 900px) {
+      .dash-charts-row { grid-template-columns: 1.4fr 1fr !important; }
+    }
   </style>
   <style>
     /* ─── RESET & BASE ─── */
@@ -3756,7 +3878,7 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v14.10</span>
+    <span style="opacity:.7">v14.11</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
@@ -8942,35 +9064,46 @@ function renderTruckList(items) {
       ? '' // ค่าเที่ยวจากฟอร์มเอง — ไม่ต้องระบุ
       : (linkedIncome > 0 ? '🔗 จากรายรับ' : '');
 
+    // Claude Design v14.11 layout — code chip + status pill + amount-right
+    const codeChipClass = paid ? 'sw-code-chip--trip'
+                        : auto === 'ส่งแล้ว' ? 'sw-code-chip--trip'
+                        : 'sw-code-chip--pending';
+    const statusClass = auto === 'ส่งแล้ว' ? 'sw-status--paid' : 'sw-status--intransit';
+    const statusIcon  = auto === 'ส่งแล้ว' ? '✅' : '🚛';
+    const payClass = paid ? 'sw-status--paid' : 'sw-status--pending';
+    const payIcon  = paid ? '💰' : '⚠️';
+    const amountColor = showAmount > 0
+      ? (paid ? 'var(--sw-success,#16a34a)' : '#d97706')
+      : 'var(--sw-fg-muted,#94a3b8)';
+    const routeText = (r.origin || r.destination)
+      ? `${r.origin || '-'} → ${r.destination || '-'}`
+      : '';
+    const titleText = `${r.plateNumber || '-'}${routeText ? ' · ' + routeText : ''}`;
+    const subParts = [];
+    if (r.customerName) subParts.push(`🏢 <span class="priv-data">${escHtml(r.customerName)}</span>`);
+    if (r.driverName)   subParts.push(`👤 <span class="priv-data">${escHtml(r.driverName)}${r.driverPhone ? ' · ' + escHtml(r.driverPhone) : ''}</span>`);
+    if (r.cargoList)    subParts.push(`📦 <span class="priv-data">${escHtml(r.cargoList)}${r.cargoWeight ? ' ' + r.cargoWeight + ' ตัน' : ''}</span>`);
+
     return `
-    <div class="record-card" style="border-left-color:${s.color}">
-      <!-- HEADER: Trip round + date (left) | freight cost (right) -->
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;padding-bottom:8px;border-bottom:1.5px dashed #e2e8f0">
-        <span style="background:linear-gradient(135deg,#0f172a,#1e293b);color:white;padding:5px 14px;border-radius:8px;font-size:.9rem;font-weight:800;letter-spacing:.3px;white-space:nowrap" class="trip-round-badge">
-          🔢 รอบเที่ยว ${r.tripRound ? '#' + r.tripRound : '—'}
-        </span>
-        <span style="font-size:.78rem;color:#475569;font-weight:600">${dateLabel}</span>
-        ${showAmount > 0
-          ? `<span class="priv-amt" style="margin-left:auto;color:#2E7D32;font-weight:800;font-size:1rem;display:inline-flex;flex-direction:column;align-items:flex-end;line-height:1.1">
-               <span>${fmtBaht(showAmount)}</span>
-               ${amountSource ? `<span style="font-size:.62rem;color:#94a3b8;font-weight:600;letter-spacing:.3px">${amountSource}</span>` : ''}
-             </span>`
-          : `<span style="margin-left:auto;color:#94a3b8;font-weight:700;font-size:.85rem">฿0</span>`}
+    <div class="record-card" style="border-left:4px solid ${s.color}">
+      <div class="sw-record-head">
+        <div class="sw-record-chips">
+          <span class="sw-code-chip ${codeChipClass}">${escHtml(r.rowId || 'TRUCK-—')}</span>
+          <span class="sw-status ${statusClass}">${statusIcon} ${auto}</span>
+          <span class="sw-status ${payClass}">${payIcon} ${paid ? 'จ่ายแล้ว' : 'ค้างจ่าย'}</span>
+        </div>
+        <div class="sw-record-amount priv-amt" style="color:${amountColor}">
+          ${showAmount > 0 ? fmtBaht(showAmount) : '฿0'}
+          ${amountSource ? `<div style="font-size:.6rem;color:#94a3b8;font-weight:600;margin-top:2px">${amountSource}</div>` : ''}
+        </div>
       </div>
-      <!-- Title row -->
-      <div class="rc-title" style="color:${s.color};display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        🚛 ${r.plateNumber||'-'}
-        <span style="padding:2px 10px;border-radius:10px;background:${s.bg};color:${s.color};font-weight:700;font-size:.7rem">${s.icon} ${auto}</span>
-        ${payHtml}
+      <div class="sw-record-title">
+        🚛 ${escHtml(titleText)}
+        ${r.tripRound ? `<span style="font-size:.7rem;color:#94a3b8;font-weight:600;margin-left:6px">รอบ #${r.tripRound}</span>` : ''}
+        <span style="font-size:.72rem;color:#94a3b8;font-weight:500;margin-left:6px">· ${dateLabel}</span>
       </div>
-      <div class="rc-sub" style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;margin-top:6px">
-        ${r.customerName ? `<span class="priv-data">🏢 ${r.customerName}</span>` : ''}
-        ${(r.origin||r.destination) ? `<span>📍 ${r.origin||'-'} → ${r.destination||'-'}</span>` : ''}
-        ${r.driverName ? `<span class="priv-data">👤 ${r.driverName}${r.driverPhone?' • '+r.driverPhone:''}</span>` : ''}
-        ${r.cargoList ? `<span class="priv-data">📦 ${r.cargoList}${r.cargoWeight?' ('+r.cargoWeight+' ตัน)':''}</span>` : ''}
-        ${r.notes ? `<span class="priv-data" style="color:#9E9E9E">📝 ${r.notes}</span>` : ''}
-        ${r.remark && !r.notes ? `<span class="priv-data" style="color:#9E9E9E">📝 ${r.remark}</span>` : ''}
-      </div>
+      ${subParts.length ? `<div class="sw-record-sub">${subParts.join(' · ')}</div>` : ''}
+      ${r.notes || r.remark ? `<div class="sw-record-sub" style="color:#94a3b8;font-style:italic;margin-top:4px">📝 ${escHtml(r.notes || r.remark)}</div>` : ''}
       ${renderImgThumbs(r.imageUrls)}
       ${renderRecActions('truck', r.rowId || r.timestamp,`${r.plateNumber||''} - ${r.customerName||''}`)}
     </div>`;
@@ -9013,24 +9146,25 @@ function renderIncomeList(items) {
     // Don't show numeric values as payment method
     if (/^[\d,.฿\s]+$/.test(paymentMethod) && paymentMethod) paymentMethod = '';
     if (/^[\d,.฿\s]+$/.test(docNumber) && docNumber) docNumber = '';
+    // Claude Design v14.11 layout
+    const subParts = [];
+    if (r.customerName) subParts.push(`🏢 <span class="priv-data">${escHtml(r.customerName)}</span>`);
+    if (r.incomeItem)   subParts.push(`📋 <span class="priv-data">${escHtml(r.incomeItem)}</span>`);
+    if (paymentMethod)  subParts.push(`💵 ${escHtml(paymentMethod)}`);
+    if (docNumber)      subParts.push(`📄 <span class="priv-data">${escHtml(docNumber)}</span>`);
     return `
-    <div class="record-card" style="border-left-color:#2E7D32">
-      <!-- HEADER: round (if linked) + date | amount -->
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;padding-bottom:8px;border-bottom:1.5px dashed #e2e8f0">
-        ${tripRound
-          ? `<span style="background:linear-gradient(135deg,#0f172a,#1e293b);color:white;padding:5px 14px;border-radius:8px;font-size:.9rem;font-weight:800;letter-spacing:.3px;white-space:nowrap" class="trip-round-badge">🔢 รอบเที่ยว #${tripRound}</span>`
-          : ''}
-        <span style="font-size:.78rem;color:#475569;font-weight:600">${dateLabel}</span>
-        <span class="priv-amt" style="margin-left:auto;color:#2E7D32;font-weight:800;font-size:1rem">${fmtBaht(amount)}</span>
+    <div class="record-card" style="border-left:4px solid #16a34a">
+      <div class="sw-record-head">
+        <div class="sw-record-chips">
+          <span class="sw-code-chip sw-code-chip--income">${escHtml(r.rowId || 'INC-—')}</span>
+          <span class="sw-status sw-status--income">💰 รายรับ</span>
+          ${tripRound ? `<span class="sw-status sw-status--intransit">🔗 รอบ #${tripRound}</span>` : ''}
+        </div>
+        <div class="sw-record-amount priv-amt" style="color:var(--sw-success,#16a34a)">+${fmtBaht(amount)}</div>
       </div>
-      <!-- Sub info — left aligned -->
-      <div class="rc-sub" style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;margin-top:6px">
-        ${r.customerName ? `<span class="priv-data">🏢 ${r.customerName}</span>` : ''}
-        ${r.incomeItem ? `<span class="priv-data">📋 ${r.incomeItem}</span>` : ''}
-        ${paymentMethod ? `<span>💵 ${paymentMethod}</span>` : ''}
-        ${docNumber ? `<span class="priv-data" style="color:#9E9E9E">📄 ${docNumber}</span>` : ''}
-        ${r.remark ? `<span class="priv-data" style="color:#9E9E9E">📝 ${r.remark}</span>` : ''}
-      </div>
+      <div class="sw-record-title">${escHtml(r.customerName || r.incomeItem || 'รายรับ')}<span style="font-size:.72rem;color:#94a3b8;font-weight:500;margin-left:6px">· ${dateLabel}</span></div>
+      ${subParts.length ? `<div class="sw-record-sub">${subParts.join(' · ')}</div>` : ''}
+      ${r.remark ? `<div class="sw-record-sub" style="color:#94a3b8;font-style:italic;margin-top:4px">📝 ${escHtml(r.remark)}</div>` : ''}
       ${renderImgThumbs(r.imageUrls)}
       ${renderRecActions('income', r.rowId || r.timestamp,`${fmtBaht(amount)} - ${r.customerName||''}`)}
     </div>`;
@@ -9067,25 +9201,26 @@ function renderExpenseList(items) {
       }
     }
     if (/^[\d,.฿\s]+$/.test(paymentMethodE) && paymentMethodE) paymentMethodE = '';
+    // Claude Design v14.11 layout
+    const subParts = [];
+    if (r.plateNumber)   subParts.push(`🚛 ${escHtml(r.plateNumber)}`);
+    if (r.vendor)        subParts.push(`👤 <span class="priv-data">${escHtml(r.vendor)}</span>`);
+    if (r.expenseDetail) subParts.push(`📋 <span class="priv-data">${escHtml(r.expenseDetail)}</span>`);
+    if (paymentMethodE)  subParts.push(`💵 ${escHtml(paymentMethodE)}`);
     return `
-    <div class="record-card" style="border-left-color:#C62828">
-      <!-- HEADER -->
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;padding-bottom:8px;border-bottom:1.5px dashed #e2e8f0">
-        ${tripRound
-          ? `<span style="background:linear-gradient(135deg,#0f172a,#1e293b);color:white;padding:5px 14px;border-radius:8px;font-size:.9rem;font-weight:800;letter-spacing:.3px;white-space:nowrap" class="trip-round-badge">🔢 รอบเที่ยว #${tripRound}</span>`
-          : ''}
-        <span style="font-size:.78rem;color:#475569;font-weight:600">${dateLabel}</span>
-        <span class="priv-amt" style="margin-left:auto;color:#C62828;font-weight:800;font-size:1rem">${fmtBaht(amount)}</span>
+    <div class="record-card" style="border-left:4px solid #dc2626">
+      <div class="sw-record-head">
+        <div class="sw-record-chips">
+          <span class="sw-code-chip sw-code-chip--expense">${escHtml(r.rowId || 'EXP-—')}</span>
+          <span class="sw-status sw-status--expense">💸 รายจ่าย</span>
+          ${r.category ? `<span class="sw-status sw-status--pending" style="background:#fee2e2;color:#b91c1c">${escHtml(r.category)}</span>` : ''}
+          ${tripRound ? `<span class="sw-status sw-status--intransit">🔗 รอบ #${tripRound}</span>` : ''}
+        </div>
+        <div class="sw-record-amount priv-amt" style="color:var(--sw-danger,#dc2626)">−${fmtBaht(amount)}</div>
       </div>
-      <!-- Sub info -->
-      <div class="rc-sub" style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;margin-top:6px">
-        ${r.category ? `<span style="padding:3px 12px;border-radius:10px;background:#FFEBEE;color:#B91C1C;font-weight:700;font-size:.72rem;display:inline-block">${r.category}</span>` : ''}
-        ${r.plateNumber ? `<span>🚛 ${r.plateNumber}</span>` : ''}
-        ${r.vendor ? `<span class="priv-data">👤 ${r.vendor}</span>` : ''}
-        ${r.expenseDetail ? `<span class="priv-data">📋 ${r.expenseDetail}</span>` : ''}
-        ${paymentMethodE ? `<span>💵 ${paymentMethodE}</span>` : ''}
-        ${r.remark ? `<span class="priv-data" style="color:#9E9E9E">📝 ${r.remark}</span>` : ''}
-      </div>
+      <div class="sw-record-title">${escHtml(r.category || r.vendor || 'รายจ่าย')}${r.plateNumber ? ` · ${escHtml(r.plateNumber)}` : ''}<span style="font-size:.72rem;color:#94a3b8;font-weight:500;margin-left:6px">· ${dateLabel}</span></div>
+      ${subParts.length ? `<div class="sw-record-sub">${subParts.join(' · ')}</div>` : ''}
+      ${r.remark ? `<div class="sw-record-sub" style="color:#94a3b8;font-style:italic;margin-top:4px">📝 ${escHtml(r.remark)}</div>` : ''}
       ${renderImgThumbs(r.imageUrls)}
       ${renderRecActions('expense', r.rowId || r.timestamp,`${fmtBaht(amount)} - ${r.category||''}`)}
     </div>`;
@@ -10569,7 +10704,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.10';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.11';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate(opts) {
