@@ -1303,14 +1303,8 @@
   </div>
 </div>
 
-<!-- ══ FLOATING ACTION BUTTON (Quick add) ══ -->
-<div id="fab-menu">
-  <button class="fab-menu-item" onclick="fabAction('truck')"><span class="fab-icon">🚚</span> บันทึกเที่ยวรถ</button>
-  <button class="fab-menu-item" onclick="fabAction('income')"><span class="fab-icon">💰</span> เพิ่มรายรับ</button>
-  <button class="fab-menu-item" onclick="fabAction('expense')"><span class="fab-icon">💸</span> เพิ่มรายจ่าย</button>
-  <button class="fab-menu-item" onclick="fabAction('maintenance')"><span class="fab-icon">🔧</span> ซ่อมบำรุง</button>
-  <button class="fab-menu-item" onclick="fabAction('fuel')"><span class="fab-icon">⛽</span> เติมน้ำมัน</button>
-</div>
+<!-- ══ FLOATING ACTION BUTTON (Quick add) — items loaded dynamically ══ -->
+<div id="fab-menu"></div>
 <button id="fab" onclick="toggleFab()" title="เพิ่มข้อมูลเร็ว (Ctrl+N)" aria-label="เพิ่มข้อมูล">
   <span id="fab-icon">+</span>
 </button>
@@ -1355,7 +1349,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v10.3 | 28/05/2026 19:00</span>
+  <span class="version" style="margin-left:auto">v10.4 | 28/05/2026 19:30</span>
   <!-- Login/Logout button -->
   <button class="header-bell" id="auth-btn" onclick="handleAuthClick()" title="เข้าสู่ระบบ" style="margin-left:10px;width:auto;padding:0 14px;font-weight:700;font-size:.78rem;display:flex;align-items:center;gap:6px">
     <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
@@ -1919,6 +1913,28 @@
         <a class="dash-card-action" href="#" onclick="event.preventDefault();loadAdminSessions()">🔄 รีเฟรช</a>
       </div>
       <div id="admin-sessions-list" style="color:#94a3b8;text-align:center;padding:14px">⏳ กำลังโหลด...</div>
+    </div>
+
+    <!-- FAB Menu management section -->
+    <div class="dash-card" style="margin-top:14px">
+      <div class="dash-card-head" style="margin-bottom:14px">
+        <div>
+          <div class="dash-card-title">➕ เมนูปุ่มลอย (FAB)</div>
+          <div class="dash-card-sub">จัดการเมนูที่โผล่ขึ้นเมื่อกดปุ่ม + ลอยที่มุมขวาล่าง</div>
+        </div>
+        <a class="dash-card-action" href="#" onclick="event.preventDefault();loadAdminFab()">🔄 รีเฟรช</a>
+      </div>
+      <div style="background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:10px;padding:12px;margin-bottom:14px">
+        <div style="font-weight:700;color:#0f172a;margin-bottom:8px;font-size:.85rem">➕ เพิ่มเมนูใหม่</div>
+        <div style="display:grid;grid-template-columns:60px 1fr 1fr 80px auto;gap:8px;align-items:center">
+          <input type="text" id="admin-fab-icon"  placeholder="🎯" maxlength="4" style="text-align:center;font-size:1.1rem">
+          <input type="text" id="admin-fab-label" placeholder="ชื่อเมนู" maxlength="40">
+          <select id="admin-fab-tab"></select>
+          <input type="number" id="admin-fab-order" placeholder="ลำดับ" min="1" max="99" value="10">
+          <button type="button" onclick="adminAddFab()" style="background:linear-gradient(135deg,#059669,#10b981);color:white;border:none;border-radius:8px;padding:10px 16px;font-weight:700;font-size:.82rem;cursor:pointer;font-family:inherit;white-space:nowrap">➕ เพิ่ม</button>
+        </div>
+      </div>
+      <div id="admin-fab-list" style="color:#94a3b8;text-align:center;padding:14px">⏳ กำลังโหลด...</div>
     </div>
   </div>
 </div>
@@ -3032,8 +3048,14 @@ async function initAdminTab() {
     if (sumBtn) sumBtn.click();
     return;
   }
+  // Populate the tab dropdown for FAB editor (once)
+  const sel = document.getElementById('admin-fab-tab');
+  if (sel && !sel.options.length && typeof FAB_TABS_AVAILABLE !== 'undefined') {
+    sel.innerHTML = FAB_TABS_AVAILABLE.map(t => `<option value="${t.tab}">${t.label}</option>`).join('');
+  }
   loadAdminCodes();
   loadAdminSessions();
+  loadAdminFab();
 }
 async function loadAdminCodes() {
   const el = document.getElementById('admin-codes-list');
@@ -3154,6 +3176,74 @@ function fmtDateTime(iso) {
     if (isNaN(d)) return iso;
     return d.toLocaleString('th-TH', { dateStyle:'short', timeStyle:'short' });
   } catch { return iso; }
+}
+
+// ─── FAB MENU MANAGEMENT (Admin) ───
+async function loadAdminFab() {
+  const el = document.getElementById('admin-fab-list');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:14px">⏳ กำลังโหลด...</div>';
+  try {
+    const r = await api('/api/auth', { action: 'listFabItems' });
+    if (!r.success) throw new Error(r.error || 'load failed');
+    if (!r.items.length) {
+      el.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:18px;font-size:.85rem">📭 ยังไม่มีเมนู</div>';
+      return;
+    }
+    const tabLabel = t => (FAB_TABS_AVAILABLE.find(x => x.tab === t) || {}).label || t;
+    el.innerHTML = r.items.map(it => `
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #f1f5f9">
+        <span style="font-size:1.4rem;width:42px;text-align:center">${escHtml(it.icon||'➕')}</span>
+        <div style="flex:1;min-width:140px">
+          <div style="font-weight:700;color:#0f172a;font-size:.88rem">${escHtml(it.label||'')}</div>
+          <div style="font-size:.7rem;color:#64748b;margin-top:2px">→ ${escHtml(tabLabel(it.tab))} • ลำดับ ${it.sortOrder}</div>
+        </div>
+        <button onclick="adminDeleteFab('${escAttr(it.rowId)}','${escAttr(it.label||'')}')" style="background:#fef2f2;border:1px solid #fecaca;border-radius:6px;color:#dc2626;padding:6px 12px;font-size:.74rem;font-weight:700;cursor:pointer;font-family:inherit">🗑 ลบ</button>
+      </div>`).join('');
+  } catch (e) {
+    el.innerHTML = `<div style="text-align:center;color:#dc2626;padding:14px">❌ ${escHtml(e.message)}</div>`;
+  }
+}
+async function adminAddFab() {
+  const icon  = document.getElementById('admin-fab-icon').value.trim() || '➕';
+  const label = document.getElementById('admin-fab-label').value.trim();
+  const tab   = document.getElementById('admin-fab-tab').value;
+  const order = parseInt(document.getElementById('admin-fab-order').value) || 10;
+  if (!label) { showToast('กรุณากรอกชื่อเมนู', 'warning'); return; }
+  if (!tab)   { showToast('กรุณาเลือกหน้า', 'warning'); return; }
+  showLoading('กำลังเพิ่มเมนู...');
+  try {
+    const r = await api('/api/auth', {
+      action: 'addFabItem', sessionId: getSessionId(),
+      icon, label, tab, sortOrder: order
+    });
+    hideLoading();
+    if (!r.success) { showToast(r.error || 'เพิ่มไม่สำเร็จ', 'error'); return; }
+    document.getElementById('admin-fab-icon').value = '';
+    document.getElementById('admin-fab-label').value = '';
+    document.getElementById('admin-fab-order').value = '10';
+    showToast(`✅ เพิ่ม "${label}" สำเร็จ`, 'success');
+    loadAdminFab();
+    loadFabItems();  // refresh FAB menu immediately
+  } catch (e) {
+    hideLoading();
+    showToast('ผิดพลาด: ' + e.message, 'error');
+  }
+}
+async function adminDeleteFab(rowId, label) {
+  if (!confirm(`ลบเมนู "${label}" จาก FAB?`)) return;
+  showLoading('กำลังลบ...');
+  try {
+    const r = await api('/api/auth', { action: 'deleteFabItem', sessionId: getSessionId(), rowId });
+    hideLoading();
+    if (!r.success) { showToast(r.error || 'ลบไม่สำเร็จ', 'error'); return; }
+    showToast('🗑 ลบแล้ว', 'success');
+    loadAdminFab();
+    loadFabItems();
+  } catch (e) {
+    hideLoading();
+    showToast('ผิดพลาด: ' + e.message, 'error');
+  }
 }
 
 // Theme toggle (light/dark)
@@ -6636,8 +6726,66 @@ function searchAllRecords(q) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// v10.0 — FAB (Floating Action Button)
+// v10.0 — FAB (Floating Action Button) — items configurable via Admin
 // ═══════════════════════════════════════════════════════════════════
+const FAB_DEFAULT_ITEMS = [
+  { icon:'🚚', label:'บันทึกเที่ยวรถ', tab:'truck' },
+  { icon:'💰', label:'เพิ่มรายรับ',     tab:'income' },
+  { icon:'💸', label:'เพิ่มรายจ่าย',    tab:'expense' },
+  { icon:'🔧', label:'ซ่อมบำรุง',       tab:'maintenance' },
+  { icon:'⛽', label:'เติมน้ำมัน',      tab:'fuel' }
+];
+const FAB_TABS_AVAILABLE = [
+  { tab:'truck',       label:'🚚 บันทึกเที่ยวรถ' },
+  { tab:'income',      label:'💰 รายรับ' },
+  { tab:'expense',     label:'💸 รายจ่าย' },
+  { tab:'vehicle',     label:'🚛 ทะเบียนรถ' },
+  { tab:'driver',      label:'👤 คนขับ' },
+  { tab:'customer',    label:'🏢 ลูกค้า' },
+  { tab:'maintenance', label:'🔧 ซ่อมบำรุง' },
+  { tab:'fuel',        label:'⛽ น้ำมัน' },
+  { tab:'invoice',     label:'🧾 ใบเสร็จ' },
+  { tab:'summary',     label:'📊 สรุปผล' },
+  { tab:'calendar',    label:'📅 ปฏิทิน' }
+];
+let _fabItems = [];
+
+async function loadFabItems() {
+  // Try cache first (instant)
+  try {
+    const cached = JSON.parse(localStorage.getItem('fab_items_cache') || 'null');
+    if (Array.isArray(cached) && cached.length) {
+      _fabItems = cached;
+      renderFabMenu();
+    }
+  } catch {}
+  // Then refresh from server
+  try {
+    const r = await api('/api/auth', { action: 'listFabItems' });
+    if (r.success && Array.isArray(r.items)) {
+      _fabItems = r.items.length ? r.items : FAB_DEFAULT_ITEMS;
+      localStorage.setItem('fab_items_cache', JSON.stringify(_fabItems));
+      renderFabMenu();
+    }
+  } catch (e) {
+    if (!_fabItems.length) {
+      _fabItems = FAB_DEFAULT_ITEMS;
+      renderFabMenu();
+    }
+  }
+}
+
+function renderFabMenu() {
+  const menu = document.getElementById('fab-menu');
+  if (!menu) return;
+  if (!_fabItems.length) { menu.innerHTML = ''; return; }
+  menu.innerHTML = _fabItems.map(it =>
+    `<button class="fab-menu-item" onclick="fabAction('${escAttr(it.tab)}')">
+      <span class="fab-icon">${escHtml(it.icon||'➕')}</span> ${escHtml(it.label)}
+    </button>`
+  ).join('');
+}
+
 function toggleFab() {
   const menu = document.getElementById('fab-menu');
   const open = menu.classList.toggle('show');
@@ -6733,6 +6881,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 window.addEventListener('DOMContentLoaded', () => {
+  loadFabItems();   // load FAB items from server (cached locally)
   setTimeout(updateFabVisibility, 200);
   // Watch body class changes (logged-in ↔ logged-out)
   new MutationObserver(updateFabVisibility).observe(document.body, {

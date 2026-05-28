@@ -17,6 +17,15 @@ const { google } = require('googleapis');
 const HARDCODED_ADMIN_CODE = '787898';   // Built-in admin code (always valid)
 const CODES_SHEET     = 'AuthCodes';
 const SESSIONS_SHEET  = 'AuthSessions';
+const FAB_SHEET       = 'FabMenu';
+
+const FAB_DEFAULTS = [
+  { icon: '🚚', label: 'บันทึกเที่ยวรถ', tab: 'truck',       sortOrder: 1 },
+  { icon: '💰', label: 'เพิ่มรายรับ',     tab: 'income',      sortOrder: 2 },
+  { icon: '💸', label: 'เพิ่มรายจ่าย',    tab: 'expense',     sortOrder: 3 },
+  { icon: '🔧', label: 'ซ่อมบำรุง',       tab: 'maintenance', sortOrder: 4 },
+  { icon: '⛽', label: 'เติมน้ำมัน',      tab: 'fuel',        sortOrder: 5 }
+];
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -40,9 +49,13 @@ module.exports = async function handler(req, res) {
       ['timestamp','code','label','active','rowId'], '#1d4ed8');
     await ensureSheet(sheets, sheetId, SESSIONS_SHEET,
       ['timestamp','sessionId','code','label','device','loginAt','lastSeenAt','revoked','rowId','ip'], '#7c3aed');
+    await ensureSheet(sheets, sheetId, FAB_SHEET,
+      ['timestamp','icon','label','tab','sortOrder','active','rowId'], '#059669');
     // Backfill missing columns (e.g. ip) for existing sheets
     await syncHeaders(sheets, sheetId, SESSIONS_SHEET,
       ['timestamp','sessionId','code','label','device','loginAt','lastSeenAt','revoked','rowId','ip']);
+    // Seed FAB defaults if sheet is empty
+    await seedFabDefaults(sheets, sheetId);
 
     // Capture IP (prefer x-forwarded-for, fallback x-real-ip / req.socket)
     const ip = getClientIp(req);
@@ -56,6 +69,10 @@ module.exports = async function handler(req, res) {
       case 'deleteCode':   return await doDeleteCode(sheets, sheetId, params, res);
       case 'listSessions': return await doListSessions(sheets, sheetId, params, res);
       case 'revokeSession':return await doRevokeSession(sheets, sheetId, params, res);
+      case 'listFabItems': return await doListFabItems(sheets, sheetId, params, res);
+      case 'addFabItem':   return await doAddFabItem(sheets, sheetId, params, res);
+      case 'deleteFabItem':return await doDeleteFabItem(sheets, sheetId, params, res);
+      case 'updateFabItem':return await doUpdateFabItem(sheets, sheetId, params, res);
       default:
         return res.status(400).json({ success: false, error: 'Unknown action: ' + action });
     }
@@ -207,6 +224,114 @@ async function doRevokeSession(sheets, sheetId, { sessionId, target }, res) {
   if (!target) return res.json({ success: false, error: 'Missing target sessionId' });
   await markSessionRevoked(sheets, sheetId, target);
   return res.json({ success: true });
+}
+
+// ───────── FAB MENU ─────────
+// Public — no auth required (everyone needs to see the FAB)
+async function doListFabItems(sheets, sheetId, _params, res) {
+  const items = await readSheet(sheets, sheetId, FAB_SHEET);
+  const safe = items
+    .filter(i => i.active !== 'false')
+    .map(i => ({
+      rowId: i.rowId, icon: i.icon || '➕', label: i.label || '(ไม่ระบุ)',
+      tab: i.tab || 'truck',
+      sortOrder: parseInt(i.sortOrder) || 0,
+      active: i.active !== 'false',
+      createdAt: i.timestamp
+    }))
+    .sort((a,b) => (a.sortOrder - b.sortOrder) || String(a.createdAt).localeCompare(String(b.createdAt)));
+  return res.json({ success: true, items: safe });
+}
+
+async function doAddFabItem(sheets, sheetId, { sessionId, icon, label, tab, sortOrder }, res) {
+  if (!await verifyAdmin(sheets, sheetId, sessionId))
+    return res.status(403).json({ success: false, error: 'Forbidden — admin only' });
+  if (!label || !tab)
+    return res.json({ success: false, error: 'ต้องระบุ label และ tab' });
+  const now = new Date().toISOString();
+  await appendRow(sheets, sheetId, FAB_SHEET,
+    [now, String(icon||'➕'), String(label).trim(), String(tab).trim(),
+     String(sortOrder || 99), 'true', genId('FAB')]);
+  return res.json({ success: true });
+}
+
+async function doDeleteFabItem(sheets, sheetId, { sessionId, rowId }, res) {
+  if (!await verifyAdmin(sheets, sheetId, sessionId))
+    return res.status(403).json({ success: false, error: 'Forbidden — admin only' });
+  if (!rowId) return res.json({ success: false, error: 'Missing rowId' });
+
+  const sheetInfo = await getSheetMeta(sheets, sheetId, FAB_SHEET);
+  const rows = (await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId, range: `${FAB_SHEET}!A:Z`
+  })).data.values || [];
+  if (rows.length < 2) return res.json({ success: false, error: 'No data' });
+  const headers = rows[0];
+  const rowIdIdx = headers.indexOf('rowId');
+  if (rowIdIdx < 0) return res.json({ success: false, error: 'No rowId column' });
+  let foundIdx = -1;
+  for (let i = 1; i < rows.length; i++) if (rows[i][rowIdIdx] === rowId) { foundIdx = i; break; }
+  if (foundIdx < 0) return res.json({ success: false, error: 'Not found' });
+
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId: sheetId,
+    requestBody: { requests: [{
+      deleteDimension: { range: { sheetId: sheetInfo.sheetId, dimension:'ROWS', startIndex: foundIdx, endIndex: foundIdx+1 } }
+    }]}
+  });
+  return res.json({ success: true });
+}
+
+async function doUpdateFabItem(sheets, sheetId, { sessionId, rowId, icon, label, tab, sortOrder, active }, res) {
+  if (!await verifyAdmin(sheets, sheetId, sessionId))
+    return res.status(403).json({ success: false, error: 'Forbidden — admin only' });
+  if (!rowId) return res.json({ success: false, error: 'Missing rowId' });
+
+  const rows = (await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId, range: `${FAB_SHEET}!A:Z`
+  })).data.values || [];
+  if (rows.length < 2) return res.json({ success: false, error: 'No data' });
+  const headers = rows[0];
+  const rowIdIdx = headers.indexOf('rowId');
+  let foundIdx = -1;
+  for (let i = 1; i < rows.length; i++) if (rows[i][rowIdIdx] === rowId) { foundIdx = i; break; }
+  if (foundIdx < 0) return res.json({ success: false, error: 'Not found' });
+
+  const oldRow = rows[foundIdx];
+  const newRow = headers.map((h, ci) => {
+    if (h === 'icon'      && icon      !== undefined) return String(icon);
+    if (h === 'label'     && label     !== undefined) return String(label);
+    if (h === 'tab'       && tab       !== undefined) return String(tab);
+    if (h === 'sortOrder' && sortOrder !== undefined) return String(sortOrder);
+    if (h === 'active'    && active    !== undefined) return active ? 'true' : 'false';
+    return oldRow[ci] || '';
+  });
+  const lastCol = String.fromCharCode(65 + headers.length - 1);
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: sheetId,
+    range: `${FAB_SHEET}!A${foundIdx+1}:${lastCol}${foundIdx+1}`,
+    valueInputOption: 'RAW', requestBody: { values: [newRow] }
+  });
+  return res.json({ success: true });
+}
+
+async function seedFabDefaults(sheets, sheetId) {
+  try {
+    const r = await sheets.spreadsheets.values.get({
+      spreadsheetId: sheetId, range: `${FAB_SHEET}!A:Z`
+    });
+    const rows = r.data.values || [];
+    if (rows.length >= 2) return; // already has data
+    const now = new Date().toISOString();
+    const values = FAB_DEFAULTS.map(d => [
+      now, d.icon, d.label, d.tab, String(d.sortOrder), 'true', genId('FAB')
+    ]);
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: sheetId,
+      range: `${FAB_SHEET}!A:A`,
+      valueInputOption: 'RAW',
+      requestBody: { values }
+    });
+  } catch (e) { console.warn('seedFabDefaults failed:', e.message); }
 }
 
 // ───────── HELPERS ─────────
