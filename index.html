@@ -1213,11 +1213,25 @@
       font-size: .68rem; font-weight: 600; font-family: ui-monospace, monospace;
       border: 1px solid var(--b-default); color: var(--t-tertiary);
     }
+    /* Live clock — distinct from version label */
+    .app-header .version {
+      display: inline-flex; align-items: center;
+      background: var(--bg-subtle);
+      padding: 5px 10px; border-radius: var(--r-md);
+      border: 1px solid var(--b-default);
+      font-size: .72rem !important;
+      color: var(--t-secondary) !important;
+    }
+    #live-clock { color: var(--t-primary); }
+    body.dark .app-header .version { background: var(--bg-elevated); border-color: var(--b-default); }
     @media (max-width:768px) {
       .header-search-btn { padding: 6px 8px; margin-left: 6px !important; }
       .header-search-btn .kbd-mini,
       .header-search-btn span:not(.search-icon) { display:none; }
-      .app-header .version { display:none; }
+      .app-header .version { padding: 4px 8px; font-size: .65rem !important; }
+      .app-header .version > span:nth-child(1),
+      .app-header .version > span:nth-child(2) { display:none; }  /* hide "v11.3 ·" on mobile, keep clock */
+      #live-clock { font-size: .85em; }
       #auth-btn span#auth-label { display:none; }
       .app-header h1 { font-size:.85rem !important; }
     }
@@ -1349,7 +1363,11 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v11.2 | 28/05/2026 11:55</span>
+  <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
+    <span style="opacity:.7">v11.3</span>
+    <span style="margin:0 6px;opacity:.4">·</span>
+    <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
+  </span>
   <!-- Login/Logout button -->
   <button class="header-bell" id="auth-btn" onclick="handleAuthClick()" title="เข้าสู่ระบบ" style="margin-left:10px;width:auto;padding:0 14px;font-weight:700;font-size:.78rem;display:flex;align-items:center;gap:6px">
     <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
@@ -6958,7 +6976,21 @@ document.addEventListener('keydown', e => {
 // ── Reliable FAB visibility updates via MutationObserver ──
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
+// ─── LIVE CLOCK — Bangkok time, updated every second ───
+function tickLiveClock() {
+  const el = document.getElementById('live-clock');
+  if (!el) return;
+  const d = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+  const pad = n => String(n).padStart(2, '0');
+  const hh = pad(d.getHours()), mm = pad(d.getMinutes()), ss = pad(d.getSeconds());
+  const day = pad(d.getDate()), mo = pad(d.getMonth() + 1), yy = d.getFullYear();
+  // Pulse the colon so it feels alive
+  const sepBlink = d.getSeconds() % 2 ? ':' : ' ';
+  el.innerHTML = `${day}/${mo}/${yy} <span style="margin:0 4px;opacity:.4">·</span> ${hh}<span style="opacity:.6">${sepBlink}</span>${mm}<span style="opacity:.5">${sepBlink}</span><span style="font-size:.78em;opacity:.7">${ss}</span>`;
+}
 window.addEventListener('DOMContentLoaded', () => {
+  tickLiveClock();
+  setInterval(tickLiveClock, 1000);
   loadFabItems();   // load FAB items from server (cached locally)
   setTimeout(updateFabVisibility, 200);
   // Watch body class changes (logged-in ↔ logged-out)
