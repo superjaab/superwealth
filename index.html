@@ -1349,7 +1349,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v11.0 | 28/05/2026 20:00</span>
+  <span class="version" style="margin-left:auto">v11.1 | 28/05/2026 20:30</span>
   <!-- Login/Logout button -->
   <button class="header-bell" id="auth-btn" onclick="handleAuthClick()" title="เข้าสู่ระบบ" style="margin-left:10px;width:auto;padding:0 14px;font-weight:700;font-size:.78rem;display:flex;align-items:center;gap:6px">
     <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
@@ -1852,13 +1852,13 @@
           <div id="mp-footer" style="margin-top:10px"></div>
         </div>
       </div>
-      <button class="cal-today-btn" onclick="calGoToday()">📅 วันนี้</button>
+      <button class="cal-today-btn" onclick="calGoToday()">📅 กลับวันนี้</button>
       <select id="cal-plate-filter" class="cal-plate-filter" onchange="calChangePlate(this.value)">
-        <option value="">🚚 ทุกทะเบียน</option>
+        <option value="">🚛 ดูรถทุกคัน</option>
       </select>
       <div class="cal-legend">
-        <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#3b82f6"></span>กำลังขนส่ง</div>
-        <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#10b981"></span>ส่งแล้ว</div>
+        <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#3b82f6"></span>🚚 กำลังขนส่ง</div>
+        <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#10b981"></span>✅ ส่งถึงแล้ว</div>
       </div>
     </div>
 
@@ -5829,8 +5829,8 @@ function _refreshPlateFilterOptions() {
   const sel = document.getElementById('cal-plate-filter');
   if (!sel) return;
   const cur = sel.value;
-  sel.innerHTML = '<option value="">🚚 ทุกทะเบียน (' + _calTrips.length + ' เที่ยว)</option>' +
-    plates.map(p => `<option value="${escHtml(p)}">${escHtml(p)}</option>`).join('');
+  sel.innerHTML = '<option value="">🚛 ดูรถทุกคัน · ' + _calTrips.length + ' เที่ยวรวม</option>' +
+    plates.map(p => `<option value="${escHtml(p)}">🚚 ${escHtml(p)}</option>`).join('');
   if (cur && plates.includes(cur)) sel.value = cur;
 }
 // ─── STATUS LOGIC (only 2 statuses) ───
@@ -6032,9 +6032,8 @@ function _buildMonthGridWeeks(_calYear, _calMonth, trips) {
         posCls = 'span-single';
       }
 
-      // Build label — show dates + plate/customer/route, prefixed with status dot
+      // Build label — clean & readable (no redundant status dot — bar color shows status)
       const tripStat = _autoTripStatus(t);
-      const stDot = _statusDot(tripStat);
       const fmtDM = n => {
         const dt = new Date(n * 86400000);
         return String(dt.getUTCDate()).padStart(2,'0') + '/' + String(dt.getUTCMonth()+1).padStart(2,'0');
@@ -6042,26 +6041,28 @@ function _buildMonthGridWeeks(_calYear, _calMonth, trips) {
       let datePart = '';
       if (ev.isMultiDay) {
         if (!ev.isContinuedLeft && !ev.isContinuedRight) {
-          datePart = `📥${fmtDM(ev.segStart)}→📤${fmtDM(ev.segEnd)}`;
+          datePart = `${fmtDM(ev.segStart)} – ${fmtDM(ev.segEnd)}`;
         } else if (!ev.isContinuedLeft) {
-          datePart = `📥${fmtDM(ev.segStart)}`;
+          datePart = `เริ่ม ${fmtDM(ev.segStart)} ›`;
         } else if (!ev.isContinuedRight) {
-          datePart = `📤${fmtDM(ev.segEnd)}`;
+          datePart = `‹ ถึง ${fmtDM(ev.segEnd)}`;
+        } else {
+          datePart = '⋯ ต่อเนื่อง ⋯';
         }
       } else {
         datePart = fmtDM(ev.segStart);
       }
       let labelParts = [];
-      if (!_calPlate) labelParts.push(t.plateNumber || '?');
-      if (t.origin || t.destination) labelParts.push((t.origin||'?') + '→' + (t.destination||'?'));
+      if (t.tripRound) labelParts.push(`รอบ ${t.tripRound}`);
+      if (!_calPlate && t.plateNumber) labelParts.push(t.plateNumber);
+      if (t.origin || t.destination) labelParts.push((t.origin||'-') + ' → ' + (t.destination||'-'));
       else if (t.customerName) labelParts.push(t.customerName);
-      if (t.tripRound) labelParts.unshift(`#${t.tripRound}`);
-      const label = `${stDot} ${datePart} • ${labelParts.join(' ')}`;
-      // Payment badge (ค้างจ่าย = red, จ่ายแล้ว = subtle white)
+      const label = `${datePart} · ${labelParts.join(' · ')}`;
+      // Payment badge (ค้างจ่าย = red, จ่ายแล้ว = subtle ✓)
       const isPaid = (t.paymentStatus || 'ค้างจ่าย') === 'จ่ายแล้ว';
       const payBadge = isPaid
-        ? `<span style="background:rgba(255,255,255,.25);padding:0 5px;border-radius:3px;font-size:.6rem;font-weight:700;margin-left:4px">จ่ายแล้ว</span>`
-        : `<span style="background:#fee2e2;color:#b91c1c;padding:1px 6px;border-radius:3px;font-size:.6rem;font-weight:800;margin-left:4px">ค้างจ่าย</span>`;
+        ? `<span style="background:rgba(255,255,255,.28);padding:1px 6px;border-radius:10px;font-size:.6rem;font-weight:700;margin-left:6px">✓ ชำระแล้ว</span>`
+        : `<span style="background:#fef2f2;color:#b91c1c;padding:1px 6px;border-radius:10px;font-size:.6rem;font-weight:800;margin-left:6px;border:1px solid rgba(185,28,28,.3)">⏰ ค้างจ่าย</span>`;
 
       // Tooltip
       const tip = [
@@ -6088,7 +6089,7 @@ function _buildMonthGridWeeks(_calYear, _calMonth, trips) {
       if (n > 0) {
         evtsHtml += `<div class="cal-evt-more"
           style="grid-column:${c+1}; grid-row:${CAL_MAX_ROWS_PER_WEEK + 1}"
-          onclick="event.stopPropagation();openCalDay('${_numToDateKey(weekStartNum + c)}')">+ ${n} เพิ่ม</div>`;
+          onclick="event.stopPropagation();openCalDay('${_numToDateKey(weekStartNum + c)}')">+ ${n} เที่ยว</div>`;
       }
     });
 
@@ -6138,33 +6139,53 @@ function openCalDay(dateKey) {
 
   const body = document.getElementById('cal-modal-body');
   if (matches.length === 0) {
-    body.innerHTML = '<div class="cal-empty">📭 ไม่มีเที่ยวรถในวันนี้</div>';
+    body.innerHTML = `<div class="cal-empty" style="padding:32px 18px;text-align:center;color:#94a3b8">
+      <div style="font-size:2.4rem;margin-bottom:6px">🌤️</div>
+      <div style="font-weight:700;color:#475569;margin-bottom:4px">ว่างทั้งวัน</div>
+      <div style="font-size:.85rem">ไม่มีเที่ยวรถในวันนี้ ${_calPlate ? 'ของ ' + _calPlate : ''}</div>
+    </div>`;
   } else {
-    body.innerHTML = matches.map(({trip, kind, span}) => {
+    // Helper to format a date number as "DD/MM"
+    const fmtDM = n => {
+      const dt = new Date(n * 86400000);
+      return String(dt.getUTCDate()).padStart(2,'0') + '/' + String(dt.getUTCMonth()+1).padStart(2,'0');
+    };
+    body.innerHTML = `<div style="font-size:.78rem;color:#64748b;padding:0 4px 10px">พบ <b style="color:#0f172a">${matches.length}</b> เที่ยวรถในวันนี้</div>` +
+    matches.map(({trip, kind, span}) => {
       const cls = _calStatusClass(trip);
       const autoStat = _autoTripStatus(trip);
-      const kindLabel = kind === 'pickup' ? '📥 เข้ารับสินค้า'
-                     : kind === 'delivery' ? '📤 ส่งสินค้า'
-                     : kind === 'transit' ? '🚚 อยู่ระหว่างขนส่ง'
-                     : '🚚 เที่ยวรถ';
-      const time = trip.jobTime ? ' • ' + trip.jobTime : '';
+      const statText = autoStat === 'ส่งแล้ว' ? '✅ ส่งถึงแล้ว' : '🚚 กำลังขนส่ง';
+      const kindLabel = kind === 'pickup'   ? '📥 วันเข้ารับสินค้า'
+                     : kind === 'delivery' ? '📤 วันส่งถึงปลายทาง'
+                     : kind === 'transit'  ? '🛣️ อยู่ระหว่างขนส่ง'
+                     :                       '🚚 เที่ยวรถ';
+      const time = trip.jobTime ? ' · ' + trip.jobTime : '';
+      const tripRoundBadge = trip.tripRound
+        ? `<span style="background:#eef2ff;color:#4338ca;padding:2px 8px;border-radius:8px;font-size:.7rem;font-weight:700">รอบ ${escHtml(trip.tripRound)}</span>`
+        : '';
+      const isPaid = (trip.paymentStatus || 'ค้างจ่าย') === 'จ่ายแล้ว';
+      const paymentBadge = isPaid
+        ? `<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:8px;font-size:.7rem;font-weight:700">✓ ชำระแล้ว</span>`
+        : `<span style="background:#fee2e2;color:#b91c1c;padding:2px 8px;border-radius:8px;font-size:.7rem;font-weight:700">⏰ ค้างจ่าย</span>`;
       const spanLabel = (span.startNum !== span.endNum)
-        ? `<div class="cal-trip-row" style="color:#3b82f6;font-weight:600">📅 ${_numToDateKey(span.startNum)} → ${_numToDateKey(span.endNum)} (${span.endNum - span.startNum + 1} วัน)</div>`
+        ? `<div class="cal-trip-row" style="color:#4f46e5;font-weight:600">🗓️ <b>ช่วงเที่ยว:</b> ${fmtDM(span.startNum)} – ${fmtDM(span.endNum)} (${span.endNum - span.startNum + 1} วัน)</div>`
         : '';
       return `
         <div class="cal-trip-card ${cls}">
-          <div class="cal-trip-head">
+          <div class="cal-trip-head" style="flex-wrap:wrap;gap:6px">
             <span class="cal-trip-plate">${escHtml(trip.plateNumber || '-')}</span>
-            <span class="cal-trip-badge ${cls}">${escHtml(autoStat)}</span>
-            <span style="font-size:.7rem;color:#64748b">${kindLabel}${time}</span>
+            ${tripRoundBadge}
+            <span class="cal-trip-badge ${cls}">${statText}</span>
+            ${paymentBadge}
           </div>
+          <div class="cal-trip-row" style="color:#64748b;font-size:.75rem;margin-top:2px">${kindLabel}${time}</div>
           ${spanLabel}
           ${trip.customerName ? `<div class="cal-trip-row">🏢 <b>ลูกค้า:</b> ${escHtml(trip.customerName)}</div>` : ''}
-          ${trip.driverName   ? `<div class="cal-trip-row">👤 <b>คนขับ:</b> ${escHtml(trip.driverName)}${trip.driverPhone ? ' (' + escHtml(trip.driverPhone) + ')' : ''}</div>` : ''}
+          ${trip.driverName   ? `<div class="cal-trip-row">👤 <b>คนขับ:</b> ${escHtml(trip.driverName)}${trip.driverPhone ? ' · ☎️ ' + escHtml(trip.driverPhone) : ''}</div>` : ''}
           ${(trip.origin || trip.destination) ? `<div class="cal-trip-row">📍 <b>เส้นทาง:</b> ${escHtml(trip.origin||'-')} → ${escHtml(trip.destination||'-')}</div>` : ''}
-          ${trip.cargoList    ? `<div class="cal-trip-row">📦 <b>สินค้า:</b> ${escHtml(trip.cargoList)}${trip.cargoWeight ? ' (' + escHtml(trip.cargoWeight) + ' ตัน)' : ''}</div>` : ''}
+          ${trip.cargoList    ? `<div class="cal-trip-row">📦 <b>สินค้า:</b> ${escHtml(trip.cargoList)}${trip.cargoWeight ? ' · ' + escHtml(trip.cargoWeight) + ' ตัน' : ''}</div>` : ''}
           ${trip.freightCost  ? `<div class="cal-trip-row">💰 <b>ค่าขนส่ง:</b> ${fmtBaht(trip.freightCost)}</div>` : ''}
-          ${trip.notes        ? `<div class="cal-trip-row">📝 ${escHtml(trip.notes)}</div>` : ''}
+          ${trip.remark       ? `<div class="cal-trip-row" style="color:#94a3b8;font-size:.78rem">📝 ${escHtml(trip.remark)}</div>` : ''}
         </div>`;
     }).join('');
   }
