@@ -1134,7 +1134,9 @@
     .sum-badge.driving { background: #FFF3E0; color: var(--orange); }
     .sum-badge.done    { background: #E8F5E9; color: var(--green); }
     .sum-badge.cancel  { background: #FFEBEE; color: var(--red); }
-    .chart-wrap { position: relative; margin: 0 auto; }
+    .chart-wrap { position: relative; margin: 0 auto; width: 100%; }
+    /* v14.27 — canvas fills wrap, height controlled by inline style on wrap */
+    .chart-wrap > canvas { display: block; width: 100% !important; }
 
     @media (min-width: 600px) {
       .tab-nav { position: static; border-top: none; border-bottom: 2px solid var(--gray2); box-shadow: none; }
@@ -4266,7 +4268,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.26 | 29/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.27 | 29/05/2026</span>
   </div>
 </aside>
 
@@ -11031,8 +11033,24 @@ function renderBarChart(income, expense, dateFrom, dateTo) {
 
   if (_barChart) { _barChart.destroy(); _barChart = null; }
   const ctx = document.getElementById('sum-chart-bar').getContext('2d');
+  const canvas = ctx.canvas;
 
-  // Inline plugin — draw ตัวเลขกลางแท่ง (หรือบนแท่งถ้าแท่งสั้น)
+  // v14.27 — Modern gradient fills with high contrast and depth
+  const greenGrad = ctx.createLinearGradient(0, 0, 0, canvas.offsetHeight || 300);
+  greenGrad.addColorStop(0, 'rgba(34,197,94,0.95)');   // bright green top
+  greenGrad.addColorStop(1, 'rgba(21,128,61,0.85)');   // darker green bottom
+  const greenHover = ctx.createLinearGradient(0, 0, 0, canvas.offsetHeight || 300);
+  greenHover.addColorStop(0, '#22c55e');
+  greenHover.addColorStop(1, '#15803d');
+
+  const redGrad = ctx.createLinearGradient(0, 0, 0, canvas.offsetHeight || 300);
+  redGrad.addColorStop(0, 'rgba(239,68,68,0.95)');     // bright red top
+  redGrad.addColorStop(1, 'rgba(185,28,28,0.85)');     // darker red bottom
+  const redHover = ctx.createLinearGradient(0, 0, 0, canvas.offsetHeight || 300);
+  redHover.addColorStop(0, '#ef4444');
+  redHover.addColorStop(1, '#b91c1c');
+
+  // v14.27 — Improved label plugin (better contrast + drop shadow)
   const barValueLabelsPlugin = {
     id: 'barValueLabels',
     afterDatasetsDraw(chart) {
@@ -11040,35 +11058,31 @@ function renderBarChart(income, expense, dateFrom, dateTo) {
       ctx.save();
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.font = 'bold 10.5px Inter, "IBM Plex Sans Thai", sans-serif';
+      ctx.font = '700 11.5px Inter, "Noto Sans Thai", "IBM Plex Sans Thai", sans-serif';
       chart.data.datasets.forEach((dataset, di) => {
         const meta = chart.getDatasetMeta(di);
         meta.data.forEach((bar, idx) => {
           const value = dataset.data[idx];
           if (!value) return;
-          // เต็มจำนวนพร้อม comma separator (ไม่ย่อ K/M)
-          // ตัวอย่าง: 82500 → "฿82,500"  |  1234568 → "฿1,234,568"
           const txt = '฿' + Math.round(value).toLocaleString('th-TH');
-          // Bar geometry
           const barHeight = Math.abs(bar.base - bar.y);
           const barWidth  = bar.width || 40;
           const midY = (bar.y + bar.base) / 2;
           const textWidth = ctx.measureText(txt).width;
-          const fitsInside = (barHeight >= 22) && (textWidth + 8 <= barWidth);
+          const fitsInside = (barHeight >= 28) && (textWidth + 12 <= barWidth);
           if (fitsInside) {
-            // Inside bar — white text with shadow
-            ctx.shadowColor = 'rgba(0,0,0,0.45)';
-            ctx.shadowBlur = 4;
+            ctx.shadowColor = 'rgba(0,0,0,0.5)';
+            ctx.shadowBlur = 6;
+            ctx.shadowOffsetY = 1;
             ctx.fillStyle = '#ffffff';
             ctx.fillText(txt, bar.x, midY);
-            ctx.shadowBlur = 0;
+            ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
           } else {
-            // Above the bar — dark text with white halo (อ่านง่ายบนพื้นสว่าง)
-            ctx.shadowColor = 'rgba(255,255,255,0.95)';
-            ctx.shadowBlur = 5;
+            ctx.shadowColor = 'rgba(255,255,255,0.98)';
+            ctx.shadowBlur = 6;
             ctx.fillStyle = '#0f172a';
-            ctx.fillText(txt, bar.x, bar.y - 8);
-            ctx.fillText(txt, bar.x, bar.y - 8); // double-pass for stronger halo
+            ctx.fillText(txt, bar.x, bar.y - 10);
+            ctx.fillText(txt, bar.x, bar.y - 10);
             ctx.shadowBlur = 0;
           }
         });
@@ -11083,46 +11097,93 @@ function renderBarChart(income, expense, dateFrom, dateTo) {
       labels: thMonths,
       datasets: [
         {
-          label: 'รายรับ',
+          label: '💰 รายรับ',
           data: months.map(m => incomeByMonth[m]),
-          backgroundColor: 'rgba(46,125,50,0.85)',
-          hoverBackgroundColor: 'rgba(46,125,50,1)',
-          borderRadius: 6,
-          borderSkipped: false
+          backgroundColor: greenGrad,
+          hoverBackgroundColor: greenHover,
+          borderRadius: { topLeft: 10, topRight: 10, bottomLeft: 2, bottomRight: 2 },
+          borderSkipped: false,
+          borderWidth: 0,
+          // v14.27 — wider bars so the chart fills the container
+          maxBarThickness: 110,
+          categoryPercentage: 0.8,
+          barPercentage: 0.85
         },
         {
-          label: 'รายจ่าย',
+          label: '💸 รายจ่าย',
           data: months.map(m => expenseByMonth[m]),
-          backgroundColor: 'rgba(198,40,40,0.85)',
-          hoverBackgroundColor: 'rgba(198,40,40,1)',
-          borderRadius: 6,
-          borderSkipped: false
+          backgroundColor: redGrad,
+          hoverBackgroundColor: redHover,
+          borderRadius: { topLeft: 10, topRight: 10, bottomLeft: 2, bottomRight: 2 },
+          borderSkipped: false,
+          borderWidth: 0,
+          maxBarThickness: 110,
+          categoryPercentage: 0.8,
+          barPercentage: 0.85
         }
       ]
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,         // fill container height
+      layout: { padding: { top: 24, bottom: 6, left: 6, right: 6 } },
+      // v14.27 — Smooth easing for entrance
+      animation: { duration: 900, easing: 'easeOutCubic' },
+      // v14.27 — Bar hover lift effect
+      hover: { mode: 'index', intersect: false },
+      interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { position: 'top', labels: { font: { size: 11 } } },
+        legend: {
+          position: 'top',
+          align: 'end',
+          labels: {
+            font: { size: 12, weight: '700', family: 'Noto Sans Thai, Inter, sans-serif' },
+            usePointStyle: true,
+            pointStyle: 'rectRounded',
+            padding: 16,
+            boxWidth: 14, boxHeight: 14
+          }
+        },
         tooltip: {
+          backgroundColor: 'rgba(15,23,42,0.95)',
+          titleFont: { size: 12, weight: '700', family: 'Noto Sans Thai, sans-serif' },
+          bodyFont: { size: 13, weight: '600', family: 'Noto Sans Thai, sans-serif' },
+          padding: 12,
+          cornerRadius: 10,
+          boxPadding: 6,
+          borderColor: 'rgba(255,255,255,0.1)',
+          borderWidth: 1,
+          displayColors: true,
           callbacks: {
-            label: ctx => '฿' + ctx.raw.toLocaleString('th-TH', { maximumFractionDigits: 0 })
+            label: ctx => ' ' + ctx.dataset.label + ': ฿' + ctx.raw.toLocaleString('th-TH', { maximumFractionDigits: 0 })
           }
         }
       },
       scales: {
         y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(148,163,184,0.18)', drawBorder: false, drawTicks: false },
+          border: { display: false },
           ticks: {
-            callback: v => '฿' + (v / 1000).toFixed(0) + 'K',
-            font: { size: 10 }
+            callback: v => v >= 1000 ? '฿' + (v / 1000).toFixed(0) + 'K' : '฿' + v,
+            font: { size: 11, weight: '600', family: 'Inter, sans-serif' },
+            color: '#64748b',
+            padding: 8
           }
         },
-        x: { ticks: { font: { size: 10 } } }
+        x: {
+          grid: { display: false },
+          border: { display: false },
+          ticks: {
+            font: { size: 12, weight: '700', family: 'Noto Sans Thai, sans-serif' },
+            color: '#475569',
+            padding: 8
+          }
+        }
       }
     },
     plugins: [barValueLabelsPlugin]
   });
-  // (chart card visibility handled in renderSummary)
 }
 
 function renderDoughnutChart(expense) {
@@ -11133,7 +11194,18 @@ function renderDoughnutChart(expense) {
   });
   const labels = Object.keys(catMap);
   const values = labels.map(k => catMap[k]);
-  const colors = ['#1565C0','#C62828','#E65100','#2E7D32','#6A1B9A','#00838F','#F57F17','#37474F'];
+  // v14.27 — Modern vibrant palette (Claude Design palette aligned)
+  const colors = [
+    '#3b82f6', // blue
+    '#ef4444', // red
+    '#f59e0b', // amber
+    '#22c55e', // green
+    '#a855f7', // purple
+    '#06b6d4', // cyan
+    '#f97316', // orange
+    '#ec4899', // pink
+    '#64748b'  // slate (fallback)
+  ];
 
   if (_doughnutChart) { _doughnutChart.destroy(); _doughnutChart = null; }
   const ctx = document.getElementById('sum-chart-doughnut').getContext('2d');
@@ -11144,17 +11216,47 @@ function renderDoughnutChart(expense) {
       datasets: [{
         data: values,
         backgroundColor: colors.slice(0, labels.length),
-        borderWidth: 2,
-        borderColor: '#fff'
+        // v14.27 — White ring between slices for cleaner separation
+        borderWidth: 3,
+        borderColor: '#ffffff',
+        hoverBorderWidth: 4,
+        // Lift slices on hover for a 3D feel
+        hoverOffset: 12,
+        spacing: 2
       }]
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
+      cutout: '62%',  // doughnut hole size
+      layout: { padding: 8 },
+      animation: { animateRotate: true, animateScale: true, duration: 900, easing: 'easeOutCubic' },
       plugins: {
-        legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10 } },
+        legend: {
+          position: 'bottom',
+          labels: {
+            font: { size: 11.5, weight: '600', family: 'Noto Sans Thai, Inter, sans-serif' },
+            color: '#475569',
+            padding: 12,
+            boxWidth: 12,
+            boxHeight: 12,
+            usePointStyle: true,
+            pointStyle: 'circle'
+          }
+        },
         tooltip: {
+          backgroundColor: 'rgba(15,23,42,0.95)',
+          titleFont: { size: 12, weight: '700', family: 'Noto Sans Thai, sans-serif' },
+          bodyFont: { size: 13, weight: '600', family: 'Noto Sans Thai, sans-serif' },
+          padding: 12,
+          cornerRadius: 10,
+          boxPadding: 6,
           callbacks: {
-            label: ctx => ctx.label + ': ฿' + ctx.raw.toLocaleString('th-TH', { maximumFractionDigits: 0 })
+            label: ctx => {
+              const total = ctx.dataset.data.reduce((s, v) => s + v, 0) || 1;
+              const pct = ((ctx.raw / total) * 100).toFixed(1);
+              return ' ' + ctx.label + ': ฿' + ctx.raw.toLocaleString('th-TH', { maximumFractionDigits: 0 }) + '  (' + pct + '%)';
+            }
           }
         }
       }
@@ -11527,7 +11629,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.26';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.27';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
