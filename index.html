@@ -1347,7 +1347,7 @@
     <span>ค้นหา...</span>
     <span class="kbd-mini">Ctrl K</span>
   </button>
-  <span class="version" style="margin-left:14px">v10.0 | 28/05/2026 18:00</span>
+  <span class="version" style="margin-left:14px">v10.1 | 28/05/2026 18:20</span>
   <!-- Login/Logout button -->
   <button class="header-bell" id="auth-btn" onclick="handleAuthClick()" title="เข้าสู่ระบบ" style="margin-left:10px;width:auto;padding:0 14px;font-weight:700;font-size:.78rem;display:flex;align-items:center;gap:6px">
     <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
@@ -4827,20 +4827,63 @@ async function submitData(type, data, resetFn) {
   } catch(e) { hideLoading(); showToast('เกิดข้อผิดพลาด: ' + e.message, 'error'); }
 }
 
+const EMPTY_META = {
+  truck:       { icon:'🚚',  title:'ยังไม่มีเที่ยวรถ',     sub:'เริ่มบันทึกเที่ยวรถแรกของคุณเพื่อดูข้อมูลที่นี่',           action:{label:'➕ เพิ่มเที่ยวรถ',     tab:'truck'} },
+  income:      { icon:'💰',  title:'ยังไม่มีรายรับ',         sub:'บันทึกรายรับเข้าระบบเพื่อติดตามรายได้',                       action:{label:'➕ เพิ่มรายรับ',       tab:'income'} },
+  expense:     { icon:'💸',  title:'ยังไม่มีรายจ่าย',         sub:'บันทึกรายจ่ายเพื่อควบคุมค่าใช้จ่าย',                            action:{label:'➕ เพิ่มรายจ่าย',      tab:'expense'} },
+  vehicle:     { icon:'🚛',  title:'ยังไม่มีรถในระบบ',       sub:'เพิ่มทะเบียนรถเพื่อใช้งานในเที่ยวรถ',                            action:{label:'➕ เพิ่มทะเบียนรถ',    tab:'vehicle'} },
+  driver:      { icon:'👤',  title:'ยังไม่มีคนขับ',           sub:'เพิ่มข้อมูลคนขับเพื่อจัดการรถ',                                  action:{label:'➕ เพิ่มคนขับ',        tab:'driver'} },
+  customer:    { icon:'🏢',  title:'ยังไม่มีลูกค้า',           sub:'เพิ่มข้อมูลลูกค้าเพื่อบันทึกเที่ยวรถ',                            action:{label:'➕ เพิ่มลูกค้า',       tab:'customer'} },
+  maintenance: { icon:'🔧',  title:'ยังไม่มีรายการซ่อมบำรุง', sub:'บันทึกการซ่อมเพื่อติดตามค่าใช้จ่ายรถ',                            action:{label:'➕ เพิ่มซ่อมบำรุง',    tab:'maintenance'} },
+  fuel:        { icon:'⛽',  title:'ยังไม่มีบันทึกน้ำมัน',     sub:'บันทึกการเติมน้ำมันเพื่อคิดต้นทุน',                              action:{label:'➕ เพิ่มน้ำมัน',       tab:'fuel'} },
+  invoice:     { icon:'🧾',  title:'ยังไม่มีใบเสร็จ',          sub:'ออกใบเสร็จรับเงินสำหรับลูกค้า',                                 action:{label:'➕ ออกใบเสร็จ',         tab:'invoice'} }
+};
+function skeletonList(count = 5) {
+  let html = '';
+  for (let i = 0; i < count; i++) {
+    html += `<div class="skeleton-card" style="animation-delay:${i*60}ms">
+      <div class="skeleton skeleton-title"></div>
+      <div class="skeleton skeleton-line" style="width:90%"></div>
+      <div class="skeleton skeleton-line" style="width:70%"></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <div class="skeleton" style="height:24px;width:80px;border-radius:14px"></div>
+        <div class="skeleton" style="height:24px;width:60px;border-radius:14px"></div>
+      </div>
+    </div>`;
+  }
+  return html;
+}
+function emptyStateHtml(type) {
+  const m = EMPTY_META[type] || { icon:'📭', title:'ยังไม่มีข้อมูล', sub:'เริ่มเพิ่มข้อมูลแรกของคุณ' };
+  const onclick = m.action ? `onclick="(function(){var b=document.querySelector('.tab-btn[onclick*=\\'${m.action.tab}\\']');if(b)b.click();setTimeout(function(){var f=document.querySelector('.inner-btn[onclick*=\\'${m.action.tab}\\',\\'form\\']');if(f)f.click();},80);})()"` : '';
+  return `<div class="empty-state">
+    <div class="empty-state-icon">${m.icon}</div>
+    <div class="empty-state-title">${m.title}</div>
+    <div class="empty-state-sub">${m.sub}</div>
+    ${m.action ? `<button class="empty-state-action" ${onclick}>${m.action.label}</button>` : ''}
+  </div>`;
+}
 async function loadList(type, containerId, renderFn) {
   const el = document.getElementById(containerId);
   if (!el) return;
-  el.innerHTML = '<p class="list-loading">⏳ กำลังโหลด...</p>';
+  el.innerHTML = skeletonList(5);
   try {
     const res  = await fetch(`/api/get-data?type=${type}`);
     const json = await res.json();
     const items = (json.data||{})[type] || [];
     _listCache[type] = items;     // cache for edit/delete lookup
-    el.innerHTML = items.length ? renderFn(items) : '<p class="list-empty">📭 ยังไม่มีข้อมูล</p>';
+    el.innerHTML = items.length ? renderFn(items) : emptyStateHtml(type);
     // update registries for datalist
     if (type==='vehicle')  { REG.vehicles=items;  populateDl('plate-dl', items.map(v=>v.plateNumber)); }
     if (type==='customer') { REG.customers=items; populateDl('cust-dl', items.map(c=>c.customerName)); }
-  } catch(e) { el.innerHTML = `<p class="list-empty">❌ โหลดไม่สำเร็จ: ${e.message}</p>`; }
+  } catch(e) {
+    el.innerHTML = `<div class="empty-state">
+      <div class="empty-state-icon" style="background:linear-gradient(135deg,#fee2e2,#fecaca)">❌</div>
+      <div class="empty-state-title">โหลดไม่สำเร็จ</div>
+      <div class="empty-state-sub">${escHtml(e.message)}</div>
+      <button class="empty-state-action" onclick="loadList('${type}','${containerId}',${renderFn.name})">🔄 ลองอีกครั้ง</button>
+    </div>`;
+  }
 }
 
 function populateDl(id, values) {
