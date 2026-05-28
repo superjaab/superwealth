@@ -40,40 +40,38 @@ module.exports = async function handler(req, res) {
   try {
     const auth = getAuth(['https://www.googleapis.com/auth/spreadsheets.readonly']);
     const sheets = google.sheets({ version:'v4', auth });
+
+    // ─── Single batchGet — ดึงทุก range พร้อมกันใน 1 API call (เร็วกว่า 3x) ───
+    const ranges = targets.map(t => `${SHEET_MAP[t].name}!A:Z`);
+    const resp = await sheets.spreadsheets.values.batchGet({
+      spreadsheetId: sheetId, ranges
+    });
+    const valueRanges = resp.data.valueRanges || [];
+
     const result = {};
-
-    for (const t of targets) {
-      const { name, dateCol } = SHEET_MAP[t];
-      try {
-        const resp = await sheets.spreadsheets.values.get({
-          spreadsheetId: sheetId, range:`${name}!A:Z`
+    targets.forEach((t, i) => {
+      const { dateCol } = SHEET_MAP[t];
+      const rows = (valueRanges[i] && valueRanges[i].values) || [];
+      if (rows.length < 2) { result[t] = []; return; }
+      const headers = rows[0];
+      let data = rows.slice(1).map(row => {
+        const obj = {};
+        headers.forEach((h, j) => { obj[h] = row[j] !== undefined ? row[j] : ''; });
+        return obj;
+      });
+      if (dateCol && (dateFrom || dateTo)) {
+        data = data.filter(r => {
+          const d = r[dateCol] || '';
+          if (dateFrom && d < dateFrom) return false;
+          if (dateTo   && d > dateTo)   return false;
+          return true;
         });
-        const rows = resp.data.values || [];
-        if (rows.length < 2) { result[t] = []; continue; }
-
-        const headers = rows[0];
-        let data = rows.slice(1).map(row => {
-          const obj = {};
-          headers.forEach((h,i) => { obj[h] = row[i] !== undefined ? row[i] : ''; });
-          return obj;
-        });
-
-        // กรองวันที่ เฉพาะ sheet ที่มี dateCol
-        if (dateCol && (dateFrom || dateTo)) {
-          data = data.filter(row => {
-            const d = row[dateCol] || '';
-            if (dateFrom && d < dateFrom) return false;
-            if (dateTo   && d > dateTo)   return false;
-            return true;
-          });
-        }
-
-        result[t] = data;
-      } catch {
-        result[t] = [];
       }
-    }
+      result[t] = data;
+    });
 
+    // Cache headers so browser/CDN won't re-fetch ทุกครั้ง (5s freshness)
+    res.setHeader('Cache-Control', 'private, max-age=5, stale-while-revalidate=30');
     return res.json({ success:true, data:result });
   } catch(e) {
     return res.status(500).json({ success:false, error:e.message });

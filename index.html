@@ -1982,7 +1982,7 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v12.1</span>
+    <span style="opacity:.7">v12.2</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
@@ -6872,18 +6872,47 @@ async function loadSummary() {
   if (!dateFrom || !dateTo) { showToast('กรุณาเลือกช่วงวันที่', 'warning'); return; }
   if (dateFrom > dateTo)    { showToast('วันที่เริ่มต้นต้องไม่เกินวันที่สิ้นสุด', 'warning'); return; }
 
-  showLoading('กำลังโหลดข้อมูลสรุป...');
+  const cacheKey = `sum_${dateFrom}_${dateTo}`;
+  const placeholder = document.getElementById('sum-placeholder');
+
+  // 1) Try cache first (instant render) — ยังไม่บล็อค UI
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const data = JSON.parse(cached);
+      renderSummary(data, dateFrom, dateTo);
+      if (placeholder) placeholder.style.display = 'none';
+    } else if (placeholder) {
+      // Show inline skeleton instead of blocking spinner
+      placeholder.innerHTML = `
+        <div class="skeleton skeleton-title" style="width:40%;margin:0 auto 14px"></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px">
+          <div class="skeleton" style="height:88px;border-radius:14px"></div>
+          <div class="skeleton" style="height:88px;border-radius:14px"></div>
+          <div class="skeleton" style="height:88px;border-radius:14px"></div>
+          <div class="skeleton" style="height:88px;border-radius:14px"></div>
+        </div>
+        <div class="skeleton" style="height:260px;border-radius:14px;margin-bottom:14px"></div>
+        <div class="skeleton" style="height:200px;border-radius:14px"></div>`;
+      placeholder.style.display = 'block';
+    }
+  } catch {}
+
+  // 2) Fetch fresh data in background (and update cache)
   try {
     const params = new URLSearchParams({ type: 'all', dateFrom, dateTo });
     const res = await fetch(`/api/get-data?${params}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
-    hideLoading();
-    if (!json.success) { showToast('โหลดไม่สำเร็จ: ' + json.error, 'error'); return; }
+    if (!json.success) {
+      showToast('โหลดไม่สำเร็จ: ' + json.error, 'error');
+      return;
+    }
+    // Save to cache for next time
+    try { sessionStorage.setItem(cacheKey, JSON.stringify(json.data)); } catch {}
     renderSummary(json.data, dateFrom, dateTo);
-    document.getElementById('sum-placeholder').style.display = 'none';
+    if (placeholder) placeholder.style.display = 'none';
   } catch (e) {
-    hideLoading();
     showToast('เกิดข้อผิดพลาด: ' + e.message, 'error');
   }
 }
@@ -7649,7 +7678,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v12.1';   // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v12.2';   // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate() {
