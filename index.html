@@ -4266,7 +4266,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.22 | 29/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.23 | 29/05/2026</span>
   </div>
 </aside>
 
@@ -4829,7 +4829,7 @@
         </div>
       </div>
       <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:.78rem;color:#1e40af">
-        💡 <b>รหัสติดตั้งมา (Built-in):</b> <code style="background:white;padding:2px 6px;border-radius:4px;font-weight:700;color:#1d4ed8">787898</code> — ใช้ได้เสมอ ลบไม่ได้
+        🔒 <b>รหัส Admin (Built-in):</b> เก็บไว้ในตัวระบบ — เปลี่ยนได้ผ่าน Environment Variable <code style="background:white;padding:2px 6px;border-radius:4px;font-weight:700;color:#1d4ed8">ADMIN_CODE</code> บน Vercel/Netlify
       </div>
       <div id="admin-codes-list" style="color:#94a3b8;text-align:center;padding:14px">⏳ กำลังโหลด...</div>
     </div>
@@ -6158,6 +6158,12 @@
         <span style="font-size:1.1rem">⚠️</span> <span>รหัสผ่านไม่ถูกต้อง — ลองใหม่อีกครั้ง</span>
       </div>
 
+      <!-- v14.23 — Honeypot field: hidden from humans, bots fill it → server rejects -->
+      <div style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;opacity:0" aria-hidden="true">
+        <label for="login-website-url">Website URL (do not fill)</label>
+        <input type="text" id="login-website-url" name="website" tabindex="-1" autocomplete="off" value="">
+      </div>
+
       <label style="display:block;font-size:.78rem;font-weight:700;color:#475569;margin-bottom:8px;letter-spacing:.3px">🔑 รหัสผ่าน</label>
       <input type="password" id="login-passcode" placeholder="••••••" maxlength="20"
              autocomplete="off" inputmode="numeric"
@@ -6289,14 +6295,30 @@ function closeLoginModal() {
 async function doLogin() {
   const code = (document.getElementById('login-passcode').value || '').trim();
   if (!code) { document.getElementById('login-passcode').focus(); return; }
+  // v14.23 — Honeypot value (bots fill, humans don't)
+  const honeypot = (document.getElementById('login-website-url')||{}).value || '';
   showLoading('กำลังเข้าสู่ระบบ...');
   try {
     const result = await api('/api/auth', {
-      action: 'login', code, device: navigator.userAgent.slice(0, 80)
+      action: 'login', code, device: navigator.userAgent.slice(0, 80), honeypot
     });
     hideLoading();
     if (!result.success) {
-      document.getElementById('login-error').style.display = 'block';
+      const errEl = document.getElementById('login-error');
+      // v14.23 — Show different message for rate-limit vs wrong code
+      if (result.blockedUntil) {
+        errEl.innerHTML = `<span style="font-size:1.1rem">🛡️</span> <span>${result.error || 'ลองมากเกินไป — กรุณารอสักครู่'}</span>`;
+        errEl.style.background = '#fef3c7';
+        errEl.style.color = '#92400e';
+        errEl.style.borderColor = '#fde68a';
+      } else {
+        errEl.innerHTML = '<span style="font-size:1.1rem">⚠️</span> <span>รหัสผ่านไม่ถูกต้อง — ลองใหม่อีกครั้ง</span>';
+        errEl.style.background = '#fee2e2';
+        errEl.style.color = '#b91c1c';
+        errEl.style.borderColor = '#fecaca';
+      }
+      errEl.style.display = 'flex';
+      document.getElementById('login-passcode').value = '';
       document.getElementById('login-passcode').focus();
       return;
     }
@@ -6308,7 +6330,7 @@ async function doLogin() {
     showToast(result.isAdmin ? '👑 เข้าสู่ระบบ Admin สำเร็จ' : '✅ เข้าสู่ระบบสำเร็จ', 'success');
   } catch (e) {
     hideLoading();
-    document.getElementById('login-error').style.display = 'block';
+    document.getElementById('login-error').style.display = 'flex';
     showToast('เกิดข้อผิดพลาด: ' + e.message, 'error');
   }
 }
@@ -6358,7 +6380,7 @@ function applyAuthGating() {
   // Preview mode: ALL tabs visible, just data is blurred via CSS
   document.querySelectorAll('.tab-btn').forEach(b => { b.style.display = ''; });
   document.querySelectorAll('.sb-section').forEach(h => { h.style.display = ''; });
-  // Admin tab only visible to admin (built-in code 787898) — not normal users
+  // Admin tab only visible to admin — not normal users
   const admin = isAdmin();
   document.querySelectorAll('.admin-only').forEach(b => {
     b.style.display = admin ? '' : 'none';
@@ -11499,7 +11521,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.22';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.23';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate(opts) {

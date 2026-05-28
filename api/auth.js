@@ -13,11 +13,22 @@
  *   revokeSession{ sessionId, target }         → { success }
  */
 const { google } = require('googleapis');
+const crypto = require('crypto');
 
-const HARDCODED_ADMIN_CODE = '787898';   // Built-in admin code (always valid)
+// v14.23 — Admin code now comes from env var (with fallback for backward compat)
+// To change: set ADMIN_CODE in Vercel/Netlify environment variables, then redeploy
+const HARDCODED_ADMIN_CODE = process.env.ADMIN_CODE || '787898';
 const CODES_SHEET     = 'AuthCodes';
 const SESSIONS_SHEET  = 'AuthSessions';
 const FAB_SHEET       = 'FabMenu';
+const FAILURES_SHEET  = 'AuthFailures';  // v14.23 — track failed logins
+
+// v14.23 — Rate limiting (in-memory per Vercel function instance)
+const RATE_LIMIT_MAX_ATTEMPTS = 5;          // 5 failed attempts...
+const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000; // ...within 5 minutes
+const RATE_LIMIT_BLOCK_MS  = 15 * 60 * 1000; // → block for 15 min
+const FAIL_DELAY_MS = 1500;                 // Always delay 1.5s on failed login
+const _failureLog = new Map(); // ip → { attempts: [timestamps], blockedUntil }
 
 const FAB_DEFAULTS = [
   { icon: '🚚', label: 'บันทึกเที่ยวรถ', tab: 'truck',       sortOrder: 1 },
@@ -82,22 +93,50 @@ module.exports = async function handler(req, res) {
 };
 
 // ───────── ACTIONS ─────────
-async function doLogin(sheets, sheetId, { code, device }, res, ip) {
+async function doLogin(sheets, sheetId, { code, device, honeypot }, res, ip) {
+  // v14.23 — Honeypot: a hidden form field that humans never fill but bots do
+  if (honeypot) {
+    await sleep(FAIL_DELAY_MS * 2);
+    return res.status(429).json({ success: false, error: 'rejected' });
+  }
   if (!code) return res.status(400).json({ success: false, error: 'Missing code' });
+
+  // v14.23 — Rate limit check (per IP)
+  const rl = _checkRateLimit(ip);
+  if (rl.blocked) {
+    const remainSec = Math.ceil((rl.blockedUntil - Date.now()) / 1000);
+    return res.status(429).json({
+      success: false,
+      error: `ลองมากเกินไป — กรุณารอ ${remainSec} วินาที`,
+      blockedUntil: rl.blockedUntil
+    });
+  }
+
   const trimmed = String(code).trim();
   let label = '';
   let valid = false;
   let isAdmin = false;
-  if (trimmed === HARDCODED_ADMIN_CODE) {
+  // v14.23 — constant-time comparison for admin code to prevent timing attacks
+  if (constantTimeEqual(trimmed, HARDCODED_ADMIN_CODE)) {
     valid = true;
     isAdmin = true;
     label = 'ผู้ดูแลระบบ (Built-in)';
   } else {
     const codes = await readSheet(sheets, sheetId, CODES_SHEET);
-    const matched = codes.find(r => String(r.code).trim() === trimmed && r.active !== 'false');
+    const matched = codes.find(r => constantTimeEqual(String(r.code).trim(), trimmed) && r.active !== 'false');
     if (matched) { valid = true; label = matched.label || ''; }
   }
-  if (!valid) return res.json({ success: false, error: 'รหัสไม่ถูกต้อง' });
+
+  if (!valid) {
+    // v14.23 — Track failure + delay
+    _recordFailure(ip);
+    await _logFailureToSheet(sheets, sheetId, ip, String(device||''));
+    await sleep(FAIL_DELAY_MS);
+    return res.json({ success: false, error: 'รหัสไม่ถูกต้อง' });
+  }
+
+  // Success → clear rate limit for this IP
+  _clearFailures(ip);
 
   const sessionId = genUuid();
   const now = new Date().toISOString();
@@ -105,6 +144,56 @@ async function doLogin(sheets, sheetId, { code, device }, res, ip) {
     [now, sessionId, trimmed, label, String(device||''), now, now, 'false', genId('SES'), String(ip||'')]);
   return res.json({ success: true, sessionId, label, isAdmin });
 }
+
+// v14.23 — Rate limiting helpers
+function _checkRateLimit(ip) {
+  if (!ip) return { blocked: false };
+  const entry = _failureLog.get(ip);
+  if (!entry) return { blocked: false };
+  // Still in block window?
+  if (entry.blockedUntil && entry.blockedUntil > Date.now()) {
+    return { blocked: true, blockedUntil: entry.blockedUntil };
+  }
+  return { blocked: false };
+}
+function _recordFailure(ip) {
+  if (!ip) return;
+  const now = Date.now();
+  let entry = _failureLog.get(ip);
+  if (!entry) entry = { attempts: [], blockedUntil: 0 };
+  // Drop old attempts outside window
+  entry.attempts = entry.attempts.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+  entry.attempts.push(now);
+  if (entry.attempts.length >= RATE_LIMIT_MAX_ATTEMPTS) {
+    entry.blockedUntil = now + RATE_LIMIT_BLOCK_MS;
+    entry.attempts = []; // reset
+  }
+  _failureLog.set(ip, entry);
+}
+function _clearFailures(ip) {
+  if (ip) _failureLog.delete(ip);
+}
+async function _logFailureToSheet(sheets, sheetId, ip, device) {
+  try {
+    await ensureSheet(sheets, sheetId, FAILURES_SHEET,
+      ['timestamp','ip','device','rowId'], '#dc2626');
+    const now = new Date().toISOString();
+    await appendRow(sheets, sheetId, FAILURES_SHEET,
+      [now, String(ip||''), String(device||''), genId('FAIL')]);
+  } catch (_) { /* best-effort */ }
+}
+function constantTimeEqual(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  if (a.length !== b.length) {
+    // Still hash to prevent length leak
+    crypto.createHash('sha256').update(b).digest();
+    return false;
+  }
+  try {
+    return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+  } catch (_) { return false; }
+}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 async function doVerify(sheets, sheetId, { sessionId }, res) {
   if (!sessionId) return res.json({ valid: false });
