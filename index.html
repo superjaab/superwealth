@@ -718,11 +718,11 @@
     /* ════ AUTOCOMPLETE COMPONENT ════ */
     .ac-wrap { position:relative; }
     .ac-dd {
-      position:absolute; top:calc(100% + 2px); left:0; right:0;
+      position:fixed; /* fixed escapes ทุก stacking context — ไม่ถูก card ทับ */
       background:white; border:1.5px solid #1565C0; border-radius:8px;
       max-height:240px; overflow-y:auto;
-      box-shadow:0 8px 24px rgba(0,0,0,.18);
-      z-index:200; display:none;
+      box-shadow:0 8px 28px rgba(0,0,0,.22);
+      z-index:9999; display:none;
     }
     .ac-dd.open { display:block; }
     .ac-opt {
@@ -2797,7 +2797,7 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v12.8</span>
+    <span style="opacity:.7">v12.9</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
@@ -4770,6 +4770,7 @@ window.addEventListener('DOMContentLoaded', () => {
 // CUSTOM AUTOCOMPLETE COMPONENT
 // ════════════════════════════════════════════════════════════════
 const _acStore = {};
+window._acStore = _acStore;  // expose so _acRepositionAll() can access
 
 function acAttach(inputId, getOptsFunc, onSelectFunc) {
   const input = document.getElementById(inputId);
@@ -4834,7 +4835,43 @@ function acRender(inputId) {
     });
   }
   a.dd.classList.add('open');
+  _acPositionDropdown(a);
 }
+
+// คำนวณตำแหน่ง dropdown (position:fixed) ตาม input
+function _acPositionDropdown(a) {
+  if (!a || !a.dd || !a.input) return;
+  if (!a.dd.classList.contains('open')) return;
+  const r = a.input.getBoundingClientRect();
+  const vh = window.innerHeight;
+  const ddMaxH = 240;
+  const gap = 2;
+  // ถ้าด้านล่างมีที่พอ → drop ลง, ถ้าไม่ → drop ขึ้น
+  const spaceBelow = vh - r.bottom;
+  const spaceAbove = r.top;
+  const openUp = (spaceBelow < ddMaxH + 20) && (spaceAbove > spaceBelow);
+  a.dd.style.left  = r.left + 'px';
+  a.dd.style.width = r.width + 'px';
+  if (openUp) {
+    a.dd.style.top    = 'auto';
+    a.dd.style.bottom = (vh - r.top + gap) + 'px';
+    a.dd.style.maxHeight = Math.min(ddMaxH, spaceAbove - 20) + 'px';
+  } else {
+    a.dd.style.bottom = 'auto';
+    a.dd.style.top    = (r.bottom + gap) + 'px';
+    a.dd.style.maxHeight = Math.min(ddMaxH, spaceBelow - 20) + 'px';
+  }
+}
+
+// reposition dropdown ของทุก autocomplete ที่กำลังเปิดอยู่ เมื่อ scroll/resize
+function _acRepositionAll() {
+  if (!window._acStore) return;
+  Object.values(_acStore).forEach(a => {
+    if (a && a.dd && a.dd.classList.contains('open')) _acPositionDropdown(a);
+  });
+}
+window.addEventListener('scroll', _acRepositionAll, true);   // capture mode → catches all inner scrolls
+window.addEventListener('resize', _acRepositionAll);
 
 // ════════════════════════════════════════════════════════════════
 // MASTER DATA — provinces, vehicles, customers, cargo history
@@ -8519,7 +8556,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v12.8';   // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v12.9';   // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate(opts) {
