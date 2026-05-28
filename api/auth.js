@@ -39,10 +39,16 @@ module.exports = async function handler(req, res) {
     await ensureSheet(sheets, sheetId, CODES_SHEET,
       ['timestamp','code','label','active','rowId'], '#1d4ed8');
     await ensureSheet(sheets, sheetId, SESSIONS_SHEET,
-      ['timestamp','sessionId','code','label','device','loginAt','lastSeenAt','revoked','rowId'], '#7c3aed');
+      ['timestamp','sessionId','code','label','device','loginAt','lastSeenAt','revoked','rowId','ip'], '#7c3aed');
+    // Backfill missing columns (e.g. ip) for existing sheets
+    await syncHeaders(sheets, sheetId, SESSIONS_SHEET,
+      ['timestamp','sessionId','code','label','device','loginAt','lastSeenAt','revoked','rowId','ip']);
+
+    // Capture IP (prefer x-forwarded-for, fallback x-real-ip / req.socket)
+    const ip = getClientIp(req);
 
     switch (action) {
-      case 'login':        return await doLogin(sheets, sheetId, params, res);
+      case 'login':        return await doLogin(sheets, sheetId, params, res, ip);
       case 'verify':       return await doVerify(sheets, sheetId, params, res);
       case 'logout':       return await doLogout(sheets, sheetId, params, res);
       case 'listCodes':    return await doListCodes(sheets, sheetId, params, res);
@@ -59,13 +65,15 @@ module.exports = async function handler(req, res) {
 };
 
 // ───────── ACTIONS ─────────
-async function doLogin(sheets, sheetId, { code, device }, res) {
+async function doLogin(sheets, sheetId, { code, device }, res, ip) {
   if (!code) return res.status(400).json({ success: false, error: 'Missing code' });
   const trimmed = String(code).trim();
   let label = '';
   let valid = false;
+  let isAdmin = false;
   if (trimmed === HARDCODED_ADMIN_CODE) {
     valid = true;
+    isAdmin = true;
     label = 'ผู้ดูแลระบบ (Built-in)';
   } else {
     const codes = await readSheet(sheets, sheetId, CODES_SHEET);
@@ -77,8 +85,8 @@ async function doLogin(sheets, sheetId, { code, device }, res) {
   const sessionId = genUuid();
   const now = new Date().toISOString();
   await appendRow(sheets, sheetId, SESSIONS_SHEET,
-    [now, sessionId, trimmed, label, String(device||''), now, now, 'false', genId('SES')]);
-  return res.json({ success: true, sessionId, label });
+    [now, sessionId, trimmed, label, String(device||''), now, now, 'false', genId('SES'), String(ip||'')]);
+  return res.json({ success: true, sessionId, label, isAdmin });
 }
 
 async function doVerify(sheets, sheetId, { sessionId }, res) {
@@ -87,6 +95,7 @@ async function doVerify(sheets, sheetId, { sessionId }, res) {
   const s = sessions.find(r => r.sessionId === sessionId);
   if (!s) return res.json({ valid: false });
   if (String(s.revoked) === 'true') return res.json({ valid: false, revoked: true });
+  const isAdmin = String(s.code).trim() === HARDCODED_ADMIN_CODE;
   // Update lastSeenAt (best-effort, ignore errors)
   try {
     const rowIdx = sessions.indexOf(s) + 2; // +1 for header, +1 for 1-based
@@ -97,7 +106,7 @@ async function doVerify(sheets, sheetId, { sessionId }, res) {
       requestBody: { values: [[new Date().toISOString()]] }
     });
   } catch {}
-  return res.json({ valid: true });
+  return res.json({ valid: true, isAdmin });
 }
 
 async function doLogout(sheets, sheetId, { sessionId }, res) {
@@ -107,8 +116,8 @@ async function doLogout(sheets, sheetId, { sessionId }, res) {
 }
 
 async function doListCodes(sheets, sheetId, { sessionId }, res) {
-  if (!await verifyValid(sheets, sheetId, sessionId))
-    return res.status(403).json({ success: false, error: 'Forbidden' });
+  if (!await verifyAdmin(sheets, sheetId, sessionId))
+    return res.status(403).json({ success: false, error: 'Forbidden — admin only' });
   const codes = await readSheet(sheets, sheetId, CODES_SHEET);
   // Hide actual code value — only show preview (first 2 + ••• + last 2)
   const safe = codes.map(c => ({
@@ -123,8 +132,8 @@ async function doListCodes(sheets, sheetId, { sessionId }, res) {
 }
 
 async function doAddCode(sheets, sheetId, { sessionId, code, label }, res) {
-  if (!await verifyValid(sheets, sheetId, sessionId))
-    return res.status(403).json({ success: false, error: 'Forbidden' });
+  if (!await verifyAdmin(sheets, sheetId, sessionId))
+    return res.status(403).json({ success: false, error: 'Forbidden — admin only' });
   if (!code) return res.json({ success: false, error: 'Missing code' });
   const trimmed = String(code).trim();
   if (trimmed.length < 4) return res.json({ success: false, error: 'รหัสต้องยาวอย่างน้อย 4 หลัก' });
@@ -143,8 +152,8 @@ async function doAddCode(sheets, sheetId, { sessionId, code, label }, res) {
 }
 
 async function doDeleteCode(sheets, sheetId, { sessionId, rowId }, res) {
-  if (!await verifyValid(sheets, sheetId, sessionId))
-    return res.status(403).json({ success: false, error: 'Forbidden' });
+  if (!await verifyAdmin(sheets, sheetId, sessionId))
+    return res.status(403).json({ success: false, error: 'Forbidden — admin only' });
   if (!rowId) return res.json({ success: false, error: 'Missing rowId' });
 
   const sheetInfo = await getSheetMeta(sheets, sheetId, CODES_SHEET);
@@ -171,8 +180,8 @@ async function doDeleteCode(sheets, sheetId, { sessionId, rowId }, res) {
 }
 
 async function doListSessions(sheets, sheetId, { sessionId }, res) {
-  if (!await verifyValid(sheets, sheetId, sessionId))
-    return res.status(403).json({ success: false, error: 'Forbidden' });
+  if (!await verifyAdmin(sheets, sheetId, sessionId))
+    return res.status(403).json({ success: false, error: 'Forbidden — admin only' });
   const sessions = await readSheet(sheets, sheetId, SESSIONS_SHEET);
   // Sort by lastSeen desc
   sessions.sort((a, b) => String(b.lastSeenAt || '').localeCompare(String(a.lastSeenAt || '')));
@@ -182,17 +191,19 @@ async function doListSessions(sheets, sheetId, { sessionId }, res) {
     codePreview: maskCode(s.code),
     label: s.label,
     device: s.device,
+    ip: s.ip || '',
     loginAt: s.loginAt,
     lastSeenAt: s.lastSeenAt,
     revoked: String(s.revoked) === 'true',
-    isCurrent: s.sessionId === sessionId
+    isCurrent: s.sessionId === sessionId,
+    isAdmin: String(s.code).trim() === HARDCODED_ADMIN_CODE
   }));
   return res.json({ success: true, sessions: safe });
 }
 
 async function doRevokeSession(sheets, sheetId, { sessionId, target }, res) {
-  if (!await verifyValid(sheets, sheetId, sessionId))
-    return res.status(403).json({ success: false, error: 'Forbidden' });
+  if (!await verifyAdmin(sheets, sheetId, sessionId))
+    return res.status(403).json({ success: false, error: 'Forbidden — admin only' });
   if (!target) return res.json({ success: false, error: 'Missing target sessionId' });
   await markSessionRevoked(sheets, sheetId, target);
   return res.json({ success: true });
@@ -204,6 +215,34 @@ async function verifyValid(sheets, sheetId, sessionId) {
   const sessions = await readSheet(sheets, sheetId, SESSIONS_SHEET);
   const s = sessions.find(r => r.sessionId === sessionId);
   return s && String(s.revoked) !== 'true';
+}
+async function verifyAdmin(sheets, sheetId, sessionId) {
+  if (!sessionId) return false;
+  const sessions = await readSheet(sheets, sheetId, SESSIONS_SHEET);
+  const s = sessions.find(r => r.sessionId === sessionId);
+  if (!s || String(s.revoked) === 'true') return false;
+  return String(s.code).trim() === HARDCODED_ADMIN_CODE;
+}
+function getClientIp(req) {
+  const xff = req.headers['x-forwarded-for'];
+  if (xff) return String(xff).split(',')[0].trim();
+  return req.headers['x-real-ip'] ||
+         req.headers['cf-connecting-ip'] ||
+         (req.socket && req.socket.remoteAddress) || '';
+}
+async function syncHeaders(sheets, spreadsheetId, sheetName, requiredHeaders) {
+  const r = await sheets.spreadsheets.values.get({
+    spreadsheetId, range: `${sheetName}!A1:Z1`
+  });
+  const current = (r.data.values && r.data.values[0]) || [];
+  const missing = requiredHeaders.filter(h => !current.includes(h));
+  if (!missing.length) return;
+  const newHeaders = [...current, ...missing];
+  const lastCol = String.fromCharCode(65 + newHeaders.length - 1);
+  await sheets.spreadsheets.values.update({
+    spreadsheetId, range: `${sheetName}!A1:${lastCol}1`,
+    valueInputOption: 'RAW', requestBody: { values: [newHeaders] }
+  });
 }
 async function markSessionRevoked(sheets, sheetId, sessionId) {
   const rows = (await sheets.spreadsheets.values.get({

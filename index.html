@@ -924,7 +924,7 @@
 <header class="app-header">
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
-  <span class="version" style="margin-left:auto">v9.0 | 28/05/2026 15:30</span>
+  <span class="version" style="margin-left:auto">v9.1 | 28/05/2026 16:15</span>
   <!-- Login/Logout button -->
   <button class="header-bell" id="auth-btn" onclick="handleAuthClick()" title="เข้าสู่ระบบ" style="margin-left:10px;width:auto;padding:0 14px;font-weight:700;font-size:.78rem;display:flex;align-items:center;gap:6px">
     <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
@@ -2465,6 +2465,17 @@ function setSessionId(sid, remember) {
 function isAuthed() {
   return !!getSessionId();
 }
+function isAdmin() {
+  return localStorage.getItem('auth_admin') === '1' || sessionStorage.getItem('auth_admin') === '1';
+}
+function setIsAdmin(flag) {
+  localStorage.removeItem('auth_admin');
+  sessionStorage.removeItem('auth_admin');
+  if (!flag) return;
+  // Mirror remember preference of sessionId
+  if (localStorage.getItem('auth_sid')) localStorage.setItem('auth_admin', '1');
+  else sessionStorage.setItem('auth_admin', '1');
+}
 function handleAuthClick() {
   if (isAuthed()) doLogout();
   else showLoginModal();
@@ -2497,9 +2508,10 @@ async function doLogin() {
     }
     const remember = document.getElementById('login-remember').checked;
     setSessionId(result.sessionId, remember);
+    setIsAdmin(!!result.isAdmin);
     closeLoginModal();
     applyAuthGating();
-    showToast('✅ เข้าสู่ระบบสำเร็จ', 'success');
+    showToast(result.isAdmin ? '👑 เข้าสู่ระบบ Admin สำเร็จ' : '✅ เข้าสู่ระบบสำเร็จ', 'success');
   } catch (e) {
     hideLoading();
     document.getElementById('login-error').style.display = 'block';
@@ -2513,6 +2525,7 @@ async function doLogout() {
     try { await api('/api/auth', { action: 'logout', sessionId: sid }); } catch(e){}
   }
   setSessionId('');
+  setIsAdmin(false);
   applyAuthGating();
   showToast('👋 ออกจากระบบแล้ว', 'info');
 }
@@ -2524,8 +2537,13 @@ async function verifySession() {
     const r = await api('/api/auth', { action: 'verify', sessionId: sid });
     if (!r.valid) {
       setSessionId('');
+      setIsAdmin(false);
       applyAuthGating();
       showToast('🔒 ถูก logout จาก Admin — กรุณาเข้าสู่ระบบใหม่', 'warning');
+    } else {
+      // Refresh admin flag from server (in case role changed)
+      setIsAdmin(!!r.isAdmin);
+      applyAuthGating();
     }
   } catch(e){ /* network issue — ignore */ }
 }
@@ -2545,10 +2563,17 @@ function applyAuthGating() {
   // Preview mode: ALL tabs visible, just data is blurred via CSS
   document.querySelectorAll('.tab-btn').forEach(b => { b.style.display = ''; });
   document.querySelectorAll('.sb-section').forEach(h => { h.style.display = ''; });
-  // Admin tab only visible when logged in (sensitive — manages codes & sessions)
+  // Admin tab only visible to admin (built-in code 787898) — not normal users
+  const admin = isAdmin();
   document.querySelectorAll('.admin-only').forEach(b => {
-    b.style.display = authed ? '' : 'none';
+    b.style.display = admin ? '' : 'none';
   });
+  // If a non-admin is currently on Admin tab, kick them back to summary
+  const adminPanel = document.getElementById('tab-admin');
+  if (!admin && adminPanel && adminPanel.classList.contains('active')) {
+    const sumBtn = document.querySelector('.tab-btn[onclick*="summary"]');
+    if (sumBtn) sumBtn.click();
+  }
   // Disable linked-trip selects when logged out (their <option> values reveal trip info)
   ['i-linkedTrip','e-linkedTrip'].forEach(id => {
     const el = document.getElementById(id);
@@ -2570,6 +2595,12 @@ function requireAuth() {
 // ════════════════════════════════════════════════════════════════
 async function initAdminTab() {
   if (!requireAuth()) return;
+  if (!isAdmin()) {
+    showToast('⛔ เมนูนี้สำหรับ Admin เท่านั้น', 'warning');
+    const sumBtn = document.querySelector('.tab-btn[onclick*="summary"]');
+    if (sumBtn) sumBtn.click();
+    return;
+  }
   loadAdminCodes();
   loadAdminSessions();
 }
@@ -2659,10 +2690,11 @@ async function loadAdminSessions() {
           <span style="margin-left:auto">${btn}</span>
         </div>
         <div style="font-size:.7rem;color:#64748b;line-height:1.5">
-          🔑 รหัส: <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-weight:700">${escHtml(s.codePreview)}</code> •
+          🔑 รหัส: <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-weight:700">${escHtml(s.codePreview)}</code>${s.isAdmin?' <span style="background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:6px;font-size:.62rem;font-weight:700">👑 ADMIN</span>':''} •
           🕐 เข้าระบบ: ${fmtDateTime(s.loginAt)} •
           👁 ใช้งานล่าสุด: ${fmtDateTime(s.lastSeenAt)}
         </div>
+        <div style="font-size:.66rem;color:#475569;font-family:monospace">🌐 IP: <b>${escHtml(s.ip) || '<span style=\"color:#cbd5e1\">(ไม่ทราบ)</span>'}</b></div>
         <div style="font-size:.66rem;color:#94a3b8;word-break:break-all">📱 ${escHtml(deviceShort) || '(ไม่ระบุ)'}</div>
       </div>`;
     }).join('');
