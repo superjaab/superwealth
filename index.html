@@ -2294,13 +2294,17 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v12.5</span>
+    <span style="opacity:.7">v12.6</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
   <!-- Login/Logout button -->
   <button class="header-bell" id="auth-btn" onclick="handleAuthClick()" title="เข้าสู่ระบบ" style="margin-left:10px;width:auto;padding:0 14px;font-weight:700;font-size:.78rem;display:flex;align-items:center;gap:6px">
     <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
+  </button>
+  <!-- Manual update check -->
+  <button class="header-bell" onclick="checkForUpdate({manual:true})" title="ตรวจหาเวอร์ชันใหม่" style="margin-left:8px">
+    🔄
   </button>
   <!-- Theme toggle (light/dark) -->
   <button class="header-bell" id="theme-toggle" onclick="toggleTheme()" title="สลับโหมดมืด/สว่าง" style="margin-left:8px">
@@ -7990,27 +7994,46 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v12.5';   // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v12.6';   // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
-async function checkForUpdate() {
+async function checkForUpdate(opts) {
+  opts = opts || {};
   try {
-    // Cache-bust query param + HEAD/GET to fetch latest HTML
-    const res = await fetch('/?_check=' + Date.now(), {
+    // Use lightweight /api/version endpoint (fast + reliable)
+    const res = await fetch('/api/version?_t=' + Date.now(), {
       method: 'GET',
       cache: 'no-store',
-      headers: { 'Cache-Control': 'no-cache' }
+      headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
     });
-    if (!res.ok) return;
-    const text = await res.text();
-    // Extract version from APP_VERSION constant in HTML
-    const m = text.match(/APP_VERSION\s*=\s*['"]([\w.-]+)['"]/);
-    if (m && m[1] && m[1] !== APP_VERSION && !_updateBannerShown) {
-      _updateBannerShown = true;
-      showUpdateBanner(m[1]);
+    if (!res.ok) {
+      console.warn('[update-check] fetch failed:', res.status);
+      if (opts.manual) showToast('❌ ตรวจสอบไม่สำเร็จ: HTTP ' + res.status, 'error');
+      return;
     }
-  } catch (e) { /* offline — ignore */ }
+    const json = await res.json();
+    const serverVer = json.version;
+    console.log(`[update-check] current=${APP_VERSION} server=${serverVer}`);
+    if (!serverVer || serverVer === 'unknown' || serverVer === 'error') {
+      if (opts.manual) showToast('❌ ตรวจสอบไม่ได้', 'error');
+      return;
+    }
+    if (serverVer !== APP_VERSION) {
+      if (!_updateBannerShown) {
+        _updateBannerShown = true;
+        showUpdateBanner(serverVer);
+      }
+      if (opts.manual) showToast(`🎉 พบเวอร์ชันใหม่ ${serverVer}`, 'success');
+    } else if (opts.manual) {
+      showToast(`✅ ใช้เวอร์ชันล่าสุดอยู่แล้ว (${APP_VERSION})`, 'success');
+    }
+  } catch (e) {
+    console.warn('[update-check] error:', e.message);
+    if (opts.manual) showToast('❌ เครือข่ายขัดข้อง: ' + e.message, 'error');
+  }
 }
+// Make available for manual trigger from console or buttons
+window.checkForUpdate = checkForUpdate;
 
 function showUpdateBanner(newVer) {
   const bar = document.createElement('div');
@@ -8047,12 +8070,15 @@ function tickLiveClock() {
 window.addEventListener('DOMContentLoaded', () => {
   tickLiveClock();
   setInterval(tickLiveClock, 1000);
-  // Auto-update check — 30s interval + on tab focus
-  setTimeout(checkForUpdate, 5000);   // first check after 5s
-  setInterval(checkForUpdate, 30000); // every 30s
+  // Auto-update check — aggressive polling early, then back off
+  setTimeout(checkForUpdate, 2000);   // first check after 2s
+  setTimeout(checkForUpdate, 10000);  // then 10s
+  setTimeout(checkForUpdate, 30000);  // 30s
+  setInterval(checkForUpdate, 60000); // then every 60s
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') checkForUpdate();
   });
+  window.addEventListener('focus', () => checkForUpdate());
   loadFabItems();   // load FAB items from server (cached locally)
   setTimeout(updateFabVisibility, 200);
   // Watch body class changes (logged-in ↔ logged-out)
