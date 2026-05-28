@@ -4170,15 +4170,18 @@
     }
     .swdp-display::placeholder { color: #94a3b8; }
     .swdp-icon {
-      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
-      width: 30px; height: 30px;
+      position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+      width: 34px; height: 34px;
       display: flex; align-items: center; justify-content: center;
       background: transparent; border: none; cursor: pointer;
-      border-radius: 6px; font-size: 1.05rem;
-      transition: background .15s;
+      border-radius: 7px; font-size: 1.1rem;
+      transition: background .15s, transform .15s;
       color: #64748b;
+      z-index: 2;
+      pointer-events: auto;
     }
-    .swdp-icon:hover { background: #eff6ff; color: #1d4ed8; }
+    .swdp-icon:hover { background: #eff6ff; color: #1d4ed8; transform: translateY(-50%) scale(1.08); }
+    .swdp-icon:active { transform: translateY(-50%) scale(.95); }
     .swdp-pop {
       position: fixed;  /* v14.35 — fixed escapes all stacking contexts */
       z-index: 99999;
@@ -4387,7 +4390,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.35 | 29/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.36 | 29/05/2026</span>
   </div>
 </aside>
 
@@ -12044,7 +12047,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.35';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.36';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
@@ -12271,20 +12274,21 @@ function _swdpAttach(input) {
   const updateDisplay = () => { display.value = _swdpFmt(input.value); };
   updateDisplay();
 
-  // v14.35 — Click ICON only opens picker (NOT clicking the text)
-  icon.addEventListener('click', (e) => {
-    e.preventDefault(); e.stopPropagation();
+  // v14.36 — Click ANYWHERE on input or icon opens picker (UX request)
+  const openPicker = (e) => {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
     _swdpOpen(input, display, wrap);
-  });
-  // Click on EMPTY display also opens (UX from user request)
-  display.addEventListener('click', () => {
-    if (!display.value) _swdpOpen(input, display, wrap);
-  });
-  // v14.35 — Allow TYPING — parse Thai BE / ISO / numeric on blur/enter
+  };
+  icon.addEventListener('mousedown', openPicker);   // mousedown beats blur
+  display.addEventListener('mousedown', openPicker);
+  display.addEventListener('focus', () => _swdpOpen(input, display, wrap));
+  // Keyboard: Enter = parse what user typed; ESC = close
   display.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); display.blur(); }
   });
   display.addEventListener('blur', () => {
+    // Don't parse if picker is still open (user is interacting with it)
+    if (_swdpCurrentPop) return;
     const txt = (display.value || '').trim();
     if (!txt) { input.value = ''; return; }
     const parsed = _swdpParseInput(txt);
@@ -12293,7 +12297,6 @@ function _swdpAttach(input) {
       input.dispatchEvent(new Event('change', { bubbles: true }));
       updateDisplay();
     } else {
-      // invalid — revert to last known good
       updateDisplay();
     }
   });
@@ -12347,9 +12350,11 @@ function _swdpClose() {
   if (_swdpCurrentPop) { _swdpCurrentPop.remove(); _swdpCurrentPop = null; _swdpAnchor = null; }
 }
 document.addEventListener('mousedown', (e) => {
-  if (_swdpCurrentPop && !_swdpCurrentPop.contains(e.target) && !_swdpAnchor?.contains(e.target)) {
-    _swdpClose();
-  }
+  if (!_swdpCurrentPop) return;
+  // Don't close if click is INSIDE the popover or its anchor (input/icon)
+  if (_swdpCurrentPop.contains(e.target)) return;
+  if (_swdpAnchor && _swdpAnchor.contains(e.target)) return;
+  _swdpClose();
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') _swdpClose(); });
 window.addEventListener('scroll', _swdpClose, true);
@@ -12437,10 +12442,9 @@ function _swdpOpen(input, display, wrap) {
       <div class="swdp-weekdays">${SWDP_WEEKDAYS.map(w => `<div class="swdp-weekday">${w}</div>`).join('')}</div>
       <div class="swdp-days">${cells}</div>
       <div class="swdp-quick">
+        <button type="button" data-quick="-1">⬅️ เมื่อวาน</button>
         <button type="button" data-quick="0">📅 วันนี้</button>
-        <button type="button" data-quick="-1">เมื่อวาน</button>
-        <button type="button" data-quick="-7">7 วันก่อน</button>
-        <button type="button" data-quick="-30">30 วันก่อน</button>
+        <button type="button" data-quick="1">พรุ่งนี้ ➡️</button>
       </div>
       ${input.value ? `<div class="swdp-clear"><button type="button" data-clear="1">🗑 ล้างค่า</button></div>` : ''}`;
 
