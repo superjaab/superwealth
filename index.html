@@ -8,6 +8,176 @@
   <!-- tokens first → defines all CSS variables · components.css → drop-in classes -->
   <link rel="stylesheet" href="/tokens.css">
   <link rel="stylesheet" href="/components.css">
+  <!-- ════ DESIGN BRIDGE — map old class names → Claude Design v2 styles ════ -->
+  <style>
+    /* HERO BANNER bridge — .hero-banner → .sw-hero polish */
+    .hero-banner {
+      background: var(--sw-hero-grad, linear-gradient(145deg,#0d47a1 0%,#1565c0 45%,#1976d2 100%));
+      border-radius: 20px !important;
+      padding: 22px 22px 20px !important;
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 30px -10px rgba(13,71,161,.45);
+    }
+    .hero-banner::before {
+      content:''; position:absolute; top:-50px; right:-30px;
+      width:180px; height:180px; border-radius:50%;
+      background: rgba(255,255,255,.07); pointer-events:none;
+    }
+    .hero-banner::after {
+      content:''; position:absolute; bottom:-40px; left:-20px;
+      width:140px; height:140px; border-radius:50%;
+      background: rgba(255,255,255,.05); pointer-events:none;
+    }
+    .hero-banner > * { position: relative; z-index: 1; }
+    .hero-brand {
+      font-size: .72rem; opacity: .82; font-weight: 600;
+      letter-spacing: .5px; margin-bottom: 2px; color: #fff;
+    }
+    .hero-title-text {
+      font-size: 1.4rem; font-weight: 900; margin: 0 0 14px;
+      letter-spacing: -.3px; color: #fff;
+    }
+    .hero-kpi-row {
+      display:flex; gap:12px; margin-bottom:14px; flex-wrap:wrap;
+    }
+    .hero-kpi {
+      flex:1; min-width:120px;
+      background: rgba(255,255,255,.13);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .hero-kpi-label {
+      font-size: .6rem; opacity:.85; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .4px; margin-bottom: 4px;
+      color: #fff;
+    }
+    .hero-kpi-val {
+      font-size: 1.25rem; font-weight: 900;
+      font-variant-numeric: tabular-nums; line-height: 1.1;
+      background: linear-gradient(180deg,#fff 0%,#dbeafe 100%);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* STAT CARDS bridge — .dash-stat → .sw-stat polish */
+    .dash-stat {
+      border-radius: 16px !important;
+      padding: 18px 16px !important;
+      min-height: 138px !important;
+      color: #fff !important;
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+      display: flex !important;
+      flex-direction: column !important;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .dash-stat:hover { transform: translateY(-3px) !important; }
+    .dash-stat::before {
+      content:''; position:absolute; inset:0;
+      background: radial-gradient(circle at top right, rgba(255,255,255,.18) 0%, transparent 60%);
+      z-index:-1;
+    }
+    .dash-stat::after {
+      content:''; position:absolute; left:0; right:0; bottom:0; height:50%;
+      background: linear-gradient(to top, rgba(0,0,0,.18) 0%, transparent 100%);
+      z-index:-1;
+    }
+    .dash-stat-icon {
+      width: 36px !important; height: 36px !important;
+      border-radius: 8px !important;
+      background: rgba(255,255,255,.22) !important;
+      border: 1px solid rgba(255,255,255,.3) !important;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      margin-bottom: 12px !important;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 4px 12px rgba(0,0,0,.15);
+      transition: transform .5s cubic-bezier(.34,1.56,.64,1);
+    }
+    .dash-stat:hover .dash-stat-icon { transform: rotate(8deg) scale(1.05); }
+    .dash-stat-label {
+      font-size: .62rem !important;
+      font-weight: 700 !important;
+      letter-spacing: .08em !important;
+      text-transform: uppercase !important;
+      opacity: .85;
+      margin-bottom: 4px !important;
+      color: #fff !important;
+    }
+    .dash-stat-value {
+      font-size: 1.55rem !important;
+      font-weight: 800 !important;
+      line-height: 1.15 !important;
+      letter-spacing: -.3px !important;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 1px 2px rgba(0,0,0,.15);
+      background: linear-gradient(180deg, #ffffff 0%, rgba(255,255,255,.85) 100%);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent !important;
+    }
+    .dash-stat-sub {
+      font-size: .72rem !important;
+      opacity: .9;
+      margin-top: auto !important;
+      padding-top: 10px !important;
+      color: rgba(255,255,255,.95) !important;
+    }
+    /* Stat tones using tokens.css gradients */
+    .dash-stat.green   { background: var(--sw-grad-green, linear-gradient(135deg,#047857,#065f46)) !important; box-shadow: var(--sw-grad-green-glow,  0 10px 28px -8px rgba(5,150,105,.45)) !important; }
+    .dash-stat.red     { background: var(--sw-grad-red,   linear-gradient(135deg,#b91c1c,#991b1b)) !important; box-shadow: var(--sw-grad-red-glow,    0 10px 28px -8px rgba(220,38,38,.45)) !important; }
+    .dash-stat.blue    { background: var(--sw-grad-blue,  linear-gradient(135deg,#1d4ed8,#1e40af)) !important; box-shadow: var(--sw-grad-blue-glow,   0 10px 28px -8px rgba(37,99,235,.45)) !important; }
+    .dash-stat.orange  { background: var(--sw-grad-orange,linear-gradient(135deg,#c2410c,#9a3412)) !important; box-shadow: var(--sw-grad-orange-glow, 0 10px 28px -8px rgba(234,88,12,.45)) !important; }
+    .dash-stat.purple  { background: var(--sw-grad-purple,linear-gradient(135deg,#6d28d9,#5b21b6)) !important; box-shadow: var(--sw-grad-purple-glow, 0 10px 28px -8px rgba(124,58,237,.45)) !important; }
+    .dash-stat.teal    { background: var(--sw-grad-teal,  linear-gradient(135deg,#0f766e,#115e59)) !important; box-shadow: var(--sw-grad-teal-glow,   0 10px 28px -8px rgba(13,148,136,.45)) !important; }
+    .dash-stat.indigo  { background: var(--sw-grad-indigo,linear-gradient(135deg,#4338ca,#3730a3)) !important; box-shadow: var(--sw-grad-indigo-glow, 0 10px 28px -8px rgba(79,70,229,.45)) !important; }
+    .dash-stat.pink    { background: var(--sw-grad-pink,  linear-gradient(135deg,#be185d,#9d174d)) !important; box-shadow: var(--sw-grad-pink-glow,   0 10px 28px -8px rgba(219,39,119,.45)) !important; }
+
+    /* DASH CARD bridge — chart/list cards */
+    .dash-card { border-radius: 16px !important; }
+    .dash-card-title {
+      font-size: 1rem !important;
+      font-weight: 800 !important;
+      color: var(--sw-fg-primary, #1a1f2e) !important;
+      letter-spacing: -.01em;
+    }
+    .dash-card-sub {
+      font-size: .72rem !important;
+      color: var(--sw-fg-tertiary, #5a6577) !important;
+    }
+    .dash-card-action {
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--sw-primary, #2563eb);
+      text-decoration: none;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      background: var(--sw-primary-soft, #eff6ff);
+      border: 1px solid transparent;
+      transition: all .15s;
+    }
+    .dash-card-action:hover {
+      background: var(--sw-primary-tint, #dbeafe);
+      border-color: var(--sw-primary, #2563eb);
+    }
+
+    /* Dark mode adjustments */
+    body.dark .dash-card-title { color: var(--sw-fg-primary, #f8fafc) !important; }
+    body.dark .dash-card-sub { color: var(--sw-fg-tertiary, #94a3b8) !important; }
+    body.dark .dash-card-action { background: rgba(68,147,248,.16); color: #4493f8; }
+    body.dark .dash-stat { box-shadow: var(--sw-inset-hi, inset 0 1px 0 rgba(255,255,255,.06)), 0 10px 28px -8px rgba(0,0,0,.4) !important; }
+
+    /* Gradient text utility (for brand/title accents) */
+    .sw-grad-text {
+      background: linear-gradient(135deg, var(--sw-primary, #2563eb) 0%, var(--sw-accent, #7c3aed) 100%);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+  </style>
   <style>
     /* ─── RESET & BASE ─── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -3382,7 +3552,7 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v14.8</span>
+    <span style="opacity:.7">v14.9</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
@@ -10195,7 +10365,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.8';   // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.9';   // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate(opts) {
