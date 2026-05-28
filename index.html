@@ -2045,6 +2045,181 @@
       color: #4338ca !important;       /* indigo-700 — เห็นชัดและสวย */
       font-weight: 800 !important;
     }
+
+    /* ═══════════════════════════════════════════════════════════
+       v12.4 — REFINED COLOR & CONTRAST
+       Stat cards ให้ดู premium + cards มี contrast ชัด ไม่กลมกลืน
+       ═══════════════════════════════════════════════════════════ */
+
+    /* ── Stat cards — ลด saturation + เพิ่ม depth ── */
+    .dash-stat {
+      border-radius: 16px !important;
+      padding: 20px 18px !important;
+      min-height: 140px !important;
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+    }
+    /* radial highlight ที่มุมขวาบน (ทำให้ดูมีมิติ ไม่แบน) */
+    .dash-stat::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(circle at top right, rgba(255,255,255,0.18) 0%, transparent 60%);
+      z-index: -1;
+    }
+    /* glass overlay ที่ขอบล่าง */
+    .dash-stat::after {
+      content: '';
+      position: absolute; left:0; right:0; bottom:0; height: 50%;
+      background: linear-gradient(to top, rgba(0,0,0,0.18) 0%, transparent 100%);
+      z-index: -1;
+    }
+    .dash-stat-icon {
+      background: rgba(255,255,255,0.18) !important;
+      border: 1px solid rgba(255,255,255,0.25) !important;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .dash-stat-label {
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      font-size: .68rem !important;
+      opacity: .85 !important;
+    }
+    .dash-stat-value {
+      font-size: 1.7rem !important;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    }
+    /* Refined color palette — ลด saturation, เพิ่มมิติ */
+    .dash-stat.green   { background: linear-gradient(135deg, #059669 0%, #047857 60%, #065f46 100%); box-shadow: 0 8px 24px -6px rgba(5,150,105,0.45); }
+    .dash-stat.red     { background: linear-gradient(135deg, #dc2626 0%, #b91c1c 60%, #991b1b 100%); box-shadow: 0 8px 24px -6px rgba(220,38,38,0.45); }
+    .dash-stat.blue    { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 60%, #1e40af 100%); box-shadow: 0 8px 24px -6px rgba(37,99,235,0.45); }
+    .dash-stat.orange  { background: linear-gradient(135deg, #ea580c 0%, #c2410c 60%, #9a3412 100%); box-shadow: 0 8px 24px -6px rgba(234,88,12,0.45); }
+    .dash-stat.purple  { background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 60%, #5b21b6 100%); box-shadow: 0 8px 24px -6px rgba(124,58,237,0.45); }
+    .dash-stat.pink    { background: linear-gradient(135deg, #db2777 0%, #be185d 60%, #9d174d 100%); box-shadow: 0 8px 24px -6px rgba(219,39,119,0.45); }
+    .dash-stat.teal    { background: linear-gradient(135deg, #0d9488 0%, #0f766e 60%, #115e59 100%); box-shadow: 0 8px 24px -6px rgba(13,148,136,0.45); }
+    .dash-stat.indigo  { background: linear-gradient(135deg, #4f46e5 0%, #4338ca 60%, #3730a3 100%); box-shadow: 0 8px 24px -6px rgba(79,70,229,0.45); }
+    .dash-stat:hover { transform: translateY(-3px) !important; }
+
+    /* ── DASH-CARD: ให้ contrast ชัดขึ้น (ไม่กลมกลืนกับ bg) ── */
+    /* DARK mode */
+    body.dark .dash-card,
+    body.dark .cal-grid,
+    body.dark .cal-modal-box {
+      background: rgba(30, 38, 64, 0.55) !important;
+      border: 1px solid rgba(148, 163, 184, 0.18) !important;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      box-shadow:
+        0 12px 32px -10px rgba(0,0,0,0.5),
+        inset 0 1px 0 rgba(255,255,255,0.08),
+        inset 0 0 0 1px rgba(255,255,255,0.02);
+    }
+    body.dark .dash-card:hover {
+      background: rgba(38, 48, 78, 0.7) !important;
+      border-color: rgba(139,92,246,0.45) !important;
+      box-shadow:
+        0 16px 40px -10px rgba(0,0,0,0.55),
+        0 0 0 1px rgba(139,92,246,0.25),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    body.dark .dash-card-title { color: #ffffff !important; font-size: 1rem !important; }
+    body.dark .dash-card-sub { color: rgba(255,255,255,0.55) !important; }
+
+    /* LIGHT mode */
+    body:not(.dark) .dash-card,
+    body:not(.dark) .cal-grid,
+    body:not(.dark) .cal-modal-box {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      box-shadow:
+        0 4px 12px -4px rgba(15, 23, 42, 0.08),
+        0 1px 3px rgba(15, 23, 42, 0.04) !important;
+    }
+    body:not(.dark) .dash-card:hover {
+      border-color: #c7d2fe !important;
+      box-shadow:
+        0 12px 24px -8px rgba(99, 102, 241, 0.18),
+        0 0 0 1px rgba(99, 102, 241, 0.1) !important;
+    }
+    body:not(.dark) .dash-card-title {
+      color: #0f172a !important;
+      font-weight: 800 !important;
+      font-size: 1rem !important;
+    }
+    body:not(.dark) .dash-card-sub {
+      color: #64748b !important;
+    }
+
+    /* ── Section "ภาพรวม" + page title ── */
+    body.dark #page-title { color: #ffffff !important; font-weight: 700; }
+    body:not(.dark) #page-title { color: #0f172a !important; font-weight: 700; }
+
+    /* ── Record cards (list items) ── */
+    body.dark .record-card {
+      background: rgba(30, 38, 64, 0.5) !important;
+      border: 1px solid rgba(148, 163, 184, 0.15) !important;
+    }
+    body.dark .record-card:hover {
+      background: rgba(38, 48, 78, 0.65) !important;
+      border-color: rgba(139,92,246,0.4) !important;
+    }
+    body:not(.dark) .record-card {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+    }
+    body:not(.dark) .record-card:hover {
+      border-color: #c7d2fe !important;
+      box-shadow: 0 8px 20px -8px rgba(99,102,241,0.18) !important;
+    }
+
+    /* ── Action chip "ดูทั้งหมด →" ── */
+    body.dark .dash-card-action {
+      color: #a78bfa !important;
+      background: rgba(139,92,246,0.12);
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(139,92,246,0.2);
+      font-weight: 600;
+      font-size: .78rem;
+    }
+    body.dark .dash-card-action:hover {
+      background: rgba(139,92,246,0.2);
+      color: #c4b5fd !important;
+    }
+    body:not(.dark) .dash-card-action {
+      color: #4f46e5 !important;
+      background: #eef2ff;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid #c7d2fe;
+      font-weight: 600;
+      font-size: .78rem;
+    }
+    body:not(.dark) .dash-card-action:hover {
+      background: #e0e7ff;
+      color: #4338ca !important;
+    }
+
+    /* ── Tables ── */
+    body.dark .sum-table th {
+      background: rgba(15, 23, 42, 0.5) !important;
+      color: #cbd5e1 !important;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2) !important;
+    }
+    body.dark .sum-table td { color: #e2e8f0 !important; }
+    body:not(.dark) .sum-table th {
+      background: #f8fafc !important;
+      color: #475569 !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+    }
+    body:not(.dark) .sum-table td { color: #1e293b !important; }
+
+    /* ── Status badges (กำลังขนส่ง / ส่งแล้ว / ค้างจ่าย / จ่ายแล้ว) ── */
+    body.dark .badge-status,
+    body.dark [class*="status-"] {
+      backdrop-filter: blur(8px);
+    }
   </style>
 </head>
 <body>
@@ -2119,7 +2294,7 @@
   <button id="hamburger" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <h1 id="page-title">บันทึกรถบรรทุก</h1>
   <span class="version" style="margin-left:auto" title="เวอร์ชัน + นาฬิกาเวลาประเทศไทย">
-    <span style="opacity:.7">v12.3</span>
+    <span style="opacity:.7">v12.4</span>
     <span style="margin:0 6px;opacity:.4">·</span>
     <span id="live-clock" style="font-variant-numeric:tabular-nums;font-weight:600">--:--:--</span>
   </span>
@@ -7815,7 +7990,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v12.3';   // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v12.4';   // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 async function checkForUpdate() {
