@@ -28,13 +28,16 @@ function corsHeaders(res) {
 }
 
 async function login(user, pass) {
-  const body = new URLSearchParams({ name: user, pass: pass }).toString();
+  // Send the full form payload (lang + name + pass + memUser) exactly as
+  // login.jsp does. Do NOT add forceLogin=true — it triggers the
+  // manyConnection guard. Verified empirically against the live server.
+  const body = new URLSearchParams({ lang: 'th', name: user, pass: pass, memUser: '1' }).toString();
   const r = await fetch(`${BASE}/CheckUserPassDJ`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
       'Referer': `${BASE}/login.jsp`,
-      'User-Agent': 'Mozilla/5.0 SuperWealth GPS Proxy'
+      'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) SuperWealth'
     },
     body,
     redirect: 'manual'
