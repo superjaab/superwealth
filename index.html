@@ -4524,7 +4524,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.42 | 29/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.43 | 29/05/2026</span>
   </div>
 </aside>
 
@@ -5187,19 +5187,32 @@
       </div>
       <div class="gps-meta" id="gps-meta">OneTrack Smart · อัพเดท <span id="gps-last-sync">—</span></div>
       <div style="flex:1"></div>
-      <a class="gps-open-new" href="https://onetracksmart.onelink.co.th/onetrack.smart.new/login.jsp" target="_blank" rel="noopener" title="เปิดเต็มจอในแท็บใหม่">⤢ เต็มจอ</a>
+      <button class="gps-open-new primary" onclick="gpsOpenAuthed(this)" title="เปิดแผนที่เต็มในแท็บใหม่ (login อัตโนมัติ)">🗺️ เปิดแผนที่ (แท็บใหม่)</button>
       <button class="gps-refresh-btn" onclick="gpsRefresh(true)" id="gps-refresh-btn" title="โหลดใหม่">↻</button>
+    </div>
+
+    <!-- Non-blocking hint: appears a few seconds after embed loads -->
+    <div id="gps-hint-bar" class="gps-hint-bar" style="display:none">
+      <span>💡 แผนที่ในกรอบไม่ขึ้นข้อมูล? เบราว์เซอร์บล็อกข้อมูลสดของ OneTrack ในกรอบฝัง —</span>
+      <button onclick="gpsOpenAuthed(this)">เปิดในแท็บใหม่ (ทำงานเต็มรูปแบบ ไม่ต้อง login)</button>
+      <button class="gps-hint-close" onclick="document.getElementById('gps-hint-bar').style.display='none'" title="ปิด">✕</button>
     </div>
 
     <!-- Map view (iframe to OneTrack with auto-auth) -->
     <div id="gps-map-wrap" class="gps-map-wrap">
       <iframe id="gps-iframe" class="gps-iframe" title="OneTrack Real-time Map"
-              sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
-              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
               allow="geolocation; fullscreen"></iframe>
       <div id="gps-iframe-loading" class="gps-iframe-loading">
         <div class="gps-iframe-spinner"></div>
         <div>กำลังเชื่อมต่อ OneTrack...</div>
+        <div id="gps-slow-hint" class="gps-slow-hint" style="display:none">
+          <div style="margin:14px 0 8px;font-size:.82rem;opacity:.85">แผนที่โหลดช้าหรือค้าง?</div>
+          <button class="gps-slow-btn" onclick="gpsOpenAuthed(this)">🗺️ เปิดแผนที่ในแท็บใหม่ (ทำงานเต็มรูปแบบ)</button>
+          <div style="margin-top:10px;font-size:.72rem;opacity:.6;max-width:320px;line-height:1.5">
+            เบราว์เซอร์บล็อกข้อมูลสดของ OneTrack ภายในกรอบฝัง (third-party cookie) — เปิดแท็บใหม่จะเห็นแผนที่และตำแหน่งรถครบ โดยไม่ต้อง login
+          </div>
+        </div>
       </div>
     </div>
 
@@ -5554,6 +5567,34 @@
   }
   body.dark .gps-open-new { background: #1f2538; border-color: #2d3548; color: #cbd5e1; }
   .gps-open-new:hover { background: var(--sw-primary-soft, #eff6ff); color: var(--sw-primary, #2563eb); border-color: var(--sw-primary, #2563eb); }
+  .gps-open-new.primary {
+    background: var(--sw-primary, #2563eb); color: #fff;
+    border-color: var(--sw-primary, #2563eb);
+    box-shadow: 0 4px 12px -4px rgba(37,99,235,.5);
+  }
+  .gps-open-new.primary:hover { background: var(--sw-primary-hover, #1d4ed8); color: #fff; }
+  .gps-open-new:disabled { opacity: .6; cursor: progress; }
+
+  /* Hint bar */
+  .gps-hint-bar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 10px 14px; margin-bottom: 14px;
+    background: rgba(245,158,11,.1);
+    border: 1px solid rgba(245,158,11,.3);
+    border-radius: 12px;
+    font-size: .8rem; color: var(--sw-fg-secondary, #4a5568);
+  }
+  body.dark .gps-hint-bar { color: #cbd5e1; }
+  .gps-hint-bar > button {
+    background: var(--sw-primary, #2563eb); color: #fff; border: none;
+    padding: 7px 14px; border-radius: 8px; font-family: inherit;
+    font-size: .78rem; font-weight: 700; cursor: pointer;
+  }
+  .gps-hint-bar > button:hover { background: var(--sw-primary-hover, #1d4ed8); }
+  .gps-hint-bar .gps-hint-close {
+    background: transparent !important; color: var(--sw-fg-muted, #98a1b0) !important;
+    padding: 4px 8px !important; margin-left: auto; font-size: .9rem !important;
+  }
 
   .gps-map-wrap {
     position: relative;
@@ -5589,6 +5630,14 @@
   }
   body.dark .gps-iframe-loading { background: #0a0e1a; color: #94a3b8; }
   .gps-iframe-loading.hide { opacity: 0; pointer-events: none; }
+  .gps-slow-hint { text-align: center; }
+  .gps-slow-btn {
+    background: var(--sw-primary, #2563eb); color: #fff; border: none;
+    padding: 11px 20px; border-radius: 10px; font-family: inherit;
+    font-size: .88rem; font-weight: 800; cursor: pointer;
+    box-shadow: 0 8px 20px -6px rgba(37,99,235,.5); transition: all .15s;
+  }
+  .gps-slow-btn:hover { background: var(--sw-primary-hover, #1d4ed8); transform: translateY(-1px); }
   .gps-iframe-spinner {
     width: 44px; height: 44px;
     border: 3px solid var(--sw-border, #e4e8ee);
@@ -9003,23 +9052,49 @@ function gpsShowState(state, opts={}) {
   }
 }
 
-function gpsSetMode(mode) {
-  _gpsMode = mode;
-  document.getElementById('gps-mode-map').classList.toggle('active', mode === 'map');
-  document.getElementById('gps-mode-cards').classList.toggle('active', mode === 'cards');
-  document.getElementById('gps-mode-map').setAttribute('aria-selected', mode === 'map');
-  document.getElementById('gps-mode-cards').setAttribute('aria-selected', mode === 'cards');
-  document.getElementById('gps-view-mode').textContent = mode === 'map' ? 'แผนที่' : 'รายการ';
-  // Trigger the correct loader for the chosen mode
-  if (mode === 'map') gpsLoadMap();
-  else if (_gpsLastData) gpsRender(_gpsLastData.vehicles || []);
-  else gpsRefresh(false);
+let _gpsSlowTimer = null;
+
+// Fetch a fresh authenticated URL (logs in server-side). Cached for TTL.
+async function gpsGetAuthUrl(force=false) {
+  if (!force && _gpsAuthUrl && Date.now() < _gpsAuthUrlExpires) return _gpsAuthUrl;
+  const r = await fetch('/api/gps-auth-url?page=fsmap_realtime.htm', { cache: 'no-store' });
+  const j = await r.json();
+  if (j.configured === false) { gpsShowState('setup'); return null; }
+  if (!j.success) { gpsShowState('error', { msg: j.error || 'ไม่ทราบสาเหตุ' }); return null; }
+  _gpsAuthUrl = j.url;
+  _gpsAuthUrlExpires = Date.now() + GPS_URL_TTL_MS;
+  return _gpsAuthUrl;
 }
+
+// Open the authenticated OneTrack map in a NEW TAB (top-level navigation).
+// This is the reliable path: as a top-level page the JSESSIONID cookie is
+// first-party, so OneTrack's live data + MQTT all work — no login needed.
+async function gpsOpenAuthed(btn) {
+  const original = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'กำลังเข้าระบบ...'; }
+  // Open the tab synchronously to dodge popup blockers, then redirect it.
+  const tab = window.open('about:blank', '_blank');
+  try {
+    const url = await gpsGetAuthUrl(true);
+    if (url) { if (tab) tab.location = url; else window.location = url; }
+    else if (tab) tab.close();
+  } catch (e) {
+    if (tab) tab.close();
+    showToast?.('เปิดแผนที่ไม่สำเร็จ: ' + (e.message || e), 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = original; }
+  }
+}
+window.gpsOpenAuthed = gpsOpenAuthed;
 
 async function gpsLoadMap() {
   const iframe = document.getElementById('gps-iframe');
   const loading = document.getElementById('gps-iframe-loading');
+  const slowHint = document.getElementById('gps-slow-hint');
   if (!iframe) return;
+  if (slowHint) slowHint.style.display = 'none';
+  if (_gpsSlowTimer) { clearTimeout(_gpsSlowTimer); _gpsSlowTimer = null; }
+
   // Reuse cached auth URL if still fresh — avoid double login
   if (_gpsAuthUrl && Date.now() < _gpsAuthUrlExpires) {
     if (iframe.src !== _gpsAuthUrl) iframe.src = _gpsAuthUrl;
@@ -9028,23 +9103,23 @@ async function gpsLoadMap() {
   }
   loading.classList.remove('hide');
   gpsShowState('loading');
-  try {
-    const r = await fetch('/api/gps-auth-url?page=fsmap_realtime.htm', { cache: 'no-store' });
-    const j = await r.json();
-    if (j.configured === false) { gpsShowState('setup'); return; }
-    if (!j.success) { gpsShowState('error', { msg: j.error || 'ไม่ทราบสาเหตุ' }); return; }
-    _gpsAuthUrl = j.url;
-    _gpsAuthUrlExpires = Date.now() + GPS_URL_TTL_MS;
-    iframe.onload = () => {
-      loading.classList.add('hide');
-      document.getElementById('gps-last-sync').textContent =
-        new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-    };
-    iframe.src = j.url;
-    gpsShowState('data');
-  } catch (e) {
-    gpsShowState('error', { msg: 'เครือข่ายมีปัญหา: ' + (e.message || e) });
-  }
+  const url = await gpsGetAuthUrl(false);
+  if (!url) return; // setup/error already shown
+  iframe.onload = () => {
+    loading.classList.add('hide');
+    if (_gpsSlowTimer) { clearTimeout(_gpsSlowTimer); _gpsSlowTimer = null; }
+    document.getElementById('gps-last-sync').textContent =
+      new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+  };
+  iframe.src = url;
+  gpsShowState('data');
+  // Show the "open in new tab" hint bar a few seconds in — the embed often
+  // can't load OneTrack's live data due to third-party cookie blocking, and
+  // we can't detect that across origins. The hint is non-blocking.
+  _gpsSlowTimer = setTimeout(() => {
+    const bar = document.getElementById('gps-hint-bar');
+    if (bar) bar.style.display = '';
+  }, 4000);
 }
 
 function gpsRenderSkeleton() {
@@ -12809,7 +12884,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.42';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.43';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
