@@ -4524,7 +4524,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.38 | 29/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.39 | 29/05/2026</span>
   </div>
 </aside>
 
@@ -12251,7 +12251,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.38';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.39';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
@@ -12351,9 +12351,10 @@ function tickLiveClock() {
   const TH_MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   const moTh = TH_MONTHS_SHORT[d.getMonth()];
   const yyBE = d.getFullYear() + 543; // Buddhist Era
-  // Pulse the colon so it feels alive
-  const sepBlink = d.getSeconds() % 2 ? ':' : ' ';
-  el.innerHTML = `<span class="sw-date">${day} ${moTh} ${yyBE}</span><span class="sw-sep">·</span><span class="sw-time">${hh}${sepBlink}${mm}<span class="sw-sec">${ss}</span></span>`;
+  // v14.39 — Colons ALWAYS visible (was: blanking on even seconds caused "22 42 48" look broken).
+  // Pulse only the OPACITY of the colon for a gentle "alive" feel.
+  const colonClass = d.getSeconds() % 2 ? 'sw-blink on' : 'sw-blink';
+  el.innerHTML = `<span class="sw-date">${day} ${moTh} ${yyBE}</span><span class="sw-sep">·</span><span class="sw-time">${hh}<span class="${colonClass}">:</span>${mm}<span class="sw-sec">:${ss}</span></span>`;
 }
 // ═══════════════════════════════════════════════════════════════════
 // v14.16 — MONEY INPUT FORMATTING (comma separator while typing)
@@ -12513,7 +12514,7 @@ function _swdpAttach(input) {
   const display = document.createElement('input');
   display.type = 'text';
   display.className = 'swdp-display';
-  display.placeholder = 'คลิกที่ปฏิทิน 📅 หรือพิมพ์เช่น "28 พ.ค. 2569"';
+  display.placeholder = 'เลือกวันที่ หรือ พิมพ์ 28 พ.ค. 2569';
   display.inputMode = 'numeric';
   if (input.required) display.required = true;
 

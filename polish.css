@@ -476,6 +476,200 @@ body.dark :where(.skeleton, [data-skeleton])::after {
   }
 }
 
+/* ════════════════════════════════════════════════════════════════════
+   v14.39 — SURGICAL UX FIXES (from live screenshot audit)
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ──────── ① Clock pill — colon pulse without disappearing ──────── */
+.sw-clock-pill .sw-blink {
+  opacity: .35;
+  transition: opacity .8s ease-out;
+}
+.sw-clock-pill .sw-blink.on {
+  opacity: 1;
+}
+
+/* ──────── ② Mobile header — kill the 3-line title wrap ──────── */
+@media (max-width: 640px) {
+  /* Title: never wrap, ellipsis if too long */
+  .app-header h1, #page-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    font-size: 1rem !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Clock pill: hide the date part, show only time — saves ~140px */
+  .sw-clock-pill .sw-date,
+  .sw-clock-pill .sw-sep {
+    display: none;
+  }
+  .sw-clock-pill {
+    padding: 4px 10px !important;
+    font-size: .75rem !important;
+  }
+  /* Hide seconds on mobile — less noise */
+  .sw-clock-pill .sw-time .sw-sec {
+    display: none;
+  }
+
+  /* Header padding tighter on mobile */
+  .app-header {
+    padding: 10px 12px !important;
+    gap: 8px !important;
+  }
+  /* Header bell buttons smaller */
+  .header-bell {
+    padding: 6px !important;
+    font-size: .9rem !important;
+  }
+}
+
+/* ──────── ③ Truncate verbose hints on mobile ──────── */
+@media (max-width: 480px) {
+  /* Form section helper text — limit to 2 lines with fade */
+  :where(.field-hint, .form-hint, [data-hint]) {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* ──────── ④ Stat card hierarchy — number FIRST visually ──────── */
+/* Make the big value pop, push label to top-meta position */
+:where(.dash-stat) .dash-stat-value {
+  font-size: 1.85rem !important;
+  font-weight: 900 !important;
+  margin-top: 4px !important;
+  line-height: 1.05 !important;
+}
+:where(.dash-stat) .dash-stat-label {
+  font-size: .58rem !important;
+  opacity: .8 !important;
+}
+/* The icon top-left feels disconnected — soften it */
+:where(.dash-stat) .dash-stat-icon {
+  width: 30px !important;
+  height: 30px !important;
+  background: rgba(255,255,255,.18) !important;
+  border-radius: 9px !important;
+  margin-bottom: 8px !important;
+}
+
+@media (max-width: 480px) {
+  :where(.dash-stat) {
+    min-height: 110px !important;
+    padding: 14px 14px !important;
+  }
+  :where(.dash-stat) .dash-stat-value {
+    font-size: 1.5rem !important;
+  }
+}
+
+/* ──────── ⑤ Skeleton cards — more visible, less ghostly ──────── */
+:where(.skeleton, [data-skeleton]) {
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--sw-fg-muted, #98a1b0) 16%, transparent),
+    color-mix(in srgb, var(--sw-fg-muted, #98a1b0) 8%, transparent)) !important;
+}
+body.dark :where(.skeleton, [data-skeleton]) {
+  background: linear-gradient(180deg,
+    rgba(255,255,255,.06),
+    rgba(255,255,255,.03)) !important;
+}
+
+/* ──────── ⑥ Date picker display — placeholder polish only ──────── */
+/* NOTE: Avoid `text-overflow: ellipsis` here — it ate the hero date
+   range ("1 พ.ค. 2569" → "1...") which is worse than wrapping. */
+@media (max-width: 480px) {
+  :where(.swdp-display) {
+    font-size: 15px !important;
+    padding-right: 38px !important; /* leave room for icon */
+  }
+  :where(.swdp-display)::placeholder {
+    font-size: 13px !important;
+    opacity: .55 !important;
+  }
+
+  /* Hero date range — stack vertically on phones so the dates fit fully */
+  :where(.hero-banner) :where([class*="date-range"], .date-range-wrap, .hero-date-row) {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+  /* If the layout uses flex but no explicit wrap class, allow wrap */
+  :where(.hero-banner) :where(.swdp-wrapper) {
+    flex: 1 1 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+/* ──────── ⑦ Section headers — calmer, more pro ──────── */
+:where(.form-section-title, .section-title) {
+  letter-spacing: -.005em;
+  font-weight: 800;
+}
+/* Section divider line under header — was anaemic */
+:where(.form-section-title, .section-title)::after {
+  background: linear-gradient(to right,
+    var(--sw-border, #e4e8ee) 0%,
+    var(--sw-border, #e4e8ee) 60%,
+    transparent 100%);
+  opacity: .9;
+}
+
+/* ──────── ⑧ Hero banner — slightly more restrained on mobile ──────── */
+@media (max-width: 640px) {
+  :where(.hero-banner) {
+    padding: 16px 16px 14px !important;
+    border-radius: 16px !important;
+  }
+  :where(.hero-title-text) {
+    font-size: 1.15rem !important;
+    margin-bottom: 10px !important;
+  }
+  :where(.hero-banner)::before,
+  :where(.hero-banner)::after {
+    width: 100px !important;
+    height: 100px !important;
+  }
+}
+
+/* ──────── ⑨ FAB — don't overlap inputs on mobile ──────── */
+@media (max-width: 480px) {
+  :where(.fab, #fab, .floating-action-button) {
+    bottom: 16px !important;
+    right: 16px !important;
+    width: 52px !important;
+    height: 52px !important;
+  }
+}
+
+/* ──────── ⑩ Sidebar in dark mode — softer brand area ──────── */
+body.dark :where(.sb-brand, .sidebar-brand) {
+  background: linear-gradient(180deg,
+    rgba(255,255,255,.03) 0%,
+    transparent 100%);
+}
+
+/* ──────── ⑪ Action buttons in cards — more prominent ──────── */
+:where(.dash-card-action) {
+  font-weight: 700 !important;
+  font-size: .75rem !important;
+  padding: 6px 14px !important;
+}
+
+/* ──────── ⑫ Tab pills (.tab-bar / .inner-nav) — better active ──────── */
+:where(.inner-tab.active, .tab-pill.active, .tab-btn.active) {
+  position: relative;
+  box-shadow:
+    0 4px 12px -2px color-mix(in srgb, var(--sw-primary, #2563eb) 35%, transparent),
+    inset 0 1px 0 rgba(255,255,255,.18);
+}
+
 /* ────────────────────────────────────────────────────────────────
    END of polish.css — additions stop here.
    To extend, append below and keep :where() for low specificity.
