@@ -4524,7 +4524,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.41 | 29/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.42 | 29/05/2026</span>
   </div>
 </aside>
 
@@ -5185,13 +5185,9 @@
         <span class="gps-dot" id="gps-dot"></span>
         <span id="gps-status-text">กำลังเชื่อมต่อ...</span>
       </div>
-      <div class="gps-meta" id="gps-meta">มุมมอง <span id="gps-view-mode">แผนที่</span> · อัพเดท <span id="gps-last-sync">—</span></div>
+      <div class="gps-meta" id="gps-meta">OneTrack Smart · อัพเดท <span id="gps-last-sync">—</span></div>
       <div style="flex:1"></div>
-      <!-- View mode toggle -->
-      <div class="gps-mode-toggle" role="tablist">
-        <button class="gps-mode-btn active" id="gps-mode-map" onclick="gpsSetMode('map')" role="tab" aria-selected="true">🗺️ แผนที่</button>
-        <button class="gps-mode-btn" id="gps-mode-cards" onclick="gpsSetMode('cards')" role="tab" aria-selected="false">📋 รายการ</button>
-      </div>
+      <a class="gps-open-new" href="https://onetracksmart.onelink.co.th/onetrack.smart.new/login.jsp" target="_blank" rel="noopener" title="เปิดเต็มจอในแท็บใหม่">⤢ เต็มจอ</a>
       <button class="gps-refresh-btn" onclick="gpsRefresh(true)" id="gps-refresh-btn" title="โหลดใหม่">↻</button>
     </div>
 
@@ -5547,6 +5543,17 @@
     box-shadow: 0 1px 3px rgba(15,23,42,.08);
   }
   body.dark .gps-mode-btn.active { background: #2a3245; color: #4493f8; }
+  .gps-open-new {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 7px 14px; border-radius: 10px;
+    border: 1px solid var(--sw-border, #e4e8ee);
+    background: var(--sw-bg-subtle, #f1f3f7);
+    color: var(--sw-fg-secondary, #4a5568);
+    font-size: .78rem; font-weight: 700; text-decoration: none;
+    transition: all .15s;
+  }
+  body.dark .gps-open-new { background: #1f2538; border-color: #2d3548; color: #cbd5e1; }
+  .gps-open-new:hover { background: var(--sw-primary-soft, #eff6ff); color: var(--sw-primary, #2563eb); border-color: var(--sw-primary, #2563eb); }
 
   .gps-map-wrap {
     position: relative;
@@ -8979,11 +8986,11 @@ function gpsShowState(state, opts={}) {
   setup.style.display = state === 'setup'  ? '' : 'none';
   error.style.display = state === 'error'  ? '' : 'none';
   empty.style.display = state === 'empty'  ? '' : 'none';
-  // When showing setup/error, hide BOTH map and cards
+  // v14.42 — map is the only view; show it whenever we have/await data
   const showData = state === 'data' || state === 'loading';
-  if (mapWrap) mapWrap.style.display = (showData && _gpsMode === 'map')   ? '' : 'none';
-  if (grid)    grid.style.display    = (showData && _gpsMode === 'cards') ? '' : 'none';
-  if (toggle)  toggle.style.display  = showData ? '' : 'none';
+  if (mapWrap) mapWrap.style.display = showData ? '' : 'none';
+  if (grid)    grid.style.display    = 'none';
+  if (toggle)  toggle.style.display  = 'none';
   pill.className = 'gps-status-pill ' + (state === 'data' ? '' : state === 'loading' ? 'loading' : 'offline');
   txt.textContent =
     state === 'loading' ? 'กำลังเชื่อมต่อ...' :
@@ -9114,51 +9121,24 @@ function gpsRender(vehicles) {
 }
 
 async function gpsRefresh(manual=false) {
+  // v14.42 — Map is the only view (cards mode removed). Always load the
+  // embedded OneTrack realtime page via the authenticated iframe URL.
   if (manual) {
     const btn = document.getElementById('gps-refresh-btn');
-    btn.classList.add('spinning');
-    setTimeout(()=>btn.classList.remove('spinning'), 1000);
+    if (btn) { btn.classList.add('spinning'); setTimeout(()=>btn.classList.remove('spinning'), 1000); }
+    _gpsAuthUrl = null; _gpsAuthUrlExpires = 0; // force fresh login
   }
-  if (_gpsMode === 'map') {
-    // Force fresh auth URL on manual refresh
-    if (manual) { _gpsAuthUrl = null; _gpsAuthUrlExpires = 0; }
-    return gpsLoadMap();
-  }
-  // Cards mode — use the structured endpoint
-  if (!_gpsLastData) gpsRenderSkeleton();
-  gpsShowState('loading');
-  try {
-    const r = await fetch('/api/gps-onetrack', { cache: 'no-store' });
-    const j = await r.json();
-    if (j.configured === false) { gpsShowState('setup'); return; }
-    if (!j.success) { gpsShowState('error', { msg: j.error || 'ไม่ทราบสาเหตุ' }); return; }
-    _gpsLastData = j;
-    gpsRender(j.vehicles || []);
-  } catch (e) {
-    gpsShowState('error', { msg: 'เครือข่ายมีปัญหา: ' + (e.message || e) });
-  }
+  return gpsLoadMap();
 }
 
 function initGPS() {
-  // Called when switchTab('gps') opens this tab.
-  // Default mode is 'map' (embedded OneTrack) — what the user actually wanted.
-  if (_gpsTimer) clearInterval(_gpsTimer);
+  // Embedded OneTrack map — exactly the page the user asked to view.
+  // The iframe (OneTrack) refreshes its own vehicle positions via MQTT,
+  // so we do NOT poll. We only refresh the auth URL when it expires.
   gpsRefresh(false);
-  // No need to poll the map iframe (OneTrack refreshes itself).
-  // Only poll the cards mode.
-  _gpsTimer = setInterval(() => {
-    if (_gpsMode !== 'cards') return;
-    if (document.getElementById('tab-gps')?.classList.contains('active')) {
-      gpsRefresh(false);
-    } else {
-      clearInterval(_gpsTimer);
-      _gpsTimer = null;
-    }
-  }, GPS_POLL_MS);
 }
 window.initGPS = initGPS;
 window.gpsRefresh = gpsRefresh;
-window.gpsSetMode = gpsSetMode;
 
 function _unused_showGPSErr(msg) {
   const el     = document.getElementById('gps-err');
@@ -12829,7 +12809,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.41';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.42';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
