@@ -4516,7 +4516,7 @@
     <button class="tab-btn" onclick="switchTab('invoice',this)"><span class="icon">🧾</span>ใบเสร็จรับเงิน</button>
     <div class="sb-section">เครื่องมือ</div>
     <button class="tab-btn admin-only" onclick="switchTab('admin',this);initAdminTab()"><span class="icon">⚙️</span>Admin</button>
-    <button class="tab-btn" onclick="switchTab('gps',this)"><span class="icon">📡</span>GPS</button>
+    <button class="tab-btn" onclick="switchTab('gps',this);initGPS()"><span class="icon">📡</span>GPS</button>
   </nav>
   <div class="sb-footer">
     <!-- v14.16 — Login button moved here (bottom-left) -->
@@ -4524,7 +4524,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.39 | 29/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.40 | 29/05/2026</span>
   </div>
 </aside>
 
@@ -5176,66 +5176,344 @@
   </div>
 </div>
 
-<!-- ══ TAB 4: GPS (เลือกผู้ให้บริการ) ══ -->
+<!-- ══ TAB 4: GPS — Live Dashboard (v14.40) — ไม่ต้อง login ══ -->
 <div class="tab-panel" id="tab-gps">
-  <div style="padding:24px 18px;background:linear-gradient(180deg,#0f172a 0%,#1e293b 100%);min-height:calc(100dvh - 96px)">
-    <!-- Header -->
-    <div style="text-align:center;margin-bottom:28px">
-      <div style="display:inline-flex;align-items:center;gap:10px;background:rgba(34,197,94,.12);padding:6px 14px;border-radius:20px;border:1px solid rgba(34,197,94,.3);margin-bottom:14px">
-        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e;animation:gps-pulse 1.5s infinite"></span>
-        <span style="color:#86efac;font-size:.72rem;font-weight:700">ONLINE</span>
+  <div class="gps-shell">
+    <!-- Status bar -->
+    <div class="gps-statusbar">
+      <div class="gps-status-pill" id="gps-status-pill">
+        <span class="gps-dot" id="gps-dot"></span>
+        <span id="gps-status-text">กำลังเชื่อมต่อ...</span>
       </div>
-      <h2 style="color:white;font-size:1.4rem;font-weight:800;margin-bottom:6px">📡 GPS ติดตามรถ</h2>
-      <p style="color:#94a3b8;font-size:.82rem">เลือกระบบ GPS ที่ต้องการเข้าใช้งาน</p>
+      <div class="gps-meta" id="gps-meta">รถ <span id="gps-count">0</span> คัน · อัพเดท <span id="gps-last-sync">—</span></div>
+      <div style="flex:1"></div>
+      <button class="gps-refresh-btn" onclick="gpsRefresh(true)" id="gps-refresh-btn" title="โหลดใหม่">↻</button>
     </div>
 
-    <!-- Provider cards -->
-    <div style="display:flex;flex-direction:column;gap:14px;max-width:480px;margin:0 auto">
+    <!-- Vehicle grid (populated by gpsRender) -->
+    <div id="gps-grid" class="gps-grid"></div>
 
-      <!-- ── OneTrack Smart (Onelink) ── -->
-      <button type="button" onclick="openGPS('onelink')"
-              style="background:linear-gradient(135deg,#1d4ed8,#1e40af);border:1px solid #3b82f6;border-radius:16px;padding:18px;cursor:pointer;font-family:inherit;text-align:left;color:white;box-shadow:0 8px 24px rgba(29,78,216,.35);transition:transform .15s,box-shadow .15s;display:flex;align-items:center;gap:14px"
-              onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(29,78,216,.5)'"
-              onmouseout="this.style.transform='';this.style.boxShadow='0 8px 24px rgba(29,78,216,.35)'">
-        <div style="width:54px;height:54px;background:rgba(255,255,255,.15);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;flex-shrink:0">📍</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:1rem;font-weight:800;margin-bottom:3px">OneTrack Smart</div>
-          <div style="font-size:.72rem;opacity:.85;margin-bottom:6px">Onelink Technology — ติดตามรถยนต์/รถบรรทุก</div>
-          <div style="font-size:.65rem;opacity:.7;font-family:monospace">onetracksmart.onelink.co.th</div>
-        </div>
-        <div style="font-size:1.5rem;opacity:.7;flex-shrink:0">↗</div>
-      </button>
-
-      <!-- ── Hino Connect ── -->
-      <button type="button" onclick="openGPS('hino')"
-              style="background:linear-gradient(135deg,#dc2626,#991b1b);border:1px solid #ef4444;border-radius:16px;padding:18px;cursor:pointer;font-family:inherit;text-align:left;color:white;box-shadow:0 8px 24px rgba(220,38,38,.35);transition:transform .15s,box-shadow .15s;display:flex;align-items:center;gap:14px"
-              onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 32px rgba(220,38,38,.5)'"
-              onmouseout="this.style.transform='';this.style.boxShadow='0 8px 24px rgba(220,38,38,.35)'">
-        <div style="width:54px;height:54px;background:rgba(255,255,255,.15);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;flex-shrink:0">🚛</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:1rem;font-weight:800;margin-bottom:3px">Hino Connect</div>
-          <div style="font-size:.72rem;opacity:.85;margin-bottom:6px">Hino Motors — Telematics สำหรับรถ Hino</div>
-          <div style="font-size:.65rem;opacity:.7;font-family:monospace">hino-connect.onelink-iot.com</div>
-        </div>
-        <div style="font-size:1.5rem;opacity:.7;flex-shrink:0">↗</div>
-      </button>
-
-    </div>
-
-    <!-- Info notice -->
-    <div style="max-width:480px;margin:22px auto 0;padding:12px 14px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);border-radius:10px">
-      <div style="display:flex;gap:10px;align-items:flex-start">
-        <span style="font-size:1.1rem;flex-shrink:0">💡</span>
-        <div style="font-size:.72rem;color:#93c5fd;line-height:1.6">
-          <b>หมายเหตุ:</b> ทั้ง 2 ระบบจะเปิดในแท็บใหม่เพื่อให้ Login และใช้งานได้เต็มรูปแบบ (Browser block third-party cookie ใน iframe)
+    <!-- Setup wizard (shown when not configured) -->
+    <div id="gps-setup" class="gps-setup" style="display:none">
+      <div class="gps-setup-card">
+        <div class="gps-setup-icon">⚙️</div>
+        <h3>ตั้งค่า GPS ครั้งแรก</h3>
+        <p>ต้องใส่ user/pass ของ OneTrack ใน Vercel เพื่อให้ระบบดึงข้อมูลได้</p>
+        <ol class="gps-setup-steps">
+          <li>เข้า <b>Vercel Dashboard</b> → โปรเจกต์ <code>superwealth</code></li>
+          <li>เลือก <b>Settings</b> → <b>Environment Variables</b></li>
+          <li>เพิ่ม 2 ตัว:
+            <div class="gps-env">
+              <div><code>GPS_ONETRACK_USER</code> <span class="gps-eg">= ชื่อผู้ใช้ OneTrack</span></div>
+              <div><code>GPS_ONETRACK_PASS</code> <span class="gps-eg">= รหัสผ่าน</span></div>
+            </div>
+          </li>
+          <li>คลิก <b>Redeploy</b> → กลับมาที่หน้านี้</li>
+        </ol>
+        <div class="gps-setup-fallback">
+          ตอนนี้ใช้ได้: <a href="https://onetracksmart.onelink.co.th/onetrack.smart.new/login.jsp" target="_blank" rel="noopener">เปิด OneTrack →</a>
+          &nbsp;·&nbsp;
+          <a href="https://hino-connect.onelink-iot.com" target="_blank" rel="noopener">เปิด Hino Connect →</a>
         </div>
       </div>
     </div>
 
+    <!-- Error state -->
+    <div id="gps-error" class="gps-error" style="display:none">
+      <div class="gps-error-icon">⚠️</div>
+      <div>
+        <div class="gps-error-title">เชื่อมต่อ GPS ไม่สำเร็จ</div>
+        <div class="gps-error-msg" id="gps-error-msg">—</div>
+        <button class="gps-retry-btn" onclick="gpsRefresh(true)">ลองอีกครั้ง</button>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="gps-empty" class="gps-empty" style="display:none">
+      <div style="font-size:2.5rem;opacity:.4;margin-bottom:8px">🛰️</div>
+      <div>ยังไม่มีรถในระบบ GPS</div>
+    </div>
   </div>
 </div>
+
 <style>
   @keyframes gps-pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  @keyframes gps-ring  { 0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.6)} 50%{box-shadow:0 0 0 6px rgba(34,197,94,0)} }
+  @keyframes gps-spin  { to { transform: rotate(360deg) } }
+
+  /* Shell */
+  .gps-shell {
+    padding: 18px;
+    max-width: 1280px;
+    margin: 0 auto;
+    min-height: calc(100dvh - 96px);
+  }
+
+  /* Status bar */
+  .gps-statusbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    background: var(--sw-bg-card, #fff);
+    border: 1px solid var(--sw-border, #e4e8ee);
+    border-radius: 14px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  body.dark .gps-statusbar { background: #131826; border-color: #2d3548; }
+  .gps-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(34,197,94,.12);
+    border: 1px solid rgba(34,197,94,.3);
+    font-size: .78rem;
+    font-weight: 700;
+    color: #16a34a;
+  }
+  body.dark .gps-status-pill { color: #86efac; }
+  .gps-status-pill.offline {
+    background: rgba(239,68,68,.12);
+    border-color: rgba(239,68,68,.3);
+    color: #dc2626;
+  }
+  body.dark .gps-status-pill.offline { color: #fca5a5; }
+  .gps-status-pill.loading {
+    background: rgba(59,130,246,.12);
+    border-color: rgba(59,130,246,.3);
+    color: #2563eb;
+  }
+  body.dark .gps-status-pill.loading { color: #93c5fd; }
+  .gps-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #22c55e; box-shadow: 0 0 6px #22c55e;
+    animation: gps-ring 1.5s infinite, gps-pulse 1.5s infinite;
+  }
+  .gps-status-pill.offline .gps-dot { background: #ef4444; box-shadow: 0 0 6px #ef4444; animation: none; }
+  .gps-status-pill.loading .gps-dot { background: #3b82f6; box-shadow: 0 0 6px #3b82f6; animation: gps-pulse 1s infinite; }
+  .gps-meta {
+    font-size: .8rem;
+    color: var(--sw-fg-tertiary, #5a6577);
+    font-variant-numeric: tabular-nums;
+  }
+  .gps-meta span { font-weight: 700; color: var(--sw-fg-primary, #1a1f2e); }
+  body.dark .gps-meta span { color: #f1f5f9; }
+  .gps-refresh-btn {
+    width: 38px; height: 38px;
+    border: 1px solid var(--sw-border, #e4e8ee);
+    background: var(--sw-bg-subtle, #f1f3f7);
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: var(--sw-fg-secondary, #4a5568);
+    transition: all .2s;
+  }
+  body.dark .gps-refresh-btn { background: #1f2538; border-color: #2d3548; color: #cbd5e1; }
+  .gps-refresh-btn:hover { background: var(--sw-primary-soft, #eff6ff); color: var(--sw-primary, #2563eb); }
+  .gps-refresh-btn.spinning { animation: gps-spin .8s linear infinite; }
+
+  /* Grid */
+  .gps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+  }
+
+  /* Vehicle card */
+  .gps-card {
+    background: var(--sw-bg-card, #fff);
+    border: 1px solid var(--sw-border, #e4e8ee);
+    border-radius: 16px;
+    padding: 16px;
+    transition: all .2s;
+  }
+  body.dark .gps-card { background: #131826; border-color: #2d3548; }
+  .gps-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px -10px rgba(15,23,42,.15);
+    border-color: var(--sw-primary, #2563eb);
+  }
+  .gps-card-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .gps-card-plate {
+    font-size: 1.05rem;
+    font-weight: 900;
+    letter-spacing: .02em;
+    color: var(--sw-fg-primary, #1a1f2e);
+    font-variant-numeric: tabular-nums;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  body.dark .gps-card-plate { color: #f1f5f9; }
+  .gps-card-status {
+    font-size: .65rem;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 999px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  .gps-card-status.moving  { background: rgba(34,197,94,.15); color: #16a34a; }
+  .gps-card-status.idle    { background: rgba(245,158,11,.15); color: #d97706; }
+  .gps-card-status.offline { background: rgba(148,163,184,.15); color: #64748b; }
+  body.dark .gps-card-status.moving  { color: #86efac; }
+  body.dark .gps-card-status.idle    { color: #fcd34d; }
+  body.dark .gps-card-status.offline { color: #cbd5e1; }
+  .gps-card-driver {
+    font-size: .8rem;
+    color: var(--sw-fg-tertiary, #5a6577);
+    margin-bottom: 12px;
+  }
+  body.dark .gps-card-driver { color: #94a3b8; }
+  .gps-card-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-top: 1px dashed var(--sw-border, #e4e8ee);
+    font-size: .82rem;
+    color: var(--sw-fg-secondary, #4a5568);
+  }
+  body.dark .gps-card-row { border-color: #2d3548; color: #cbd5e1; }
+  .gps-card-row .gps-icon { font-size: 1rem; opacity: .7; flex-shrink: 0; width: 18px; text-align: center; }
+  .gps-card-row .gps-label { font-size: .68rem; color: var(--sw-fg-muted, #98a1b0); margin-right: 4px; text-transform: uppercase; letter-spacing: .04em; font-weight: 700; }
+  .gps-card-row .gps-val { font-variant-numeric: tabular-nums; font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gps-card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--sw-border, #e4e8ee);
+  }
+  body.dark .gps-card-actions { border-color: #2d3548; }
+  .gps-card-actions a {
+    flex: 1;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--sw-primary-soft, #eff6ff);
+    color: var(--sw-primary, #2563eb);
+    text-align: center;
+    font-size: .76rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all .15s;
+  }
+  .gps-card-actions a:hover { background: var(--sw-primary, #2563eb); color: white; }
+  body.dark .gps-card-actions a { background: rgba(68,147,248,.16); color: #4493f8; }
+  body.dark .gps-card-actions a:hover { background: #4493f8; color: white; }
+
+  /* Setup wizard */
+  .gps-setup { display: flex; justify-content: center; padding: 40px 16px; }
+  .gps-setup-card {
+    max-width: 520px;
+    background: var(--sw-bg-card, #fff);
+    border: 1px solid var(--sw-border, #e4e8ee);
+    border-radius: 18px;
+    padding: 28px 26px;
+    text-align: left;
+  }
+  body.dark .gps-setup-card { background: #131826; border-color: #2d3548; }
+  .gps-setup-icon { font-size: 2.5rem; text-align: center; margin-bottom: 8px; }
+  .gps-setup-card h3 { margin: 0 0 8px; text-align: center; font-size: 1.15rem; font-weight: 800; color: var(--sw-fg-primary, #1a1f2e); }
+  body.dark .gps-setup-card h3 { color: #f1f5f9; }
+  .gps-setup-card p { text-align: center; color: var(--sw-fg-tertiary, #5a6577); margin: 0 0 18px; font-size: .85rem; line-height: 1.6; }
+  .gps-setup-steps {
+    padding-left: 22px;
+    margin: 0 0 18px;
+    font-size: .85rem;
+    line-height: 1.7;
+    color: var(--sw-fg-secondary, #4a5568);
+  }
+  body.dark .gps-setup-steps { color: #cbd5e1; }
+  .gps-setup-steps li { margin-bottom: 8px; }
+  .gps-env {
+    margin-top: 6px;
+    padding: 10px 12px;
+    background: var(--sw-bg-subtle, #f1f3f7);
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .78rem;
+    line-height: 1.7;
+  }
+  body.dark .gps-env { background: #1f2538; }
+  .gps-env code {
+    background: rgba(37,99,235,.12);
+    color: var(--sw-primary, #2563eb);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+  }
+  body.dark .gps-env code { background: rgba(68,147,248,.16); color: #4493f8; }
+  .gps-eg { color: var(--sw-fg-muted, #98a1b0); font-size: .72rem; }
+  .gps-setup-fallback {
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: rgba(59,130,246,.06);
+    border: 1px dashed rgba(59,130,246,.3);
+    border-radius: 8px;
+    font-size: .78rem;
+    text-align: center;
+    color: var(--sw-fg-secondary, #4a5568);
+  }
+  body.dark .gps-setup-fallback { background: rgba(68,147,248,.06); color: #cbd5e1; }
+  .gps-setup-fallback a { color: var(--sw-primary, #2563eb); font-weight: 700; text-decoration: none; }
+  .gps-setup-fallback a:hover { text-decoration: underline; }
+
+  /* Error state */
+  .gps-error {
+    display: flex;
+    gap: 14px;
+    padding: 18px 20px;
+    background: rgba(239,68,68,.06);
+    border: 1px solid rgba(239,68,68,.25);
+    border-radius: 14px;
+    margin-bottom: 16px;
+  }
+  .gps-error-icon { font-size: 1.8rem; flex-shrink: 0; }
+  .gps-error-title { font-weight: 800; color: #dc2626; margin-bottom: 4px; }
+  body.dark .gps-error-title { color: #fca5a5; }
+  .gps-error-msg { font-size: .8rem; color: var(--sw-fg-tertiary, #5a6577); margin-bottom: 10px; }
+  .gps-retry-btn {
+    background: #dc2626; color: white; border: none;
+    padding: 7px 16px; border-radius: 8px;
+    font-weight: 700; font-size: .82rem; cursor: pointer;
+    font-family: inherit;
+  }
+  .gps-retry-btn:hover { background: #b91c1c; }
+
+  /* Empty state */
+  .gps-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--sw-fg-tertiary, #5a6577);
+    font-size: .9rem;
+  }
+
+  /* Skeleton card */
+  .gps-card.skeleton {
+    background: linear-gradient(90deg, var(--sw-bg-subtle, #f1f3f7) 30%, var(--sw-bg-card, #fff) 50%, var(--sw-bg-subtle, #f1f3f7) 70%);
+    background-size: 200% 100%;
+    border-color: transparent;
+    pointer-events: none;
+    min-height: 200px;
+    animation: gps-shimmer 1.4s linear infinite;
+  }
+  body.dark .gps-card.skeleton {
+    background: linear-gradient(90deg, #1a1f31 30%, #131826 50%, #1a1f31 70%);
+    background-size: 200% 100%;
+  }
+  @keyframes gps-shimmer { from { background-position: 200% 0 } to { background-position: -200% 0 } }
 </style>
 
 <!-- ══ TAB 5: อ่านตัวหนังสือจากภาพ ══ -->
@@ -8581,6 +8859,153 @@ function openGPS(provider) {
   if (!url) return;
   window.open(url, '_blank', 'noopener,noreferrer');
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   v14.40 — GPS LIVE DASHBOARD (server-side proxy, no user login)
+   ═══════════════════════════════════════════════════════════════════ */
+let _gpsTimer = null;
+let _gpsLastData = null;
+const GPS_POLL_MS = 30_000;
+
+function gpsShowState(state, opts={}) {
+  const setup = document.getElementById('gps-setup');
+  const error = document.getElementById('gps-error');
+  const empty = document.getElementById('gps-empty');
+  const grid  = document.getElementById('gps-grid');
+  const pill  = document.getElementById('gps-status-pill');
+  const txt   = document.getElementById('gps-status-text');
+  if (!pill) return;
+  setup.style.display = state === 'setup'  ? '' : 'none';
+  error.style.display = state === 'error'  ? '' : 'none';
+  empty.style.display = state === 'empty'  ? '' : 'none';
+  grid.style.display  = state === 'data'   ? '' : 'none';
+  pill.className = 'gps-status-pill ' + (state === 'data' ? '' : state === 'loading' ? 'loading' : 'offline');
+  txt.textContent =
+    state === 'loading' ? 'กำลังเชื่อมต่อ...' :
+    state === 'setup'   ? 'ยังไม่ตั้งค่า' :
+    state === 'error'   ? 'ออฟไลน์' :
+    state === 'empty'   ? 'ไม่มีรถในระบบ' :
+                           'เชื่อมต่อแล้ว';
+  if (state === 'error' && opts.msg) {
+    document.getElementById('gps-error-msg').textContent = opts.msg;
+  }
+}
+
+function gpsRenderSkeleton() {
+  const grid = document.getElementById('gps-grid');
+  grid.innerHTML = Array.from({length:4}, ()=>'<div class="gps-card skeleton"></div>').join('');
+  grid.style.display = '';
+}
+
+function gpsClassifyStatus(v) {
+  // OneTrack returns various status strings — normalize to moving/idle/offline
+  const s = String(v.status||'').toLowerCase();
+  if (s.includes('mov') || s.includes('run') || s.includes('วิ่ง') || (v.speed||0) > 3) return 'moving';
+  if (s.includes('off') || s.includes('lost') || s.includes('ขาด')) return 'offline';
+  return 'idle';
+}
+
+function gpsFormatTime(t) {
+  if (!t) return '—';
+  // Accept ISO, "YYYY-MM-DD HH:mm:ss", or epoch
+  let d;
+  if (typeof t === 'number') d = new Date(t);
+  else if (/^\d+$/.test(t)) d = new Date(Number(t));
+  else d = new Date(String(t).replace(' ', 'T'));
+  if (isNaN(d)) return String(t);
+  const now = new Date();
+  const diffSec = Math.floor((now - d) / 1000);
+  if (diffSec < 10) return 'เมื่อกี้';
+  if (diffSec < 60) return `${diffSec} วินาที`;
+  if (diffSec < 3600) return `${Math.floor(diffSec/60)} นาที`;
+  if (diffSec < 86400) return `${Math.floor(diffSec/3600)} ชม.`;
+  return d.toLocaleDateString('th-TH');
+}
+
+function gpsRender(vehicles) {
+  const grid = document.getElementById('gps-grid');
+  document.getElementById('gps-count').textContent = vehicles.length;
+  document.getElementById('gps-last-sync').textContent = new Date().toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  if (!vehicles.length) { gpsShowState('empty'); return; }
+  grid.innerHTML = vehicles.map(v => {
+    const klass = gpsClassifyStatus(v);
+    const statusLabel = klass === 'moving' ? 'วิ่ง' : klass === 'offline' ? 'ขาดสัญญาณ' : 'จอด';
+    const mapUrl = (v.lat && v.lng) ? `https://www.google.com/maps?q=${v.lat},${v.lng}` : null;
+    const dirUrl = (v.lat && v.lng) ? `https://www.google.com/maps/dir/?api=1&destination=${v.lat},${v.lng}` : null;
+    return `
+      <div class="gps-card">
+        <div class="gps-card-head">
+          <div class="gps-card-plate">🚛 ${(v.plate||'—').toString()}</div>
+          <span class="gps-card-status ${klass}">${statusLabel}</span>
+        </div>
+        ${v.driverName ? `<div class="gps-card-driver">👤 ${v.driverName}</div>` : ''}
+        <div class="gps-card-row">
+          <span class="gps-icon">⚡</span>
+          <span class="gps-label">ความเร็ว</span>
+          <span class="gps-val">${Math.round(v.speed||0)} กม./ชม.</span>
+        </div>
+        <div class="gps-card-row">
+          <span class="gps-icon">📍</span>
+          <span class="gps-label">ตำแหน่ง</span>
+          <span class="gps-val">${v.address || (v.lat && v.lng ? `${v.lat.toFixed(4)}, ${v.lng.toFixed(4)}` : '—')}</span>
+        </div>
+        <div class="gps-card-row">
+          <span class="gps-icon">🕒</span>
+          <span class="gps-label">อัพเดท</span>
+          <span class="gps-val">${gpsFormatTime(v.lastUpdate)}</span>
+        </div>
+        ${mapUrl ? `<div class="gps-card-actions">
+          <a href="${mapUrl}" target="_blank" rel="noopener">🗺️ ดูบนแผนที่</a>
+          <a href="${dirUrl}" target="_blank" rel="noopener">🧭 นำทาง</a>
+        </div>` : ''}
+      </div>
+    `;
+  }).join('');
+  gpsShowState('data');
+}
+
+async function gpsRefresh(manual=false) {
+  if (manual) {
+    const btn = document.getElementById('gps-refresh-btn');
+    btn.classList.add('spinning');
+    setTimeout(()=>btn.classList.remove('spinning'), 1000);
+  }
+  if (!_gpsLastData) gpsRenderSkeleton();
+  gpsShowState('loading');
+  try {
+    const r = await fetch('/api/gps-onetrack', { cache: 'no-store' });
+    const j = await r.json();
+    if (j.configured === false) {
+      gpsShowState('setup');
+      return;
+    }
+    if (!j.success) {
+      gpsShowState('error', { msg: j.error || 'ไม่ทราบสาเหตุ' });
+      return;
+    }
+    _gpsLastData = j;
+    gpsRender(j.vehicles || []);
+  } catch (e) {
+    gpsShowState('error', { msg: 'เครือข่ายมีปัญหา: ' + (e.message || e) });
+  }
+}
+
+function initGPS() {
+  // Called when switchTab('gps') opens this tab. Start polling.
+  if (_gpsTimer) clearInterval(_gpsTimer);
+  gpsRefresh(false);
+  _gpsTimer = setInterval(() => {
+    if (document.getElementById('tab-gps')?.classList.contains('active')) {
+      gpsRefresh(false);
+    } else {
+      // Tab not visible anymore — stop polling to save bandwidth
+      clearInterval(_gpsTimer);
+      _gpsTimer = null;
+    }
+  }, GPS_POLL_MS);
+}
+window.initGPS = initGPS;
+window.gpsRefresh = gpsRefresh;
 
 function _unused_showGPSErr(msg) {
   const el     = document.getElementById('gps-err');
@@ -12251,7 +12676,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.39';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.40';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
