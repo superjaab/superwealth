@@ -113,7 +113,7 @@ function buildMenuImageSVG() {
     const ly = c.yt + 600;       // label baseline
     return `${icon(c.icon, c.x, cy)}
       <text x="${c.x}" y="${ly}" text-anchor="middle" fill="white" font-size="120"
-            font-family="Sarabun" font-weight="bold">${c.label}</text>`;
+            font-family="Sarabun">${c.label}</text>`;
   }).join('');
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="2500" height="1686">
@@ -296,14 +296,25 @@ async function renderMenuSVGtoJPEG() {
   // tracer so the .ttf is included in the function bundle.
   const fontBuffer = fs.readFileSync(path.join(__dirname, 'fonts', 'Sarabun-Bold.ttf'));
 
+  const fontPath = path.join(__dirname, 'fonts', 'Sarabun-Bold.ttf');
   const svgString = buildMenuImageSVG();
+  // resvg's linux-x64 binary is stricter about font-family matching than
+  // macOS — a buffer alone left Thai text blank. Pin Sarabun as EVERY
+  // generic family so any fallback path resolves to it, and load by both
+  // file + buffer.
   const resvg = new Resvg(svgString, {
     background: '#0f172a',
     fitTo: { mode: 'width', value: 2500 },
     font: {
+      fontFiles: [fontPath],
       fontBuffers: [fontBuffer],
       loadSystemFonts: false,
-      defaultFontFamily: 'Sarabun'
+      defaultFontFamily: 'Sarabun',
+      serifFamily: 'Sarabun',
+      sansSerifFamily: 'Sarabun',
+      cursiveFamily: 'Sarabun',
+      fantasyFamily: 'Sarabun',
+      monospaceFamily: 'Sarabun'
     }
   });
   const pngData = resvg.render();
