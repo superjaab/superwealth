@@ -90,11 +90,49 @@ module.exports = async function handler(req, res) {
   }
 
   // Optional: push a test message to a userId (proves the reply path works).
+  // ?push=USERID         → plain text
+  // ?push=USERID&qr=1    → text WITH quick-reply buttons (validates buttons)
+  // ?push=USERID&vehicles=1 → text with one button PER vehicle (reproduces
+  //                            the real menu; catches >13 items / >20-char labels)
   if (req.query.push) {
-    const push = await linePOST('/message/push', token, {
-      to: String(req.query.push),
-      messages: [{ type: 'text', text: '✅ ทดสอบจาก SuperWealth — ถ้าเห็นข้อความนี้ แปลว่าบอทส่งข้อความได้ปกติ' }]
-    });
+    let messages;
+    if (req.query.vehicles) {
+      // Mirror the real truck_2 step: one message-action button per plate.
+      let plates = [];
+      try {
+        const auth = new google.auth.GoogleAuth({
+          credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON),
+          scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly']
+        });
+        const sheets = google.sheets({ version: 'v4', auth });
+        const r = await sheets.spreadsheets.values.get({
+          spreadsheetId: process.env.SHEET_ID, range: 'Vehicles!A:Z'
+        });
+        const rows = r.data.values || [];
+        const h = rows[0] || [];
+        const pi = h.indexOf('plateNumber');
+        plates = rows.slice(1).map(x => x[pi]).filter(Boolean);
+      } catch (e) { return res.status(200).json({ error: 'read vehicles: ' + e.message }); }
+      const items = plates.map(p => ({ type: 'action', action: { type: 'message', label: p, text: p } }));
+      messages = [{ type: 'text', text: `ทดสอบปุ่มทะเบียนรถ (${items.length} คัน)`, quickReply: { items } }];
+      const push = await linePOST('/message/push', token, { to: String(req.query.push), messages });
+      return res.status(200).json({
+        action: 'push-vehicles-test', to: req.query.push,
+        plateCount: plates.length,
+        longLabels: plates.filter(p => p.length > 20),
+        exceeds13: plates.length > 13,
+        push
+      });
+    } else if (req.query.qr) {
+      messages = [{ type: 'text', text: '✅ ทดสอบปุ่ม — กดปุ่มด้านล่างได้',
+        quickReply: { items: [
+          { type:'action', action:{ type:'message', label:'วันนี้', text:'วันนี้' } },
+          { type:'action', action:{ type:'postback', label:'🚛 บันทึกรถ', data:'MENU_TRUCK' } }
+        ] } }];
+    } else {
+      messages = [{ type: 'text', text: '✅ ทดสอบจาก SuperWealth — ถ้าเห็นข้อความนี้ บอทส่งข้อความได้ปกติ' }];
+    }
+    const push = await linePOST('/message/push', token, { to: String(req.query.push), messages });
     return res.status(200).json({ action: 'push-test', to: req.query.push, push });
   }
 
