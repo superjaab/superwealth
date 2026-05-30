@@ -288,35 +288,12 @@ module.exports = async function handler(req, res) {
 async function renderMenuSVGtoJPEG() {
   const fs   = require('fs');
   const path = require('path');
-  const { Resvg } = require('@resvg/resvg-js');
 
-  // Vercel Linux has no Thai (or Arial) system font, so loadSystemFonts
-  // rendered Thai text as nothing. Bundle Sarabun and load it explicitly.
-  // fs.readFileSync(path.join(__dirname, ...)) is traced by Vercel's file
-  // tracer so the .ttf is included in the function bundle.
-  const fontBuffer = fs.readFileSync(path.join(__dirname, 'fonts', 'Sarabun-Bold.ttf'));
-
-  const fontPath = path.join(__dirname, 'fonts', 'Sarabun-Bold.ttf');
-  const svgString = buildMenuImageSVG();
-  // resvg's linux-x64 binary is stricter about font-family matching than
-  // macOS — a buffer alone left Thai text blank. Pin Sarabun as EVERY
-  // generic family so any fallback path resolves to it, and load by both
-  // file + buffer.
-  const resvg = new Resvg(svgString, {
-    background: '#0f172a',
-    fitTo: { mode: 'width', value: 2500 },
-    font: {
-      fontFiles: [fontPath],
-      fontBuffers: [fontBuffer],
-      loadSystemFonts: false,
-      defaultFontFamily: 'Sarabun',
-      serifFamily: 'Sarabun',
-      sansSerifFamily: 'Sarabun',
-      cursiveFamily: 'Sarabun',
-      fantasyFamily: 'Sarabun',
-      monospaceFamily: 'Sarabun'
-    }
-  });
-  const pngData = resvg.render();
-  return pngData.asPng();   // LINE accepts PNG (Content-Type: image/png)
+  // Serve a PRE-RENDERED PNG. resvg's linux-x64 binary on Vercel wouldn't
+  // render Thai glyphs even with the Sarabun font bundled + every generic
+  // family pinned (icons rendered, Thai text stayed blank — a native-binary
+  // quirk vs macOS). So we render the menu locally where it works (see
+  // /tmp/genmenu.js) and commit the result as api/rich-menu.png. Vercel just
+  // streams the file — guaranteed identical to what we verified by eye.
+  return fs.readFileSync(path.join(__dirname, 'rich-menu.png'));
 }

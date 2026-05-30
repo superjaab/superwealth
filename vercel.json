@@ -6,7 +6,7 @@
     "api/ocr.js":            { "maxDuration": 20 },
     "api/get-data.js":       { "maxDuration": 30 },
     "api/line-webhook.js":   { "maxDuration": 30 },
-    "api/line-setup.js":     { "maxDuration": 30, "includeFiles": "api/fonts/**" }
+    "api/line-setup.js":     { "maxDuration": 30, "includeFiles": "api/rich-menu.png" }
   },
   "headers": [
     {
