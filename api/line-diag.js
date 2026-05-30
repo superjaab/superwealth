@@ -1,19 +1,39 @@
 'use strict';
 /**
  * GET /api/line-diag
- *   Diagnoses the LINE bot configuration end-to-end so we can see WHY
- *   messages aren't getting through. Checks, via the Messaging API:
- *     1. env vars present (token, sheet, service account)
- *     2. bot info (GET /v2/bot/info) — proves the token is valid
- *     3. webhook endpoint registered + active (GET .../webhook/endpoint)
- *     4. webhook delivery test (POST .../webhook/test) — LINE pings our URL
- *     5. message quota (GET /v2/bot/message/quota) — is the bot rate-limited
+ *   Diagnoses the LINE bot configuration end-to-end.
  *
- * GET /api/line-diag?fix=webhook&url=https://...  → sets the webhook URL
- *   (PUT .../webhook/endpoint). Use to (re)register the webhook from here.
+ * GET /api/line-diag?fix=webhook&url=https://...  → set the webhook URL.
+ * GET /api/line-diag?push=USERID                  → push a test message to
+ *   a specific LINE userId (proves the reply/messaging path works).
  */
 
+const { google } = require('googleapis');
 const LINE = 'https://api.line.me/v2/bot';
+
+// Read the LineStates sheet to learn whether real users have ever reached
+// the webhook (the bot writes a row per user it has processed).
+async function readLineStates() {
+  try {
+    const auth = new google.auth.GoogleAuth({
+      credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON),
+      scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly']
+    });
+    const sheets = google.sheets({ version: 'v4', auth });
+    const r = await sheets.spreadsheets.values.get({
+      spreadsheetId: process.env.SHEET_ID, range: 'LineStates!A:D'
+    });
+    const rows = r.data.values || [];
+    if (rows.length < 2) return { users: 0, lastSeen: null, sampleUserId: null };
+    const h = rows[0];
+    const ui = h.indexOf('userId'), ti = h.indexOf('updatedAt');
+    const body = rows.slice(1).filter(x => x[ui]);
+    const last = body.map(x => x[ti]).filter(Boolean).sort().pop() || null;
+    return { users: body.length, lastSeen: last, sampleUserId: body.length ? body[body.length-1][ui] : null };
+  } catch (e) {
+    return { error: String(e.message || e) };
+  }
+}
 
 async function lineGET(path, token) {
   try {
@@ -69,6 +89,15 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ action: 'set-webhook', url: req.query.url, put, test });
   }
 
+  // Optional: push a test message to a userId (proves the reply path works).
+  if (req.query.push) {
+    const push = await linePOST('/message/push', token, {
+      to: String(req.query.push),
+      messages: [{ type: 'text', text: '✅ ทดสอบจาก SuperWealth — ถ้าเห็นข้อความนี้ แปลว่าบอทส่งข้อความได้ปกติ' }]
+    });
+    return res.status(200).json({ action: 'push-test', to: req.query.push, push });
+  }
+
   const [info, endpoint, quota] = await Promise.all([
     lineGET('/info', token),
     lineGET('/channel/webhook/endpoint', token),
@@ -77,6 +106,9 @@ module.exports = async function handler(req, res) {
 
   // Test delivery to whatever endpoint is registered
   const webhookTest = await linePOST('/channel/webhook/test', token, null);
+
+  // Have any real users ever reached the webhook?
+  const lineStates = await readLineStates();
 
   // Build a plain-language verdict
   const verdict = [];
@@ -99,6 +131,15 @@ module.exports = async function handler(req, res) {
     verdict.push('⚠️ webhook test เรียกไม่ได้ (' + webhookTest.status + ')');
   }
 
+  // Interpret LineStates: have real user messages ever arrived?
+  if (lineStates.error) {
+    verdict.push('⚠️ อ่าน LineStates ไม่ได้: ' + lineStates.error);
+  } else if (lineStates.users > 0) {
+    verdict.push('✅ มี user เคยคุยกับบอท ' + lineStates.users + ' คน (ล่าสุด ' + (lineStates.lastSeen || '?') + ') → webhook รับข้อความจริงได้ → ปัญหาอยู่ที่ "การตอบกลับ" ไม่ใช่การรับ');
+  } else {
+    verdict.push('❌ ไม่มี user เคยถูกบันทึกใน LineStates เลย → ข้อความจริงไม่เคยมาถึง webhook → ต้องเช็ค "โหมดการตอบกลับ/Auto-reply" ใน LINE OA Manager (manager.line.biz)');
+  }
+
   return res.status(200).json({
     ok: true,
     env,
@@ -107,6 +148,8 @@ module.exports = async function handler(req, res) {
     botInfo: info.data,
     webhookEndpoint: endpoint.data,
     webhookTest: webhookTest.data,
-    messageQuota: quota.data
+    messageQuota: quota.data,
+    lineStates,
+    howToTestReply: 'เพิ่ม ?push=<LINE userId> เพื่อส่งข้อความทดสอบไปหา user นั้น'
   });
 };
