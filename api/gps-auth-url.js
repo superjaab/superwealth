@@ -94,6 +94,13 @@ module.exports = async function handler(req, res) {
     });
   }
 
+  // Lightweight config probe — report readiness WITHOUT logging in.
+  // Used when the GPS tab opens so we don't burn a OneTrack session
+  // (single-session account) just to decide launch-vs-setup.
+  if (req.query?.check === '1') {
+    return res.status(200).json({ success: true, configured: true, ready: true });
+  }
+
   const requested = String(req.query?.page || 'fsmap_realtime.htm').trim();
   const page = ALLOWED_PAGES.has(requested) ? requested : 'fsmap_realtime.htm';
 

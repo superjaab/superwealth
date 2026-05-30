@@ -4524,7 +4524,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.43 | 29/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.44 | 29/05/2026</span>
   </div>
 </aside>
 
@@ -5176,48 +5176,38 @@
   </div>
 </div>
 
-<!-- ══ TAB 4: GPS — Embedded OneTrack (v14.41) — ไม่ต้อง login ══ -->
+<!-- ══ TAB 4: GPS — Launch OneTrack (v14.44) — เปิดแท็บใหม่ login อัตโนมัติ ══ -->
 <div class="tab-panel" id="tab-gps">
   <div class="gps-shell">
-    <!-- Status bar -->
-    <div class="gps-statusbar">
-      <div class="gps-status-pill" id="gps-status-pill">
-        <span class="gps-dot" id="gps-dot"></span>
-        <span id="gps-status-text">กำลังเชื่อมต่อ...</span>
-      </div>
-      <div class="gps-meta" id="gps-meta">OneTrack Smart · อัพเดท <span id="gps-last-sync">—</span></div>
-      <div style="flex:1"></div>
-      <button class="gps-open-new primary" onclick="gpsOpenAuthed(this)" title="เปิดแผนที่เต็มในแท็บใหม่ (login อัตโนมัติ)">🗺️ เปิดแผนที่ (แท็บใหม่)</button>
-      <button class="gps-refresh-btn" onclick="gpsRefresh(true)" id="gps-refresh-btn" title="โหลดใหม่">↻</button>
-    </div>
 
-    <!-- Non-blocking hint: appears a few seconds after embed loads -->
-    <div id="gps-hint-bar" class="gps-hint-bar" style="display:none">
-      <span>💡 แผนที่ในกรอบไม่ขึ้นข้อมูล? เบราว์เซอร์บล็อกข้อมูลสดของ OneTrack ในกรอบฝัง —</span>
-      <button onclick="gpsOpenAuthed(this)">เปิดในแท็บใหม่ (ทำงานเต็มรูปแบบ ไม่ต้อง login)</button>
-      <button class="gps-hint-close" onclick="document.getElementById('gps-hint-bar').style.display='none'" title="ปิด">✕</button>
-    </div>
+    <!-- Launch card (default) -->
+    <div id="gps-launch" class="gps-launch">
+      <div class="gps-launch-card">
+        <div class="gps-launch-badge">
+          <span class="gps-dot" id="gps-dot"></span>
+          <span id="gps-status-text">พร้อมใช้งาน</span>
+        </div>
+        <div class="gps-launch-icon">🛰️</div>
+        <h2>GPS ติดตามรถ</h2>
+        <p class="gps-launch-sub">OneTrack Smart · เข้าระบบอัตโนมัติ ไม่ต้องพิมพ์ user/pass</p>
 
-    <!-- Map view (iframe to OneTrack with auto-auth) -->
-    <div id="gps-map-wrap" class="gps-map-wrap">
-      <iframe id="gps-iframe" class="gps-iframe" title="OneTrack Real-time Map"
-              referrerpolicy="no-referrer-when-downgrade"
-              allow="geolocation; fullscreen"></iframe>
-      <div id="gps-iframe-loading" class="gps-iframe-loading">
-        <div class="gps-iframe-spinner"></div>
-        <div>กำลังเชื่อมต่อ OneTrack...</div>
-        <div id="gps-slow-hint" class="gps-slow-hint" style="display:none">
-          <div style="margin:14px 0 8px;font-size:.82rem;opacity:.85">แผนที่โหลดช้าหรือค้าง?</div>
-          <button class="gps-slow-btn" onclick="gpsOpenAuthed(this)">🗺️ เปิดแผนที่ในแท็บใหม่ (ทำงานเต็มรูปแบบ)</button>
-          <div style="margin-top:10px;font-size:.72rem;opacity:.6;max-width:320px;line-height:1.5">
-            เบราว์เซอร์บล็อกข้อมูลสดของ OneTrack ภายในกรอบฝัง (third-party cookie) — เปิดแท็บใหม่จะเห็นแผนที่และตำแหน่งรถครบ โดยไม่ต้อง login
-          </div>
+        <button class="gps-launch-btn" id="gps-launch-btn" onclick="gpsOpenAuthed(this)">
+          🗺️ เปิดแผนที่ติดตามรถ
+        </button>
+        <div class="gps-launch-note">เปิดในแท็บใหม่ — เห็นตำแหน่งรถแบบเรียลไทม์เต็มรูปแบบ</div>
+
+        <div class="gps-launch-links">
+          <a href="#" onclick="gpsOpenAuthed(this,'fsmap_history.htm');return false">📜 ดูประวัติเส้นทาง</a>
+          <span>·</span>
+          <a href="#" onclick="gpsOpenAuthed(this,'main.jsp');return false">📊 แดชบอร์ด OneTrack</a>
         </div>
       </div>
-    </div>
 
-    <!-- Vehicle grid (populated by gpsRender) — secondary view -->
-    <div id="gps-grid" class="gps-grid" style="display:none"></div>
+      <div class="gps-launch-why">
+        <span>ℹ️</span>
+        <span>OneTrack เปิดในแท็บแยกเพราะระบบใช้ MQTT/cookie ที่เบราว์เซอร์ไม่อนุญาตให้ฝังข้ามโดเมน — แต่ที่นี่ <b>login ให้อัตโนมัติ</b> ต่างจากเดิมที่ต้องพิมพ์รหัสเอง</span>
+      </div>
+    </div>
 
     <!-- Setup wizard (shown when not configured) -->
     <div id="gps-setup" class="gps-setup" style="display:none">
@@ -5266,6 +5256,65 @@
   @keyframes gps-pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
   @keyframes gps-ring  { 0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.6)} 50%{box-shadow:0 0 0 6px rgba(34,197,94,0)} }
   @keyframes gps-spin  { to { transform: rotate(360deg) } }
+  @keyframes gps-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+
+  /* ── Launch card (v14.44) ── */
+  .gps-launch {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 18px;
+    min-height: calc(100dvh - 160px); padding: 24px 16px;
+  }
+  .gps-launch-card {
+    width: 100%; max-width: 440px; text-align: center;
+    background: var(--sw-bg-card, #fff);
+    border: 1px solid var(--sw-border, #e4e8ee);
+    border-radius: 24px;
+    padding: 36px 28px 32px;
+    box-shadow: 0 20px 50px -20px rgba(15,23,42,.18);
+  }
+  body.dark .gps-launch-card { background: #131826; border-color: #2d3548; }
+  .gps-launch-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 14px; border-radius: 999px;
+    background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.3);
+    font-size: .72rem; font-weight: 800; color: #16a34a; margin-bottom: 18px;
+  }
+  body.dark .gps-launch-badge { color: #86efac; }
+  .gps-launch-icon { font-size: 3.4rem; margin-bottom: 6px; animation: gps-float 3s ease-in-out infinite; }
+  .gps-launch-card h2 {
+    margin: 0 0 6px; font-size: 1.5rem; font-weight: 900;
+    color: var(--sw-fg-primary, #1a1f2e); letter-spacing: -.01em;
+  }
+  body.dark .gps-launch-card h2 { color: #f8fafc; }
+  .gps-launch-sub { margin: 0 0 26px; font-size: .85rem; color: var(--sw-fg-tertiary, #5a6577); line-height: 1.5; }
+  .gps-launch-btn {
+    width: 100%; padding: 16px 24px; border: none; border-radius: 14px;
+    background: linear-gradient(135deg, #1d4ed8, #2563eb);
+    color: #fff; font-family: inherit; font-size: 1.05rem; font-weight: 800;
+    cursor: pointer; box-shadow: 0 12px 28px -8px rgba(37,99,235,.55);
+    transition: transform .15s, box-shadow .15s;
+  }
+  .gps-launch-btn:hover { transform: translateY(-2px); box-shadow: 0 16px 36px -8px rgba(37,99,235,.65); }
+  .gps-launch-btn:active { transform: translateY(0); }
+  .gps-launch-btn:disabled { opacity: .65; cursor: progress; transform: none; }
+  .gps-launch-note { margin-top: 12px; font-size: .76rem; color: var(--sw-fg-muted, #98a1b0); }
+  .gps-launch-links {
+    margin-top: 20px; padding-top: 18px;
+    border-top: 1px solid var(--sw-border, #e4e8ee);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    font-size: .8rem; flex-wrap: wrap;
+  }
+  body.dark .gps-launch-links { border-color: #2d3548; }
+  .gps-launch-links a { color: var(--sw-primary, #2563eb); font-weight: 700; text-decoration: none; }
+  .gps-launch-links a:hover { text-decoration: underline; }
+  .gps-launch-links span { color: var(--sw-fg-muted, #98a1b0); }
+  .gps-launch-why {
+    max-width: 440px; display: flex; gap: 10px; align-items: flex-start;
+    padding: 12px 16px; border-radius: 12px;
+    background: rgba(59,130,246,.07); border: 1px dashed rgba(59,130,246,.3);
+    font-size: .76rem; line-height: 1.6; color: var(--sw-fg-tertiary, #5a6577);
+  }
+  body.dark .gps-launch-why { color: #94a3b8; background: rgba(68,147,248,.06); }
 
   /* Shell */
   .gps-shell {
@@ -9011,209 +9060,77 @@ function openGPS(provider) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   v14.40-41 — GPS DASHBOARD (server-side proxy, no user login)
-   v14.41 adds: embedded OneTrack iframe (primary) + cards (secondary)
+   v14.44 — GPS LAUNCH (open authenticated OneTrack in a new tab)
+   No iframe embed: OneTrack's live data needs first-party cookies, which
+   a cross-origin iframe can't have. Top-level navigation works fully and
+   we still log in server-side, so the user never types a password.
    ═══════════════════════════════════════════════════════════════════ */
-let _gpsTimer = null;
-let _gpsLastData = null;
-let _gpsMode = 'map'; // 'map' = iframe, 'cards' = structured
-let _gpsAuthUrl = null;
-let _gpsAuthUrlExpires = 0;
-const GPS_POLL_MS = 30_000;
-const GPS_URL_TTL_MS = 8 * 60_000; // 8 min, less than server's 10 min cache
 
+// Show one of: 'launch' (default), 'setup' (no env vars), 'error'.
 function gpsShowState(state, opts={}) {
-  const setup   = document.getElementById('gps-setup');
-  const error   = document.getElementById('gps-error');
-  const empty   = document.getElementById('gps-empty');
-  const grid    = document.getElementById('gps-grid');
-  const mapWrap = document.getElementById('gps-map-wrap');
-  const toggle  = document.querySelector('.gps-mode-toggle');
-  const pill    = document.getElementById('gps-status-pill');
-  const txt     = document.getElementById('gps-status-text');
-  if (!pill) return;
-  setup.style.display = state === 'setup'  ? '' : 'none';
-  error.style.display = state === 'error'  ? '' : 'none';
-  empty.style.display = state === 'empty'  ? '' : 'none';
-  // v14.42 — map is the only view; show it whenever we have/await data
-  const showData = state === 'data' || state === 'loading';
-  if (mapWrap) mapWrap.style.display = showData ? '' : 'none';
-  if (grid)    grid.style.display    = 'none';
-  if (toggle)  toggle.style.display  = 'none';
-  pill.className = 'gps-status-pill ' + (state === 'data' ? '' : state === 'loading' ? 'loading' : 'offline');
-  txt.textContent =
-    state === 'loading' ? 'กำลังเชื่อมต่อ...' :
-    state === 'setup'   ? 'ยังไม่ตั้งค่า' :
-    state === 'error'   ? 'ออฟไลน์' :
-    state === 'empty'   ? 'ไม่มีรถในระบบ' :
-                           'เชื่อมต่อแล้ว';
+  const launch = document.getElementById('gps-launch');
+  const setup  = document.getElementById('gps-setup');
+  const error  = document.getElementById('gps-error');
+  if (launch) launch.style.display = state === 'launch' ? '' : 'none';
+  if (setup)  setup.style.display  = state === 'setup'  ? '' : 'none';
+  if (error)  error.style.display  = state === 'error'  ? '' : 'none';
+  const txt = document.getElementById('gps-status-text');
+  if (txt) txt.textContent =
+    state === 'setup' ? 'ยังไม่ตั้งค่า' :
+    state === 'error' ? 'เชื่อมต่อไม่ได้' : 'พร้อมใช้งาน';
   if (state === 'error' && opts.msg) {
-    document.getElementById('gps-error-msg').textContent = opts.msg;
+    const m = document.getElementById('gps-error-msg');
+    if (m) m.textContent = opts.msg;
   }
 }
 
-let _gpsSlowTimer = null;
-
-// Fetch a fresh authenticated URL (logs in server-side). Cached for TTL.
-async function gpsGetAuthUrl(force=false) {
-  if (!force && _gpsAuthUrl && Date.now() < _gpsAuthUrlExpires) return _gpsAuthUrl;
-  const r = await fetch('/api/gps-auth-url?page=fsmap_realtime.htm', { cache: 'no-store' });
+// Fetch a fresh authenticated URL (server logs in to OneTrack for us).
+async function gpsGetAuthUrl(page='fsmap_realtime.htm') {
+  const r = await fetch('/api/gps-auth-url?page=' + encodeURIComponent(page), { cache: 'no-store' });
   const j = await r.json();
   if (j.configured === false) { gpsShowState('setup'); return null; }
   if (!j.success) { gpsShowState('error', { msg: j.error || 'ไม่ทราบสาเหตุ' }); return null; }
-  _gpsAuthUrl = j.url;
-  _gpsAuthUrlExpires = Date.now() + GPS_URL_TTL_MS;
-  return _gpsAuthUrl;
+  return j.url;
 }
 
-// Open the authenticated OneTrack map in a NEW TAB (top-level navigation).
-// This is the reliable path: as a top-level page the JSESSIONID cookie is
-// first-party, so OneTrack's live data + MQTT all work — no login needed.
-async function gpsOpenAuthed(btn) {
+// Open an authenticated OneTrack page in a NEW TAB. As a top-level page the
+// JSESSIONID cookie is first-party → full live data + MQTT work, no login.
+async function gpsOpenAuthed(btn, page='fsmap_realtime.htm') {
   const original = btn ? btn.textContent : '';
-  if (btn) { btn.disabled = true; btn.textContent = 'กำลังเข้าระบบ...'; }
-  // Open the tab synchronously to dodge popup blockers, then redirect it.
+  if (btn && btn.tagName === 'BUTTON') { btn.disabled = true; btn.textContent = '⏳ กำลังเข้าระบบ...'; }
+  // Open the tab synchronously (dodges popup blockers), then redirect it.
   const tab = window.open('about:blank', '_blank');
   try {
-    const url = await gpsGetAuthUrl(true);
+    const url = await gpsGetAuthUrl(page);
     if (url) { if (tab) tab.location = url; else window.location = url; }
-    else if (tab) tab.close();
+    else if (tab) tab.close(); // setup/error state already shown in-page
   } catch (e) {
     if (tab) tab.close();
-    showToast?.('เปิดแผนที่ไม่สำเร็จ: ' + (e.message || e), 'error');
+    (window.showToast || alert)('เปิดแผนที่ไม่สำเร็จ: ' + (e.message || e));
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = original; }
+    if (btn && btn.tagName === 'BUTTON') { btn.disabled = false; btn.textContent = original; }
   }
 }
 window.gpsOpenAuthed = gpsOpenAuthed;
 
-async function gpsLoadMap() {
-  const iframe = document.getElementById('gps-iframe');
-  const loading = document.getElementById('gps-iframe-loading');
-  const slowHint = document.getElementById('gps-slow-hint');
-  if (!iframe) return;
-  if (slowHint) slowHint.style.display = 'none';
-  if (_gpsSlowTimer) { clearTimeout(_gpsSlowTimer); _gpsSlowTimer = null; }
+// Retry from the error state — just re-check config.
+function gpsRefresh() { initGPS(); }
+window.gpsRefresh = gpsRefresh;
 
-  // Reuse cached auth URL if still fresh — avoid double login
-  if (_gpsAuthUrl && Date.now() < _gpsAuthUrlExpires) {
-    if (iframe.src !== _gpsAuthUrl) iframe.src = _gpsAuthUrl;
-    gpsShowState('data');
-    return;
+// On opening the GPS tab: lightweight config check (no OneTrack login)
+// to pick launch vs setup. The real login happens only on button click.
+async function initGPS() {
+  gpsShowState('launch'); // optimistic default
+  try {
+    const r = await fetch('/api/gps-auth-url?check=1', { cache: 'no-store' });
+    const j = await r.json();
+    if (j.configured === false) gpsShowState('setup');
+    else gpsShowState('launch');
+  } catch {
+    gpsShowState('launch'); // probe failed — button will surface any error
   }
-  loading.classList.remove('hide');
-  gpsShowState('loading');
-  const url = await gpsGetAuthUrl(false);
-  if (!url) return; // setup/error already shown
-  iframe.onload = () => {
-    loading.classList.add('hide');
-    if (_gpsSlowTimer) { clearTimeout(_gpsSlowTimer); _gpsSlowTimer = null; }
-    document.getElementById('gps-last-sync').textContent =
-      new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-  };
-  iframe.src = url;
-  gpsShowState('data');
-  // Show the "open in new tab" hint bar a few seconds in — the embed often
-  // can't load OneTrack's live data due to third-party cookie blocking, and
-  // we can't detect that across origins. The hint is non-blocking.
-  _gpsSlowTimer = setTimeout(() => {
-    const bar = document.getElementById('gps-hint-bar');
-    if (bar) bar.style.display = '';
-  }, 4000);
-}
-
-function gpsRenderSkeleton() {
-  const grid = document.getElementById('gps-grid');
-  grid.innerHTML = Array.from({length:4}, ()=>'<div class="gps-card skeleton"></div>').join('');
-  grid.style.display = '';
-}
-
-function gpsClassifyStatus(v) {
-  // OneTrack returns various status strings — normalize to moving/idle/offline
-  const s = String(v.status||'').toLowerCase();
-  if (s.includes('mov') || s.includes('run') || s.includes('วิ่ง') || (v.speed||0) > 3) return 'moving';
-  if (s.includes('off') || s.includes('lost') || s.includes('ขาด')) return 'offline';
-  return 'idle';
-}
-
-function gpsFormatTime(t) {
-  if (!t) return '—';
-  // Accept ISO, "YYYY-MM-DD HH:mm:ss", or epoch
-  let d;
-  if (typeof t === 'number') d = new Date(t);
-  else if (/^\d+$/.test(t)) d = new Date(Number(t));
-  else d = new Date(String(t).replace(' ', 'T'));
-  if (isNaN(d)) return String(t);
-  const now = new Date();
-  const diffSec = Math.floor((now - d) / 1000);
-  if (diffSec < 10) return 'เมื่อกี้';
-  if (diffSec < 60) return `${diffSec} วินาที`;
-  if (diffSec < 3600) return `${Math.floor(diffSec/60)} นาที`;
-  if (diffSec < 86400) return `${Math.floor(diffSec/3600)} ชม.`;
-  return d.toLocaleDateString('th-TH');
-}
-
-function gpsRender(vehicles) {
-  const grid = document.getElementById('gps-grid');
-  document.getElementById('gps-count').textContent = vehicles.length;
-  document.getElementById('gps-last-sync').textContent = new Date().toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
-  if (!vehicles.length) { gpsShowState('empty'); return; }
-  grid.innerHTML = vehicles.map(v => {
-    const klass = gpsClassifyStatus(v);
-    const statusLabel = klass === 'moving' ? 'วิ่ง' : klass === 'offline' ? 'ขาดสัญญาณ' : 'จอด';
-    const mapUrl = (v.lat && v.lng) ? `https://www.google.com/maps?q=${v.lat},${v.lng}` : null;
-    const dirUrl = (v.lat && v.lng) ? `https://www.google.com/maps/dir/?api=1&destination=${v.lat},${v.lng}` : null;
-    return `
-      <div class="gps-card">
-        <div class="gps-card-head">
-          <div class="gps-card-plate">🚛 ${(v.plate||'—').toString()}</div>
-          <span class="gps-card-status ${klass}">${statusLabel}</span>
-        </div>
-        ${v.driverName ? `<div class="gps-card-driver">👤 ${v.driverName}</div>` : ''}
-        <div class="gps-card-row">
-          <span class="gps-icon">⚡</span>
-          <span class="gps-label">ความเร็ว</span>
-          <span class="gps-val">${Math.round(v.speed||0)} กม./ชม.</span>
-        </div>
-        <div class="gps-card-row">
-          <span class="gps-icon">📍</span>
-          <span class="gps-label">ตำแหน่ง</span>
-          <span class="gps-val">${v.address || (v.lat && v.lng ? `${v.lat.toFixed(4)}, ${v.lng.toFixed(4)}` : '—')}</span>
-        </div>
-        <div class="gps-card-row">
-          <span class="gps-icon">🕒</span>
-          <span class="gps-label">อัพเดท</span>
-          <span class="gps-val">${gpsFormatTime(v.lastUpdate)}</span>
-        </div>
-        ${mapUrl ? `<div class="gps-card-actions">
-          <a href="${mapUrl}" target="_blank" rel="noopener">🗺️ ดูบนแผนที่</a>
-          <a href="${dirUrl}" target="_blank" rel="noopener">🧭 นำทาง</a>
-        </div>` : ''}
-      </div>
-    `;
-  }).join('');
-  gpsShowState('data');
-}
-
-async function gpsRefresh(manual=false) {
-  // v14.42 — Map is the only view (cards mode removed). Always load the
-  // embedded OneTrack realtime page via the authenticated iframe URL.
-  if (manual) {
-    const btn = document.getElementById('gps-refresh-btn');
-    if (btn) { btn.classList.add('spinning'); setTimeout(()=>btn.classList.remove('spinning'), 1000); }
-    _gpsAuthUrl = null; _gpsAuthUrlExpires = 0; // force fresh login
-  }
-  return gpsLoadMap();
-}
-
-function initGPS() {
-  // Embedded OneTrack map — exactly the page the user asked to view.
-  // The iframe (OneTrack) refreshes its own vehicle positions via MQTT,
-  // so we do NOT poll. We only refresh the auth URL when it expires.
-  gpsRefresh(false);
 }
 window.initGPS = initGPS;
-window.gpsRefresh = gpsRefresh;
 
 function _unused_showGPSErr(msg) {
   const el     = document.getElementById('gps-err');
@@ -12884,7 +12801,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.43';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.44';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
