@@ -136,11 +136,25 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ action: 'push-test', to: req.query.push, push });
   }
 
-  const [info, endpoint, quota] = await Promise.all([
+  const [info, endpoint, quota, defaultRM, rmList] = await Promise.all([
     lineGET('/info', token),
     lineGET('/channel/webhook/endpoint', token),
-    lineGET('/message/quota', token)
+    lineGET('/message/quota', token),
+    lineGET('/user/all/richmenu', token),       // default rich menu assigned to all users
+    lineGET('/richmenu/list', token)            // all rich menus
   ]);
+
+  // Does the default rich menu have an image uploaded? (areas don't show
+  // without it; some clients won't render the menu at all.)
+  let rmImage = null;
+  const defaultRMId = defaultRM.data?.richMenuId;
+  if (defaultRMId) {
+    try {
+      const ir = await fetch(`https://api-data.line.me/v2/bot/richmenu/${defaultRMId}/content`,
+        { headers: { Authorization: `Bearer ${token}` } });
+      rmImage = { status: ir.status, hasImage: ir.ok, contentType: ir.headers.get('content-type') };
+    } catch (e) { rmImage = { error: String(e.message || e) }; }
+  }
 
   // Test delivery to whatever endpoint is registered
   const webhookTest = await linePOST('/channel/webhook/test', token, null);
@@ -178,6 +192,18 @@ module.exports = async function handler(req, res) {
     verdict.push('❌ ไม่มี user เคยถูกบันทึกใน LineStates เลย → ข้อความจริงไม่เคยมาถึง webhook → ต้องเช็ค "โหมดการตอบกลับ/Auto-reply" ใน LINE OA Manager (manager.line.biz)');
   }
 
+  // Rich menu verdict
+  if (!defaultRMId) {
+    verdict.push('❌ ไม่มี default rich menu — user จะไม่เห็นปุ่มเมนูเลย! (รัน POST /api/line-setup?fullSetup=1)');
+  } else {
+    verdict.push('✅ default rich menu ตั้งแล้ว (' + defaultRMId.slice(0,20) + '…)');
+    if (rmImage && !rmImage.hasImage) {
+      verdict.push('⚠️ rich menu ยังไม่มีรูป (' + (rmImage.status||'?') + ') — ปุ่มอาจไม่แสดง รัน fullSetup ใหม่');
+    } else if (rmImage && rmImage.hasImage) {
+      verdict.push('✅ rich menu มีรูปแล้ว (' + (rmImage.contentType||'') + ')');
+    }
+  }
+
   return res.status(200).json({
     ok: true,
     env,
@@ -188,6 +214,9 @@ module.exports = async function handler(req, res) {
     webhookTest: webhookTest.data,
     messageQuota: quota.data,
     lineStates,
-    howToTestReply: 'เพิ่ม ?push=<LINE userId> เพื่อส่งข้อความทดสอบไปหา user นั้น'
+    defaultRichMenu: defaultRM.data,
+    richMenuImage: rmImage,
+    richMenuCount: (rmList.data?.richmenus || []).length,
+    howToTestReply: '?push=<userId> | &qr=1 ปุ่ม | &vehicles=1 ปุ่มทะเบียน'
   });
 };
