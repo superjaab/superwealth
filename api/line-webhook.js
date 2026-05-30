@@ -243,14 +243,29 @@ function applyOCRToState(formData, state, ocrParsed) {
 // ─── LINE API helpers ──────────────────────────────────────────
 async function reply(token, msgs) {
   if (!Array.isArray(msgs)) msgs = [msgs];
-  await fetch(LINE_REPLY_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}`
-    },
-    body: JSON.stringify({ replyToken: token, messages: msgs })
-  });
+  // LINE allows max 5 messages per reply — trim defensively.
+  if (msgs.length > 5) msgs = msgs.slice(0, 5);
+  try {
+    const r = await fetch(LINE_REPLY_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}`
+      },
+      body: JSON.stringify({ replyToken: token, messages: msgs })
+    });
+    if (!r.ok) {
+      // Surface WHY a reply was rejected (malformed flex, >5000 chars,
+      // expired/used replyToken, etc.) — previously failed silently.
+      const detail = await r.text().catch(() => '');
+      console.error(`LINE reply FAILED ${r.status}:`, detail.slice(0, 500),
+        '| msgTypes:', msgs.map(m => m.type).join(','));
+    }
+    return r.ok;
+  } catch (e) {
+    console.error('LINE reply EXCEPTION:', e.message);
+    return false;
+  }
 }
 
 // text message with optional quick replies
