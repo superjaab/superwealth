@@ -4524,7 +4524,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.45 | 29/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.46 | 29/05/2026</span>
   </div>
 </aside>
 
@@ -5195,11 +5195,11 @@
       <!-- Provider cards -->
       <div class="gps-prov-list">
 
-        <!-- OneTrack Smart — login อัตโนมัติ -->
-        <button type="button" class="gps-prov-card onetrack" id="gps-onetrack-card" onclick="gpsOpenAuthed(this)">
+        <!-- OneTrack Smart — เปิดหน้า login (login เอง) -->
+        <button type="button" class="gps-prov-card onetrack" id="gps-onetrack-card" onclick="openGPS('onelink')">
           <div class="gps-prov-icon">📍</div>
           <div class="gps-prov-body">
-            <div class="gps-prov-name">OneTrack Smart <span class="gps-prov-tag">เข้าระบบอัตโนมัติ</span></div>
+            <div class="gps-prov-name">OneTrack Smart</div>
             <div class="gps-prov-desc">Onelink Technology — ติดตามรถยนต์/รถบรรทุก</div>
             <div class="gps-prov-url">onetracksmart.onelink.co.th</div>
           </div>
@@ -5222,7 +5222,7 @@
       <!-- Info notice -->
       <div class="gps-prov-note">
         <span>💡</span>
-        <span><b>OneTrack Smart</b> เข้าระบบให้อัตโนมัติ ไม่ต้องพิมพ์รหัส · <b>Hino Connect</b> เปิดหน้า login ตามปกติ — ทั้งคู่เปิดในแท็บใหม่เพื่อใช้งานเต็มรูปแบบ</span>
+        <span>กดการ์ดเพื่อเปิดระบบ GPS ในแท็บใหม่ แล้ว login ตามปกติ — ใช้งานได้เต็มรูปแบบ (แผนที่ + ข้อมูลสด)</span>
       </div>
     </div>
 
@@ -9153,18 +9153,10 @@ window.gpsOpenAuthed = gpsOpenAuthed;
 function gpsRefresh() { initGPS(); }
 window.gpsRefresh = gpsRefresh;
 
-// On opening the GPS tab: lightweight config check (no OneTrack login)
-// to pick launch vs setup. The real login happens only on button click.
-async function initGPS() {
-  gpsShowState('launch'); // optimistic default
-  try {
-    const r = await fetch('/api/gps-auth-url?check=1', { cache: 'no-store' });
-    const j = await r.json();
-    if (j.configured === false) gpsShowState('setup');
-    else gpsShowState('launch');
-  } catch {
-    gpsShowState('launch'); // probe failed — button will surface any error
-  }
+// GPS tab just shows the provider picker — each card opens the portal's
+// login page in a new tab (user logs in themselves). No proxy/API needed.
+function initGPS() {
+  gpsShowState('launch');
 }
 window.initGPS = initGPS;
 
@@ -12837,7 +12829,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.45';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.46';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
