@@ -132,6 +132,36 @@ module.exports = async function handler(req, res) {
   const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
   if (!token) return res.status(500).json({ error: 'Missing LINE_CHANNEL_ACCESS_TOKEN' });
 
+  // ── GET ?fontcheck=1 : is the bundled Thai font present + readable? ──
+  if (req.method === 'GET' && req.query.fontcheck) {
+    const fs = require('fs'); const path = require('path');
+    const candidates = [
+      path.join(__dirname, 'fonts', 'Sarabun-Bold.ttf'),
+      path.join(process.cwd(), 'api', 'fonts', 'Sarabun-Bold.ttf'),
+      '/var/task/api/fonts/Sarabun-Bold.ttf'
+    ];
+    const found = candidates.map(p => {
+      try { const s = fs.statSync(p); return { path: p, bytes: s.size }; }
+      catch (e) { return { path: p, error: e.code || e.message }; }
+    });
+    let dir = [];
+    try { dir = fs.readdirSync(__dirname); } catch {}
+    let fontsDir = [];
+    try { fontsDir = fs.readdirSync(path.join(__dirname, 'fonts')); } catch (e) { fontsDir = ['ERR:' + (e.code||e.message)]; }
+    return res.json({ __dirname, cwd: process.cwd(), candidates: found, apiDir: dir, fontsDir });
+  }
+
+  // ── GET ?rendertest=1 : render the menu image and return the PNG ──
+  if (req.method === 'GET' && req.query.rendertest) {
+    try {
+      const png = await renderMenuSVGtoJPEG();
+      res.setHeader('Content-Type', 'image/png');
+      return res.status(200).send(png);
+    } catch (e) {
+      return res.status(500).json({ error: 'render failed', detail: String(e.stack || e.message || e) });
+    }
+  }
+
   // ── GET: show status ──────────────────────────────────────────
   if (req.method === 'GET') {
     const list = await lineAPI('/richmenu/list');
