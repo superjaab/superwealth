@@ -670,6 +670,86 @@ body.dark :where(.sb-brand, .sidebar-brand) {
     inset 0 1px 0 rgba(255,255,255,.18);
 }
 
+/* ════════════════════════════════════════════════════════════════════
+   v14.47 — Universal list toolbar (search · count · export)
+   ════════════════════════════════════════════════════════════════════ */
+.list-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  flex-wrap: wrap;
+}
+.lt-search {
+  flex: 1;
+  min-width: 180px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  height: 42px;
+  background: var(--sw-bg-card, #fff);
+  border: 1px solid var(--sw-border, #e4e8ee);
+  border-radius: 12px;
+  transition: border-color .15s, box-shadow .15s;
+}
+body.dark .lt-search { background: #131826; border-color: #2d3548; }
+.lt-search:focus-within {
+  border-color: var(--sw-primary, #2563eb);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sw-primary, #2563eb) 16%, transparent);
+}
+.lt-search svg {
+  width: 18px; height: 18px; flex-shrink: 0;
+  color: var(--sw-fg-muted, #98a1b0);
+}
+.lt-search input {
+  flex: 1; min-width: 0;
+  border: none; outline: none; background: transparent;
+  font-family: inherit; font-size: .92rem;
+  color: var(--sw-fg-primary, #1a1f2e);
+}
+body.dark .lt-search input { color: #f1f5f9; }
+.lt-search input::placeholder { color: var(--sw-fg-muted, #98a1b0); }
+.lt-clear {
+  border: none; background: transparent; cursor: pointer;
+  color: var(--sw-fg-muted, #98a1b0); font-size: .9rem;
+  width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0;
+  transition: all .15s;
+}
+.lt-clear:hover { background: var(--sw-bg-subtle, #f1f3f7); color: var(--sw-fg-primary, #1a1f2e); }
+.lt-count {
+  font-size: .8rem; font-weight: 700;
+  color: var(--sw-fg-tertiary, #5a6577);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.lt-export {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 42px; padding: 0 16px;
+  border: 1px solid var(--sw-border, #e4e8ee);
+  background: var(--sw-bg-card, #fff);
+  color: var(--sw-fg-secondary, #4a5568);
+  border-radius: 12px; cursor: pointer;
+  font-family: inherit; font-size: .85rem; font-weight: 700;
+  transition: all .15s;
+}
+body.dark .lt-export { background: #131826; border-color: #2d3548; color: #cbd5e1; }
+.lt-export svg { width: 17px; height: 17px; }
+.lt-export:hover {
+  background: var(--sw-success-soft, #dcfce7);
+  color: var(--sw-success, #16a34a);
+  border-color: var(--sw-success, #16a34a);
+}
+.lt-nomatch {
+  text-align: center; padding: 32px 16px;
+  color: var(--sw-fg-tertiary, #5a6577); font-size: .9rem;
+}
+@media (max-width: 480px) {
+  .lt-export span { display: none; }   /* icon-only on small phones */
+  .lt-export { padding: 0 12px; }
+  .lt-count { order: 3; width: 100%; text-align: right; margin-top: -4px; }
+}
+
 /* ────────────────────────────────────────────────────────────────
    END of polish.css — additions stop here.
    To extend, append below and keep :where() for low specificity.

@@ -4524,7 +4524,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.46 | 29/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.47 | 31/05/2026</span>
   </div>
 </aside>
 
@@ -10365,9 +10365,132 @@ function emptyAction(tab) {
     if (formBtn) formBtn.click();
   }, 80);
 }
+// ═══════════════════════════════════════════════════════════════════
+// v14.47 — UNIVERSAL LIST TOOLBAR (search · live count · CSV export)
+// One toolbar injected above every list tab. Search filters the rendered
+// cards by their text content (render-function agnostic), so it works for
+// all 9 list types without touching each renderer.
+// ═══════════════════════════════════════════════════════════════════
+const LIST_LABELS = {
+  truck:'เที่ยวรถ', income:'รายรับ', expense:'รายจ่าย', vehicle:'ทะเบียนรถ',
+  driver:'คนขับ', customer:'ลูกค้า', maintenance:'ซ่อมบำรุง', fuel:'น้ำมัน', invoice:'ใบเสร็จ'
+};
+// Thai column headers for CSV (per type). Keys not listed fall back to raw key.
+const CSV_COLS = {
+  truck:   ['pickupDate','deliveryDate','tripRound','plateNumber','driverName','customerName','origin','destination','cargoList','cargoWeight','freightCost','paymentStatus','jobStatus','remark'],
+  income:  ['incomeDate','docNumber','customerName','incomeItem','amount','paymentMethod','linkedTripRound','remark'],
+  expense: ['expenseDate','category','plateNumber','vendor','expenseDetail','amount','paymentMethod','linkedTripRound','remark'],
+  vehicle: ['plateNumber','vehicleType','brand','model','year','loadCapacity','regExpiry','prbExpiry','insuranceExpiry','inspectionExpiry','assignedDriver','assignedDriverPhone','notes'],
+  driver:  ['driverName','driverPhone','idCard','licenseType','licenseExpiry','address','notes'],
+  customer:['customerName','contactPerson','customerPhone','taxId','address','notes'],
+  maintenance:['maintenanceDate','plateNumber','maintenanceType','vendor','detail','cost','nextDueDate','remark'],
+  fuel:    ['fuelDate','plateNumber','liters','pricePerLiter','totalCost','odometer','station','remark'],
+  invoice: ['invoiceDate','invoiceNumber','customerName','items','subtotal','vat','total','status','remark']
+};
+const CSV_HEAD_TH = {
+  pickupDate:'วันรับสินค้า', deliveryDate:'วันส่งสินค้า', tripRound:'รอบเที่ยว', plateNumber:'ทะเบียนรถ',
+  driverName:'คนขับ', customerName:'ลูกค้า', origin:'ต้นทาง', destination:'ปลายทาง', cargoList:'สินค้า',
+  cargoWeight:'น้ำหนัก', freightCost:'ค่าขนส่ง', paymentStatus:'สถานะจ่าย', jobStatus:'สถานะงาน', remark:'หมายเหตุ',
+  incomeDate:'วันที่', docNumber:'เลขเอกสาร', incomeItem:'รายการ', amount:'จำนวนเงิน', paymentMethod:'ช่องทาง',
+  linkedTripRound:'เที่ยวที่เชื่อม', expenseDate:'วันที่', category:'ประเภท', vendor:'ผู้ขาย/ร้าน', expenseDetail:'รายละเอียด',
+  vehicleType:'ประเภทรถ', brand:'ยี่ห้อ', model:'รุ่น', year:'ปี', loadCapacity:'น้ำหนักบรรทุก',
+  regExpiry:'ทะเบียนหมดอายุ', prbExpiry:'พรบหมดอายุ', insuranceExpiry:'ประกันหมดอายุ', inspectionExpiry:'ตรวจสภาพหมดอายุ',
+  assignedDriver:'คนขับประจำ', assignedDriverPhone:'เบอร์คนขับ', driverPhone:'เบอร์โทร', idCard:'เลขบัตรปชช',
+  licenseType:'ประเภทใบขับขี่', licenseExpiry:'ใบขับขี่หมดอายุ', address:'ที่อยู่', contactPerson:'ผู้ติดต่อ',
+  customerPhone:'เบอร์โทร', taxId:'เลขผู้เสียภาษี', maintenanceDate:'วันที่ซ่อม', maintenanceType:'ประเภทซ่อม',
+  detail:'รายละเอียด', cost:'ค่าใช้จ่าย', nextDueDate:'ครบกำหนดครั้งหน้า', fuelDate:'วันที่', liters:'ลิตร',
+  pricePerLiter:'ราคา/ลิตร', totalCost:'รวมเงิน', odometer:'เลขไมล์', station:'ปั๊ม', invoiceDate:'วันที่',
+  invoiceNumber:'เลขใบเสร็จ', items:'รายการ', subtotal:'ยอดก่อนภาษี', vat:'ภาษี', total:'รวม', status:'สถานะ'
+};
+
+function ensureListToolbar(type, containerId) {
+  const list = document.getElementById(containerId);
+  if (!list) return;
+  const tbId = `lt-${type}`;
+  if (document.getElementById(tbId)) return;   // already built
+  const tb = document.createElement('div');
+  tb.id = tbId;
+  tb.className = 'list-toolbar';
+  tb.innerHTML = `
+    <div class="lt-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="text" id="lt-input-${type}" placeholder="ค้นหา${LIST_LABELS[type]||''}..."
+             autocomplete="off" oninput="applyListFilter('${type}','${containerId}')">
+      <button class="lt-clear" id="lt-clear-${type}" title="ล้าง" onclick="clearListFilter('${type}','${containerId}')" style="display:none">✕</button>
+    </div>
+    <span class="lt-count" id="lt-count-${type}"></span>
+    <button class="lt-export" onclick="exportListCsv('${type}')" title="ส่งออก CSV (Excel)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+      <span>Export</span>
+    </button>`;
+  list.parentNode.insertBefore(tb, list);
+}
+
+function applyListFilter(type, containerId) {
+  const list = document.getElementById(containerId);
+  const input = document.getElementById(`lt-input-${type}`);
+  if (!list) return;
+  const q = (input?.value || '').trim().toLowerCase();
+  const clearBtn = document.getElementById(`lt-clear-${type}`);
+  if (clearBtn) clearBtn.style.display = q ? '' : 'none';
+  // Filter direct child cards by text content
+  const cards = [...list.children].filter(c => c.nodeType === 1 && !c.classList.contains('empty-state') && !c.classList.contains('skeleton-card'));
+  let shown = 0;
+  cards.forEach(c => {
+    const match = !q || (c.textContent || '').toLowerCase().includes(q);
+    c.style.display = match ? '' : 'none';
+    if (match) shown++;
+  });
+  const total = (_listCache[type] || []).length;
+  const cnt = document.getElementById(`lt-count-${type}`);
+  if (cnt) cnt.textContent = q ? `${shown} / ${total} รายการ` : `${total} รายการ`;
+  // "No match" hint
+  let nm = document.getElementById(`lt-nomatch-${type}`);
+  if (q && shown === 0 && cards.length) {
+    if (!nm) {
+      nm = document.createElement('div');
+      nm.id = `lt-nomatch-${type}`;
+      nm.className = 'lt-nomatch';
+      nm.innerHTML = `🔍 ไม่พบรายการที่ตรงกับ "<b>${escHtml(q)}</b>"`;
+      list.appendChild(nm);
+    } else { nm.style.display = ''; nm.querySelector('b').textContent = q; }
+  } else if (nm) { nm.style.display = 'none'; }
+}
+
+function clearListFilter(type, containerId) {
+  const input = document.getElementById(`lt-input-${type}`);
+  if (input) input.value = '';
+  applyListFilter(type, containerId);
+  input?.focus();
+}
+
+// Generic CSV export from the in-memory list cache (covers all 9 types).
+function exportListCsv(type) {
+  if (typeof requireAuth === 'function' && !requireAuth()) return;
+  const data = _listCache[type] || [];
+  if (!data.length) { showToast('ไม่มีข้อมูลให้ส่งออก','warning'); return; }
+  const cols = CSV_COLS[type] || Object.keys(data[0]);
+  const escCell = v => {
+    const s = String(v==null?'':v).replace(/"/g,'""');
+    return /[",\n\r]/.test(s) ? `"${s}"` : s;
+  };
+  const head = cols.map(c => CSV_HEAD_TH[c] || c);
+  const lines = [head.join(',')];
+  data.forEach(r => lines.push(cols.map(c => escCell(r[c])).join(',')));
+  const csv = '﻿' + lines.join('\r\n');   // BOM for Excel UTF-8
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `superwealth-${LIST_LABELS[type]||type}-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  showToast(`📤 ส่งออก "${LIST_LABELS[type]||type}" สำเร็จ (${data.length} แถว)`, 'success');
+}
+
 async function loadList(type, containerId, renderFn) {
   const el = document.getElementById(containerId);
   if (!el) return;
+  ensureListToolbar(type, containerId);   // v14.47 — search + count + export
   el.innerHTML = skeletonList(5);
   try {
     const res  = await fetch(`/api/get-data?type=${type}`);
@@ -10375,6 +10498,7 @@ async function loadList(type, containerId, renderFn) {
     const items = (json.data||{})[type] || [];
     _listCache[type] = items;     // cache for edit/delete lookup
     el.innerHTML = items.length ? renderFn(items) : emptyStateHtml(type);
+    applyListFilter(type, containerId);   // re-apply active search + refresh count
     // update registries for datalist
     if (type==='vehicle')  { REG.vehicles=items;  populateDl('plate-dl', items.map(v=>v.plateNumber)); }
     if (type==='customer') { REG.customers=items; populateDl('cust-dl', items.map(c=>c.customerName)); }
@@ -12829,7 +12953,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.46';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.47';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
