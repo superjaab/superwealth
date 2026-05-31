@@ -313,6 +313,28 @@ function kindFromStep(step) {
 }
 const CONFIRM_STATE = { truck:'truck_confirm', income:'inc_confirm', expense:'exp_confirm', maintenance:'maint_confirm' };
 
+// Required fields per record type — block save until these are filled.
+function missingRequired(kind, f) {
+  const has = v => v != null && String(v).trim() !== '' && String(v).trim() !== '-';
+  const pos = v => parseFloat(v) > 0;
+  const need = [];
+  if (kind === 'truck') {
+    if (!has(f.pickupDate))  need.push('📅 วันที่รับ');
+    if (!has(f.plateNumber)) need.push('🚛 ทะเบียนรถ');
+  } else if (kind === 'income') {
+    if (!has(f.incomeDate))  need.push('📅 วันที่');
+    if (!pos(f.amount))      need.push('💵 จำนวนเงิน');
+  } else if (kind === 'expense') {
+    if (!has(f.expenseDate)) need.push('📅 วันที่');
+    if (!has(f.category))    need.push('💸 ประเภท');
+    if (!pos(f.amount))      need.push('💵 จำนวนเงิน');
+  } else if (kind === 'maintenance') {
+    if (!has(f.maintenanceDate)) need.push('📅 วันที่ซ่อม');
+    if (!has(f.plateNumber))     need.push('🚛 ทะเบียน');
+  }
+  return need;
+}
+
 function buildStep(step, ref) {
   const { vehicles } = ref;
   const plates = uniq(vehicles, 'plateNumber');
@@ -401,11 +423,13 @@ function flexEditRow(row) {
   } else {
     action = { type:'postback', label:'แก้ไข', data:'EDIT:'+row.step, displayText:'✏️ แก้ '+row.k };
   }
+  const empty = !(row.v != null && String(row.v).trim() !== '' && String(row.v).trim() !== '-');
   return {
     type:'box', layout:'horizontal', margin:'md', paddingAll:'sm', cornerRadius:'md', action,
     contents:[
       { type:'text', text:row.k, size:'sm', color:C.textSub, flex:4, weight:'regular' },
-      { type:'text', text:String(row.v||'-'), size:'sm', color:row.col||C.text, flex:5, weight:'bold', align:'end', wrap:true },
+      { type:'text', text: empty ? 'แตะเพื่อกรอก' : String(row.v), size:'sm',
+        color: empty ? C.textMute : (row.col||C.text), flex:5, weight:'bold', align:'end', wrap:true },
       { type:'text', text:'✏️', size:'xs', flex:0, color:C.textMute, align:'end', gravity:'center', margin:'sm' }
     ]
   };
@@ -489,36 +513,36 @@ async function buildWelcomeFlex(sheets, sheetId) {
 function buildConfirmFlex(type, f) {
   // Each row: { k:label, v:value, col?:valueColor, step:editStepId, date?:true }
   const meta = {
-    truck:   { icon:'🚛', title:'ยืนยันบันทึกรถ',   color: C.primary,
+    truck:   { icon:'🚛', title:'บันทึกรถ',   color: C.primary,
                rows:[
                  { k:'📅 วันที่รับ', v:f.pickupDate,  step:'truck_1', date:true },
                  { k:'🚛 ทะเบียนรถ', v:f.plateNumber, step:'truck_2' },
                  { k:'👤 คนขับ',     v:f.driverName,  step:'truck_driver' },
                  { k:'📍 ต้นทาง',     v:f.origin,       step:'truck_3' },
                  { k:'📍 ปลายทาง',    v:f.destination,  step:'truck_4' },
-                 { k:'💵 ค่าขนส่ง',   v:`${num(f.freightCost)} บาท`, col:C.success, step:'truck_5' },
+                 { k:'💵 ค่าขนส่ง',   v:(f.freightCost ? `${num(f.freightCost)} บาท` : ''), col:C.success, step:'truck_5' },
                  { k:'💳 สถานะ',      v:f.paymentStatus, col:(f.paymentStatus==='ชำระแล้ว'?C.success:C.danger), step:'truck_6' }
                ]},
-    income:  { icon:'💰', title:'ยืนยันรายรับ',     color: C.success,
+    income:  { icon:'💰', title:'บันทึกรายรับ',     color: C.success,
                rows:[
                  { k:'📅 วันที่',     v:f.incomeDate, step:'inc_1', date:true },
                  { k:'💰 ประเภท',     v:f.incomeItem, step:'inc_2' },
-                 { k:'💵 จำนวน',      v:`${num(f.amount)} บาท`, col:C.success, step:'inc_3' },
+                 { k:'💵 จำนวน',      v:(f.amount ? `${num(f.amount)} บาท` : ''), col:C.success, step:'inc_3' },
                  { k:'💳 ช่องทาง',    v:f.paymentMethod, step:'inc_4' }
                ]},
-    expense: { icon:'💸', title:'ยืนยันรายจ่าย',    color: C.danger,
+    expense: { icon:'💸', title:'บันทึกรายจ่าย',    color: C.danger,
                rows:[
                  { k:'📅 วันที่',     v:f.expenseDate, step:'exp_1', date:true },
                  { k:'💸 ประเภท',     v:f.category, step:'exp_2' },
-                 { k:'💵 จำนวน',      v:`${num(f.amount)} บาท`, col:C.danger, step:'exp_3' },
+                 { k:'💵 จำนวน',      v:(f.amount ? `${num(f.amount)} บาท` : ''), col:C.danger, step:'exp_3' },
                  { k:'💳 ช่องทาง',    v:f.paymentMethod, step:'exp_4' }
                ]},
-    maintenance: { icon:'🔧', title:'ยืนยันซ่อมบำรุง', color: C.warningDark,
+    maintenance: { icon:'🔧', title:'บันทึกซ่อมบำรุง', color: C.warningDark,
                rows:[
                  { k:'📅 วันที่ซ่อม', v:f.maintenanceDate, step:'maint_1', date:true },
                  { k:'🚛 ทะเบียน',    v:f.plateNumber, step:'maint_2' },
                  { k:'🔧 ประเภท',     v:f.maintenanceType, step:'maint_3' },
-                 { k:'💵 ค่าซ่อม',    v:`${num(f.cost)} บาท`, col:C.warningDark, step:'maint_4' }
+                 { k:'💵 ค่าซ่อม',    v:(f.cost ? `${num(f.cost)} บาท` : ''), col:C.warningDark, step:'maint_4' }
                ]}
   };
   const m = meta[type] || meta.truck;
@@ -530,7 +554,7 @@ function buildConfirmFlex(type, f) {
         type:'box', layout:'vertical', backgroundColor:m.color, paddingAll:'lg',
         contents:[
           { type:'text', text:`${m.icon} ${m.title}`, color: C.white, weight:'bold', size:'md' },
-          { type:'text', text:'แตะที่แถวเพื่อแก้ไข ✏️ · ตรวจสอบก่อนยืนยัน', color:'#FFFFFF', size:'xxs', margin:'xs', weight:'regular', wrap:true }
+          { type:'text', text:'แตะที่แต่ละช่องเพื่อกรอก/แก้ไข ✏️ แล้วกดยืนยัน', color:'#FFFFFF', size:'xxs', margin:'xs', weight:'regular', wrap:true }
         ]
       },
       body: {
@@ -1147,29 +1171,23 @@ async function handleEvent(event, sheets, sheetId) {
   }
 
   // ── Menu triggers (Rich Menu sends these postback data) ────────
+  // Open the fill-it-yourself form card immediately (empty) — tap each row to
+  // fill, in any order, then ยืนยัน. (No more one-question-at-a-time chat.)
   if (text==='MENU_TRUCK' || text==='🚛 บันทึกรถ') {
-    const ref = await getRef(sheets, sheetId);
-    const s = buildStep('truck_1', ref);
-    await writeState(sheets, sheetId, userId, 'truck_1', {}, rowNum);
-    return reply(token, txt(s.q, s.qr));
+    await writeState(sheets, sheetId, userId, 'truck_confirm', {}, rowNum);
+    return reply(token, buildConfirmFlex('truck', {}));
   }
   if (text==='MENU_INCOME' || text==='💰 รายรับ') {
-    const ref = await getRef(sheets, sheetId);
-    const s = buildStep('inc_1', ref);
-    await writeState(sheets, sheetId, userId, 'inc_1', {}, rowNum);
-    return reply(token, txt(s.q, s.qr));
+    await writeState(sheets, sheetId, userId, 'inc_confirm', {}, rowNum);
+    return reply(token, buildConfirmFlex('income', {}));
   }
   if (text==='MENU_EXPENSE' || text==='💸 รายจ่าย') {
-    const ref = await getRef(sheets, sheetId);
-    const s = buildStep('exp_1', ref);
-    await writeState(sheets, sheetId, userId, 'exp_1', {}, rowNum);
-    return reply(token, txt(s.q, s.qr));
+    await writeState(sheets, sheetId, userId, 'exp_confirm', {}, rowNum);
+    return reply(token, buildConfirmFlex('expense', {}));
   }
   if (text==='MENU_MAINTENANCE' || text==='🔧 ซ่อมบำรุง') {
-    const ref = await getRef(sheets, sheetId);
-    const s = buildStep('maint_1', ref);
-    await writeState(sheets, sheetId, userId, 'maint_1', {}, rowNum);
-    return reply(token, txt(s.q, s.qr));
+    await writeState(sheets, sheetId, userId, 'maint_confirm', {}, rowNum);
+    return reply(token, buildConfirmFlex('maintenance', {}));
   }
   if (text==='MENU_CALENDAR' || text==='📅 ปฏิทิน' || text==='cal_now' || pb==='cal_now') {
     const now = bkkNow();
@@ -1235,6 +1253,15 @@ async function handleEvent(event, sheets, sheetId) {
     const t = (text || '').replace(/[✅❌\s]/g, '');
     const isConfirm = t.startsWith('ยืนยัน') || t.toLowerCase().startsWith('confirm') || t === 'ok' || t === 'โอเค';
     if (isConfirm) {
+      // Block save if required fields are still blank (form may be partially
+      // filled since the user fills the card in any order).
+      const miss = missingRequired(kind, formData);
+      if (miss.length) {
+        return reply(token, [
+          txt('⚠️ ยังกรอกไม่ครบ: ' + miss.join(', ') + '\nแตะที่แถวด้านล่างเพื่อกรอกให้ครบก่อนนะครับ'),
+          buildConfirmFlex(kind, formData)
+        ]);
+      }
       try {
         let id;
         if (kind === 'truck')         id = await saveTruck(sheets,       sheetId, formData);
