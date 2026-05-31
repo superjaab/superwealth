@@ -375,7 +375,7 @@ function buildStep(step, ref) {
   if (!s) return null;
   // Always offer a cancel button on every form step (kept last; total stays
   // within LINE's 13 quick-reply limit since the largest list is 10 items).
-  s.qr = [...(s.qr || []), qMsg('❌ ยกเลิก', '❌ ยกเลิก')];
+  s.qr = [...(s.qr || []), qPb('❌ ยกเลิก', 'DO_CANCEL')];
   return s;
 }
 
@@ -421,7 +421,7 @@ function flexEditRow(row) {
     action = { type:'datetimepicker', label:'แก้ไข', mode:'date', data:'EDITDATE:'+row.step };
     if (validIso) action.initial = validIso;
   } else {
-    action = { type:'postback', label:'แก้ไข', data:'EDIT:'+row.step, displayText:'✏️ แก้ '+row.k };
+    action = { type:'postback', label:'แก้ไข', data:'EDIT:'+row.step }; // no displayText → silent
   }
   const empty = !(row.v != null && String(row.v).trim() !== '' && String(row.v).trim() !== '-');
   return {
@@ -566,9 +566,9 @@ function buildConfirmFlex(type, f) {
         contents:[
           { type:'box', layout:'horizontal', spacing:'sm', contents:[
             { type:'button', style:'secondary', height:'sm', flex:1,
-              action:{ type:'message', label:'❌ ยกเลิก', text:'❌ ยกเลิก' } },
+              action:{ type:'postback', label:'❌ ยกเลิก', data:'DO_CANCEL' } },
             { type:'button', style:'primary', color:m.color, height:'sm', flex:2,
-              action:{ type:'message', label:'✅ ยืนยัน', text:'✅ ยืนยัน' } }
+              action:{ type:'postback', label:'✅ ยืนยัน', data:'DO_CONFIRM' } }
           ]},
           { type:'button', style:'link', height:'sm',
             action:{ type:'uri', label:'📝 เปิดฟอร์มเต็มหน้า (dropdown)', uri:`${WEB_URL}/liff.html?type=${type}` } }
@@ -585,8 +585,10 @@ function buildConfirmFlex(type, f) {
 function buildPicker(title, step, options) {
   const kind = kindFromStep(step);
   const color = ({ truck:C.primary, income:C.success, expense:C.danger, maintenance:C.warningDark })[kind] || C.primary;
+  // Postback (no displayText) so tapping an option does NOT post a chat bubble.
   const buttons = options.slice(0, 12).map(opt => ({
-    type:'button', style:'secondary', height:'sm', margin:'sm', action: opt.action
+    type:'button', style:'secondary', height:'sm', margin:'sm',
+    action:{ type:'postback', label: opt.action.label, data:`PICK:${step}:${opt.action.text}` }
   }));
   return {
     type:'flex', altText: title,
@@ -601,7 +603,7 @@ function buildPicker(title, step, options) {
       },
       body: { type:'box', layout:'vertical', paddingAll:'md', spacing:'xs', contents: buttons }
     },
-    quickReply: { items: [ qMsg('❌ ยกเลิก', '❌ ยกเลิก') ] }
+    quickReply: { items: [ qPb('❌ ยกเลิก', 'DO_CANCEL') ] }
   };
 }
 
@@ -1174,7 +1176,7 @@ async function handleEvent(event, sheets, sheetId) {
   }
 
   // ── Global cancel ──────────────────────────────────────────────
-  if (text === 'ยกเลิก' || text === '❌ ยกเลิก') {
+  if (text === 'ยกเลิก' || text === '❌ ยกเลิก' || pb === 'DO_CANCEL') {
     await writeState(sheets, sheetId, userId, 'idle', {}, rowNum);
     return reply(token, txt('ยกเลิกแล้วครับ 👍 กดเมนูด้านล่างเพื่อเริ่มใหม่'));
   }
@@ -1191,6 +1193,27 @@ async function handleEvent(event, sheets, sheetId) {
       const [y,mo,d] = iso.split('-');
       formData[field] = `${d}/${mo}/${y}`;     // store as DD/MM/YYYY (display fmt)
     }
+    await writeState(sheets, sheetId, userId, CONFIRM_STATE[kind], formData, rowNum);
+    return reply(token, buildConfirmFlex(kind, formData));
+  }
+  // PICK:<step>:<value> → option tapped in a picker card (silent postback).
+  // Set the field and go straight back to the form card — no chat bubble.
+  if (pb.startsWith('PICK:')) {
+    const rest  = pb.slice('PICK:'.length);
+    const sep   = rest.indexOf(':');
+    const step  = sep >= 0 ? rest.slice(0, sep) : rest;
+    const value = sep >= 0 ? rest.slice(sep + 1) : '';
+    const field = FIELD[step];
+    if (field) formData[field] = value;
+    if (field === 'plateNumber') {
+      try {
+        const vehicles = await sheetRows(sheets, sheetId, 'Vehicles');
+        const veh = vehicles.find(v => v.plateNumber === value);
+        if (veh?.assignedDriver)      formData.driverName  = veh.assignedDriver;
+        if (veh?.assignedDriverPhone) formData.driverPhone = veh.assignedDriverPhone;
+      } catch { /* ignore */ }
+    }
+    const kind = kindFromStep(step);
     await writeState(sheets, sheetId, userId, CONFIRM_STATE[kind], formData, rowNum);
     return reply(token, buildConfirmFlex(kind, formData));
   }
@@ -1318,7 +1341,7 @@ async function handleEvent(event, sheets, sheetId) {
     // that isn't a confirm here is stray input — re-show the card instead of
     // silently wiping the user's entry.)
     const t = (text || '').replace(/[✅❌\s]/g, '');
-    const isConfirm = t.startsWith('ยืนยัน') || t.toLowerCase().startsWith('confirm') || t === 'ok' || t === 'โอเค';
+    const isConfirm = pb === 'DO_CONFIRM' || t.startsWith('ยืนยัน') || t.toLowerCase().startsWith('confirm') || t === 'ok' || t === 'โอเค';
     if (isConfirm) {
       // Block save if required fields are still blank (form may be partially
       // filled since the user fills the card in any order).
