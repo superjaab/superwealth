@@ -340,7 +340,12 @@ function buildStep(step, ref) {
                     qMsg('อื่นๆ','อื่นๆ') ] },
     maint_4: { q:'💵 ค่าซ่อม (บาท) พิมพ์เป็นตัวเลข', qr: [] },
   };
-  return STEPS[step] || null;
+  const s = STEPS[step];
+  if (!s) return null;
+  // Always offer a cancel button on every form step (kept last; total stays
+  // within LINE's 13 quick-reply limit since the largest list is 10 items).
+  s.qr = [...(s.qr || []), qMsg('❌ ยกเลิก', '❌ ยกเลิก')];
+  return s;
 }
 
 // ─── Confirm summaries ─────────────────────────────────────────
