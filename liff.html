@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>SuperWealth · ฟอร์มบันทึก</title>
+<style>
+  :root{ --c:#1565C0; --cDark:#0D47A1; --bg:#F5F7FB; --line:#E4E8EE;
+         --sub:#5A6577; --mute:#98A1B0; --text:#1A1F2E; --green:#2E7D32; --danger:#C62828; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body{ margin:0; font-family:-apple-system,"Sarabun","Segoe UI",sans-serif; background:var(--bg); color:var(--text); }
+  .wrap{ max-width:540px; margin:0 auto; min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; }
+  header{ background:var(--cDark); color:#fff; padding:20px 18px 16px; }
+  header h1{ margin:0; font-size:19px; font-weight:800; }
+  header p{ margin:5px 0 0; font-size:12.5px; color:#cfe2ff; }
+  form{ padding:16px; display:flex; flex-direction:column; gap:14px; flex:1; }
+  .field label{ display:block; font-size:13px; font-weight:700; color:var(--sub); margin-bottom:6px; }
+  .req{ color:var(--danger); }
+  .field input, .field select{ width:100%; padding:13px 12px; font-size:16px; font-family:inherit;
+    border:1.5px solid var(--line); border-radius:12px; background:#fff; color:var(--text); appearance:none; }
+  .field select{ background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%235A6577' stroke-width='2.5'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat:no-repeat; background-position:right 12px center; padding-right:38px; }
+  .field input:focus, .field select:focus{ outline:none; border-color:var(--c); }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .btns{ position:sticky; bottom:0; background:linear-gradient(transparent,var(--bg) 28%);
+    padding:14px 16px calc(18px + env(safe-area-inset-bottom)); display:flex; gap:10px; }
+  button{ flex:1; padding:15px; font-size:16px; font-weight:800; font-family:inherit; border:none; border-radius:14px; cursor:pointer; }
+  .cancel{ background:#E9ECF2; color:var(--sub); flex:0 0 32%; }
+  .save{ background:var(--c); color:#fff; }
+  .save:disabled{ opacity:.55; }
+  .overlay{ position:fixed; inset:0; background:rgba(245,247,251,.96); display:none; flex-direction:column;
+    align-items:center; justify-content:center; gap:14px; padding:30px; text-align:center; z-index:9; }
+  .overlay.show{ display:flex; }
+  .spinner{ width:40px; height:40px; border:4px solid var(--line); border-top-color:var(--c); border-radius:50%; animation:spin .8s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .ok-emoji{ font-size:56px; }
+  .ok-title{ font-size:20px; font-weight:800; color:var(--green); }
+  .ok-id{ font-size:13px; color:var(--mute); }
+  .err{ color:var(--danger); font-weight:700; }
+  .hint{ font-size:11.5px; color:var(--mute); margin-top:4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="title">บันทึก</h1>
+    <p id="subtitle">กรอกข้อมูลให้ครบแล้วกดบันทึก</p>
+  </header>
+  <form id="f" autocomplete="off"></form>
+  <div class="btns">
+    <button type="button" class="cancel" id="cancelBtn">ยกเลิก</button>
+    <button type="submit" form="f" class="save" id="saveBtn">✅ บันทึก</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div id="loading"><div class="spinner"></div><p>กำลังบันทึก…</p></div>
+  <div id="done" style="display:none">
+    <div class="ok-emoji">✅</div>
+    <div class="ok-title" id="okMsg">บันทึกสำเร็จ</div>
+    <div class="ok-id" id="okId"></div>
+    <div class="btns" style="position:static;background:none;padding-top:18px">
+      <button class="save" id="closeBtn">เสร็จสิ้น</button>
+    </div>
+  </div>
+  <div id="failbox" style="display:none">
+    <div class="ok-emoji">⚠️</div>
+    <div class="err" id="failMsg">บันทึกไม่สำเร็จ</div>
+    <div class="btns" style="position:static;background:none;padding-top:18px">
+      <button class="cancel" id="retryBtn" style="flex:1">↩️ ลองใหม่</button>
+    </div>
+  </div>
+</div>
+
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script>
+  // ใส่ LIFF ID เมื่อตั้งค่าใน LINE Developers Console แล้ว (auto-close กลับแชต)
+  const LIFF_ID = "";
+  const API = location.origin;
+  const PROVINCES = ['กรุงเทพ','นครราชสีมา','ขอนแก่น','อุดรธานี','เชียงใหม่','สมุทรปราการ',
+    'ชลบุรี','นนทบุรี','พระนครศรีอยุธยา','ระยอง','นครปฐม','ปทุมธานี','สระบุรี','สุราษฎร์ธานี'];
+
+  // ── Form configs per record type ──────────────────────────────
+  const TYPES = {
+    truck: { title:'🚛 บันทึกรถ', color:'#1565C0', sub:'งานเดินรถ / เที่ยววิ่ง',
+      fields:[
+        {id:'pickupDate', label:'วันที่รับสินค้า', type:'date', required:true},
+        {id:'plateNumber', label:'ทะเบียนรถ', type:'plate', required:true},
+        {id:'driverName', label:'คนขับ', type:'text', placeholder:'ชื่อคนขับ (เติมอัตโนมัติเมื่อเลือกทะเบียน)'},
+        {id:'origin', label:'ต้นทาง', type:'province', half:true},
+        {id:'destination', label:'ปลายทาง', type:'province', half:true},
+        {id:'freightCost', label:'ค่าขนส่ง (บาท)', type:'number', half:true},
+        {id:'paymentStatus', label:'สถานะ', type:'select', options:['ค้างจ่าย','ชำระแล้ว'], half:true},
+      ]},
+    income: { title:'💰 บันทึกรายรับ', color:'#2E7D32', sub:'เงินเข้า',
+      fields:[
+        {id:'incomeDate', label:'วันที่รับเงิน', type:'date', required:true},
+        {id:'incomeItem', label:'ประเภทรายรับ', type:'select', options:['ค่าขนส่ง','ค่ามัดจำ','อื่นๆ']},
+        {id:'amount', label:'จำนวนเงิน (บาท)', type:'number', required:true, half:true},
+        {id:'paymentMethod', label:'ช่องทาง', type:'select', options:['เงินสด','โอน','เช็ค'], half:true},
+        {id:'customerName', label:'ลูกค้า (ถ้ามี)', type:'text'},
+      ]},
+    expense: { title:'💸 บันทึกรายจ่าย', color:'#C62828', sub:'เงินออก',
+      fields:[
+        {id:'expenseDate', label:'วันที่จ่ายเงิน', type:'date', required:true},
+        {id:'category', label:'ประเภทรายจ่าย', type:'select', required:true,
+          options:['น้ำมัน','ซ่อมบำรุง','ค่าทางด่วน','เบี้ยเลี้ยง','ค่าปรับ','อื่นๆ']},
+        {id:'amount', label:'จำนวนเงิน (บาท)', type:'number', required:true, half:true},
+        {id:'paymentMethod', label:'ช่องทาง', type:'select', options:['เงินสด','โอน','เช็ค'], half:true},
+        {id:'plateNumber', label:'ทะเบียนรถ (ถ้าเกี่ยวกับรถ)', type:'plate'},
+      ]},
+    maintenance: { title:'🔧 บันทึกซ่อมบำรุง', color:'#E65100', sub:'การซ่อม / ดูแลรถ',
+      fields:[
+        {id:'maintenanceDate', label:'วันที่ซ่อม', type:'date', required:true},
+        {id:'plateNumber', label:'ทะเบียนรถ', type:'plate', required:true},
+        {id:'maintenanceType', label:'ประเภทการซ่อม', type:'select',
+          options:['เปลี่ยนยาง','น้ำมันเครื่อง','เบรค','ช่วงล่าง','แอร์','ไฟฟ้า','ตรวจสภาพ','ล้างรถ','อื่นๆ']},
+        {id:'cost', label:'ค่าซ่อม (บาท)', type:'number', required:true},
+      ]},
+  };
+
+  const params = new URLSearchParams(location.search);
+  const type = TYPES[params.get('type')] ? params.get('type') : 'truck';
+  const cfg = TYPES[type];
+
+  // theme
+  document.documentElement.style.setProperty('--c', cfg.color);
+  document.querySelector('header').style.background = cfg.color;
+  document.getElementById('title').textContent = cfg.title;
+  document.getElementById('subtitle').textContent = cfg.sub + ' · มี dropdown ให้เลือก';
+  document.title = 'SuperWealth · ' + cfg.title;
+  document.getElementById('saveBtn').style.background = cfg.color;
+
+  // ── Build the form ────────────────────────────────────────────
+  const form = document.getElementById('f');
+  let pendingHalf = null;
+  function fieldHTML(fl){
+    const reqStar = fl.required ? ' <span class="req">*</span>' : '';
+    let input;
+    if (fl.type === 'select') {
+      input = `<select id="${fl.id}" ${fl.required?'required':''}>` +
+        (fl.required ? `<option value="" disabled selected>— เลือก —</option>` : '') +
+        fl.options.map(o=>`<option>${o}</option>`).join('') + `</select>`;
+    } else if (fl.type === 'plate') {
+      input = `<input id="${fl.id}" list="plates" ${fl.required?'required':''} placeholder="เลือกหรือพิมพ์ทะเบียน">`;
+    } else if (fl.type === 'province') {
+      input = `<input id="${fl.id}" list="provinces" placeholder="เลือกหรือพิมพ์จังหวัด">`;
+    } else if (fl.type === 'date') {
+      input = `<input id="${fl.id}" type="date" ${fl.required?'required':''}>`;
+    } else if (fl.type === 'number') {
+      input = `<input id="${fl.id}" type="number" inputmode="numeric" min="0" placeholder="0" ${fl.required?'required':''}>`;
+    } else {
+      input = `<input id="${fl.id}" type="text" placeholder="${fl.placeholder||''}">`;
+    }
+    return `<div class="field">
+      <label for="${fl.id}">${fl.label}${reqStar}</label>${input}
+      ${fl.type==='plate'?'<div class="hint">เลือกจากรายการ หรือพิมพ์ทะเบียนใหม่ก็ได้</div>':''}
+    </div>`;
+  }
+  // group consecutive half fields into rows
+  let html = '', buffer = [];
+  const flush = () => { if(!buffer.length) return;
+    html += buffer.length===2 ? `<div class="row2">${buffer.join('')}</div>` : buffer.join('');
+    buffer = []; };
+  for (const fl of cfg.fields) {
+    if (fl.half) { buffer.push(fieldHTML(fl)); if (buffer.length===2) flush(); }
+    else { flush(); html += fieldHTML(fl); }
+  }
+  flush();
+  html += `<datalist id="provinces">${PROVINCES.map(p=>`<option>${p}</option>`).join('')}</datalist>
+           <datalist id="plates"></datalist>`;
+  form.innerHTML = html;
+
+  // default date = today
+  cfg.fields.filter(f=>f.type==='date').forEach(f=>{
+    document.getElementById(f.id).value = new Date().toISOString().slice(0,10);
+  });
+
+  // ── Fetch real vehicles → plate datalist + driver auto-fill ────
+  let vehMap = {};
+  (async () => {
+    try {
+      const r = await fetch(`${API}/api/get-data?type=vehicle`);
+      const j = await r.json();
+      const list = (j.data && j.data.vehicle) || [];
+      const dl = document.getElementById('plates');
+      list.forEach(v => {
+        if (!v.plateNumber) return;
+        vehMap[v.plateNumber] = v;
+        const o = document.createElement('option'); o.value = v.plateNumber; dl.appendChild(o);
+      });
+    } catch(e){ console.warn('load vehicles failed:', e); }
+  })();
+  // driver auto-fill when a known plate is chosen (truck form)
+  const plateEl = document.getElementById('plateNumber');
+  const driverEl = document.getElementById('driverName');
+  if (plateEl && driverEl) {
+    plateEl.addEventListener('change', () => {
+      const v = vehMap[plateEl.value.trim()];
+      if (v && v.assignedDriver && !driverEl.value) driverEl.value = v.assignedDriver;
+    });
+  }
+
+  // ── LIFF init (no-op in demo/plain-web mode) ──────────────────
+  let liffReady = false;
+  (async () => {
+    if (LIFF_ID && window.liff) {
+      try { await liff.init({ liffId: LIFF_ID }); liffReady = true; } catch(e){ console.warn('liff init:', e); }
+    }
+  })();
+
+  // ── Build save payload from the form ──────────────────────────
+  function collect(){
+    const val = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+    const d = {}; cfg.fields.forEach(f => d[f.id] = val(f.id));
+    d.userAgent = liffReady ? 'LINE LIFF' : 'LINE Form';
+    if (type === 'truck') { d.jobDate = d.pickupDate; d.jobStatus = 'กำลังดำเนินการ'; d.tripCount = 1;
+      const v = vehMap[d.plateNumber]; if (v && v.assignedDriverPhone) d.driverPhone = v.assignedDriverPhone; }
+    if (type === 'expense') d.expenseDetail = d.category;
+    if (type === 'maintenance') d.description = d.maintenanceType;
+    return d;
+  }
+
+  // ── Submit ────────────────────────────────────────────────────
+  const overlay = document.getElementById('overlay');
+  const show = el => { ['loading','done','failbox'].forEach(x=>document.getElementById(x).style.display='none');
+    document.getElementById(el).style.display='block'; overlay.classList.add('show'); };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!form.reportValidity()) return;
+    document.getElementById('saveBtn').disabled = true;
+    show('loading');
+    try {
+      const r = await fetch(`${API}/api/save`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ type, data: collect() })
+      });
+      const j = await r.json();
+      if (!j.success) throw new Error(j.error || 'save failed');
+      document.getElementById('okMsg').textContent = j.message || 'บันทึกสำเร็จ';
+      document.getElementById('okId').textContent = 'รหัส: ' + (j.rowId||'');
+      show('done');
+      // LIFF: ส่งข้อความยืนยันกลับแชต แล้วปิดหน้าต่าง
+      if (liffReady && liff.isInClient && liff.isInClient()) {
+        try { await liff.sendMessages([{ type:'text', text:`✅ ${j.message} (${j.rowId})` }]); } catch(_){}
+      }
+    } catch(err) {
+      document.getElementById('failMsg').textContent = '⚠️ ' + (err.message || 'บันทึกไม่สำเร็จ');
+      show('failbox');
+    } finally {
+      document.getElementById('saveBtn').disabled = false;
+    }
+  });
+
+  function leave(){
+    if (liffReady && liff.isInClient && liff.isInClient()) liff.closeWindow();
+    else history.length > 1 ? history.back() : window.close();
+  }
+  document.getElementById('cancelBtn').addEventListener('click', leave);
+  document.getElementById('closeBtn').addEventListener('click', leave);
+  document.getElementById('retryBtn').addEventListener('click', () => overlay.classList.remove('show'));
+</script>
+</body>
+</html>

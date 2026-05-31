@@ -601,6 +601,34 @@ function buildPicker(title, step, options) {
   };
 }
 
+// ── FORM LAUNCH CARD — opens the full web form (real dropdowns) ──
+function buildFormLaunch(kind) {
+  const meta = {
+    truck:       { icon:'🚛', title:'บันทึกรถ',       color: C.primary     },
+    income:      { icon:'💰', title:'บันทึกรายรับ',   color: C.success     },
+    expense:     { icon:'💸', title:'บันทึกรายจ่าย',  color: C.danger      },
+    maintenance: { icon:'🔧', title:'บันทึกซ่อมบำรุง', color: C.warningDark }
+  }[kind] || { icon:'📝', title:'บันทึก', color: C.primary };
+  const url = `${WEB_URL}/liff.html?type=${kind}`;
+  return {
+    type:'flex', altText:`📝 ${meta.title}`,
+    contents:{
+      type:'bubble',
+      header:{ type:'box', layout:'vertical', backgroundColor: meta.color, paddingAll:'lg', contents:[
+        { type:'text', text:`${meta.icon} ${meta.title}`, color: C.white, weight:'bold', size:'lg' },
+        { type:'text', text:'ฟอร์มกรอกเต็มหน้า · มี dropdown ให้เลือก', color:'#FFFFFF', size:'xxs', margin:'xs', wrap:true }
+      ]},
+      body:{ type:'box', layout:'vertical', paddingAll:'lg', contents:[
+        { type:'text', text:'แตะปุ่มด้านล่างเพื่อเปิดฟอร์ม กรอกข้อมูลทั้งหมดในจอเดียว เลือกจาก dropdown แล้วบันทึกลงระบบได้เลย', size:'sm', color: C.textSub, wrap:true }
+      ]},
+      footer:{ type:'box', layout:'vertical', paddingAll:'md', contents:[
+        { type:'button', style:'primary', color: meta.color, height:'sm',
+          action:{ type:'uri', label:'📝 เปิดฟอร์มกรอก', uri: url } }
+      ]}
+    }
+  };
+}
+
 // ── 3) SUCCESS FLEX (green header + ID + quick actions) ──
 function buildSuccessFlex(type, rowId, f) {
   const meta = {
@@ -1205,23 +1233,22 @@ async function handleEvent(event, sheets, sheetId) {
   }
 
   // ── Menu triggers (Rich Menu sends these postback data) ────────
-  // Open the fill-it-yourself form card immediately (empty) — tap each row to
-  // fill, in any order, then ยืนยัน. (No more one-question-at-a-time chat.)
+  // Open the full web form (real dropdowns, fill the whole screen at once).
   if (text==='MENU_TRUCK' || text==='🚛 บันทึกรถ') {
-    await writeState(sheets, sheetId, userId, 'truck_confirm', {}, rowNum);
-    return reply(token, buildConfirmFlex('truck', {}));
+    await writeState(sheets, sheetId, userId, 'idle', {}, rowNum);
+    return reply(token, buildFormLaunch('truck'));
   }
   if (text==='MENU_INCOME' || text==='💰 รายรับ') {
-    await writeState(sheets, sheetId, userId, 'inc_confirm', {}, rowNum);
-    return reply(token, buildConfirmFlex('income', {}));
+    await writeState(sheets, sheetId, userId, 'idle', {}, rowNum);
+    return reply(token, buildFormLaunch('income'));
   }
   if (text==='MENU_EXPENSE' || text==='💸 รายจ่าย') {
-    await writeState(sheets, sheetId, userId, 'exp_confirm', {}, rowNum);
-    return reply(token, buildConfirmFlex('expense', {}));
+    await writeState(sheets, sheetId, userId, 'idle', {}, rowNum);
+    return reply(token, buildFormLaunch('expense'));
   }
   if (text==='MENU_MAINTENANCE' || text==='🔧 ซ่อมบำรุง') {
-    await writeState(sheets, sheetId, userId, 'maint_confirm', {}, rowNum);
-    return reply(token, buildConfirmFlex('maintenance', {}));
+    await writeState(sheets, sheetId, userId, 'idle', {}, rowNum);
+    return reply(token, buildFormLaunch('maintenance'));
   }
   if (text==='MENU_CALENDAR' || text==='📅 ปฏิทิน' || text==='cal_now' || pb==='cal_now') {
     const now = bkkNow();
