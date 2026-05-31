@@ -574,6 +574,33 @@ function buildConfirmFlex(type, f) {
   };
 }
 
+// ── PICKER FLEX (tap-to-choose list — the closest thing to a dropdown) ──
+// `options` is a list of quick-reply items ({action:{type:'message',label,text}});
+// each becomes a full-width button. Tapping sends the value as a message, which
+// the edit-mode handler captures and writes back to the form card.
+function buildPicker(title, step, options) {
+  const kind = kindFromStep(step);
+  const color = ({ truck:C.primary, income:C.success, expense:C.danger, maintenance:C.warningDark })[kind] || C.primary;
+  const buttons = options.slice(0, 12).map(opt => ({
+    type:'button', style:'secondary', height:'sm', margin:'sm', action: opt.action
+  }));
+  return {
+    type:'flex', altText: title,
+    contents: {
+      type:'bubble',
+      header: {
+        type:'box', layout:'vertical', backgroundColor: color, paddingAll:'md',
+        contents:[
+          { type:'text', text: title, color: C.white, weight:'bold', size:'sm', wrap:true },
+          { type:'text', text:'แตะเลือกจากรายการ หรือพิมพ์เองก็ได้', color:'#FFFFFF', size:'xxs', margin:'xs', wrap:true }
+        ]
+      },
+      body: { type:'box', layout:'vertical', paddingAll:'md', spacing:'xs', contents: buttons }
+    },
+    quickReply: { items: [ qMsg('❌ ยกเลิก', '❌ ยกเลิก') ] }
+  };
+}
+
 // ── 3) SUCCESS FLEX (green header + ID + quick actions) ──
 function buildSuccessFlex(type, rowId, f) {
   const meta = {
@@ -1147,6 +1174,13 @@ async function handleEvent(event, sheets, sheetId) {
       return reply(token, buildConfirmFlex(kind, formData));
     }
     await writeState(sheets, sheetId, userId, 'edit_' + step, formData, rowNum);
+    // Choice fields (have selectable options) → show a tap-to-pick list card
+    // (the "drop list"). Free-text / number fields → plain prompt to type.
+    const options = (s.qr || []).filter(it =>
+      it.action && it.action.type === 'message' && it.action.text !== '❌ ยกเลิก');
+    if (options.length > 0) {
+      return reply(token, buildPicker(`✏️ ${s.q}`, step, options));
+    }
     return reply(token, txt(`✏️ แก้ไข — ${s.q}`, s.qr));
   }
   // Edit-mode answer: user supplied the new value → save it & return to card.
