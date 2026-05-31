@@ -251,6 +251,22 @@ function applyOCRToState(formData, state, ocrParsed) {
 }
 
 // ─── LINE API helpers ──────────────────────────────────────────
+// Show the in-chat loading animation (• • • bouncing) so a silent tap feels
+// acknowledged. 1:1 chats only; LINE clears it when we send a reply or after
+// `seconds` (5–60, multiple of 5). Best-effort — never blocks the reply.
+async function showLoading(chatId, seconds = 5) {
+  try {
+    await fetch('https://api.line.me/v2/bot/chat/loading/start', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}`
+      },
+      body: JSON.stringify({ chatId, loadingSeconds: seconds })
+    });
+  } catch (e) { /* non-fatal */ }
+}
+
 async function reply(token, msgs) {
   if (!Array.isArray(msgs)) msgs = [msgs];
   // LINE allows max 5 messages per reply — trim defensively.
@@ -1154,6 +1170,12 @@ async function handleEvent(event, sheets, sheetId) {
     imageMessageId = event.message.id;
   } else {
     return;
+  }
+
+  // ── Show LINE loading animation so a tap feels acknowledged ────
+  // (1:1 chats only; auto-dismisses when we reply or after the timeout.)
+  if ((event.type === 'postback' || isImage) && event.source?.type === 'user') {
+    await showLoading(userId);
   }
 
   // ── Read state (+ ref data in parallel for menus) ─────────────
