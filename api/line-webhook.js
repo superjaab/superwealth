@@ -18,6 +18,11 @@ function fmt(d) {
 }
 function todayStr()    { return fmt(bkkNow()); }
 function tomorrowStr() { const d = bkkNow(); d.setDate(d.getDate()+1); return fmt(d); }
+// YYYY-MM-DD from a Date's *local* components (use with bkkNow() — avoids the
+// toISOString() UTC shift that flips the day around midnight Bangkok time).
+function isoDate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 
 // Convert DD/MM/YYYY → YYYY-MM-DD (sheets format). Pass-through if already ISO.
 function toISO(str) {
@@ -184,7 +189,12 @@ function parseOCRText(text) {
     let [, d, m, y] = dateMatch;
     if (y.length === 2) y = '20' + y;
     if (parseInt(y) > 2400) y = (parseInt(y) - 543).toString(); // Thai BE → CE
-    result.date = `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+    // Only accept a sane calendar date — skip OCR noise / wrong digit order
+    // so we never store an impossible date like 2024-13-25.
+    const dd = parseInt(d, 10), mm = parseInt(m, 10);
+    if (mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) {
+      result.date = `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+    }
   }
 
   // ── Plate: Thai format (2-digit + 4-digit, or 2-char Thai + 4-digit) ──
@@ -274,10 +284,12 @@ function txt(text, qrItems) {
   if (qrItems && qrItems.length) m.quickReply = { items: qrItems.slice(0,13) };
   return m;
 }
-// quick reply item helpers
-function qMsg(label, text)  { return { type:'action', action:{ type:'message', label, text } }; }
-function qPb(label, data)   { return { type:'action', action:{ type:'postback', label, data } }; }
-function qUri(label, uri)   { return { type:'action', action:{ type:'uri', label, uri } }; }
+// quick reply item helpers — LINE caps action labels at 20 chars; a longer
+// label rejects the WHOLE message (400) and the bot fails to reply, so trim.
+const qLabel = s => String(s == null ? '' : s).slice(0, 20);
+function qMsg(label, text)  { return { type:'action', action:{ type:'message', label:qLabel(label), text } }; }
+function qPb(label, data)   { return { type:'action', action:{ type:'postback', label:qLabel(label), data } }; }
+function qUri(label, uri)   { return { type:'action', action:{ type:'uri', label:qLabel(label), uri } }; }
 
 // ─── Step definitions ──────────────────────────────────────────
 const TRUCK_SEQ   = ['truck_1','truck_2','truck_3','truck_4','truck_5','truck_6','truck_confirm'];
@@ -365,7 +377,7 @@ function flexSep() { return { type:'separator', margin:'md', color:'#EEF1F6' }; 
 
 // ── 1) WELCOME FLEX (hero card with today's KPIs) ──
 async function buildWelcomeFlex(sheets, sheetId) {
-  const today = bkkNow().toISOString().slice(0,10);
+  const today = isoDate(bkkNow());
   let income = 0, expense = 0, trips = 0;
   try {
     const inc  = await sheetRows(sheets, sheetId, 'Income');
@@ -1127,7 +1139,13 @@ async function handleEvent(event, sheets, sheetId) {
 
   // ── Confirm steps — use Flex Success card on save ──
   const handleConfirm = async (kind) => {
-    if (text === '✅ ยืนยัน') {
+    // Accept any "ยืนยัน"/"confirm"/"ok" phrasing — not just the exact button
+    // text. (Explicit cancel is already handled globally above, so anything
+    // that isn't a confirm here is stray input — re-show the card instead of
+    // silently wiping the user's entry.)
+    const t = (text || '').replace(/[✅❌\s]/g, '');
+    const isConfirm = t.startsWith('ยืนยัน') || t.toLowerCase().startsWith('confirm') || t === 'ok' || t === 'โอเค';
+    if (isConfirm) {
       try {
         let id;
         if (kind === 'truck')         id = await saveTruck(sheets,       sheetId, formData);
@@ -1141,8 +1159,8 @@ async function handleEvent(event, sheets, sheetId) {
         return reply(token, txt(`❌ เกิดข้อผิดพลาด: ${e.message}`));
       }
     }
-    await writeState(sheets, sheetId, userId, 'idle', {}, rowNum);
-    return reply(token, txt('ยกเลิกแล้วครับ 👍'));
+    // Stray input on the confirm step — keep the form, re-show the confirm card.
+    return reply(token, buildConfirmFlex(kind, formData));
   };
   if (state === 'truck_confirm') return handleConfirm('truck');
   if (state === 'inc_confirm')   return handleConfirm('income');
