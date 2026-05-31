@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>SuperWealth · ฟอร์มบันทึกรถ (DEMO LIFF)</title>
+<style>
+  :root{ --blue:#1565C0; --blueDark:#0D47A1; --green:#2E7D32; --danger:#C62828;
+         --bg:#F5F7FB; --line:#E4E8EE; --sub:#5A6577; --mute:#98A1B0; --text:#1A1F2E; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body{ margin:0; font-family:-apple-system,"Sarabun","Segoe UI",sans-serif; background:var(--bg); color:var(--text); }
+  .wrap{ max-width:520px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; }
+  header{ background:var(--blueDark); color:#fff; padding:18px 18px 16px; }
+  header h1{ margin:0; font-size:18px; font-weight:800; }
+  header p{ margin:4px 0 0; font-size:12px; color:#BBDEFB; }
+  .demo-badge{ display:inline-block; background:#FFCC02; color:#5a4500; font-size:10px;
+    font-weight:800; padding:2px 8px; border-radius:20px; margin-bottom:8px; letter-spacing:.5px; }
+  form{ padding:16px; display:flex; flex-direction:column; gap:14px; flex:1; }
+  .field label{ display:block; font-size:13px; font-weight:700; color:var(--sub); margin-bottom:6px; }
+  .field input, .field select{ width:100%; padding:13px 12px; font-size:16px; font-family:inherit;
+    border:1.5px solid var(--line); border-radius:12px; background:#fff; color:var(--text); appearance:none; }
+  .field select{ background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%235A6577' stroke-width='2.5'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat:no-repeat; background-position:right 12px center; padding-right:38px; }
+  .field input:focus, .field select:focus{ outline:none; border-color:var(--blue); }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .btns{ position:sticky; bottom:0; background:linear-gradient(transparent,var(--bg) 30%);
+    padding:14px 16px 18px; display:flex; gap:10px; }
+  button{ flex:1; padding:15px; font-size:16px; font-weight:800; font-family:inherit; border:none;
+    border-radius:14px; cursor:pointer; }
+  .cancel{ background:#E9ECF2; color:var(--sub); flex:0 0 34%; }
+  .save{ background:var(--blue); color:#fff; }
+  .save:active{ background:var(--blueDark); }
+  .result{ padding:18px; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:16px; overflow:hidden; }
+  .card .head{ background:var(--green); color:#fff; padding:14px 16px; font-weight:800; }
+  .card .body{ padding:8px 16px; }
+  .kv{ display:flex; justify-content:space-between; padding:11px 0; border-bottom:1px solid #EEF1F6; font-size:14px; }
+  .kv:last-child{ border-bottom:none; }
+  .kv .k{ color:var(--sub); } .kv .v{ font-weight:700; }
+  .note{ font-size:12px; color:var(--mute); text-align:center; padding:10px 18px 24px; line-height:1.6; }
+  .hidden{ display:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="demo-badge">DEMO · ตัวอย่าง LIFF</span>
+    <h1>🚛 บันทึกรถ</h1>
+    <p>กรอกทั้งหน้าในจอเดียว — แตะช่องตัวเลือกจะเด้ง dropdown จริงของมือถือ</p>
+  </header>
+
+  <form id="f">
+    <div class="field">
+      <label>📅 วันที่รับสินค้า</label>
+      <input type="date" id="pickupDate" required>
+    </div>
+    <div class="field">
+      <label>🚛 ทะเบียนรถ</label>
+      <select id="plateNumber" required>
+        <option value="" disabled selected>— เลือกทะเบียน —</option>
+        <option>70-4770</option><option>82-1234</option><option>1กก-5678</option><option>ผก-9012</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>👤 คนขับ</label>
+      <input type="text" id="driverName" placeholder="ชื่อคนขับ">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>📍 ต้นทาง</label>
+        <select id="origin">
+          <option value="" disabled selected>— เลือก —</option>
+          <option>กรุงเทพ</option><option>นครราชสีมา</option><option>ขอนแก่น</option>
+          <option>อุดรธานี</option><option>เชียงใหม่</option><option>ชลบุรี</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>📍 ปลายทาง</label>
+        <select id="destination">
+          <option value="" disabled selected>— เลือก —</option>
+          <option>กรุงเทพ</option><option>นครราชสีมา</option><option>ขอนแก่น</option>
+          <option>อุดรธานี</option><option>เชียงใหม่</option><option>ชลบุรี</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>💵 ค่าขนส่ง (บาท)</label>
+        <input type="number" id="freightCost" inputmode="numeric" placeholder="0">
+      </div>
+      <div class="field">
+        <label>💳 สถานะ</label>
+        <select id="paymentStatus">
+          <option>ค้างจ่าย</option><option>ชำระแล้ว</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="btns">
+      <button type="button" class="cancel" onclick="closeIt()">ยกเลิก</button>
+      <button type="submit" class="save">✅ บันทึก</button>
+    </div>
+  </form>
+
+  <div id="result" class="result hidden">
+    <div class="card">
+      <div class="head">✅ ตัวอย่างข้อมูลที่จะถูกบันทึก</div>
+      <div class="body" id="resultBody"></div>
+    </div>
+    <p class="note">นี่คือโหมด <b>DEMO</b> — ยังไม่ได้บันทึกลง Google Sheets จริง<br>
+      ถ้าทำเป็น LIFF เต็มรูปแบบ กดบันทึกแล้วจะเซฟลงชีตและปิดหน้าต่างกลับแชต LINE อัตโนมัติ</p>
+    <div class="btns"><button class="save" onclick="location.reload()">↩️ ลองใหม่</button></div>
+  </div>
+</div>
+
+<!-- LIFF SDK — ทำงานทั้งในและนอก LINE; โหมด demo ไม่ต้องมี LIFF ID -->
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script>
+  // ใส่ LIFF ID ตรงนี้เมื่อพร้อมใช้งานจริง (ได้จาก LINE Developers Console)
+  const LIFF_ID = "";
+
+  (async () => {
+    if (LIFF_ID && window.liff) {
+      try { await liff.init({ liffId: LIFF_ID }); } catch (e) { console.warn("liff init failed (demo mode):", e); }
+    }
+  })();
+
+  function closeIt() {
+    if (LIFF_ID && window.liff && liff.isInClient && liff.isInClient()) liff.closeWindow();
+    else location.reload();
+  }
+
+  document.getElementById("f").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const v = id => document.getElementById(id).value || "-";
+    const dateTH = (() => { const d = document.getElementById("pickupDate").value;
+      if (!d) return "-"; const [y,m,dd] = d.split("-"); return `${dd}/${m}/${y}`; })();
+    const fc = document.getElementById("freightCost").value;
+    const data = {
+      "📅 วันที่รับ": dateTH,
+      "🚛 ทะเบียนรถ": v("plateNumber"),
+      "👤 คนขับ": v("driverName"),
+      "📍 ต้นทาง": v("origin"),
+      "📍 ปลายทาง": v("destination"),
+      "💵 ค่าขนส่ง": fc ? Number(fc).toLocaleString("th-TH") + " บาท" : "-",
+      "💳 สถานะ": v("paymentStatus"),
+    };
+    document.getElementById("resultBody").innerHTML =
+      Object.entries(data).map(([k,val]) => `<div class="kv"><span class="k">${k}</span><span class="v">${val}</span></div>`).join("");
+    document.getElementById("f").classList.add("hidden");
+    document.getElementById("result").classList.remove("hidden");
+    window.scrollTo(0,0);
+    // โหมดจริง (LIFF): จะ POST ไป /api/save แล้ว liff.closeWindow() ตรงนี้
+  });
+</script>
+</body>
+</html>
