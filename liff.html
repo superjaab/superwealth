@@ -201,6 +201,46 @@
     });
   }
 
+  // ── ⚡ Quick-entry: prefill from admin defaults ───────────────
+  let quickDef = {}, _nextRound = null;
+  if (type !== 'maintenance') {
+    const bar = document.createElement('div');
+    bar.style.cssText = 'padding:0 16px;margin-top:6px';
+    bar.innerHTML = `<button type="button" id="quickBtn" style="width:100%;padding:13px;font-size:15px;font-weight:800;font-family:inherit;border:none;border-radius:12px;background:#0EA5E9;color:#fff;cursor:pointer">⚡ ลงด่วน — เติมค่าที่ตั้งไว้</button>
+      <div style="font-size:11.5px;color:#98A1B0;text-align:center;margin-top:5px">เติมค่าที่ตั้งไว้ให้ทุกช่อง · เหลือแค่เช็กวันที่ แล้วกดบันทึก</div>`;
+    form.parentNode.insertBefore(bar, form);
+    (async () => {
+      try {
+        const r = await fetch(`${API}/api/get-data?type=quickDefaults`);
+        const j = await r.json();
+        const rows = (j.data && j.data.quickDefaults) || [];
+        if (rows.length && rows[rows.length-1].payload) quickDef = JSON.parse(rows[rows.length-1].payload);
+      } catch(e){ console.warn('load quick defaults failed:', e); }
+    })();
+    if (type === 'truck') (async () => {
+      try {
+        const r = await fetch(`${API}/api/get-data?type=truck`);
+        const j = await r.json();
+        const jobs = (j.data && j.data.truck) || [];
+        _nextRound = jobs.reduce((m,t)=>Math.max(m, parseInt(t.tripRound)||0), 0) + 1;
+      } catch(e){ _nextRound = null; }
+    })();
+    document.getElementById('quickBtn').addEventListener('click', () => {
+      const d = (quickDef && quickDef[type]) || {};
+      cfg.fields.forEach(f => {
+        if (f.type === 'date') return;                 // keep today's date
+        if (d[f.id] != null && d[f.id] !== '') { const el = document.getElementById(f.id); if (el) el.value = d[f.id]; }
+      });
+      if (type === 'truck') {
+        const pe = document.getElementById('plateNumber'), de = document.getElementById('driverName');
+        const v = pe && vehMap[pe.value.trim()];
+        if (v && v.assignedDriver && de && !de.value) de.value = v.assignedDriver;
+      }
+      const btn = document.getElementById('quickBtn');
+      btn.textContent = '✅ เติมค่าแล้ว — เช็กวันที่ แล้วกดบันทึก'; btn.style.background = '#16A34A';
+    });
+  }
+
   // ── LIFF init (no-op in demo/plain-web mode) ──────────────────
   let liffReady = false;
   (async () => {
@@ -215,6 +255,7 @@
     const d = {}; cfg.fields.forEach(f => d[f.id] = val(f.id));
     d.userAgent = liffReady ? 'LINE LIFF' : 'LINE Form';
     if (type === 'truck') { d.jobDate = d.pickupDate; d.jobStatus = 'กำลังดำเนินการ'; d.tripCount = 1;
+      if (_nextRound) d.tripRound = _nextRound;
       const v = vehMap[d.plateNumber]; if (v && v.assignedDriverPhone) d.driverPhone = v.assignedDriverPhone; }
     if (type === 'expense') d.expenseDetail = d.category;
     if (type === 'maintenance') d.description = d.maintenanceType;

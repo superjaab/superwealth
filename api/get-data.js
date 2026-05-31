@@ -16,7 +16,8 @@ const SHEET_MAP = {
   fuel:            { name:'FuelLog',          dateCol:'fuelDate'        },
   invoice:         { name:'Invoices',         dateCol:'invoiceDate'     },
   capital:         { name:'Capital',          dateCol:null              },
-  capitalMovement: { name:'CapitalMovements', dateCol:'movementDate'    }
+  capitalMovement: { name:'CapitalMovements', dateCol:'movementDate'    },
+  quickDefaults:   { name:'QuickDefaults',    dateCol:null              }
 };
 
 // 'all' = the three main transaction sheets (used by summary tab)

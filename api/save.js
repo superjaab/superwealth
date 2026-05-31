@@ -177,6 +177,17 @@ const CONFIGS = {
       rowId: id
     })
   },
+  // Quick-entry defaults — one JSON blob ({truck:{...},income:{...},expense:{...}})
+  // appended each save; the latest row wins (read via get-data, take the last).
+  quickDefaults: {
+    name: 'QuickDefaults', color: '#0EA5E9', prefix: 'QD',
+    headers: ['timestamp','payload','rowId'],
+    data: (d, now, id) => ({
+      timestamp: now,
+      payload: typeof d.payload === 'string' ? d.payload : JSON.stringify(d.payload || {}),
+      rowId: id
+    })
+  },
   capitalMovement: {
     name: 'CapitalMovements', color: '#a855f7', prefix: 'MOV',
     headers: ['timestamp','movementDate','accountRowId','accountName',
@@ -200,7 +211,8 @@ const MSG = {
   driver:'บันทึกข้อมูลคนขับสำเร็จ', customer:'บันทึกข้อมูลลูกค้าสำเร็จ',
   maintenance:'บันทึกการซ่อมบำรุงสำเร็จ', fuel:'บันทึกข้อมูลน้ำมันสำเร็จ',
   invoice:'บันทึกใบเสร็จสำเร็จ',
-  capital:'บันทึกบัญชีเงินทุนสำเร็จ', capitalMovement:'บันทึกการเคลื่อนไหวเงินสำเร็จ'
+  capital:'บันทึกบัญชีเงินทุนสำเร็จ', capitalMovement:'บันทึกการเคลื่อนไหวเงินสำเร็จ',
+  quickDefaults:'บันทึกค่าลงด่วนแล้ว'
 };
 
 module.exports = async function handler(req, res) {

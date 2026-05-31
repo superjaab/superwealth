@@ -4524,7 +4524,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.58 | 31/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.59 | 31/05/2026</span>
   </div>
 </aside>
 
@@ -4569,6 +4569,11 @@
   </div>
   <div id="truck-form-view">
   <form id="form-truck" onsubmit="return false">
+
+    <div class="card" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:linear-gradient(135deg,#ecfeff,#e0f2fe);border:1.5px solid #7dd3fc">
+      <button type="button" onclick="quickFill('truck')" style="flex:1;min-width:130px;padding:11px;font-weight:800;font-size:.9rem;border:none;border-radius:10px;background:#0EA5E9;color:#fff;cursor:pointer;font-family:inherit">⚡ ลงด่วน</button>
+      <button type="button" class="admin-only" onclick="saveQuickDefaults('truck')" style="padding:11px 14px;font-weight:700;font-size:.82rem;border:1.5px solid #0284c7;border-radius:10px;background:#fff;color:#0284c7;cursor:pointer;font-family:inherit">💾 ตั้งค่าลงด่วน</button>
+    </div>
 
     <div class="card">
       <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
@@ -4685,6 +4690,11 @@
   <div id="income-form-view">
   <form id="form-income" onsubmit="return false">
 
+    <div class="card" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:linear-gradient(135deg,#ecfeff,#e0f2fe);border:1.5px solid #7dd3fc">
+      <button type="button" onclick="quickFill('income')" style="flex:1;min-width:130px;padding:11px;font-weight:800;font-size:.9rem;border:none;border-radius:10px;background:#0EA5E9;color:#fff;cursor:pointer;font-family:inherit">⚡ ลงด่วน</button>
+      <button type="button" class="admin-only" onclick="saveQuickDefaults('income')" style="padding:11px 14px;font-weight:700;font-size:.82rem;border:1.5px solid #0284c7;border-radius:10px;background:#fff;color:#0284c7;cursor:pointer;font-family:inherit">💾 ตั้งค่าลงด่วน</button>
+    </div>
+
     <div class="card">
       <div class="card-title green">📄 ข้อมูลรายรับ</div>
       <div class="form-row-3">
@@ -4777,6 +4787,11 @@
   </div>
   <div id="expense-form-view">
   <form id="form-expense" onsubmit="return false">
+
+    <div class="card" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:linear-gradient(135deg,#ecfeff,#e0f2fe);border:1.5px solid #7dd3fc">
+      <button type="button" onclick="quickFill('expense')" style="flex:1;min-width:130px;padding:11px;font-weight:800;font-size:.9rem;border:none;border-radius:10px;background:#0EA5E9;color:#fff;cursor:pointer;font-family:inherit">⚡ ลงด่วน</button>
+      <button type="button" class="admin-only" onclick="saveQuickDefaults('expense')" style="padding:11px 14px;font-weight:700;font-size:.82rem;border:1.5px solid #0284c7;border-radius:10px;background:#fff;color:#0284c7;cursor:pointer;font-family:inherit">💾 ตั้งค่าลงด่วน</button>
+    </div>
 
     <div class="card">
       <div class="card-title red">🧾 ข้อมูลรายจ่าย</div>
@@ -5096,6 +5111,21 @@
         🔒 <b>รหัส Admin (Built-in):</b> เก็บไว้ในตัวระบบ — เปลี่ยนได้ผ่าน Environment Variable <code style="background:white;padding:2px 6px;border-radius:4px;font-weight:700;color:#1d4ed8">ADMIN_CODE</code> บน Vercel/Netlify
       </div>
       <div id="admin-codes-list" style="color:#94a3b8;text-align:center;padding:14px">⏳ กำลังโหลด...</div>
+    </div>
+
+    <!-- ⚡ Quick-entry defaults section -->
+    <div class="dash-card" style="margin-bottom:14px">
+      <div class="dash-card-head" style="margin-bottom:10px">
+        <div>
+          <div class="dash-card-title">⚡ ค่าเริ่มต้น "ลงด่วน"</div>
+          <div class="dash-card-sub">ค่าที่ปุ่ม ⚡ ลงด่วน จะเติมให้ (ใช้ได้ทั้งเว็บและ LINE)</div>
+        </div>
+      </div>
+      <div style="background:#ecfeff;border:1px solid #bae6fd;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:.78rem;color:#075985">
+        💡 วิธีตั้งค่า: เปิดเมนู <b>บันทึกรถ / รายรับ / รายจ่าย</b> → กรอกค่าที่ใช้บ่อย → กดปุ่ม <b>💾 ตั้งค่าลงด่วน</b> ในฟอร์มนั้น<br>
+        จากนั้นปุ่ม <b>⚡ ลงด่วน</b> (ทั้งเว็บและ LINE) จะเติมค่าให้อัตโนมัติ เหลือแค่แก้ <b>วันที่</b> — รอบเที่ยวรันต่อให้เอง
+      </div>
+      <div id="admin-quickdefaults" style="color:#94a3b8;text-align:center;padding:10px;font-size:.82rem">⏳ กำลังโหลด...</div>
     </div>
 
     <!-- Sessions section -->
@@ -7229,6 +7259,7 @@ async function initAdminTab() {
   await loadAdminFab();
   loadAdminInvItems();   // v14.20 (localStorage-only — no API call)
   loadAdminIncItems();   // v14.28 (localStorage-only — no API call)
+  renderQuickDefaultsAdmin();  // ⚡ show current quick-entry defaults
 }
 
 // v14.29 — Admin: manage invoice item presets (full CRUD on defaults + extras)
@@ -8559,13 +8590,14 @@ async function loadMasterData() {
     return;
   }
   try {
-    const [vehRes, custRes, drvRes, truckRes, incRes, expRes] = await Promise.all([
+    const [vehRes, custRes, drvRes, truckRes, incRes, expRes, qdRes] = await Promise.all([
       fetch('/api/get-data?type=vehicle').then(r => r.json()).catch(() => ({})),
       fetch('/api/get-data?type=customer').then(r => r.json()).catch(() => ({})),
       fetch('/api/get-data?type=driver').then(r => r.json()).catch(() => ({})),
       fetch('/api/get-data?type=truck').then(r => r.json()).catch(() => ({})),
       fetch('/api/get-data?type=income').then(r => r.json()).catch(() => ({})),
-      fetch('/api/get-data?type=expense').then(r => r.json()).catch(() => ({}))
+      fetch('/api/get-data?type=expense').then(r => r.json()).catch(() => ({})),
+      fetch('/api/get-data?type=quickDefaults').then(r => r.json()).catch(() => ({}))
     ]);
     _master.vehicles      = ((vehRes.data || {}).vehicle) || [];
     _master.customers     = ((custRes.data || {}).customer) || [];
@@ -8573,6 +8605,12 @@ async function loadMasterData() {
     _master.truckHistory  = ((truckRes.data || {}).truck) || [];
     _master.incomeHistory = ((incRes.data || {}).income) || [];
     _master.expenseHistory= ((expRes.data || {}).expense) || [];
+    // ⚡ Quick-entry defaults (latest QuickDefaults row, JSON payload)
+    try {
+      const qdRows = ((qdRes.data || {}).quickDefaults) || [];
+      _master.quickDefaults = qdRows.length && qdRows[qdRows.length-1].payload
+        ? JSON.parse(qdRows[qdRows.length-1].payload) : {};
+    } catch { _master.quickDefaults = {}; }
     // Populate datalists (for places still using them)
     const plateDl = document.getElementById('plate-dl');
     if (plateDl) plateDl.innerHTML = _master.vehicles.map(v => `<option value="${escAttr(v.plateNumber||'')}">`).join('');
@@ -9674,6 +9712,79 @@ function collectFormData(formKey) {
       linkedTripRound: eLinkedRound
     };
   }
+}
+
+// ═══ ⚡ QUICK ENTRY (ลงด่วน) — prefill from admin-set defaults ═══
+// Maps the stored default keys → the form field element IDs.
+const QUICK_FIELDS = {
+  truck:  { plateNumber:'t-plateNumber', driverName:'t-driverName', driverPhone:'t-driverPhone',
+            origin:'t-origin', destination:'t-destination', customerName:'t-customerName',
+            cargoList:'t-cargoList', freightCost:'t-freightCost', paymentStatus:'t-paymentStatus' },
+  income: { customerName:'i-customerName', incomeItem:'i-incomeItem', amount:'i-amount', paymentMethod:'i-paymentMethod' },
+  expense:{ category:'e-category', plateNumber:'e-plateNumber', vendor:'e-vendor',
+            expenseDetail:'e-expenseDetail', amount:'e-amount', paymentMethod:'e-paymentMethod' },
+};
+const QUICK_DATE_FIELD = { truck:'t-pickupDate', income:'i-incomeDate', expense:'e-expenseDate' };
+
+// ⚡ Fill the form with saved defaults; date = today (editable); truck round = next.
+function quickFill(formKey) {
+  const defs = (_master.quickDefaults || {})[formKey] || {};
+  const map = QUICK_FIELDS[formKey] || {};
+  let filled = 0;
+  Object.entries(map).forEach(([key, id]) => {
+    const el = document.getElementById(id);
+    if (el && defs[key] != null && defs[key] !== '') { el.value = defs[key]; filled++; }
+  });
+  // Today's date (user can change)
+  const dEl = document.getElementById(QUICK_DATE_FIELD[formKey]);
+  if (dEl) dEl.value = new Date().toISOString().slice(0,10);
+  // Trip round runs normally (next number)
+  if (formKey === 'truck' && typeof setTripRoundField === 'function') setTripRoundField();
+  showToast(filled ? `⚡ เติมค่าลงด่วนแล้ว ${filled} ช่อง — เช็กวันที่ แล้วกดบันทึก` :
+    '⚠️ ยังไม่ได้ตั้งค่าลงด่วน — กด "💾 ตั้งค่าลงด่วน" เพื่อบันทึกค่าจากฟอร์มนี้', filled ? 'success' : 'warning');
+}
+
+// 💾 Save the current form values as the quick-entry defaults (admin only).
+async function saveQuickDefaults(formKey) {
+  if (!isAdmin()) { showToast('เฉพาะแอดมินเท่านั้น', 'warning'); return; }
+  const map = QUICK_FIELDS[formKey] || {};
+  const obj = {};
+  Object.entries(map).forEach(([key, id]) => {
+    const el = document.getElementById(id);
+    let v = el ? (el.value || '').trim() : '';
+    if (el && el.dataset && el.dataset.money === '1') v = v.replace(/,/g, '');
+    if (v !== '') obj[key] = v;
+  });
+  if (!Object.keys(obj).length) { showToast('ฟอร์มยังว่าง — กรอกค่าที่ต้องการตั้งเป็น default ก่อน', 'warning'); return; }
+  const all = Object.assign({}, _master.quickDefaults || {});
+  all[formKey] = obj;
+  try {
+    const res = await api('/api/save', { type:'quickDefaults', data:{ payload: JSON.stringify(all) } });
+    if (res.success) { _master.quickDefaults = all; renderQuickDefaultsAdmin();
+      showToast('💾 ตั้งค่าลงด่วนแล้ว — ใช้ได้ทั้งเว็บและ LINE', 'success'); }
+    else showToast('บันทึกไม่สำเร็จ: ' + res.error, 'error');
+  } catch(e) { showToast('เกิดข้อผิดพลาด: ' + e.message, 'error'); }
+}
+
+// Render the current quick-entry defaults summary in the Admin tab (if present).
+function renderQuickDefaultsAdmin() {
+  const el = document.getElementById('admin-quickdefaults');
+  if (!el) return;
+  const qd = _master.quickDefaults || {};
+  const LBL = { plateNumber:'ทะเบียน', driverName:'คนขับ', origin:'ต้นทาง', destination:'ปลายทาง',
+    customerName:'ลูกค้า', cargoList:'สินค้า', freightCost:'ค่าขนส่ง', paymentStatus:'สถานะ',
+    incomeItem:'รายการ', amount:'จำนวนเงิน', paymentMethod:'ช่องทาง', category:'หมวด',
+    vendor:'ร้าน/ผู้ขาย', expenseDetail:'รายละเอียด', driverPhone:'เบอร์คนขับ' };
+  const TITLE = { truck:'🚛 บันทึกรถ', income:'💰 รายรับ', expense:'💸 รายจ่าย' };
+  const blocks = ['truck','income','expense'].map(k => {
+    const d = qd[k] || {};
+    const items = Object.entries(d).filter(([,v]) => v !== '' && v != null);
+    const body = items.length
+      ? items.map(([key,v]) => `<span style="display:inline-block;background:#e0f2fe;color:#075985;border-radius:8px;padding:2px 9px;margin:2px;font-size:.74rem"><b>${LBL[key]||key}:</b> ${String(v)}</span>`).join('')
+      : '<span style="color:#94a3b8;font-size:.78rem">ยังไม่ได้ตั้งค่า — เปิดฟอร์มนี้ กรอกค่า แล้วกด "💾 ตั้งค่าลงด่วน"</span>';
+    return `<div style="margin-bottom:10px"><div style="font-weight:700;font-size:.82rem;margin-bottom:3px">${TITLE[k]}</div>${body}</div>`;
+  }).join('');
+  el.innerHTML = blocks;
 }
 
 // ─── RESET FORM ───────────────────────────
@@ -12953,7 +13064,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.58';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.59';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison

@@ -117,6 +117,26 @@ async function getRef(sheets, sheetId) {
   const vehicles = await sheetRows(sheets, sheetId, 'Vehicles');
   return { vehicles };
 }
+
+// Quick-entry defaults — latest row of the QuickDefaults sheet (a JSON blob
+// keyed by record type: { truck:{...}, income:{...}, expense:{...} }).
+async function getQuickDefaults(sheets, sheetId) {
+  try {
+    const rows = await sheetRows(sheets, sheetId, 'QuickDefaults');
+    if (!rows.length) return {};
+    const last = rows[rows.length - 1];
+    return last.payload ? JSON.parse(last.payload) : {};
+  } catch { return {}; }
+}
+
+// Next running trip round = max existing tripRound + 1.
+async function nextTripRound(sheets, sheetId) {
+  try {
+    const jobs = await sheetRows(sheets, sheetId, 'TruckJobs');
+    const max = jobs.reduce((m, j) => Math.max(m, parseInt(j.tripRound) || 0), 0);
+    return max + 1;
+  } catch { return 1; }
+}
 function uniq(arr, key, limit=10) {
   return [...new Set(arr.map(r => r[key]).filter(Boolean))].slice(0, limit);
 }
@@ -615,6 +635,11 @@ function buildConfirmFlex(type, f, highlightStep) {
             { type:'button', style:'primary', color:m.color, height:'sm', flex:2,
               action:{ type:'postback', label:'✅ ยืนยัน', data:'DO_CONFIRM' } }
           ]},
+          // ⚡ Quick-fill from admin defaults (not for maintenance)
+          ...(type !== 'maintenance' ? [
+            { type:'button', style:'primary', height:'sm', color:'#0EA5E9',
+              action:{ type:'postback', label:'⚡ ลงด่วน (เติมค่าที่ตั้งไว้)', data:`QUICK:${type}` } }
+          ] : []),
           { type:'button', style:'link', height:'sm',
             action:{ type:'uri', label:'📝 เปิดฟอร์มเต็มหน้า (dropdown)', uri:`${WEB_URL}/liff.html?type=${type}` } }
         ]
@@ -937,7 +962,7 @@ async function saveTruck(sheets, sheetId, f) {
     plateNumber: f.plateNumber||'', driverName: f.driverName||'', driverPhone: f.driverPhone||'',
     origin: f.origin||'', destination: f.destination||'',
     customerName: f.customerName||'', cargoList: f.cargoList||'',
-    cargoWeight: parseFloat(f.cargoWeight)||0, tripCount: 1,
+    cargoWeight: parseFloat(f.cargoWeight)||0, tripCount: parseInt(f.tripCount)||1,
     freightCost: parseFloat(f.freightCost)||0,
     jobStatus: 'กำลังดำเนินการ',
     remark: f.remark==='-'?'':(f.remark||''),
@@ -946,7 +971,7 @@ async function saveTruck(sheets, sheetId, f) {
     userAgent: 'LINE Bot', rowId,
     pickupDate: toISO(f.pickupDate)||'',
     deliveryDate: toISO(f.deliveryDate)||'',
-    tripRound: 1,
+    tripRound: parseInt(f.tripRound)||1,
     paymentStatus: f.paymentStatus||'ค้างจ่าย',
   };
   const headers = ['timestamp','jobDate','jobTime','plateNumber','driverName','driverPhone','origin','destination','customerName','cargoList','cargoWeight','tripCount','freightCost','jobStatus','remark','imageUrls','ocrText','userAgent','rowId','pickupDate','deliveryDate','tripRound','paymentStatus'];
@@ -1245,6 +1270,24 @@ async function handleEvent(event, sheets, sheetId) {
       formData[field] = `${d}/${mo}/${y}`;     // store as DD/MM/YYYY (display fmt)
     }
     return replyWrite(token, buildConfirmFlex(kind, formData, step), sheets, sheetId, userId, CONFIRM_STATE[kind], formData, rowNum);
+  }
+  // QUICK:<kind> → ⚡ ลงด่วน: prefill the card with admin defaults, set today's
+  // date (user can still edit), auto-number the trip round, then let the user
+  // review & press ✅ ยืนยัน (does NOT auto-save).
+  if (pb.startsWith('QUICK:')) {
+    const kind = pb.slice('QUICK:'.length);          // truck | income | expense
+    const defs = await getQuickDefaults(sheets, sheetId);
+    Object.assign(formData, (defs && defs[kind]) || {});
+    const today = todayStr();                         // DD/MM/YYYY (editable)
+    if (kind === 'truck') {
+      formData.pickupDate = today;
+      formData.tripRound  = await nextTripRound(sheets, sheetId);
+    } else if (kind === 'income')  { formData.incomeDate  = today; }
+    else if (kind === 'expense')   { formData.expenseDate = today; }
+    return replyWrite(token, [
+      txt('⚡ เติมค่าที่ตั้งไว้แล้ว — เช็ก/แก้ "วันที่" ให้ถูก แล้วกด ✅ ยืนยัน'),
+      buildConfirmFlex(kind, formData)
+    ], sheets, sheetId, userId, CONFIRM_STATE[kind], formData, rowNum);
   }
   // PICK:<step>:<value> → option tapped in a picker card (silent postback).
   // Set the field and go straight back to the form card — no chat bubble.
