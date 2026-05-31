@@ -301,10 +301,17 @@ const MAINT_SEQ   = ['maint_1','maint_2','maint_3','maint_4','maint_confirm'];
 const FIELD = {
   truck_1:'pickupDate', truck_2:'plateNumber', truck_3:'origin',
   truck_4:'destination', truck_5:'freightCost', truck_6:'paymentStatus',
+  truck_driver:'driverName',                       // edit-only (not in TRUCK_SEQ)
   inc_1:'incomeDate', inc_2:'incomeItem', inc_3:'amount', inc_4:'paymentMethod',
   exp_1:'expenseDate', exp_2:'category', exp_3:'amount', exp_4:'paymentMethod',
   maint_1:'maintenanceDate', maint_2:'plateNumber', maint_3:'maintenanceType', maint_4:'cost',
 };
+
+// Which confirm card a given step belongs to (prefix → confirm kind/state).
+function kindFromStep(step) {
+  return ({ truck:'truck', inc:'income', exp:'expense', maint:'maintenance' })[String(step).split('_')[0]] || 'truck';
+}
+const CONFIRM_STATE = { truck:'truck_confirm', income:'inc_confirm', expense:'exp_confirm', maintenance:'maint_confirm' };
 
 function buildStep(step, ref) {
   const { vehicles } = ref;
@@ -319,6 +326,8 @@ function buildStep(step, ref) {
     truck_4: { q:'📍 ปลายทาง', qr: PROVINCES.map(p=>qMsg(p,p)) },
     truck_5: { q:'💵 ค่าขนส่ง (บาท) พิมพ์เป็นตัวเลข', qr: [] },
     truck_6: { q:'💳 สถานะค่าขนส่ง', qr:[qMsg('✅ ชำระแล้ว','ชำระแล้ว'), qMsg('⚠️ ค้างจ่าย','ค้างจ่าย')] },
+    truck_driver: { q:'👤 ชื่อคนขับ (พิมพ์ชื่อ)', qr: [] }, // edit-only step
+
     // ── Income (4 steps) ──
     inc_1: { q:'📅 วันที่รับเงิน', qr: dateQR },
     inc_2: { q:'💰 ประเภทรายรับ', qr:[qMsg('ค่าขนส่ง','ค่าขนส่ง'),qMsg('ค่ามัดจำ','ค่ามัดจำ'),qMsg('อื่นๆ','อื่นๆ')] },
@@ -379,6 +388,28 @@ function flexRow(label, value, valueColor) {
   };
 }
 function flexSep() { return { type:'separator', margin:'md', color:'#EEF1F6' }; }
+
+// Tappable confirm row — tap to edit that single field, then return to confirm.
+// Date fields open LINE's native date picker; others re-ask the question.
+function flexEditRow(row) {
+  let action;
+  if (row.date) {
+    const iso = toISO(row.v || '');
+    const validIso = /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : null;
+    action = { type:'datetimepicker', label:'แก้ไข', mode:'date', data:'EDITDATE:'+row.step };
+    if (validIso) action.initial = validIso;
+  } else {
+    action = { type:'postback', label:'แก้ไข', data:'EDIT:'+row.step, displayText:'✏️ แก้ '+row.k };
+  }
+  return {
+    type:'box', layout:'horizontal', margin:'md', paddingAll:'sm', cornerRadius:'md', action,
+    contents:[
+      { type:'text', text:row.k, size:'sm', color:C.textSub, flex:4, weight:'regular' },
+      { type:'text', text:String(row.v||'-'), size:'sm', color:row.col||C.text, flex:5, weight:'bold', align:'end', wrap:true },
+      { type:'text', text:'✏️', size:'xs', flex:0, color:C.textMute, align:'end', gravity:'center', margin:'sm' }
+    ]
+  };
+}
 
 // ── 1) WELCOME FLEX (hero card with today's KPIs) ──
 async function buildWelcomeFlex(sheets, sheetId) {
@@ -456,37 +487,38 @@ async function buildWelcomeFlex(sheets, sheetId) {
 
 // ── 2) CONFIRM FLEX (sectioned card with header color + rows) ──
 function buildConfirmFlex(type, f) {
+  // Each row: { k:label, v:value, col?:valueColor, step:editStepId, date?:true }
   const meta = {
     truck:   { icon:'🚛', title:'ยืนยันบันทึกรถ',   color: C.primary,
                rows:[
-                 ['📅 วันที่รับ', f.pickupDate],
-                 ['🚛 ทะเบียนรถ', f.plateNumber],
-                 ['👤 คนขับ',     f.driverName],
-                 ['📍 ต้นทาง',     f.origin],
-                 ['📍 ปลายทาง',    f.destination],
-                 ['💵 ค่าขนส่ง',   `${num(f.freightCost)} บาท`, C.success],
-                 ['💳 สถานะ',      f.paymentStatus, (f.paymentStatus==='ชำระแล้ว'?C.success:C.danger)]
+                 { k:'📅 วันที่รับ', v:f.pickupDate,  step:'truck_1', date:true },
+                 { k:'🚛 ทะเบียนรถ', v:f.plateNumber, step:'truck_2' },
+                 { k:'👤 คนขับ',     v:f.driverName,  step:'truck_driver' },
+                 { k:'📍 ต้นทาง',     v:f.origin,       step:'truck_3' },
+                 { k:'📍 ปลายทาง',    v:f.destination,  step:'truck_4' },
+                 { k:'💵 ค่าขนส่ง',   v:`${num(f.freightCost)} บาท`, col:C.success, step:'truck_5' },
+                 { k:'💳 สถานะ',      v:f.paymentStatus, col:(f.paymentStatus==='ชำระแล้ว'?C.success:C.danger), step:'truck_6' }
                ]},
     income:  { icon:'💰', title:'ยืนยันรายรับ',     color: C.success,
                rows:[
-                 ['📅 วันที่',     f.incomeDate],
-                 ['💰 ประเภท',     f.incomeItem],
-                 ['💵 จำนวน',      `${num(f.amount)} บาท`, C.success],
-                 ['💳 ช่องทาง',    f.paymentMethod]
+                 { k:'📅 วันที่',     v:f.incomeDate, step:'inc_1', date:true },
+                 { k:'💰 ประเภท',     v:f.incomeItem, step:'inc_2' },
+                 { k:'💵 จำนวน',      v:`${num(f.amount)} บาท`, col:C.success, step:'inc_3' },
+                 { k:'💳 ช่องทาง',    v:f.paymentMethod, step:'inc_4' }
                ]},
     expense: { icon:'💸', title:'ยืนยันรายจ่าย',    color: C.danger,
                rows:[
-                 ['📅 วันที่',     f.expenseDate],
-                 ['💸 ประเภท',     f.category],
-                 ['💵 จำนวน',      `${num(f.amount)} บาท`, C.danger],
-                 ['💳 ช่องทาง',    f.paymentMethod]
+                 { k:'📅 วันที่',     v:f.expenseDate, step:'exp_1', date:true },
+                 { k:'💸 ประเภท',     v:f.category, step:'exp_2' },
+                 { k:'💵 จำนวน',      v:`${num(f.amount)} บาท`, col:C.danger, step:'exp_3' },
+                 { k:'💳 ช่องทาง',    v:f.paymentMethod, step:'exp_4' }
                ]},
     maintenance: { icon:'🔧', title:'ยืนยันซ่อมบำรุง', color: C.warningDark,
                rows:[
-                 ['📅 วันที่ซ่อม', f.maintenanceDate],
-                 ['🚛 ทะเบียน',    f.plateNumber],
-                 ['🔧 ประเภท',     f.maintenanceType],
-                 ['💵 ค่าซ่อม',    `${num(f.cost)} บาท`, C.warningDark]
+                 { k:'📅 วันที่ซ่อม', v:f.maintenanceDate, step:'maint_1', date:true },
+                 { k:'🚛 ทะเบียน',    v:f.plateNumber, step:'maint_2' },
+                 { k:'🔧 ประเภท',     v:f.maintenanceType, step:'maint_3' },
+                 { k:'💵 ค่าซ่อม',    v:`${num(f.cost)} บาท`, col:C.warningDark, step:'maint_4' }
                ]}
   };
   const m = meta[type] || meta.truck;
@@ -498,12 +530,12 @@ function buildConfirmFlex(type, f) {
         type:'box', layout:'vertical', backgroundColor:m.color, paddingAll:'lg',
         contents:[
           { type:'text', text:`${m.icon} ${m.title}`, color: C.white, weight:'bold', size:'md' },
-          { type:'text', text:'ตรวจสอบก่อนยืนยัน', color:'#FFFFFF', size:'xxs', margin:'xs', weight:'regular' }
+          { type:'text', text:'แตะที่แถวเพื่อแก้ไข ✏️ · ตรวจสอบก่อนยืนยัน', color:'#FFFFFF', size:'xxs', margin:'xs', weight:'regular', wrap:true }
         ]
       },
       body: {
         type:'box', layout:'vertical', paddingAll:'lg', spacing:'none',
-        contents: m.rows.map(([k,v,col],i) => i===0 ? flexRow(k,v,col) : { type:'box', layout:'vertical', contents:[ flexSep(), flexRow(k,v,col) ] })
+        contents: m.rows.map((row,i) => i===0 ? flexEditRow(row) : { type:'box', layout:'vertical', contents:[ flexSep(), flexEditRow(row) ] })
       },
       footer: {
         type:'box', layout:'horizontal', paddingAll:'md', spacing:'sm',
@@ -1023,12 +1055,14 @@ async function handleEvent(event, sheets, sheetId) {
 
   let text = '';
   let pb   = '';
+  let pbParams = {};
   let isImage = false;
   let imageMessageId = '';
   if (event.type === 'message' && event.message?.type === 'text') {
     text = event.message.text.trim();
   } else if (event.type === 'postback') {
     pb   = event.postback?.data || '';
+    pbParams = event.postback?.params || {};
     text = pb;
   } else if (event.type === 'message' && event.message?.type === 'image') {
     isImage = true;
@@ -1060,6 +1094,56 @@ async function handleEvent(event, sheets, sheetId) {
   if (text === 'ยกเลิก' || text === '❌ ยกเลิก') {
     await writeState(sheets, sheetId, userId, 'idle', {}, rowNum);
     return reply(token, txt('ยกเลิกแล้วครับ 👍 กดเมนูด้านล่างเพื่อเริ่มใหม่'));
+  }
+
+  // ── Edit a single field from the confirm card ──────────────────
+  // EDITDATE:<step> comes from the date-picker (value in postback.params.date)
+  // → set the field immediately and re-show the confirm card.
+  if (pb.startsWith('EDITDATE:')) {
+    const step  = pb.slice('EDITDATE:'.length);
+    const field = FIELD[step];
+    const iso   = pbParams.date || '';        // 'YYYY-MM-DD'
+    const kind  = kindFromStep(step);
+    if (field && /^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+      const [y,mo,d] = iso.split('-');
+      formData[field] = `${d}/${mo}/${y}`;     // store as DD/MM/YYYY (display fmt)
+    }
+    await writeState(sheets, sheetId, userId, CONFIRM_STATE[kind], formData, rowNum);
+    return reply(token, buildConfirmFlex(kind, formData));
+  }
+  // EDIT:<step> → jump into "edit one field" mode and re-ask that question.
+  if (pb.startsWith('EDIT:')) {
+    const step = pb.slice('EDIT:'.length);
+    const ref  = await getRef(sheets, sheetId);
+    const s    = buildStep(step, ref);
+    if (!s) {
+      // Unknown step — just re-show the card.
+      const kind = kindFromStep(step);
+      await writeState(sheets, sheetId, userId, CONFIRM_STATE[kind], formData, rowNum);
+      return reply(token, buildConfirmFlex(kind, formData));
+    }
+    await writeState(sheets, sheetId, userId, 'edit_' + step, formData, rowNum);
+    return reply(token, txt(`✏️ แก้ไข — ${s.q}`, s.qr));
+  }
+  // Edit-mode answer: user supplied the new value → save it & return to card.
+  // Only treat *typed text / quick-reply* (not a postback) as the answer, so
+  // tapping a rich-menu button while editing escapes to that menu instead.
+  if (!pb && state.startsWith('edit_')) {
+    const step  = state.slice('edit_'.length);
+    const field = FIELD[step];
+    if (field) formData[field] = text;
+    // Selecting a plate also refreshes the auto-filled driver (truck flow).
+    if (field === 'plateNumber') {
+      try {
+        const vehicles = await sheetRows(sheets, sheetId, 'Vehicles');
+        const veh = vehicles.find(v => v.plateNumber === text);
+        if (veh?.assignedDriver)      formData.driverName  = veh.assignedDriver;
+        if (veh?.assignedDriverPhone) formData.driverPhone = veh.assignedDriverPhone;
+      } catch { /* ignore */ }
+    }
+    const kind = kindFromStep(step);
+    await writeState(sheets, sheetId, userId, CONFIRM_STATE[kind], formData, rowNum);
+    return reply(token, buildConfirmFlex(kind, formData));
   }
 
   // ── Menu triggers (Rich Menu sends these postback data) ────────
