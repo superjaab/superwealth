@@ -35,14 +35,22 @@ function toISO(str) {
 }
 
 // ─── Google Sheets helpers ─────────────────────────────────────
+// Cache the auth + sheets client at module scope so warm invocations reuse the
+// same OAuth access token instead of re-doing the JWT handshake every request
+// (saves ~200–500ms per call when the function is warm).
+let _auth = null, _sheets = null;
 function getAuth() {
-  return new google.auth.GoogleAuth({
+  if (_auth) return _auth;
+  _auth = new google.auth.GoogleAuth({
     credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON),
     scopes: ['https://www.googleapis.com/auth/spreadsheets']
   });
+  return _auth;
 }
 function getSheetsClient() {
-  return google.sheets({ version: 'v4', auth: getAuth() });
+  if (_sheets) return _sheets;
+  _sheets = google.sheets({ version: 'v4', auth: getAuth() });
+  return _sheets;
 }
 async function sheetRows(sheets, sheetId, name) {
   try {
@@ -265,6 +273,17 @@ async function showLoading(chatId, seconds = 5) {
       body: JSON.stringify({ chatId, loadingSeconds: seconds })
     });
   } catch (e) { /* non-fatal */ }
+}
+
+// Send the reply AND persist state concurrently (both still complete before
+// the handler returns) — overlapping the Sheets write with the LINE reply
+// instead of waiting for the write first shaves perceived latency.
+async function replyWrite(token, msgs, sheets, sheetId, userId, state, data, rowNum) {
+  const [ok] = await Promise.all([
+    reply(token, msgs),
+    writeState(sheets, sheetId, userId, state, data, rowNum)
+  ]);
+  return ok;
 }
 
 async function reply(token, msgs) {
@@ -1173,9 +1192,9 @@ async function handleEvent(event, sheets, sheetId) {
   }
 
   // ── Show LINE loading animation so a tap feels acknowledged ────
-  // (1:1 chats only; auto-dismisses when we reply or after the timeout.)
+  // Fire WITHOUT awaiting so it overlaps the state read (1:1 chats only).
   if ((event.type === 'postback' || isImage) && event.source?.type === 'user') {
-    await showLoading(userId);
+    showLoading(userId);
   }
 
   // ── Read state (+ ref data in parallel for menus) ─────────────
@@ -1215,8 +1234,7 @@ async function handleEvent(event, sheets, sheetId) {
       const [y,mo,d] = iso.split('-');
       formData[field] = `${d}/${mo}/${y}`;     // store as DD/MM/YYYY (display fmt)
     }
-    await writeState(sheets, sheetId, userId, CONFIRM_STATE[kind], formData, rowNum);
-    return reply(token, buildConfirmFlex(kind, formData));
+    return replyWrite(token, buildConfirmFlex(kind, formData), sheets, sheetId, userId, CONFIRM_STATE[kind], formData, rowNum);
   }
   // PICK:<step>:<value> → option tapped in a picker card (silent postback).
   // Set the field and go straight back to the form card — no chat bubble.
@@ -1236,29 +1254,23 @@ async function handleEvent(event, sheets, sheetId) {
       } catch { /* ignore */ }
     }
     const kind = kindFromStep(step);
-    await writeState(sheets, sheetId, userId, CONFIRM_STATE[kind], formData, rowNum);
-    return reply(token, buildConfirmFlex(kind, formData));
+    return replyWrite(token, buildConfirmFlex(kind, formData), sheets, sheetId, userId, CONFIRM_STATE[kind], formData, rowNum);
   }
   // EDIT:<step> → jump into "edit one field" mode and re-ask that question.
   if (pb.startsWith('EDIT:')) {
     const step = pb.slice('EDIT:'.length);
-    const ref  = await getRef(sheets, sheetId);
+    // Only the plate steps need the Vehicles sheet — skip that read otherwise.
+    const needsVehicles = (step === 'truck_2' || step === 'maint_2');
+    const ref  = needsVehicles ? await getRef(sheets, sheetId) : { vehicles: [] };
     const s    = buildStep(step, ref);
     if (!s) {
-      // Unknown step — just re-show the card.
       const kind = kindFromStep(step);
-      await writeState(sheets, sheetId, userId, CONFIRM_STATE[kind], formData, rowNum);
-      return reply(token, buildConfirmFlex(kind, formData));
+      return replyWrite(token, buildConfirmFlex(kind, formData), sheets, sheetId, userId, CONFIRM_STATE[kind], formData, rowNum);
     }
-    await writeState(sheets, sheetId, userId, 'edit_' + step, formData, rowNum);
-    // Choice fields (have selectable options) → show a tap-to-pick list card
-    // (the "drop list"). Free-text / number fields → plain prompt to type.
-    const options = (s.qr || []).filter(it =>
-      it.action && it.action.type === 'message' && it.action.text !== '❌ ยกเลิก');
-    if (options.length > 0) {
-      return reply(token, buildPicker(`✏️ ${s.q}`, step, options));
-    }
-    return reply(token, txt(`✏️ แก้ไข — ${s.q}`, s.qr));
+    // Choice fields → tap-to-pick list card; free-text / number → prompt to type.
+    const options = (s.qr || []).filter(it => it.action && it.action.type === 'message');
+    const msg = options.length > 0 ? buildPicker(`✏️ ${s.q}`, step, options) : txt(`✏️ แก้ไข — ${s.q}`, s.qr);
+    return replyWrite(token, msg, sheets, sheetId, userId, 'edit_' + step, formData, rowNum);
   }
   // Edit-mode answer: user supplied the new value → save it & return to card.
   // Only treat *typed text / quick-reply* (not a postback) as the answer, so
@@ -1277,8 +1289,7 @@ async function handleEvent(event, sheets, sheetId) {
       } catch { /* ignore */ }
     }
     const kind = kindFromStep(step);
-    await writeState(sheets, sheetId, userId, CONFIRM_STATE[kind], formData, rowNum);
-    return reply(token, buildConfirmFlex(kind, formData));
+    return replyWrite(token, buildConfirmFlex(kind, formData), sheets, sheetId, userId, CONFIRM_STATE[kind], formData, rowNum);
   }
 
   // ── Menu triggers (Rich Menu sends these postback data) ────────
@@ -1286,20 +1297,16 @@ async function handleEvent(event, sheets, sheetId) {
   // the calendar). The card also carries a "เปิดฟอร์มเต็มหน้า" button for the
   // full web form with native dropdowns.
   if (text==='MENU_TRUCK' || text==='🚛 บันทึกรถ') {
-    await writeState(sheets, sheetId, userId, 'truck_confirm', {}, rowNum);
-    return reply(token, buildConfirmFlex('truck', {}));
+    return replyWrite(token, buildConfirmFlex('truck', {}), sheets, sheetId, userId, 'truck_confirm', {}, rowNum);
   }
   if (text==='MENU_INCOME' || text==='💰 รายรับ') {
-    await writeState(sheets, sheetId, userId, 'inc_confirm', {}, rowNum);
-    return reply(token, buildConfirmFlex('income', {}));
+    return replyWrite(token, buildConfirmFlex('income', {}), sheets, sheetId, userId, 'inc_confirm', {}, rowNum);
   }
   if (text==='MENU_EXPENSE' || text==='💸 รายจ่าย') {
-    await writeState(sheets, sheetId, userId, 'exp_confirm', {}, rowNum);
-    return reply(token, buildConfirmFlex('expense', {}));
+    return replyWrite(token, buildConfirmFlex('expense', {}), sheets, sheetId, userId, 'exp_confirm', {}, rowNum);
   }
   if (text==='MENU_MAINTENANCE' || text==='🔧 ซ่อมบำรุง') {
-    await writeState(sheets, sheetId, userId, 'maint_confirm', {}, rowNum);
-    return reply(token, buildConfirmFlex('maintenance', {}));
+    return replyWrite(token, buildConfirmFlex('maintenance', {}), sheets, sheetId, userId, 'maint_confirm', {}, rowNum);
   }
   if (text==='MENU_CALENDAR' || text==='📅 ปฏิทิน' || text==='cal_now' || pb==='cal_now') {
     const now = bkkNow();
@@ -1380,11 +1387,9 @@ async function handleEvent(event, sheets, sheetId) {
         else if (kind === 'income')   id = await saveIncome(sheets,      sheetId, formData);
         else if (kind === 'expense')  id = await saveExpense(sheets,     sheetId, formData);
         else if (kind === 'maintenance') id = await saveMaintenance(sheets, sheetId, formData);
-        await writeState(sheets, sheetId, userId, 'idle', {}, rowNum);
-        return reply(token, buildSuccessFlex(kind, id, formData));
+        return replyWrite(token, buildSuccessFlex(kind, id, formData), sheets, sheetId, userId, 'idle', {}, rowNum);
       } catch(e) {
-        await writeState(sheets, sheetId, userId, 'idle', {}, rowNum);
-        return reply(token, txt(`❌ เกิดข้อผิดพลาด: ${e.message}`));
+        return replyWrite(token, txt(`❌ เกิดข้อผิดพลาด: ${e.message}`), sheets, sheetId, userId, 'idle', {}, rowNum);
       }
     }
     // Stray input on the confirm step — keep the form, re-show the confirm card.
