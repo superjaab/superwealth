@@ -562,12 +562,16 @@ function buildConfirmFlex(type, f) {
         contents: m.rows.map((row,i) => i===0 ? flexEditRow(row) : { type:'box', layout:'vertical', contents:[ flexSep(), flexEditRow(row) ] })
       },
       footer: {
-        type:'box', layout:'horizontal', paddingAll:'md', spacing:'sm',
+        type:'box', layout:'vertical', paddingAll:'md', spacing:'sm',
         contents:[
-          { type:'button', style:'secondary', height:'sm', flex:1,
-            action:{ type:'message', label:'❌ ยกเลิก', text:'❌ ยกเลิก' } },
-          { type:'button', style:'primary', color:m.color, height:'sm', flex:2,
-            action:{ type:'message', label:'✅ ยืนยัน', text:'✅ ยืนยัน' } }
+          { type:'box', layout:'horizontal', spacing:'sm', contents:[
+            { type:'button', style:'secondary', height:'sm', flex:1,
+              action:{ type:'message', label:'❌ ยกเลิก', text:'❌ ยกเลิก' } },
+            { type:'button', style:'primary', color:m.color, height:'sm', flex:2,
+              action:{ type:'message', label:'✅ ยืนยัน', text:'✅ ยืนยัน' } }
+          ]},
+          { type:'button', style:'link', height:'sm',
+            action:{ type:'uri', label:'📝 เปิดฟอร์มเต็มหน้า (dropdown)', uri:`${WEB_URL}/liff.html?type=${type}` } }
         ]
       }
     }
@@ -1233,22 +1237,24 @@ async function handleEvent(event, sheets, sheetId) {
   }
 
   // ── Menu triggers (Rich Menu sends these postback data) ────────
-  // Open the full web form (real dropdowns, fill the whole screen at once).
+  // Open the in-chat form card (tap each row to fill via list pickers — like
+  // the calendar). The card also carries a "เปิดฟอร์มเต็มหน้า" button for the
+  // full web form with native dropdowns.
   if (text==='MENU_TRUCK' || text==='🚛 บันทึกรถ') {
-    await writeState(sheets, sheetId, userId, 'idle', {}, rowNum);
-    return reply(token, buildFormLaunch('truck'));
+    await writeState(sheets, sheetId, userId, 'truck_confirm', {}, rowNum);
+    return reply(token, buildConfirmFlex('truck', {}));
   }
   if (text==='MENU_INCOME' || text==='💰 รายรับ') {
-    await writeState(sheets, sheetId, userId, 'idle', {}, rowNum);
-    return reply(token, buildFormLaunch('income'));
+    await writeState(sheets, sheetId, userId, 'inc_confirm', {}, rowNum);
+    return reply(token, buildConfirmFlex('income', {}));
   }
   if (text==='MENU_EXPENSE' || text==='💸 รายจ่าย') {
-    await writeState(sheets, sheetId, userId, 'idle', {}, rowNum);
-    return reply(token, buildFormLaunch('expense'));
+    await writeState(sheets, sheetId, userId, 'exp_confirm', {}, rowNum);
+    return reply(token, buildConfirmFlex('expense', {}));
   }
   if (text==='MENU_MAINTENANCE' || text==='🔧 ซ่อมบำรุง') {
-    await writeState(sheets, sheetId, userId, 'idle', {}, rowNum);
-    return reply(token, buildFormLaunch('maintenance'));
+    await writeState(sheets, sheetId, userId, 'maint_confirm', {}, rowNum);
+    return reply(token, buildConfirmFlex('maintenance', {}));
   }
   if (text==='MENU_CALENDAR' || text==='📅 ปฏิทิน' || text==='cal_now' || pb==='cal_now') {
     const now = bkkNow();
