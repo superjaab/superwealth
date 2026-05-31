@@ -448,7 +448,9 @@ function flexSep() { return { type:'separator', margin:'md', color:'#EEF1F6' }; 
 
 // Tappable confirm row — tap to edit that single field, then return to confirm.
 // Date fields open LINE's native date picker; others re-ask the question.
-function flexEditRow(row) {
+// `highlightStep` = the field just changed → render it green with a ✓ so the
+// user can see at a glance which row they just tapped/filled.
+function flexEditRow(row, highlightStep) {
   let action;
   if (row.date) {
     const iso = toISO(row.v || '');
@@ -458,16 +460,24 @@ function flexEditRow(row) {
   } else {
     action = { type:'postback', label:'แก้ไข', data:'EDIT:'+row.step }; // no displayText → silent
   }
-  const empty = !(row.v != null && String(row.v).trim() !== '' && String(row.v).trim() !== '-');
-  return {
+  const empty     = !(row.v != null && String(row.v).trim() !== '' && String(row.v).trim() !== '-');
+  const justEdited = highlightStep && row.step === highlightStep;
+  // Backgrounds: just-edited = green tint, filled = faint tint, empty = none.
+  const bg   = justEdited ? '#E3F4E8' : (empty ? null : '#F7F9FC');
+  const icon = justEdited ? '✅' : '✏️';
+  const box = {
     type:'box', layout:'horizontal', margin:'md', paddingAll:'sm', cornerRadius:'md', action,
     contents:[
       { type:'text', text:row.k, size:'sm', color:C.textSub, flex:4, weight:'regular' },
       { type:'text', text: empty ? 'แตะเพื่อกรอก' : String(row.v), size:'sm',
-        color: empty ? C.textMute : (row.col||C.text), flex:5, weight:'bold', align:'end', wrap:true },
-      { type:'text', text:'✏️', size:'xs', flex:0, color:C.textMute, align:'end', gravity:'center', margin:'sm' }
+        color: empty ? C.textMute : (justEdited ? C.success : (row.col||C.text)),
+        flex:5, weight:'bold', align:'end', wrap:true },
+      { type:'text', text: icon, size:'xs', flex:0, align:'end', gravity:'center', margin:'sm',
+        color: justEdited ? C.success : C.textMute }
     ]
   };
+  if (bg) box.backgroundColor = bg;
+  return box;
 }
 
 // ── 1) WELCOME FLEX (hero card with today's KPIs) ──
@@ -545,7 +555,7 @@ async function buildWelcomeFlex(sheets, sheetId) {
 }
 
 // ── 2) CONFIRM FLEX (sectioned card with header color + rows) ──
-function buildConfirmFlex(type, f) {
+function buildConfirmFlex(type, f, highlightStep) {
   // Each row: { k:label, v:value, col?:valueColor, step:editStepId, date?:true }
   const meta = {
     truck:   { icon:'🚛', title:'บันทึกรถ',   color: C.primary,
@@ -594,7 +604,7 @@ function buildConfirmFlex(type, f) {
       },
       body: {
         type:'box', layout:'vertical', paddingAll:'lg', spacing:'none',
-        contents: m.rows.map((row,i) => i===0 ? flexEditRow(row) : { type:'box', layout:'vertical', contents:[ flexSep(), flexEditRow(row) ] })
+        contents: m.rows.map((row,i) => i===0 ? flexEditRow(row, highlightStep) : { type:'box', layout:'vertical', contents:[ flexSep(), flexEditRow(row, highlightStep) ] })
       },
       footer: {
         type:'box', layout:'vertical', paddingAll:'md', spacing:'sm',
@@ -1234,7 +1244,7 @@ async function handleEvent(event, sheets, sheetId) {
       const [y,mo,d] = iso.split('-');
       formData[field] = `${d}/${mo}/${y}`;     // store as DD/MM/YYYY (display fmt)
     }
-    return replyWrite(token, buildConfirmFlex(kind, formData), sheets, sheetId, userId, CONFIRM_STATE[kind], formData, rowNum);
+    return replyWrite(token, buildConfirmFlex(kind, formData, step), sheets, sheetId, userId, CONFIRM_STATE[kind], formData, rowNum);
   }
   // PICK:<step>:<value> → option tapped in a picker card (silent postback).
   // Set the field and go straight back to the form card — no chat bubble.
@@ -1254,7 +1264,7 @@ async function handleEvent(event, sheets, sheetId) {
       } catch { /* ignore */ }
     }
     const kind = kindFromStep(step);
-    return replyWrite(token, buildConfirmFlex(kind, formData), sheets, sheetId, userId, CONFIRM_STATE[kind], formData, rowNum);
+    return replyWrite(token, buildConfirmFlex(kind, formData, step), sheets, sheetId, userId, CONFIRM_STATE[kind], formData, rowNum);
   }
   // EDIT:<step> → jump into "edit one field" mode and re-ask that question.
   if (pb.startsWith('EDIT:')) {
@@ -1289,7 +1299,7 @@ async function handleEvent(event, sheets, sheetId) {
       } catch { /* ignore */ }
     }
     const kind = kindFromStep(step);
-    return replyWrite(token, buildConfirmFlex(kind, formData), sheets, sheetId, userId, CONFIRM_STATE[kind], formData, rowNum);
+    return replyWrite(token, buildConfirmFlex(kind, formData, step), sheets, sheetId, userId, CONFIRM_STATE[kind], formData, rowNum);
   }
 
   // ── Menu triggers (Rich Menu sends these postback data) ────────
