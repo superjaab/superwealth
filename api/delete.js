@@ -9,7 +9,8 @@ const { google } = require('googleapis');
 const SHEET_NAMES = {
   truck:'TruckJobs', income:'Income', expense:'Expense',
   vehicle:'Vehicles', driver:'Drivers', customer:'Customers',
-  maintenance:'Maintenance', fuel:'FuelLog', invoice:'Invoices'
+  maintenance:'Maintenance', fuel:'FuelLog', invoice:'Invoices',
+  capital:'Capital', capitalMovement:'CapitalMovements'  // v14.80 — was missing
 };
 
 module.exports = async function handler(req, res) {
