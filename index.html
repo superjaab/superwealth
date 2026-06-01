@@ -4692,7 +4692,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.88 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.89 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -12874,7 +12874,7 @@ function openCalDay(dateKey) {
       const lbl = (trip.plateNumber || '-') + (trip.tripRound ? ' รอบ ' + trip.tripRound : '');
       const actionBar = rid ? `
         <div class="cal-trip-actions" style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed #e2e8f0;justify-content:flex-end;flex-wrap:wrap">
-          <button type="button" onclick="event.stopPropagation();closeCalDay();onEditClick('truck','${escAttr(rid)}')"
+          <button type="button" onclick="event.stopPropagation();_calEditTrip('${escAttr(rid)}')"
                   style="background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;border-radius:8px;padding:7px 14px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px">✏️ แก้ไข</button>
           <button type="button" onclick="event.stopPropagation();onDeleteClick('truck','${escAttr(rid)}','${escAttr(lbl)}')"
                   style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;border-radius:8px;padding:7px 14px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px">🗑 ลบ</button>
@@ -12903,6 +12903,23 @@ function openCalDay(dateKey) {
 }
 function closeCalDay() {
   document.getElementById('cal-day-modal').classList.remove('show');
+}
+
+// v14.89 — Edit a trip directly from calendar (use _calTrips not _listCache)
+function _calEditTrip(identifier) {
+  if (typeof requireAuth === 'function' && !requireAuth()) return;
+  const rec = (_calTrips || []).find(r =>
+    (r.rowId || '') === identifier || (r.timestamp || '') === identifier
+  );
+  if (!rec) { showToast('ไม่พบข้อมูล (' + identifier + ')', 'error'); return; }
+  // Sync into _listCache so save/refresh paths find it too
+  if (typeof _listCache === 'object' && Array.isArray(_listCache.truck)) {
+    const i = _listCache.truck.findIndex(r => (r.rowId||'') === (rec.rowId||''));
+    if (i < 0) _listCache.truck.push(rec);
+  }
+  closeCalDay();
+  const idForBackend = rec.rowId || rec.timestamp || identifier;
+  startEdit('truck', idForBackend, rec);
 }
 
 // ─── SUMMARY TAB ──────────────────────────────────────────────────────────────
@@ -13865,7 +13882,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.88';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.89';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
