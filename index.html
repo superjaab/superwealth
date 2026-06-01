@@ -4659,7 +4659,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.71 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.72 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -4865,7 +4865,7 @@
           <input type="time" id="i-incomeTime">
         </div>
         <div class="form-row">
-          <label>เลขที่เอกสาร <span style="font-size:.7rem;color:#94a3b8;font-weight:400">(ระบบรันให้)</span></label>
+          <label>เลขที่เอกสาร</label>
           <input type="text" id="i-docNumber" placeholder="RV-202606-0001" readonly
                  class="sw-doc-auto" title="ใบสำคัญรับ — ระบบรันให้อัตโนมัติ (แก้ไม่ได้)">
         </div>
@@ -4974,7 +4974,7 @@
           <input type="time" id="e-expenseTime">
         </div>
         <div class="form-row">
-          <label>เลขที่เอกสาร <span style="font-size:.7rem;color:#94a3b8;font-weight:400">(ระบบรันให้)</span></label>
+          <label>เลขที่เอกสาร</label>
           <input type="text" id="e-docNumber" placeholder="PV-202606-0001" readonly
                  class="sw-doc-auto" title="ใบสำคัญจ่าย — ระบบรันให้อัตโนมัติ (แก้ไม่ได้)">
         </div>
@@ -6700,7 +6700,7 @@
     <div class="card">
       <div class="card-title" style="color:#006064">📄 ข้อมูลเอกสาร</div>
       <div class="form-row-3">
-        <div class="form-row"><label>เลขที่เอกสาร <span class="req">*</span> <span style="font-size:.7rem;color:#94a3b8;font-weight:400">(ระบบรันให้)</span></label><input type="text" id="inv-number" placeholder="IV-202605-0001" maxlength="30" readonly class="sw-doc-auto" title="ใบกำกับ — ระบบรันให้อัตโนมัติ (แก้ไม่ได้)"></div>
+        <div class="form-row"><label>เลขที่เอกสาร <span class="req">*</span></label><input type="text" id="inv-number" placeholder="IV-202605-0001" maxlength="30" readonly class="sw-doc-auto" title="ใบกำกับ — ระบบรันให้อัตโนมัติ (แก้ไม่ได้)"></div>
         <div class="form-row"><label>วันที่จัดทำเอกสาร <span class="req">*</span></label><input type="date" id="inv-date"></div>
         <div class="form-row"><label>วันที่จ่ายเงิน</label><input type="date" id="inv-paydate"></div>
       </div>
@@ -13607,7 +13607,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.71';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.72';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
