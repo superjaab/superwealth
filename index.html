@@ -4692,7 +4692,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.89 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.90 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -11413,13 +11413,39 @@ function submitVehicle() {
   }, ()=>resetFields(['v-plate','v-type','v-brand','v-model','v-year','v-load','v-color','v-chassis','v-reg','v-prb','v-ins','v-inspect','v-notes']));
 }
 function renderVehicleList(items) {
-  return [...items].reverse().map(v=>`
+  // v14.90 — Show ALL captured fields (was missing loadCapacity, color, chassisNo, driver, notes, expiry dates)
+  return [...items].reverse().map(v => {
+    const fmtExp = d => d ? fmtDate(d) : '-';
+    const subLine1 = [
+      v.brand || v.model ? `${escHtml(v.brand||'')} ${escHtml(v.model||'')}`.trim() : '',
+      v.year ? `ปี ${+v.year+543}` : '',
+      v.color ? `🎨 ${escHtml(v.color)}` : '',
+      v.loadCapacity ? `🏋️ ${escHtml(v.loadCapacity)} ตัน` : ''
+    ].filter(Boolean).map(s => `<span>${s}</span>`).join('');
+    const chassisLine = v.chassisNo
+      ? `<div class="rc-sub" style="margin-top:3px;color:#64748b"><span>🔧 เลขตัวถัง: ${escHtml(v.chassisNo)}</span></div>` : '';
+    const driverLine = (v.assignedDriver || v.assignedDriverPhone)
+      ? `<div class="rc-sub" style="margin-top:3px"><span>👤 คนขับประจำ: ${escHtml(v.assignedDriver||'-')}</span>${v.assignedDriverPhone?`<span>📞 ${escHtml(v.assignedDriverPhone)}</span>`:''}</div>` : '';
+    const expDetail = `<div class="rc-sub" style="margin-top:6px;padding:8px;background:#f8fafc;border-radius:6px;font-size:.74rem;color:#475569;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px">
+        <span>📋 ภาษี: <b>${fmtExp(v.regExpiry)}</b></span>
+        <span>🛡 พ.ร.บ.: <b>${fmtExp(v.prbExpiry)}</b></span>
+        <span>🔒 ประกัน: <b>${fmtExp(v.insuranceExpiry)}</b></span>
+        <span>🔍 ตรวจสภาพ: <b>${fmtExp(v.inspectionExpiry)}</b></span>
+      </div>`;
+    const notesLine = v.notes
+      ? `<div class="rc-sub" style="margin-top:6px;color:#94a3b8;font-size:.78rem">📝 ${escHtml(v.notes)}</div>` : '';
+    return `
     <div class="record-card" style="border-left-color:#0D47A1">
-      <div class="rc-title">🚛 ${v.plateNumber} <span style="font-size:.78rem;font-weight:400;color:var(--gray3)">${v.vehicleType||''}</span></div>
-      <div class="rc-sub"><span>${v.brand||''} ${v.model||''}</span>${v.year?`<span>ปี ${+v.year+543}</span>`:''}</div>
+      <div class="rc-title">🚛 ${escHtml(v.plateNumber||'')} <span style="font-size:.78rem;font-weight:400;color:var(--gray3)">${escHtml(v.vehicleType||'')}</span></div>
+      ${subLine1 ? `<div class="rc-sub">${subLine1}</div>` : ''}
+      ${chassisLine}
+      ${driverLine}
       <div class="rc-badges">${expiryBadge(v.regExpiry,'ภาษี')}${expiryBadge(v.prbExpiry,'พ.ร.บ.')}${expiryBadge(v.insuranceExpiry,'ประกัน')}${expiryBadge(v.inspectionExpiry,'ตรวจสภาพ')}</div>
-      ${renderRecActions('vehicle', v.rowId || v.timestamp,v.plateNumber||'')}
-    </div>`).join('');
+      ${expDetail}
+      ${notesLine}
+      ${renderRecActions('vehicle', v.rowId || v.timestamp, v.plateNumber||'')}
+    </div>`;
+  }).join('');
 }
 
 // ─── DRIVER ────────────────────────────────────────────────────────────────
@@ -11434,14 +11460,28 @@ function submitDriver() {
   }, ()=>resetFields(['d-name','d-phone','d-idcard','d-lic-type','d-lic-num','d-lic-exp','d-address','d-emg-contact','d-emg-phone','d-notes']));
 }
 function renderDriverList(items) {
+  // v14.90 — Show ALL captured fields (was missing idCard, address, emergency contact, notes)
   const sBg={ทำงาน:'#E8F5E9',พักงาน:'#FFF9C4',ลาออก:'#FFEBEE'}, sFg={ทำงาน:'#2E7D32',พักงาน:'#F57F17',ลาออก:'#C62828'};
-  return [...items].reverse().map(d=>`
+  return [...items].reverse().map(d => {
+    const idLine = d.idCard ? `<div class="rc-sub" style="color:#64748b"><span>🆔 บัตรประชาชน: ${escHtml(d.idCard)}</span></div>` : '';
+    const addrLine = d.address ? `<div class="rc-sub" style="color:#64748b"><span>🏠 ${escHtml(d.address)}</span></div>` : '';
+    const licExpLine = d.licenseExpiry ? `<div class="rc-sub" style="color:#64748b"><span>📅 ใบขับขี่หมด: ${fmtDate(d.licenseExpiry)}</span></div>` : '';
+    const emgLine = (d.emergencyContact || d.emergencyPhone)
+      ? `<div class="rc-sub" style="margin-top:6px;padding:6px 8px;background:#fef2f2;border-radius:6px;color:#991b1b;font-size:.78rem"><span>🚨 ติดต่อฉุกเฉิน: ${escHtml(d.emergencyContact||'-')}${d.emergencyPhone?` · 📞 ${escHtml(d.emergencyPhone)}`:''}</span></div>` : '';
+    const notesLine = d.notes ? `<div class="rc-sub" style="margin-top:6px;color:#94a3b8;font-size:.78rem">📝 ${escHtml(d.notes)}</div>` : '';
+    return `
     <div class="record-card" style="border-left-color:#1B5E20">
-      <div class="rc-title">👤 ${d.driverName} <span style="font-size:.72rem;padding:2px 8px;border-radius:10px;background:${sBg[d.status]||'#F5F5F5'};color:${sFg[d.status]||'#616161'}">${d.status||'ทำงาน'}</span></div>
-      <div class="rc-sub"><span>📞 ${d.driverPhone||'-'}</span><span>ใบขับขี่ ${d.licenseType||''} ${d.licenseNumber||''}</span></div>
+      <div class="rc-title">👤 ${escHtml(d.driverName||'')} <span style="font-size:.72rem;padding:2px 8px;border-radius:10px;background:${sBg[d.status]||'#F5F5F5'};color:${sFg[d.status]||'#616161'}">${escHtml(d.status||'ทำงาน')}</span></div>
+      <div class="rc-sub"><span>📞 ${escHtml(d.driverPhone||'-')}</span>${d.licenseType||d.licenseNumber?`<span>ใบขับขี่ ${escHtml(d.licenseType||'')} ${escHtml(d.licenseNumber||'')}</span>`:''}</div>
+      ${licExpLine}
+      ${idLine}
+      ${addrLine}
+      ${emgLine}
       <div class="rc-badges">${expiryBadge(d.licenseExpiry,'ใบขับขี่')}</div>
-      ${renderRecActions('driver', d.rowId || d.timestamp,d.driverName||'')}
-    </div>`).join('');
+      ${notesLine}
+      ${renderRecActions('driver', d.rowId || d.timestamp, d.driverName||'')}
+    </div>`;
+  }).join('');
 }
 
 // ─── CUSTOMER ──────────────────────────────────────────────────────────────
@@ -11454,13 +11494,29 @@ function submitCustomer() {
   }, ()=>resetFields(['c-name','c-contact','c-phone','c-email','c-address','c-taxid','c-terms','c-cargo','c-notes']));
 }
 function renderCustomerList(items) {
-  return [...items].reverse().map(c=>`
+  // v14.90 — Show ALL captured fields (was missing email, address, cargoItems, notes)
+  return [...items].reverse().map(c => {
+    const subFields = [
+      c.contactName ? escHtml(c.contactName) : '',
+      c.phone ? `📞 ${escHtml(c.phone)}` : '',
+      c.email ? `✉️ ${escHtml(c.email)}` : '',
+      c.paymentTerms ? `💳 ${escHtml(c.paymentTerms)}` : ''
+    ].filter(Boolean).map(s => `<span>${s}</span>`).join('');
+    const taxLine  = c.taxId ? `<div class="rc-sub" style="color:#64748b"><span>🧾 เลขผู้เสียภาษี: ${escHtml(c.taxId)}</span></div>` : '';
+    const addrLine = c.address ? `<div class="rc-sub" style="color:#64748b"><span>🏠 ${escHtml(c.address)}</span></div>` : '';
+    const cargoLine = c.cargoItems ? `<div class="rc-sub" style="margin-top:6px;padding:6px 8px;background:#f3e8ff;border-radius:6px;color:#581c87;font-size:.78rem"><span>📦 สินค้าที่ขนส่ง: ${escHtml(c.cargoItems)}</span></div>` : '';
+    const notesLine = c.notes ? `<div class="rc-sub" style="margin-top:6px;color:#94a3b8;font-size:.78rem">📝 ${escHtml(c.notes)}</div>` : '';
+    return `
     <div class="record-card" style="border-left-color:#4A148C">
-      <div class="rc-title">🏢 ${c.customerName}</div>
-      <div class="rc-sub"><span>${c.contactName||''}</span><span>📞 ${c.phone||'-'}</span><span>${c.paymentTerms||''}</span></div>
-      ${c.taxId?`<div class="rc-sub">เลขผู้เสียภาษี: ${c.taxId}</div>`:''}
-      ${renderRecActions('customer', c.rowId || c.timestamp,c.customerName||'')}
-    </div>`).join('');
+      <div class="rc-title">🏢 ${escHtml(c.customerName||'')}</div>
+      ${subFields ? `<div class="rc-sub">${subFields}</div>` : ''}
+      ${taxLine}
+      ${addrLine}
+      ${cargoLine}
+      ${notesLine}
+      ${renderRecActions('customer', c.rowId || c.timestamp, c.customerName||'')}
+    </div>`;
+  }).join('');
 }
 
 // ─── MAINTENANCE ───────────────────────────────────────────────────────────
@@ -13882,7 +13938,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.89';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.90';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
