@@ -4509,27 +4509,25 @@
       .sw-prompt-btn { width: 100%; }
     }
 
-    /* v14.71 — Auto-generated document numbers — DARK readonly style */
+    /* v14.73 — Auto-generated document numbers (soft pale-blue readonly) */
     .sw-doc-auto {
-      background: linear-gradient(135deg, #1e293b, #334155) !important;
-      border: 1.5px solid #475569 !important;
-      color: #f1f5f9 !important;
+      background: #e8ecf3 !important;
+      border: 1.5px solid #c7d0e0 !important;
+      color: #1e293b !important;
       font-weight: 800 !important;
       font-family: 'JetBrains Mono', 'IBM Plex Mono', 'Roboto Mono', ui-monospace, monospace !important;
       letter-spacing: 1.5px;
       cursor: not-allowed;
-      text-shadow: 0 1px 2px rgba(0,0,0,.25);
-      box-shadow: inset 0 1px 2px rgba(0,0,0,.2);
     }
-    .sw-doc-auto::placeholder { color: #94a3b8 !important; opacity: .8; }
-    .sw-doc-auto:focus { outline: none !important; box-shadow: inset 0 1px 2px rgba(0,0,0,.2) !important; }
-    .sw-doc-auto:hover { border-color: #64748b !important; }
-    /* Dark mode (only slight tweak — already dark by default) */
+    .sw-doc-auto::placeholder { color: #94a3b8 !important; opacity: .65; }
+    .sw-doc-auto:focus { outline: none !important; box-shadow: none !important; border-color: #c7d0e0 !important; }
+    .sw-doc-auto:hover { background: #dfe4ed !important; border-color: #b6c0d4 !important; }
     body.dark .sw-doc-auto {
-      background: linear-gradient(135deg, #020617, #0f172a) !important;
+      background: #1e2336 !important;
       border-color: #334155 !important;
       color: #e2e8f0 !important;
     }
+    body.dark .sw-doc-auto:hover { background: #252b40 !important; }
 
     /* ARIA live region for screen readers (visually hidden) */
     .sw-sr-only {
@@ -4659,7 +4657,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.72 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.73 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -4866,7 +4864,7 @@
         </div>
         <div class="form-row">
           <label>เลขที่เอกสาร</label>
-          <input type="text" id="i-docNumber" placeholder="RV-202606-0001" readonly
+          <input type="text" id="i-docNumber" placeholder="RV-000001" readonly
                  class="sw-doc-auto" title="ใบสำคัญรับ — ระบบรันให้อัตโนมัติ (แก้ไม่ได้)">
         </div>
       </div>
@@ -4975,7 +4973,7 @@
         </div>
         <div class="form-row">
           <label>เลขที่เอกสาร</label>
-          <input type="text" id="e-docNumber" placeholder="PV-202606-0001" readonly
+          <input type="text" id="e-docNumber" placeholder="PV-000001" readonly
                  class="sw-doc-auto" title="ใบสำคัญจ่าย — ระบบรันให้อัตโนมัติ (แก้ไม่ได้)">
         </div>
       </div>
@@ -6700,7 +6698,7 @@
     <div class="card">
       <div class="card-title" style="color:#006064">📄 ข้อมูลเอกสาร</div>
       <div class="form-row-3">
-        <div class="form-row"><label>เลขที่เอกสาร <span class="req">*</span></label><input type="text" id="inv-number" placeholder="IV-202605-0001" maxlength="30" readonly class="sw-doc-auto" title="ใบกำกับ — ระบบรันให้อัตโนมัติ (แก้ไม่ได้)"></div>
+        <div class="form-row"><label>เลขที่เอกสาร <span class="req">*</span></label><input type="text" id="inv-number" placeholder="IV-000001" maxlength="30" readonly class="sw-doc-auto" title="ใบกำกับ — ระบบรันให้อัตโนมัติ (แก้ไม่ได้)"></div>
         <div class="form-row"><label>วันที่จัดทำเอกสาร <span class="req">*</span></label><input type="date" id="inv-date"></div>
         <div class="form-row"><label>วันที่จ่ายเงิน</label><input type="date" id="inv-paydate"></div>
       </div>
@@ -11420,27 +11418,26 @@ function calcInv() {
   setTxt('inv-vat-amount', fmt(vat));
   setTxt('inv-total-display', '฿' + fmt(sub+vat));
 }
-// v14.70 — Robust doc-number generator. Scans existing records for max seq
-// in the current YYYYMM (so it's consistent across browsers/devices) + uses
-// localStorage as a tiebreaker so two quick saves don't collide.
+// v14.73 — Sequential doc-number generator (never resets)
+// Format: RV-000001, RV-000002, RV-000003... PV-000001... IV-000001...
+// Scans ALL existing records → max seq → +1. localStorage = collision guard.
+// Handles legacy year-month numbers (e.g., "RV-202606-0001") gracefully.
 function _genDocNumber(prefix, existingNumbers) {
-  const now = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Bangkok'}));
-  const y = now.getFullYear();
-  const m = String(now.getMonth()+1).padStart(2,'0');
-  const monthKey = `${y}${m}`;
-  const re = new RegExp('^' + prefix + '-' + monthKey + '-(\\d+)$');
-  // Find max seq in existing records for this prefix + month
+  // Match any "PREFIX-...-NNN" or "PREFIX-NNN" — extract trailing number
+  const rePlain = new RegExp('^' + prefix + '-(\\d+)$');
+  const reYM    = new RegExp('^' + prefix + '-\\d{6}-(\\d+)$');
   let maxSeq = 0;
   (existingNumbers || []).forEach(n => {
-    const m2 = String(n || '').match(re);
-    if (m2) maxSeq = Math.max(maxSeq, parseInt(m2[1]));
+    const s = String(n || '').trim();
+    let m = s.match(rePlain) || s.match(reYM);
+    if (m) maxSeq = Math.max(maxSeq, parseInt(m[1]));
   });
-  // Local seq (in case multiple unsaved entries on same browser)
-  const lsKey = `${prefix.toLowerCase()}_seq_${monthKey}`;
+  // Local seq (collision guard for back-to-back unsaved entries)
+  const lsKey = `${prefix.toLowerCase()}_seq_global`;
   const lsSeq = parseInt(localStorage.getItem(lsKey) || '0');
   const next = Math.max(maxSeq, lsSeq) + 1;
   localStorage.setItem(lsKey, String(next));
-  return `${prefix}-${monthKey}-${String(next).padStart(4, '0')}`;
+  return `${prefix}-${String(next).padStart(6, '0')}`;
 }
 
 // v14.71 — Use formal Thai accounting prefixes
@@ -13607,7 +13604,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.72';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.73';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
