@@ -4692,7 +4692,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.87 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.88 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -10829,6 +10829,12 @@ async function confirmDel() {
       showToast('🗑 ลบสำเร็จ', 'success');
       reloadList(type);
       loadMasterData();
+      // v14.88 — refresh calendar if truck row was deleted (so cal-day-modal stays consistent)
+      if (type === 'truck' && typeof loadCalTrips === 'function') {
+        loadCalTrips();
+        const calMod = document.getElementById('cal-day-modal');
+        if (calMod && calMod.classList.contains('show')) closeCalDay();
+      }
     } else {
       showToast(result.error || 'ลบไม่สำเร็จ', 'error');
     }
@@ -12863,6 +12869,16 @@ function openCalDay(dateKey) {
       const spanLabel = (span.startNum !== span.endNum)
         ? `<div class="cal-trip-row" style="color:#4f46e5;font-weight:600">🗓️ <b>ช่วงเที่ยว:</b> ${fmtDM(span.startNum)} – ${fmtDM(span.endNum)} (${span.endNum - span.startNum + 1} วัน)</div>`
         : '';
+      // v14.88 — Edit/Delete actions (requires admin login)
+      const rid = trip.rowId || trip.timestamp || '';
+      const lbl = (trip.plateNumber || '-') + (trip.tripRound ? ' รอบ ' + trip.tripRound : '');
+      const actionBar = rid ? `
+        <div class="cal-trip-actions" style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed #e2e8f0;justify-content:flex-end;flex-wrap:wrap">
+          <button type="button" onclick="event.stopPropagation();closeCalDay();onEditClick('truck','${escAttr(rid)}')"
+                  style="background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;border-radius:8px;padding:7px 14px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px">✏️ แก้ไข</button>
+          <button type="button" onclick="event.stopPropagation();onDeleteClick('truck','${escAttr(rid)}','${escAttr(lbl)}')"
+                  style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;border-radius:8px;padding:7px 14px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px">🗑 ลบ</button>
+        </div>` : '';
       return `
         <div class="cal-trip-card ${cls}">
           <div class="cal-trip-head" style="flex-wrap:wrap;gap:6px">
@@ -12879,6 +12895,7 @@ function openCalDay(dateKey) {
           ${trip.cargoList    ? `<div class="cal-trip-row">📦 <b>สินค้า:</b> ${escHtml(trip.cargoList)}${trip.cargoWeight ? ' · ' + escHtml(trip.cargoWeight) + ' ตัน' : ''}</div>` : ''}
           ${trip.freightCost  ? `<div class="cal-trip-row">💰 <b>ค่าขนส่ง:</b> ${fmtBaht(trip.freightCost)}</div>` : ''}
           ${trip.remark       ? `<div class="cal-trip-row" style="color:#94a3b8;font-size:.78rem">📝 ${escHtml(trip.remark)}</div>` : ''}
+          ${actionBar}
         </div>`;
     }).join('');
   }
@@ -13848,7 +13865,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.87';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.88';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
