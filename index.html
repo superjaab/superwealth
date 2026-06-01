@@ -3900,8 +3900,20 @@
       opacity: .85 !important;
     }
     .dash-stat-value {
-      font-size: 1.7rem !important;
+      font-size: clamp(1.05rem, 3.5vw, 1.55rem) !important;
       text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+      line-height: 1.15 !important;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-variant-numeric: tabular-nums;
+    }
+    /* v14.82 — Sub label (e.g. ROI formula) wraps cleanly, never overflows */
+    .dash-stat-sub {
+      white-space: normal !important;
+      word-break: break-word;
+      line-height: 1.4;
+      font-size: .68rem !important;
     }
     /* Refined color palette — ลด saturation, เพิ่มมิติ (FORCE override) */
     body .dash-stat.green   { background: linear-gradient(135deg, #047857 0%, #065f46 100%) !important; box-shadow: 0 10px 28px -8px rgba(5,150,105,0.45) !important; }
@@ -4680,7 +4692,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.81 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.82 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -8254,18 +8266,37 @@ function capSetType(type) {
 // legacy alias for existing onchange handler (if any references remain)
 function capToggleBankFields() { capSetType(document.getElementById('cap-new-type').value); }
 
+// v14.82 — Use localStorage cache for instant initial render, then refresh in background
+const _CAP_CACHE_KEY = 'sw_capital_cache_v1';
 async function loadCapital() {
   const list = document.getElementById('cap-accounts-list');
   if (!list) return;
-  list.innerHTML = skeletonList(3);
+  // 1. Show cached data immediately (if any) — feels instant
+  try {
+    const cached = JSON.parse(localStorage.getItem(_CAP_CACHE_KEY) || 'null');
+    if (cached && Array.isArray(cached.accounts)) {
+      _capitalAccounts = cached.accounts;
+      renderCapitalKPIs();
+      renderCapitalList();
+    } else {
+      list.innerHTML = skeletonList(3);
+    }
+  } catch (_) { list.innerHTML = skeletonList(3); }
+  // 2. Fetch fresh in background
   try {
     const res = await fetch('/api/get-data?type=capital');
     const json = await res.json();
     _capitalAccounts = ((json.data || {}).capital || []).filter(a => a.active !== 'false');
     renderCapitalKPIs();
     renderCapitalList();
+    // 3. Update cache
+    try {
+      localStorage.setItem(_CAP_CACHE_KEY, JSON.stringify({ accounts: _capitalAccounts, ts: Date.now() }));
+    } catch (_) {}
   } catch (e) {
-    list.innerHTML = `<div style="text-align:center;color:#dc2626;padding:18px">❌ ${escHtml(e.message)}</div>`;
+    if (!_capitalAccounts.length) {
+      list.innerHTML = `<div style="text-align:center;color:#dc2626;padding:18px">❌ ${escHtml(e.message)}</div>`;
+    }
   }
 }
 
@@ -13794,7 +13825,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.81';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.82';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
