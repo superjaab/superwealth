@@ -4552,7 +4552,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.61 | 01/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.62 | 01/06/2026</span>
   </div>
 </aside>
 
@@ -9108,6 +9108,30 @@ function tabFromPath() {
 function urlForTab(tab) {
   return tab === DEFAULT_TAB ? '/' : '/' + tab;
 }
+// v14.62 — Scroll the active scroll container back to top on tab switch.
+// Tries window + every common scrollable wrapper in this app.
+function _scrollToTop() {
+  const targets = [
+    window,
+    document.documentElement,
+    document.body,
+    document.getElementById('main-content'),
+    document.getElementById('app-shell'),
+    document.getElementById('main-wrapper'),
+    document.querySelector('.tab-panel.active'),
+  ].filter(Boolean);
+  // Use rAF to wait for any layout/transition to settle
+  requestAnimationFrame(() => {
+    targets.forEach(el => {
+      try {
+        if (el === window) window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+        else if (el.scrollTo) el.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+        else { el.scrollTop = 0; el.scrollLeft = 0; }
+      } catch (_) { /* ignore */ }
+    });
+  });
+}
+
 function switchTab(tab, btnEl, opts) {
   opts = opts || {};
   // Find the actual sidebar button for this tab if btnEl not provided
@@ -9128,6 +9152,8 @@ function switchTab(tab, btnEl, opts) {
   if (tab === 'income') populateLinkedTripsDropdown();
   if (tab === 'expense') populateExpenseLinkedTripsDropdown();
   closeSidebar();
+  // v14.62 — Always scroll to top when switching menus (UX fix)
+  _scrollToTop();
 
   // ─── Sync URL with current tab (unless popstate triggered the switch) ───
   if (!opts.fromPopState) {
@@ -10637,6 +10663,8 @@ function innerTab(key, view, btnEl) {
   if (lv) lv.style.display = view==='list' ? '' : 'none';
   btnEl.parentElement.querySelectorAll('.inner-btn').forEach(b=>b.classList.remove('active'));
   btnEl.classList.add('active');
+  // v14.62 — Scroll to top when switching form/list sub-tab
+  if (typeof _scrollToTop === 'function') _scrollToTop();
   // auto-load list when switching to it
   const loaders = {
     truck:       ()=>loadList('truck','truck-list',renderTruckList),
@@ -13309,7 +13337,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.61';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.62';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
