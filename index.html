@@ -4524,7 +4524,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.59 | 31/05/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.60 | 01/06/2026</span>
   </div>
 </aside>
 
@@ -4570,9 +4570,10 @@
   <div id="truck-form-view">
   <form id="form-truck" onsubmit="return false">
 
-    <div class="card" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:linear-gradient(135deg,#ecfeff,#e0f2fe);border:1.5px solid #7dd3fc">
-      <button type="button" onclick="quickFill('truck')" style="flex:1;min-width:130px;padding:11px;font-weight:800;font-size:.9rem;border:none;border-radius:10px;background:#0EA5E9;color:#fff;cursor:pointer;font-family:inherit">⚡ ลงด่วน</button>
-      <button type="button" class="admin-only" onclick="saveQuickDefaults('truck')" style="padding:11px 14px;font-weight:700;font-size:.82rem;border:1.5px solid #0284c7;border-radius:10px;background:#fff;color:#0284c7;cursor:pointer;font-family:inherit">💾 ตั้งค่าลงด่วน</button>
+    <div class="card sw-quick-card" data-key="truck" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:linear-gradient(135deg,#ecfeff,#e0f2fe);border:1.5px solid #7dd3fc">
+      <select id="quick-tpl-truck" class="sw-quick-tpl" style="flex:1;min-width:130px;padding:10px 12px;border-radius:10px;border:1.5px solid #7dd3fc;background:#fff;color:#0c4a6e;font-weight:700;font-size:.86rem;font-family:inherit;cursor:pointer"></select>
+      <button type="button" onclick="quickFill('truck')" style="padding:11px 16px;font-weight:800;font-size:.9rem;border:none;border-radius:10px;background:#0EA5E9;color:#fff;cursor:pointer;font-family:inherit;white-space:nowrap">⚡ ลงด่วน</button>
+      <button type="button" class="admin-only" onclick="saveQuickDefaults('truck')" style="padding:11px 14px;font-weight:700;font-size:.82rem;border:1.5px solid #0284c7;border-radius:10px;background:#fff;color:#0284c7;cursor:pointer;font-family:inherit;white-space:nowrap">💾 บันทึกเป็นเทมเพลต</button>
     </div>
 
     <div class="card">
@@ -4691,8 +4692,9 @@
   <form id="form-income" onsubmit="return false">
 
     <div class="card" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:linear-gradient(135deg,#ecfeff,#e0f2fe);border:1.5px solid #7dd3fc">
-      <button type="button" onclick="quickFill('income')" style="flex:1;min-width:130px;padding:11px;font-weight:800;font-size:.9rem;border:none;border-radius:10px;background:#0EA5E9;color:#fff;cursor:pointer;font-family:inherit">⚡ ลงด่วน</button>
-      <button type="button" class="admin-only" onclick="saveQuickDefaults('income')" style="padding:11px 14px;font-weight:700;font-size:.82rem;border:1.5px solid #0284c7;border-radius:10px;background:#fff;color:#0284c7;cursor:pointer;font-family:inherit">💾 ตั้งค่าลงด่วน</button>
+      <select id="quick-tpl-income" class="sw-quick-tpl" style="flex:1;min-width:130px;padding:10px 12px;border-radius:10px;border:1.5px solid #7dd3fc;background:#fff;color:#0c4a6e;font-weight:700;font-size:.86rem;font-family:inherit;cursor:pointer"></select>
+      <button type="button" onclick="quickFill('income')" style="padding:11px 16px;font-weight:800;font-size:.9rem;border:none;border-radius:10px;background:#0EA5E9;color:#fff;cursor:pointer;font-family:inherit;white-space:nowrap">⚡ ลงด่วน</button>
+      <button type="button" class="admin-only" onclick="saveQuickDefaults('income')" style="padding:11px 14px;font-weight:700;font-size:.82rem;border:1.5px solid #0284c7;border-radius:10px;background:#fff;color:#0284c7;cursor:pointer;font-family:inherit;white-space:nowrap">💾 บันทึกเป็นเทมเพลต</button>
     </div>
 
     <div class="card">
@@ -4789,8 +4791,9 @@
   <form id="form-expense" onsubmit="return false">
 
     <div class="card" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:linear-gradient(135deg,#ecfeff,#e0f2fe);border:1.5px solid #7dd3fc">
-      <button type="button" onclick="quickFill('expense')" style="flex:1;min-width:130px;padding:11px;font-weight:800;font-size:.9rem;border:none;border-radius:10px;background:#0EA5E9;color:#fff;cursor:pointer;font-family:inherit">⚡ ลงด่วน</button>
-      <button type="button" class="admin-only" onclick="saveQuickDefaults('expense')" style="padding:11px 14px;font-weight:700;font-size:.82rem;border:1.5px solid #0284c7;border-radius:10px;background:#fff;color:#0284c7;cursor:pointer;font-family:inherit">💾 ตั้งค่าลงด่วน</button>
+      <select id="quick-tpl-expense" class="sw-quick-tpl" style="flex:1;min-width:130px;padding:10px 12px;border-radius:10px;border:1.5px solid #7dd3fc;background:#fff;color:#0c4a6e;font-weight:700;font-size:.86rem;font-family:inherit;cursor:pointer"></select>
+      <button type="button" onclick="quickFill('expense')" style="padding:11px 16px;font-weight:800;font-size:.9rem;border:none;border-radius:10px;background:#0EA5E9;color:#fff;cursor:pointer;font-family:inherit;white-space:nowrap">⚡ ลงด่วน</button>
+      <button type="button" class="admin-only" onclick="saveQuickDefaults('expense')" style="padding:11px 14px;font-weight:700;font-size:.82rem;border:1.5px solid #0284c7;border-radius:10px;background:#fff;color:#0284c7;cursor:pointer;font-family:inherit;white-space:nowrap">💾 บันทึกเป็นเทมเพลต</button>
     </div>
 
     <div class="card">
@@ -5113,17 +5116,20 @@
       <div id="admin-codes-list" style="color:#94a3b8;text-align:center;padding:14px">⏳ กำลังโหลด...</div>
     </div>
 
-    <!-- ⚡ Quick-entry defaults section -->
-    <div class="dash-card" style="margin-bottom:14px">
+    <!-- ⚡ Quick-entry templates section (v14.60 — multi-template) -->
+    <div id="admin-quick-section" class="dash-card" style="margin-bottom:14px">
       <div class="dash-card-head" style="margin-bottom:10px">
         <div>
-          <div class="dash-card-title">⚡ ค่าเริ่มต้น "ลงด่วน"</div>
-          <div class="dash-card-sub">ค่าที่ปุ่ม ⚡ ลงด่วน จะเติมให้ (ใช้ได้ทั้งเว็บและ LINE)</div>
+          <div class="dash-card-title">⚡ เทมเพลต "ลงด่วน"</div>
+          <div class="dash-card-sub">เก็บข้อความต้นแบบหลายชุด — เลือกใช้จาก dropdown ที่ฟอร์ม</div>
         </div>
       </div>
       <div style="background:#ecfeff;border:1px solid #bae6fd;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:.78rem;color:#075985">
-        💡 วิธีตั้งค่า: เปิดเมนู <b>บันทึกรถ / รายรับ / รายจ่าย</b> → กรอกค่าที่ใช้บ่อย → กดปุ่ม <b>💾 ตั้งค่าลงด่วน</b> ในฟอร์มนั้น<br>
-        จากนั้นปุ่ม <b>⚡ ลงด่วน</b> (ทั้งเว็บและ LINE) จะเติมค่าให้อัตโนมัติ เหลือแค่แก้ <b>วันที่</b> — รอบเที่ยวรันต่อให้เอง
+        💡 <b>วิธีเพิ่มเทมเพลต:</b><br>
+        1️⃣ เปิดเมนู <b>บันทึกรถ / รายรับ / รายจ่าย</b> → กรอกค่าที่ใช้บ่อย<br>
+        2️⃣ กดปุ่ม <b>💾 บันทึกเป็นเทมเพลต</b> → ตั้งชื่อ (เช่น "ขนข้าว ปทุมธานี")<br>
+        3️⃣ ใช้งาน: เลือกเทมเพลตจาก dropdown แล้วกด <b>⚡ ลงด่วน</b> → เติมค่าให้ทันที<br>
+        4️⃣ <b>เปลี่ยนชื่อ/ลบ</b> เทมเพลตได้ที่ด้านล่างนี้
       </div>
       <div id="admin-quickdefaults" style="color:#94a3b8;text-align:center;padding:10px;font-size:.82rem">⏳ กำลังโหลด...</div>
     </div>
@@ -8413,6 +8419,8 @@ window.addEventListener('DOMContentLoaded', () => {
     setTripRoundField();
     populateLinkedTripsDropdown();
     populateExpenseLinkedTripsDropdown();
+    // v14.60 — populate quick-entry template dropdowns
+    if (typeof _quickRefreshDropdowns === 'function') _quickRefreshDropdowns();
   });
   // Image zoom keyboard
   document.addEventListener('keydown', e => {
@@ -9714,7 +9722,7 @@ function collectFormData(formKey) {
   }
 }
 
-// ═══ ⚡ QUICK ENTRY (ลงด่วน) — prefill from admin-set defaults ═══
+// ═══ ⚡ QUICK ENTRY (ลงด่วน) — multi-template support (v14.60) ═══
 // Maps the stored default keys → the form field element IDs.
 const QUICK_FIELDS = {
   truck:  { plateNumber:'t-plateNumber', driverName:'t-driverName', driverPhone:'t-driverPhone',
@@ -9726,25 +9734,82 @@ const QUICK_FIELDS = {
 };
 const QUICK_DATE_FIELD = { truck:'t-pickupDate', income:'i-incomeDate', expense:'e-expenseDate' };
 
-// ⚡ Fill the form with saved defaults; date = today (editable); truck round = next.
+// v14.60 — Normalize quickDefaults to array-of-templates shape
+// Legacy shape: quickDefaults[truck] = { plateNumber: 'X', ... } (single object)
+// New shape:    quickDefaults[truck] = [ { id, name, fields:{...} }, ... ]
+function _quickGetTemplates(formKey) {
+  const root = _master.quickDefaults || {};
+  const val = root[formKey];
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  // Legacy single-object → wrap as one template named "ค่าเริ่มต้น"
+  if (typeof val === 'object' && Object.keys(val).length > 0) {
+    return [{ id: 'default', name: 'ค่าเริ่มต้น', fields: val }];
+  }
+  return [];
+}
+function _quickGenId() { return 'tpl-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6); }
+
+// Populate the <select id="quick-tpl-{formKey}"> dropdown
+function _quickRefreshDropdowns() {
+  ['truck','income','expense'].forEach(formKey => {
+    const sel = document.getElementById('quick-tpl-' + formKey);
+    if (!sel) return;
+    const tpls = _quickGetTemplates(formKey);
+    const prev = sel.value;
+    if (!tpls.length) {
+      sel.innerHTML = '<option value="">— ยังไม่มีเทมเพลต —</option>';
+      sel.disabled = true;
+      return;
+    }
+    sel.disabled = false;
+    sel.innerHTML = tpls.map((t, i) =>
+      `<option value="${escAttr(t.id || String(i))}">📋 ${escHtml(t.name || 'เทมเพลตที่ ' + (i+1))}</option>`
+    ).join('');
+    // Try to keep previous selection
+    if (prev && [...sel.options].some(o => o.value === prev)) sel.value = prev;
+  });
+}
+
+// ⚡ Fill form with the SELECTED template (from dropdown)
 function quickFill(formKey) {
-  const defs = (_master.quickDefaults || {})[formKey] || {};
+  const tpls = _quickGetTemplates(formKey);
+  if (!tpls.length) {
+    showToast('⚠️ ยังไม่มีเทมเพลต — กรอกค่าแล้วกด "💾 บันทึกเป็นเทมเพลต"', 'warning');
+    return;
+  }
+  const sel = document.getElementById('quick-tpl-' + formKey);
+  const selectedId = sel ? sel.value : '';
+  const tpl = tpls.find(t => t.id === selectedId) || tpls[0];
+  const defs = tpl.fields || {};
   const map = QUICK_FIELDS[formKey] || {};
   let filled = 0;
   Object.entries(map).forEach(([key, id]) => {
     const el = document.getElementById(id);
-    if (el && defs[key] != null && defs[key] !== '') { el.value = defs[key]; filled++; }
+    if (el && defs[key] != null && defs[key] !== '') {
+      el.value = defs[key];
+      // Format money fields
+      if (el.dataset && el.dataset.money === '1' && typeof formatMoneyDisplay === 'function') {
+        el.value = formatMoneyDisplay(String(defs[key]));
+      }
+      filled++;
+    }
   });
   // Today's date (user can change)
   const dEl = document.getElementById(QUICK_DATE_FIELD[formKey]);
-  if (dEl) dEl.value = new Date().toISOString().slice(0,10);
+  if (dEl) {
+    const today = new Date().toISOString().slice(0,10);
+    if (dEl._flatpickr) dEl._flatpickr.setDate(today, false);
+    else dEl.value = today;
+  }
   // Trip round runs normally (next number)
   if (formKey === 'truck' && typeof setTripRoundField === 'function') setTripRoundField();
-  showToast(filled ? `⚡ เติมค่าลงด่วนแล้ว ${filled} ช่อง — เช็กวันที่ แล้วกดบันทึก` :
-    '⚠️ ยังไม่ได้ตั้งค่าลงด่วน — กด "💾 ตั้งค่าลงด่วน" เพื่อบันทึกค่าจากฟอร์มนี้', filled ? 'success' : 'warning');
+  showToast(filled
+    ? `⚡ "${tpl.name}" เติม ${filled} ช่องแล้ว — เช็กวันที่แล้วกดบันทึก`
+    : '⚠️ เทมเพลตนี้ว่าง — ลองเลือกเทมเพลตอื่น', filled ? 'success' : 'warning');
 }
 
-// 💾 Save the current form values as the quick-entry defaults (admin only).
+// 💾 Save current form values as a NEW template (admin only). Prompts for a name.
 async function saveQuickDefaults(formKey) {
   if (!isAdmin()) { showToast('เฉพาะแอดมินเท่านั้น', 'warning'); return; }
   const map = QUICK_FIELDS[formKey] || {};
@@ -9755,36 +9820,158 @@ async function saveQuickDefaults(formKey) {
     if (el && el.dataset && el.dataset.money === '1') v = v.replace(/,/g, '');
     if (v !== '') obj[key] = v;
   });
-  if (!Object.keys(obj).length) { showToast('ฟอร์มยังว่าง — กรอกค่าที่ต้องการตั้งเป็น default ก่อน', 'warning'); return; }
-  const all = Object.assign({}, _master.quickDefaults || {});
-  all[formKey] = obj;
+  if (!Object.keys(obj).length) { showToast('ฟอร์มยังว่าง — กรอกค่าก่อนบันทึก', 'warning'); return; }
+
+  // Ask for template name (with default suggestion)
+  const tpls = _quickGetTemplates(formKey);
+  const sel = document.getElementById('quick-tpl-' + formKey);
+  const existingTpl = sel && sel.value ? tpls.find(t => t.id === sel.value) : null;
+  const suggested = existingTpl ? existingTpl.name : _quickSuggestName(formKey, obj);
+  const name = prompt('ตั้งชื่อเทมเพลตนี้ (กดตกลงเพื่อเขียนทับเทมเพลตที่เลือก):', suggested);
+  if (name == null) return;  // user canceled
+  const trimmedName = name.trim() || suggested || 'เทมเพลตใหม่';
+
+  // If user kept the suggested name AND a template with that name exists → update it
+  let updated = false;
+  const next = [...tpls];
+  const sameNameIdx = next.findIndex(t => t.name === trimmedName);
+  if (sameNameIdx >= 0) {
+    next[sameNameIdx] = { ...next[sameNameIdx], name: trimmedName, fields: obj };
+    updated = true;
+  } else {
+    next.push({ id: _quickGenId(), name: trimmedName, fields: obj });
+  }
+  // Build full payload
+  const allRoot = Object.assign({}, _master.quickDefaults || {});
+  allRoot[formKey] = next;
   try {
-    const res = await api('/api/save', { type:'quickDefaults', data:{ payload: JSON.stringify(all) } });
-    if (res.success) { _master.quickDefaults = all; renderQuickDefaultsAdmin();
-      showToast('💾 ตั้งค่าลงด่วนแล้ว — ใช้ได้ทั้งเว็บและ LINE', 'success'); }
-    else showToast('บันทึกไม่สำเร็จ: ' + res.error, 'error');
+    const res = await api('/api/save', { type:'quickDefaults', data:{ payload: JSON.stringify(allRoot) } });
+    if (res.success) {
+      _master.quickDefaults = allRoot;
+      _quickRefreshDropdowns();
+      // Select the just-saved template in the dropdown
+      const newSel = document.getElementById('quick-tpl-' + formKey);
+      if (newSel) {
+        const target = next[sameNameIdx >= 0 ? sameNameIdx : next.length - 1];
+        if (target && target.id) newSel.value = target.id;
+      }
+      renderQuickDefaultsAdmin();
+      showToast(updated ? `✏️ อัปเดต "${trimmedName}" แล้ว` : `💾 เพิ่มเทมเพลต "${trimmedName}" แล้ว`, 'success');
+    } else {
+      showToast('บันทึกไม่สำเร็จ: ' + res.error, 'error');
+    }
   } catch(e) { showToast('เกิดข้อผิดพลาด: ' + e.message, 'error'); }
 }
 
-// Render the current quick-entry defaults summary in the Admin tab (if present).
+// Suggest a template name based on key fields
+function _quickSuggestName(formKey, fields) {
+  if (formKey === 'truck') {
+    const parts = [fields.origin, fields.destination].filter(Boolean);
+    if (parts.length) return parts.join(' → ');
+    if (fields.customerName) return fields.customerName;
+  }
+  if (formKey === 'income') {
+    if (fields.incomeItem) return fields.incomeItem;
+    if (fields.customerName) return fields.customerName;
+  }
+  if (formKey === 'expense') {
+    if (fields.category && fields.vendor) return fields.category + ' · ' + fields.vendor;
+    if (fields.category) return fields.category;
+  }
+  return 'เทมเพลตใหม่';
+}
+
+// Delete a specific template by id
+async function deleteQuickTemplate(formKey, tplId) {
+  if (!isAdmin()) { showToast('เฉพาะแอดมินเท่านั้น', 'warning'); return; }
+  const tpls = _quickGetTemplates(formKey);
+  const tpl = tpls.find(t => t.id === tplId);
+  if (!tpl) return;
+  const next = tpls.filter(t => t.id !== tplId);
+  const allRoot = Object.assign({}, _master.quickDefaults || {});
+  allRoot[formKey] = next;
+  try {
+    const res = await api('/api/save', { type:'quickDefaults', data:{ payload: JSON.stringify(allRoot) } });
+    if (res.success) {
+      _master.quickDefaults = allRoot;
+      _quickRefreshDropdowns();
+      renderQuickDefaultsAdmin();
+      showToast(`🗑 ลบเทมเพลต "${tpl.name}" แล้ว`, 'success');
+    } else {
+      showToast('ลบไม่สำเร็จ: ' + res.error, 'error');
+    }
+  } catch(e) { showToast('เกิดข้อผิดพลาด: ' + e.message, 'error'); }
+}
+
+// Rename a template
+async function renameQuickTemplate(formKey, tplId) {
+  if (!isAdmin()) { showToast('เฉพาะแอดมินเท่านั้น', 'warning'); return; }
+  const tpls = _quickGetTemplates(formKey);
+  const tpl = tpls.find(t => t.id === tplId);
+  if (!tpl) return;
+  const newName = prompt('ตั้งชื่อเทมเพลตใหม่:', tpl.name);
+  if (newName == null) return;
+  const trimmed = newName.trim();
+  if (!trimmed) { showToast('ชื่อว่างไม่ได้', 'warning'); return; }
+  if (trimmed === tpl.name) return;
+  const next = tpls.map(t => t.id === tplId ? { ...t, name: trimmed } : t);
+  const allRoot = Object.assign({}, _master.quickDefaults || {});
+  allRoot[formKey] = next;
+  try {
+    const res = await api('/api/save', { type:'quickDefaults', data:{ payload: JSON.stringify(allRoot) } });
+    if (res.success) {
+      _master.quickDefaults = allRoot;
+      _quickRefreshDropdowns();
+      renderQuickDefaultsAdmin();
+      showToast(`✏️ เปลี่ยนชื่อเป็น "${trimmed}"`, 'success');
+    } else {
+      showToast('บันทึกไม่สำเร็จ: ' + res.error, 'error');
+    }
+  } catch(e) { showToast('เกิดข้อผิดพลาด: ' + e.message, 'error'); }
+}
+
+// Render the multi-template list in the Admin tab.
 function renderQuickDefaultsAdmin() {
   const el = document.getElementById('admin-quickdefaults');
   if (!el) return;
-  const qd = _master.quickDefaults || {};
   const LBL = { plateNumber:'ทะเบียน', driverName:'คนขับ', origin:'ต้นทาง', destination:'ปลายทาง',
     customerName:'ลูกค้า', cargoList:'สินค้า', freightCost:'ค่าขนส่ง', paymentStatus:'สถานะ',
     incomeItem:'รายการ', amount:'จำนวนเงิน', paymentMethod:'ช่องทาง', category:'หมวด',
     vendor:'ร้าน/ผู้ขาย', expenseDetail:'รายละเอียด', driverPhone:'เบอร์คนขับ' };
   const TITLE = { truck:'🚛 บันทึกรถ', income:'💰 รายรับ', expense:'💸 รายจ่าย' };
   const blocks = ['truck','income','expense'].map(k => {
-    const d = qd[k] || {};
-    const items = Object.entries(d).filter(([,v]) => v !== '' && v != null);
-    const body = items.length
-      ? items.map(([key,v]) => `<span style="display:inline-block;background:#e0f2fe;color:#075985;border-radius:8px;padding:2px 9px;margin:2px;font-size:.74rem"><b>${LBL[key]||key}:</b> ${String(v)}</span>`).join('')
-      : '<span style="color:#94a3b8;font-size:.78rem">ยังไม่ได้ตั้งค่า — เปิดฟอร์มนี้ กรอกค่า แล้วกด "💾 ตั้งค่าลงด่วน"</span>';
-    return `<div style="margin-bottom:10px"><div style="font-weight:700;font-size:.82rem;margin-bottom:3px">${TITLE[k]}</div>${body}</div>`;
+    const tpls = _quickGetTemplates(k);
+    let body;
+    if (!tpls.length) {
+      body = '<span style="color:#94a3b8;font-size:.78rem">ยังไม่มีเทมเพลต — เปิดฟอร์ม "' + TITLE[k] + '" กรอกค่า แล้วกด "💾 บันทึกเป็นเทมเพลต"</span>';
+    } else {
+      body = tpls.map(t => {
+        const items = Object.entries(t.fields || {}).filter(([,v]) => v !== '' && v != null);
+        const chips = items.length
+          ? items.map(([key,v]) => `<span style="display:inline-block;background:#e0f2fe;color:#075985;border-radius:8px;padding:2px 9px;margin:2px;font-size:.72rem"><b>${LBL[key]||key}:</b> ${escHtml(String(v))}</span>`).join('')
+          : '<span style="color:#94a3b8;font-size:.72rem">(ว่าง)</span>';
+        return `
+          <div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+              <span style="font-weight:800;color:#0f172a;font-size:.88rem">📋 ${escHtml(t.name || '(ไม่มีชื่อ)')}</span>
+              <span style="margin-left:auto;display:flex;gap:6px">
+                <button type="button" onclick="renameQuickTemplate('${escAttr(k)}','${escAttr(t.id)}')" style="background:#dbeafe;color:#1d4ed8;border:none;border-radius:6px;padding:5px 10px;font-weight:700;cursor:pointer;font-size:.75rem;font-family:inherit">✏️ เปลี่ยนชื่อ</button>
+                <button type="button" onclick="if(confirm('ลบเทมเพลต \\'${escAttr(t.name||'')}\\' ?'))deleteQuickTemplate('${escAttr(k)}','${escAttr(t.id)}')" style="background:#fee2e2;color:#b91c1c;border:none;border-radius:6px;padding:5px 10px;font-weight:700;cursor:pointer;font-size:.75rem;font-family:inherit">🗑 ลบ</button>
+              </span>
+            </div>
+            <div>${chips}</div>
+          </div>`;
+      }).join('');
+    }
+    return `
+      <div style="margin-bottom:14px">
+        <div style="font-weight:700;font-size:.85rem;margin-bottom:6px;color:#0f172a">${TITLE[k]} <span style="color:#94a3b8;font-weight:500;font-size:.72rem">— ${tpls.length} เทมเพลต</span></div>
+        ${body}
+      </div>`;
   }).join('');
   el.innerHTML = blocks;
+  // Also refresh the dropdowns at the top of each form
+  _quickRefreshDropdowns();
 }
 
 // ─── RESET FORM ───────────────────────────
@@ -13064,7 +13251,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.59';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.60';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
