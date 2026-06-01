@@ -4692,7 +4692,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.93 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.94 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -9349,22 +9349,23 @@ function _extractProvinceFromAddress(addr) {
 
 // v14.91 — Generalized handler for both origin + destination customer fields.
 // provinceFieldId = 't-origin' or 't-destination'
+// v14.94 — Always overwrite when user explicitly picks a customer (not just when empty).
 function onCustomerSelectedFor(provinceFieldId) {
   return function(name) {
     if (!name) return;
     const c = _master.customers.find(x => (x.customerName || x.name) === name);
     if (!c) return;
     let filledMsgs = [];
-    // 1) Auto-fill province — prefer customer.province; fallback to extracting from address (v14.92)
+    // 1) Auto-fill province — prefer customer.province; fallback to extracting from address
     const provField = document.getElementById(provinceFieldId);
-    if (provField && !provField.value) {
+    if (provField) {
       let prov = (c.province || '').trim();
       if (!prov && c.address) prov = _extractProvinceFromAddress(c.address);
       if (prov) { provField.value = prov; filledMsgs.push(`📍 ${prov}`); }
     }
-    // 2) Auto-fill cargo from customer's cargoItems (only if empty)
+    // 2) Auto-fill cargo from customer's cargoItems (overwrite to reflect new selection)
     const cargoField = document.getElementById('t-cargoList');
-    if (cargoField && !cargoField.value && c.cargoItems) {
+    if (cargoField && c.cargoItems) {
       const first = String(c.cargoItems).split(/[,;\n]/)[0].trim();
       if (first) { cargoField.value = first; filledMsgs.push(`📦 ${first}`); }
     }
@@ -14013,7 +14014,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.93';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.94';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
