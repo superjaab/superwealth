@@ -4509,21 +4509,26 @@
       .sw-prompt-btn { width: 100%; }
     }
 
-    /* v14.70 — Auto-generated document numbers (readonly + visual cue) */
+    /* v14.71 — Auto-generated document numbers — DARK readonly style */
     .sw-doc-auto {
-      background: linear-gradient(90deg, #f0fdf4, #ecfeff) !important;
-      border: 1.5px solid #86efac !important;
-      color: #14532d !important;
-      font-weight: 700 !important;
-      font-family: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace !important;
-      letter-spacing: 1px;
+      background: linear-gradient(135deg, #1e293b, #334155) !important;
+      border: 1.5px solid #475569 !important;
+      color: #f1f5f9 !important;
+      font-weight: 800 !important;
+      font-family: 'JetBrains Mono', 'IBM Plex Mono', 'Roboto Mono', ui-monospace, monospace !important;
+      letter-spacing: 1.5px;
       cursor: not-allowed;
+      text-shadow: 0 1px 2px rgba(0,0,0,.25);
+      box-shadow: inset 0 1px 2px rgba(0,0,0,.2);
     }
-    .sw-doc-auto:focus { outline: none !important; box-shadow: none !important; }
+    .sw-doc-auto::placeholder { color: #94a3b8 !important; opacity: .8; }
+    .sw-doc-auto:focus { outline: none !important; box-shadow: inset 0 1px 2px rgba(0,0,0,.2) !important; }
+    .sw-doc-auto:hover { border-color: #64748b !important; }
+    /* Dark mode (only slight tweak — already dark by default) */
     body.dark .sw-doc-auto {
-      background: linear-gradient(90deg, #0f1f2e, #0c1a25) !important;
-      border-color: #2d4a6a !important;
-      color: #7dd3fc !important;
+      background: linear-gradient(135deg, #020617, #0f172a) !important;
+      border-color: #334155 !important;
+      color: #e2e8f0 !important;
     }
 
     /* ARIA live region for screen readers (visually hidden) */
@@ -4654,7 +4659,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.70 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.71 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -4861,8 +4866,8 @@
         </div>
         <div class="form-row">
           <label>เลขที่เอกสาร <span style="font-size:.7rem;color:#94a3b8;font-weight:400">(ระบบรันให้)</span></label>
-          <input type="text" id="i-docNumber" placeholder="INC-202606-0001" readonly
-                 class="sw-doc-auto" title="ระบบรันให้อัตโนมัติ — แก้ไม่ได้">
+          <input type="text" id="i-docNumber" placeholder="RV-202606-0001" readonly
+                 class="sw-doc-auto" title="ใบสำคัญรับ — ระบบรันให้อัตโนมัติ (แก้ไม่ได้)">
         </div>
       </div>
       <div class="form-row">
@@ -4970,8 +4975,8 @@
         </div>
         <div class="form-row">
           <label>เลขที่เอกสาร <span style="font-size:.7rem;color:#94a3b8;font-weight:400">(ระบบรันให้)</span></label>
-          <input type="text" id="e-docNumber" placeholder="EXP-202606-0001" readonly
-                 class="sw-doc-auto" title="ระบบรันให้อัตโนมัติ — แก้ไม่ได้">
+          <input type="text" id="e-docNumber" placeholder="PV-202606-0001" readonly
+                 class="sw-doc-auto" title="ใบสำคัญจ่าย — ระบบรันให้อัตโนมัติ (แก้ไม่ได้)">
         </div>
       </div>
       <div class="form-row-2">
@@ -6695,7 +6700,7 @@
     <div class="card">
       <div class="card-title" style="color:#006064">📄 ข้อมูลเอกสาร</div>
       <div class="form-row-3">
-        <div class="form-row"><label>เลขที่เอกสาร <span class="req">*</span> <span style="font-size:.7rem;color:#94a3b8;font-weight:400">(ระบบรันให้)</span></label><input type="text" id="inv-number" placeholder="INV-202605-0001" maxlength="30" readonly class="sw-doc-auto" title="ระบบรันให้อัตโนมัติ — แก้ไม่ได้"></div>
+        <div class="form-row"><label>เลขที่เอกสาร <span class="req">*</span> <span style="font-size:.7rem;color:#94a3b8;font-weight:400">(ระบบรันให้)</span></label><input type="text" id="inv-number" placeholder="IV-202605-0001" maxlength="30" readonly class="sw-doc-auto" title="ใบกำกับ — ระบบรันให้อัตโนมัติ (แก้ไม่ได้)"></div>
         <div class="form-row"><label>วันที่จัดทำเอกสาร <span class="req">*</span></label><input type="date" id="inv-date"></div>
         <div class="form-row"><label>วันที่จ่ายเงิน</label><input type="date" id="inv-paydate"></div>
       </div>
@@ -11438,26 +11443,31 @@ function _genDocNumber(prefix, existingNumbers) {
   return `${prefix}-${monthKey}-${String(next).padStart(4, '0')}`;
 }
 
+// v14.71 — Use formal Thai accounting prefixes
+//   RV = ใบสำคัญรับ (Receipt Voucher) — รายรับ
+//   PV = ใบสำคัญจ่าย (Payment Voucher) — รายจ่าย
+//   IV = ใบกำกับ (Invoice/Tax Invoice) — ใบเสร็จ
 function genInvNum(force) {
   const el = document.getElementById('inv-number');
   if (!el) return;
   if (!force && el.value) return;
+  // Backward-compat: also check legacy INV-prefixed numbers
   const existing = (_master.invoices || []).map(x => x.invoiceNumber);
-  el.value = _genDocNumber('INV', existing);
+  el.value = _genDocNumber('IV', existing);
 }
 function genIncNum(force) {
   const el = document.getElementById('i-docNumber');
   if (!el) return;
   if (!force && el.value) return;
   const existing = (_master.incomeHistory || []).map(x => x.docNumber);
-  el.value = _genDocNumber('INC', existing);
+  el.value = _genDocNumber('RV', existing);
 }
 function genExpNum(force) {
   const el = document.getElementById('e-docNumber');
   if (!el) return;
   if (!force && el.value) return;
   const existing = (_master.expenseHistory || []).map(x => x.docNumber);
-  el.value = _genDocNumber('EXP', existing);
+  el.value = _genDocNumber('PV', existing);
 }
 function submitInvoice() {
   if (!gv('inv-number')) { showToast('กรุณากรอกเลขที่เอกสาร','warning'); return; }
@@ -13597,7 +13607,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.70';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.71';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
