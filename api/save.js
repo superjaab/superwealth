@@ -72,13 +72,14 @@ const CONFIGS = {
   },
   expense: {
     name: 'Expense', color: '#B71C1C', prefix: 'EXP',
-    headers: ['timestamp','expenseDate','expenseTime','category','plateNumber',
+    headers: ['timestamp','expenseDate','expenseTime','docNumber','category','plateNumber',
       'vendor','expenseDetail','amount','paymentMethod','remark',
       'imageUrls','ocrText','userAgent','rowId',
       'linkedTripRowId','linkedTripRound'],
     data: (d, now, id) => ({
       timestamp: now,
       expenseDate: d.expenseDate||'', expenseTime: d.expenseTime||'',
+      docNumber: d.docNumber||'',
       category: d.category||'', plateNumber: d.plateNumber||'',
       vendor: d.vendor||'', expenseDetail: d.expenseDetail||'',
       amount: +d.amount||0, paymentMethod: d.paymentMethod||'เงินสด',

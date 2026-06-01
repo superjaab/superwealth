@@ -4509,6 +4509,23 @@
       .sw-prompt-btn { width: 100%; }
     }
 
+    /* v14.70 — Auto-generated document numbers (readonly + visual cue) */
+    .sw-doc-auto {
+      background: linear-gradient(90deg, #f0fdf4, #ecfeff) !important;
+      border: 1.5px solid #86efac !important;
+      color: #14532d !important;
+      font-weight: 700 !important;
+      font-family: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace !important;
+      letter-spacing: 1px;
+      cursor: not-allowed;
+    }
+    .sw-doc-auto:focus { outline: none !important; box-shadow: none !important; }
+    body.dark .sw-doc-auto {
+      background: linear-gradient(90deg, #0f1f2e, #0c1a25) !important;
+      border-color: #2d4a6a !important;
+      color: #7dd3fc !important;
+    }
+
     /* ARIA live region for screen readers (visually hidden) */
     .sw-sr-only {
       position: absolute !important; width: 1px; height: 1px;
@@ -4637,7 +4654,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.68 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.70 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -4843,8 +4860,9 @@
           <input type="time" id="i-incomeTime">
         </div>
         <div class="form-row">
-          <label>เลขที่เอกสาร</label>
-          <input type="text" id="i-docNumber" placeholder="INV-001" maxlength="50">
+          <label>เลขที่เอกสาร <span style="font-size:.7rem;color:#94a3b8;font-weight:400">(ระบบรันให้)</span></label>
+          <input type="text" id="i-docNumber" placeholder="INC-202606-0001" readonly
+                 class="sw-doc-auto" title="ระบบรันให้อัตโนมัติ — แก้ไม่ได้">
         </div>
       </div>
       <div class="form-row">
@@ -4950,6 +4968,13 @@
           <label>เวลา</label>
           <input type="time" id="e-expenseTime">
         </div>
+        <div class="form-row">
+          <label>เลขที่เอกสาร <span style="font-size:.7rem;color:#94a3b8;font-weight:400">(ระบบรันให้)</span></label>
+          <input type="text" id="e-docNumber" placeholder="EXP-202606-0001" readonly
+                 class="sw-doc-auto" title="ระบบรันให้อัตโนมัติ — แก้ไม่ได้">
+        </div>
+      </div>
+      <div class="form-row-2">
         <div class="form-row">
           <label>หมวดรายจ่าย <span class="req">*</span></label>
           <select id="e-category" required>
@@ -6670,7 +6695,7 @@
     <div class="card">
       <div class="card-title" style="color:#006064">📄 ข้อมูลเอกสาร</div>
       <div class="form-row-3">
-        <div class="form-row"><label>เลขที่เอกสาร <span class="req">*</span></label><input type="text" id="inv-number" placeholder="INV-202605-0001" maxlength="30"></div>
+        <div class="form-row"><label>เลขที่เอกสาร <span class="req">*</span> <span style="font-size:.7rem;color:#94a3b8;font-weight:400">(ระบบรันให้)</span></label><input type="text" id="inv-number" placeholder="INV-202605-0001" maxlength="30" readonly class="sw-doc-auto" title="ระบบรันให้อัตโนมัติ — แก้ไม่ได้"></div>
         <div class="form-row"><label>วันที่จัดทำเอกสาร <span class="req">*</span></label><input type="date" id="inv-date"></div>
         <div class="form-row"><label>วันที่จ่ายเงิน</label><input type="date" id="inv-paydate"></div>
       </div>
@@ -8625,6 +8650,10 @@ window.addEventListener('DOMContentLoaded', () => {
     populateExpenseLinkedTripsDropdown();
     // v14.60 — populate quick-entry template dropdowns
     if (typeof _quickRefreshDropdowns === 'function') _quickRefreshDropdowns();
+    // v14.70 — populate auto doc numbers (after master data has real records)
+    if (typeof genIncNum === 'function') genIncNum(true);
+    if (typeof genExpNum === 'function') genExpNum(true);
+    if (typeof genInvNum === 'function') genInvNum(true);
   });
   // Image zoom keyboard
   document.addEventListener('keydown', e => {
@@ -9328,7 +9357,8 @@ function switchTab(tab, btnEl, opts) {
   const title = document.getElementById('page-title');
   if (title) title.textContent = PAGE_NAMES[tab] || tab;
   if (tab === 'invoice') { genInvNum(); renderInvRows(); refreshInvItemDatalist(); refreshInvPayeeDatalists(); }
-  if (tab === 'income')  { refreshIncItemDatalist(); }
+  if (tab === 'income')  { refreshIncItemDatalist(); genIncNum(); }
+  if (tab === 'expense') { genExpNum(); }
   if (tab === 'truck' && !_editingMode.truck) setTripRoundField();
   if (tab === 'income') populateLinkedTripsDropdown();
   if (tab === 'expense') populateExpenseLinkedTripsDropdown();
@@ -9790,8 +9820,9 @@ async function submitForm(formKey) {
       // Refresh master data + re-fill auto fields (tripRound/linked trips)
       await loadMasterData();
       if (formKey === 'truck')   setTripRoundField();
-      if (formKey === 'income')  populateLinkedTripsDropdown();
-      if (formKey === 'expense') populateExpenseLinkedTripsDropdown();
+      if (formKey === 'income')  { populateLinkedTripsDropdown(); genIncNum(true); }
+      if (formKey === 'expense') { populateExpenseLinkedTripsDropdown(); genExpNum(true); }
+      if (formKey === 'invoice') genInvNum(true);
       // Refresh expense dropdown too if a truck was added (so it includes new rounds)
       if (formKey === 'truck') { populateLinkedTripsDropdown(); populateExpenseLinkedTripsDropdown(); }
     } else {
@@ -9977,6 +10008,7 @@ function collectFormData(formKey) {
     const eLinkedRound = (eLinkedOpt && eLinkedOpt.dataset.round) ? +eLinkedOpt.dataset.round : 0;
     return {
       expenseDate: g('e-expenseDate'), expenseTime: g('e-expenseTime'),
+      docNumber: g('e-docNumber'),     // v14.70 — auto-generated
       category: g('e-category'),
       plateNumber: g('e-plateNumber'), vendor: g('e-vendor'),
       expenseDetail: g('e-expenseDetail'), amount: g('e-amount'),
@@ -10280,6 +10312,10 @@ function resetForm(formKey, silent) {
 
   // 3) Reset defaults
   setDefaultDates();
+  // v14.70 — Re-generate auto doc numbers after reset
+  if (formKey === 'income')  setTimeout(() => genIncNum(true), 50);
+  if (formKey === 'expense') setTimeout(() => genExpNum(true), 50);
+  if (formKey === 'invoice') setTimeout(() => genInvNum(true), 50);
   if (formKey === 'truck') {
     const st = document.getElementById('t-status'); if (st) st.value = 'รอโหลด';
     const tc = document.getElementById('t-tripCount'); if (tc) tc.value = '1';
@@ -10330,7 +10366,8 @@ const _PREFILL_MAP = {
     paymentMethod:'i-paymentMethod', remark:'i-remark', linkedTripRowId:'i-linkedTrip'
   },
   expense: {
-    expenseDate:'e-expenseDate', expenseTime:'e-expenseTime', category:'e-category',
+    expenseDate:'e-expenseDate', expenseTime:'e-expenseTime', docNumber:'e-docNumber',
+    category:'e-category',
     plateNumber:'e-plateNumber', vendor:'e-vendor', expenseDetail:'e-expenseDetail',
     amount:'e-amount', paymentMethod:'e-paymentMethod', remark:'e-remark',
     linkedTripRowId:'e-linkedTrip'
@@ -11378,15 +11415,49 @@ function calcInv() {
   setTxt('inv-vat-amount', fmt(vat));
   setTxt('inv-total-display', '฿' + fmt(sub+vat));
 }
-function genInvNum() {
-  const el = document.getElementById('inv-number');
-  if (!el || el.value) return;
+// v14.70 — Robust doc-number generator. Scans existing records for max seq
+// in the current YYYYMM (so it's consistent across browsers/devices) + uses
+// localStorage as a tiebreaker so two quick saves don't collide.
+function _genDocNumber(prefix, existingNumbers) {
   const now = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Bangkok'}));
-  const y=now.getFullYear(), m=String(now.getMonth()+1).padStart(2,'0');
-  const key = `inv_seq_${y}${m}`;
-  let seq = parseInt(localStorage.getItem(key)||'0') + 1;
-  localStorage.setItem(key, seq);
-  el.value = `INV-${y}${m}-${String(seq).padStart(4,'0')}`;
+  const y = now.getFullYear();
+  const m = String(now.getMonth()+1).padStart(2,'0');
+  const monthKey = `${y}${m}`;
+  const re = new RegExp('^' + prefix + '-' + monthKey + '-(\\d+)$');
+  // Find max seq in existing records for this prefix + month
+  let maxSeq = 0;
+  (existingNumbers || []).forEach(n => {
+    const m2 = String(n || '').match(re);
+    if (m2) maxSeq = Math.max(maxSeq, parseInt(m2[1]));
+  });
+  // Local seq (in case multiple unsaved entries on same browser)
+  const lsKey = `${prefix.toLowerCase()}_seq_${monthKey}`;
+  const lsSeq = parseInt(localStorage.getItem(lsKey) || '0');
+  const next = Math.max(maxSeq, lsSeq) + 1;
+  localStorage.setItem(lsKey, String(next));
+  return `${prefix}-${monthKey}-${String(next).padStart(4, '0')}`;
+}
+
+function genInvNum(force) {
+  const el = document.getElementById('inv-number');
+  if (!el) return;
+  if (!force && el.value) return;
+  const existing = (_master.invoices || []).map(x => x.invoiceNumber);
+  el.value = _genDocNumber('INV', existing);
+}
+function genIncNum(force) {
+  const el = document.getElementById('i-docNumber');
+  if (!el) return;
+  if (!force && el.value) return;
+  const existing = (_master.incomeHistory || []).map(x => x.docNumber);
+  el.value = _genDocNumber('INC', existing);
+}
+function genExpNum(force) {
+  const el = document.getElementById('e-docNumber');
+  if (!el) return;
+  if (!force && el.value) return;
+  const existing = (_master.expenseHistory || []).map(x => x.docNumber);
+  el.value = _genDocNumber('EXP', existing);
 }
 function submitInvoice() {
   if (!gv('inv-number')) { showToast('กรุณากรอกเลขที่เอกสาร','warning'); return; }
@@ -13526,7 +13597,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.68';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.70';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
