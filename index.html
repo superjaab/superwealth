@@ -4692,7 +4692,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.95 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.96 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -4940,9 +4940,9 @@
           <span>รายการรายรับ <span class="req">*</span></span>
           <a href="#" onclick="event.preventDefault();switchTab('admin',document.querySelector('[onclick*=\\'admin\\']'));setTimeout(()=>document.getElementById('admin-inc-items-section')?.scrollIntoView({behavior:'smooth'}),200)" style="font-size:.7rem;font-weight:600;color:#0891b2;text-decoration:none">⚙️ จัดการรายการ →</a>
         </label>
-        <!-- v14.28 — dropdown + free input (datalist) -->
-        <input type="text" id="i-incomeItem" placeholder="เลือกหรือพิมพ์รายการ..." maxlength="200" list="inc-item-dl" autocomplete="off">
-        <datalist id="inc-item-dl"></datalist>
+        <!-- v14.28 / v14.96 — wired to custom acAttach dropdown -->
+        <input type="text" id="i-incomeItem" placeholder="เลือกหรือพิมพ์รายการ..." maxlength="200" autocomplete="off">
+        <datalist id="inc-item-dl" hidden></datalist>
         <p class="hint" style="font-size:.7rem;color:#94a3b8;margin-top:4px">💡 เลือกจากรายการที่กำหนดไว้ หรือพิมพ์ใหม่ได้</p>
       </div>
       <div class="form-row-2">
@@ -6696,7 +6696,7 @@
       <div class="card-title" style="color:#E65100">🔧 ข้อมูลการซ่อมบำรุง</div>
       <div class="form-row-2">
         <div class="form-row"><label>วันที่ซ่อม <span class="req">*</span></label><input type="date" id="mnt-date"></div>
-        <div class="form-row"><label>ทะเบียนรถ <span class="req">*</span></label><input type="text" id="mnt-plate" placeholder="กข-1234" list="plate-dl" maxlength="20"></div>
+        <div class="form-row"><label>ทะเบียนรถ <span class="req">*</span></label><input type="text" id="mnt-plate" placeholder="กข-1234" maxlength="20" autocomplete="off"></div>
       </div>
       <div class="form-row"><label>ประเภทการซ่อม <span class="req">*</span></label>
         <select id="mnt-type" onchange="mntTypeChange(this.value)">
@@ -6757,7 +6757,7 @@
       <div class="form-row-3">
         <div class="form-row"><label>วันที่ <span class="req">*</span></label><input type="date" id="fuel-date"></div>
         <div class="form-row"><label>เวลา</label><input type="time" id="fuel-time"></div>
-        <div class="form-row"><label>ทะเบียนรถ <span class="req">*</span></label><input type="text" id="fuel-plate" placeholder="กข-1234" list="plate-dl" maxlength="20"></div>
+        <div class="form-row"><label>ทะเบียนรถ <span class="req">*</span></label><input type="text" id="fuel-plate" placeholder="กข-1234" maxlength="20" autocomplete="off"></div>
       </div>
       <div class="form-row-3">
         <div class="form-row"><label>จำนวนลิตร <span class="req">*</span></label><input type="number" id="fuel-liters" placeholder="0" min="0" step="0.01" oninput="calcFuelTotal()"></div>
@@ -6802,13 +6802,14 @@
       <div class="form-row-2">
         <div class="form-row">
           <label>ชื่อผู้รับเงิน <span class="req">*</span></label>
-          <input type="text" id="inv-payee" placeholder="พิมพ์เพื่อค้นหาคนขับ..." list="inv-payee-dl" maxlength="150" autocomplete="off" oninput="onInvPayeeChange()">
-          <datalist id="inv-payee-dl"></datalist>
+          <!-- v14.96 — wired to custom acAttach (replaces native datalist) -->
+          <input type="text" id="inv-payee" placeholder="พิมพ์เพื่อค้นหาคนขับ..." maxlength="150" autocomplete="off">
+          <datalist id="inv-payee-dl" hidden></datalist>
         </div>
         <div class="form-row">
           <label>เลขทะเบียนรถ</label>
-          <input type="text" id="inv-payee-plate" placeholder="กข-1234" maxlength="20" list="inv-plate-dl" autocomplete="off">
-          <datalist id="inv-plate-dl"></datalist>
+          <input type="text" id="inv-payee-plate" placeholder="กข-1234" maxlength="20" autocomplete="off">
+          <datalist id="inv-plate-dl" hidden></datalist>
         </div>
       </div>
       <div class="form-row">
@@ -9406,11 +9407,16 @@ function initAllAutocompletes() {
   acAttach('c-province',     getProvinceOpts, null);
   // Income / Expense / Maintenance / Fuel — customer & plate fields
   acAttach('i-customerName', getCustomerOpts, null);
+  // v14.96 — รายการรายรับ uses custom acAttach instead of native datalist
+  acAttach('i-incomeItem',   () => (typeof getIncItemPresets === 'function' ? getIncItemPresets() : []), null);
   acAttach('e-plateNumber',  getPlateOpts,    null);
   acAttach('e-vendor',       getDriverOpts,   null);   // ผู้รับเงิน = คนขับ
   acAttach('mnt-plate',      getPlateOpts,    null);
   acAttach('fuel-plate',     getPlateOpts,    null);
   acAttach('inv-customer',   getCustomerOpts, null);
+  // v14.96 — invoice payee + plate
+  acAttach('inv-payee',      getDriverOpts,   () => { if (typeof onInvPayeeChange === 'function') onInvPayeeChange(); });
+  acAttach('inv-payee-plate', getPlateOpts,   null);
   // Vehicle form — driver dropdown
   acAttach('v-driver',       getDriverOpts,   onVehicleDriverSelected);
 }
@@ -11764,15 +11770,23 @@ function removeInvRow(i) {
 function renderInvRows() {
   const tbody = document.getElementById('inv-items-body');
   if (!tbody) return;
+  // v14.96 — each row's description input gets unique ID + acAttach (consistent dropdown UX)
   tbody.innerHTML = invRows.map((r,i)=>`
     <tr>
-      <td style="padding:4px"><input class="inv-input" type="text" list="inv-item-dl" value="${(r.desc||'').replace(/"/g,'&quot;')}" placeholder="เลือกหรือพิมพ์รายการ..." onchange="invRows[${i}].desc=this.value"></td>
+      <td style="padding:4px"><input id="inv-row-desc-${i}" class="inv-input" type="text" value="${(r.desc||'').replace(/"/g,'&quot;')}" placeholder="เลือกหรือพิมพ์รายการ..." autocomplete="off" onchange="invRows[${i}].desc=this.value"></td>
       <td style="padding:4px"><input class="inv-input inv-num" type="number" value="${r.qty||1}" min="0" step="1" onchange="invRows[${i}].qty=+this.value||1;renderInvRows()"></td>
       <td style="padding:4px"><input class="inv-input inv-price" type="text" inputmode="decimal" value="${formatMoneyDisplay(String(r.total||0))}" placeholder="0.00" style="text-align:right;font-weight:700"
              oninput="this.value=formatMoneyDisplay(this.value)"
              onchange="invRows[${i}].total=parseFloat((this.value||'0').replace(/,/g,''))||0;calcInv()"></td>
       <td style="padding:4px"><button type="button" class="inv-del-btn" onclick="removeInvRow(${i})" title="ลบรายการ">✕</button></td>
     </tr>`).join('');
+  // Wire each new desc input to the custom dropdown (uses presets list)
+  invRows.forEach((_, i) => {
+    if (typeof acAttach === 'function' && typeof getInvItemPresets === 'function') {
+      acAttach(`inv-row-desc-${i}`, () => getInvItemPresets(),
+        v => { invRows[i].desc = v; });
+    }
+  });
   calcInv();
 }
 function calcInvRow(i) { calcInv(); }
@@ -14018,7 +14032,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.95';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.96';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
