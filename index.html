@@ -2110,6 +2110,137 @@
     body.dark .cmd-item-icon { background: var(--bg-elevated); }
     body.dark .cmd-kbd { background: var(--bg-elevated); color: var(--t-secondary); border-color: var(--b-default); }
 
+    /* ════════════════════════════════════════════════════════════════
+       v14.97 — UI POLISH (global micro-interactions)
+       เป้าหมาย: ทำให้ทุกการกด/คลิก/hover ดูลื่นและตอบสนองทันที
+       ════════════════════════════════════════════════════════════════ */
+
+    /* ── Selection color: ใช้สีน้ำเงินอ่อนของแบรนด์ แทนสีน้ำเงินกลาง default ── */
+    ::selection { background: #dbeafe; color: #1e3a8a; }
+    body.dark ::selection { background: #1e40af; color: #f1f5f9; }
+
+    /* ── Custom scrollbar (เบาๆ ไม่รบกวน) ── */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148,163,184,.35);
+      border-radius: 6px; border: 2px solid transparent; background-clip: padding-box;
+      transition: background .2s;
+    }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(100,116,139,.55); background-clip: padding-box; border: 2px solid transparent; }
+    body.dark ::-webkit-scrollbar-thumb { background: rgba(71,85,105,.45); background-clip: padding-box; border: 2px solid transparent; }
+
+    /* ── Card hover lift (เบามาก ไม่กระโดด) ── */
+    .record-card {
+      transition: transform .18s cubic-bezier(.2,.7,.3,1),
+                  box-shadow .18s ease,
+                  border-color .18s ease;
+      will-change: transform;
+    }
+    .record-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(15,23,42,.07), 0 2px 4px rgba(15,23,42,.04);
+    }
+    body.dark .record-card:hover {
+      box-shadow: 0 6px 18px rgba(0,0,0,.35), 0 2px 4px rgba(0,0,0,.2);
+    }
+
+    /* ── Button micro-press (ทุก .btn จะมี feedback กดเล็กน้อย) ── */
+    .btn, button.submit-btn {
+      transition: transform .12s cubic-bezier(.2,.7,.3,1),
+                  box-shadow .15s ease,
+                  background .15s ease,
+                  filter .15s ease;
+    }
+    .btn:not(:disabled):active,
+    button.submit-btn:not(:disabled):active {
+      transform: translateY(0) scale(.97);
+      filter: brightness(.96);
+    }
+
+    /* ── Input focus: ring มี subtle glow + smooth ── */
+    input, textarea, select {
+      transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+
+    /* ── Autocomplete dropdown slide-in ── */
+    .ac-dd.open { animation: acDropIn .14s cubic-bezier(.2,.7,.3,1); }
+    @keyframes acDropIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .ac-opt {
+      transition: background .12s ease, color .12s ease, padding-left .12s ease;
+    }
+    .ac-opt:hover { padding-left: 16px; }   /* ขยับนิดเดียวพอให้รู้สึก */
+
+    /* ── Modal: scale + fade in (เมื่อ class .show/.open ถูกเพิ่ม) ── */
+    #cal-day-modal.show,
+    #del-modal.open,
+    #img-zoom-modal.open {
+      animation: modalBgIn .18s ease both;
+    }
+    #cal-day-modal.show .cal-modal-box,
+    #del-modal.open .del-box,
+    #img-zoom-modal.open img {
+      animation: modalBoxIn .24s cubic-bezier(.2,.7,.3,1) both;
+    }
+    @keyframes modalBgIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes modalBoxIn {
+      from { opacity: 0; transform: scale(.94); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    /* ── Skeleton shimmer ที่นุ่มขึ้น (ถ้าใช้คลาส .skeleton-card อยู่แล้ว) ── */
+    .skeleton-card {
+      position: relative; overflow: hidden;
+    }
+    .skeleton-card::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(90deg,
+        transparent 0%, rgba(255,255,255,.55) 50%, transparent 100%);
+      transform: translateX(-100%);
+      animation: skeletonShimmer 1.4s ease-in-out infinite;
+    }
+    body.dark .skeleton-card::after {
+      background: linear-gradient(90deg,
+        transparent 0%, rgba(255,255,255,.06) 50%, transparent 100%);
+    }
+    @keyframes skeletonShimmer {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    /* ── Toast เด้งขึ้นจากด้านล่างเล็กๆ ── */
+    .toast {
+      animation: toastIn .26s cubic-bezier(.2,1.4,.5,1) both;
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(20px) scale(.92); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* ── Tap-highlight ปิด (ไม่เกิดสีฟ้ากระพริบบนมือถือ) ── */
+    a, button, input, select, textarea, [role="button"] { -webkit-tap-highlight-color: transparent; }
+
+    /* ── inner-nav (toggle เเท็บย่อย) hover + active polish ── */
+    .inner-btn {
+      transition: background .15s ease, color .15s ease, transform .12s ease, box-shadow .15s ease;
+    }
+    .inner-btn:active { transform: scale(.97); }
+
+    /* ── Image thumbnails ใน record cards (ขยับนิดเวลา hover) ── */
+    .record-card img:not([alt="logo"]) {
+      transition: transform .25s cubic-bezier(.2,.7,.3,1), box-shadow .2s ease;
+    }
+    .record-card img:not([alt="logo"]):hover {
+      transform: scale(1.04);
+      box-shadow: 0 4px 14px rgba(0,0,0,.18);
+    }
+
     /* ─── REDUCED MOTION ─── */
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
@@ -4692,7 +4823,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.96 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.97 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -8933,6 +9064,12 @@ window._acStore = _acStore;  // expose so _acRepositionAll() can access
 function acAttach(inputId, getOptsFunc, onSelectFunc) {
   const input = document.getElementById(inputId);
   if (!input) return;
+  // v14.97 — Cleanup: if re-attaching, remove the old orphan dd from <body>
+  // (left there by _acPositionDropdown). Prevents DOM growth on repeated render.
+  const prev = _acStore[inputId];
+  if (prev && prev.dd && prev.dd.parentNode === document.body) {
+    prev.dd.remove();
+  }
   // Wrap if not wrapped
   let wrap = input.parentElement;
   if (!wrap.classList.contains('ac-wrap')) {
@@ -11240,6 +11377,11 @@ async function submitData(type, data, resetFn) {
     if (result.success) {
       showToast('✅ ' + (result.message || 'บันทึกสำเร็จ'), 'success');
       if (resetFn) resetFn();
+      // v14.97 — Refresh master data so new vehicle/driver/customer/etc.
+      // appears immediately in autocomplete (without page reload).
+      try { await loadMasterData(); } catch(e) {}
+      // Refresh the inline list if we're viewing it
+      try { reloadList(type); } catch(e) {}
     } else { showToast('บันทึกไม่สำเร็จ: ' + result.error, 'error'); }
   } catch(e) { hideLoading(); showToast('เกิดข้อผิดพลาด: ' + e.message, 'error'); }
 }
@@ -14032,7 +14174,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.96';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.97';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
