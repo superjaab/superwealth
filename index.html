@@ -4680,7 +4680,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.76 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.77 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -6300,9 +6300,10 @@
       </div>
     </div>
 
-    <!-- Tabs: Accounts list / Vehicle Assets / Analytics -->
+    <!-- Tabs: Accounts list / Vehicle Assets / Movements / Analytics -->
     <div class="inner-nav" style="margin-bottom:14px">
       <button class="inner-btn active" onclick="capInnerTab('accounts',this)">🏦 บัญชี</button>
+      <button class="inner-btn" onclick="capInnerTab('movements',this)">📋 รายการเงินทุน</button>
       <button class="inner-btn" onclick="capInnerTab('assets',this)">🚚 ทรัพย์สินรถ</button>
       <button class="inner-btn" onclick="capInnerTab('analytics',this)">📊 วิเคราะห์</button>
     </div>
@@ -6387,6 +6388,71 @@
           <a class="dash-card-action" href="#" onclick="event.preventDefault();loadCapital()">🔄 รีเฟรช</a>
         </div>
         <div id="cap-accounts-list" style="display:flex;flex-direction:column;gap:10px">
+          <div style="text-align:center;color:#94a3b8;padding:18px">⏳ กำลังโหลด...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Capital Movements view (v14.77 — track where capital came from) ── -->
+    <div id="cap-view-movements" style="display:none">
+      <!-- Add-movement form -->
+      <div class="dash-card" style="padding:18px 20px;margin-bottom:14px;background:linear-gradient(135deg,#fef3c7,#ffffff);border:1.5px solid #fde68a">
+        <div style="font-weight:800;font-size:.95rem;color:#92400e;margin-bottom:12px">➕ บันทึกการเคลื่อนไหวเงินทุน</div>
+        <div class="form-row-3">
+          <div class="form-row">
+            <label>วันที่ <span class="req">*</span></label>
+            <input type="date" id="mov-date" required>
+          </div>
+          <div class="form-row">
+            <label>บัญชี <span class="req">*</span></label>
+            <select id="mov-account"></select>
+          </div>
+          <div class="form-row">
+            <label>ประเภท <span class="req">*</span></label>
+            <select id="mov-type">
+              <option value="deposit" selected>💰 เพิ่มทุน (deposit)</option>
+              <option value="withdraw">💸 ถอนทุน (withdraw)</option>
+              <option value="transfer">🔁 โอนระหว่างบัญชี (transfer)</option>
+              <option value="loan_in">📥 กู้เข้า (loan in)</option>
+              <option value="loan_out">📤 ปล่อยกู้ (loan out)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-row">
+            <label>จำนวนเงิน (บาท) <span class="req">*</span></label>
+            <input type="text" inputmode="decimal" id="mov-amount" data-money="1" placeholder="0.00"
+                   style="text-align:right;font-weight:700;font-variant-numeric:tabular-nums">
+          </div>
+          <div class="form-row">
+            <label>หมายเหตุ / ที่มา</label>
+            <input type="text" id="mov-note" placeholder="เช่น เงินจากครอบครัว, ขายรถเก่า..." maxlength="200">
+          </div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button type="button" class="btn btn-primary" onclick="addCapitalMovement()" style="flex:1;padding:11px;font-weight:700">💾 บันทึก</button>
+        </div>
+      </div>
+
+      <!-- Movements list -->
+      <div class="dash-card" style="padding:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <div style="font-weight:800;font-size:.95rem">📋 ประวัติการเคลื่อนไหวเงินทุน</div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <select id="mov-filter-type" onchange="renderCapitalMovements()" style="padding:6px 10px;border-radius:8px;border:1.5px solid #e2e8f0;font-family:inherit;font-size:.82rem">
+              <option value="">ทุกประเภท</option>
+              <option value="deposit">💰 เพิ่มทุน</option>
+              <option value="withdraw">💸 ถอนทุน</option>
+              <option value="transfer">🔁 โอน</option>
+              <option value="loan_in">📥 กู้เข้า</option>
+              <option value="loan_out">📤 ปล่อยกู้</option>
+            </select>
+            <a class="dash-card-action" href="#" onclick="event.preventDefault();loadCapitalMovements()">🔄 รีเฟรช</a>
+          </div>
+        </div>
+        <!-- Totals strip -->
+        <div id="mov-totals" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:14px"></div>
+        <div id="mov-list" style="display:flex;flex-direction:column;gap:8px">
           <div style="text-align:center;color:#94a3b8;padding:18px">⏳ กำลังโหลด...</div>
         </div>
       </div>
@@ -7914,10 +7980,160 @@ function capInnerTab(view, btn) {
   document.querySelectorAll('#tab-capital .inner-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('cap-view-accounts').style.display  = view === 'accounts'  ? '' : 'none';
+  document.getElementById('cap-view-movements').style.display = view === 'movements' ? '' : 'none';
   document.getElementById('cap-view-assets').style.display    = view === 'assets'    ? '' : 'none';
   document.getElementById('cap-view-analytics').style.display = view === 'analytics' ? '' : 'none';
   if (view === 'analytics') renderCapitalAnalytics();
   if (view === 'assets')    loadVehicleAssets();
+  if (view === 'movements') initCapitalMovements();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// v14.77 — Capital Movements (track deposits/withdrawals/transfers)
+// ═══════════════════════════════════════════════════════════════
+let _capitalMovements = [];
+
+async function initCapitalMovements() {
+  // Set default date to today
+  const dEl = document.getElementById('mov-date');
+  if (dEl && !dEl.value) {
+    const today = new Date().toISOString().slice(0,10);
+    if (dEl._flatpickr) dEl._flatpickr.setDate(today, false);
+    else dEl.value = today;
+  }
+  // Populate account dropdown from loaded accounts
+  _refreshMovementAccountList();
+  // Attach money formatter
+  const amtEl = document.getElementById('mov-amount');
+  if (amtEl && typeof attachMoneyInput === 'function') attachMoneyInput(amtEl);
+  // Load movements
+  await loadCapitalMovements();
+}
+
+function _refreshMovementAccountList() {
+  const sel = document.getElementById('mov-account');
+  if (!sel) return;
+  const accs = (_capitalAccounts || []);
+  if (!accs.length) {
+    sel.innerHTML = '<option value="">— ยังไม่มีบัญชี (เพิ่มที่ tab บัญชี) —</option>';
+    return;
+  }
+  sel.innerHTML = accs.map(a =>
+    `<option value="${escAttr(a.rowId)}" data-name="${escAttr(a.accountName)}">${escHtml(a.accountName)} (${a.accountType||''})</option>`
+  ).join('');
+}
+
+async function loadCapitalMovements() {
+  const listEl = document.getElementById('mov-list');
+  if (!listEl) return;
+  listEl.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:18px">⏳ กำลังโหลด...</div>';
+  try {
+    const res = await fetch('/api/get-data?type=capitalMovement').then(r => r.json());
+    _capitalMovements = (res.data?.capitalMovement || []).sort((a,b) =>
+      String(b.movementDate||b.timestamp||'').localeCompare(String(a.movementDate||a.timestamp||''))
+    );
+    renderCapitalMovements();
+  } catch (e) {
+    listEl.innerHTML = `<div style="text-align:center;color:#dc2626;padding:18px">❌ ${escHtml(e.message)}</div>`;
+  }
+}
+
+function renderCapitalMovements() {
+  const listEl = document.getElementById('mov-list');
+  const totalsEl = document.getElementById('mov-totals');
+  if (!listEl || !totalsEl) return;
+  const filter = document.getElementById('mov-filter-type')?.value || '';
+  const items = filter ? _capitalMovements.filter(m => m.movementType === filter) : _capitalMovements;
+
+  // Compute totals
+  const totals = { deposit:0, withdraw:0, transfer:0, loan_in:0, loan_out:0 };
+  items.forEach(m => { totals[m.movementType] = (totals[m.movementType] || 0) + (parseFloat(m.amount)||0); });
+  const netCapital = totals.deposit - totals.withdraw + totals.loan_in - totals.loan_out;
+
+  totalsEl.innerHTML = `
+    <div style="padding:10px 12px;border-radius:10px;background:#dcfce7;border:1px solid #86efac">
+      <div style="font-size:.7rem;font-weight:700;color:#166534">💰 เพิ่มทุนรวม</div>
+      <div class="priv-amt" style="font-size:1.05rem;font-weight:900;color:#15803d;font-variant-numeric:tabular-nums">${fmtBaht(totals.deposit)}</div>
+    </div>
+    <div style="padding:10px 12px;border-radius:10px;background:#fee2e2;border:1px solid #fca5a5">
+      <div style="font-size:.7rem;font-weight:700;color:#991b1b">💸 ถอนทุนรวม</div>
+      <div class="priv-amt" style="font-size:1.05rem;font-weight:900;color:#b91c1c;font-variant-numeric:tabular-nums">${fmtBaht(totals.withdraw)}</div>
+    </div>
+    <div style="padding:10px 12px;border-radius:10px;background:#dbeafe;border:1px solid #93c5fd">
+      <div style="font-size:.7rem;font-weight:700;color:#1e40af">📥 กู้เข้ารวม</div>
+      <div class="priv-amt" style="font-size:1.05rem;font-weight:900;color:#1d4ed8;font-variant-numeric:tabular-nums">${fmtBaht(totals.loan_in)}</div>
+    </div>
+    <div style="padding:10px 12px;border-radius:10px;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);border:1px solid #818cf8">
+      <div style="font-size:.7rem;font-weight:700;color:#3730a3">💼 ทุนสุทธิ</div>
+      <div class="priv-amt" style="font-size:1.05rem;font-weight:900;color:${netCapital>=0?'#4338ca':'#b91c1c'};font-variant-numeric:tabular-nums">${fmtBaht(netCapital)}</div>
+    </div>`;
+
+  if (!items.length) {
+    listEl.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:30px 14px;background:#fafafa;border-radius:10px;border:1.5px dashed #e2e8f0">📭 ยังไม่มีบันทึกการเคลื่อนไหว — เพิ่มการเคลื่อนไหวแรกที่ฟอร์มด้านบน</div>';
+    return;
+  }
+
+  const TYPE_META = {
+    deposit:  { label: '💰 เพิ่มทุน',     color: '#16a34a', bg: '#dcfce7', sign: '+' },
+    withdraw: { label: '💸 ถอนทุน',      color: '#dc2626', bg: '#fee2e2', sign: '−' },
+    transfer: { label: '🔁 โอน',         color: '#0891b2', bg: '#cffafe', sign: '↔' },
+    loan_in:  { label: '📥 กู้เข้า',     color: '#1d4ed8', bg: '#dbeafe', sign: '+' },
+    loan_out: { label: '📤 ปล่อยกู้',    color: '#7c3aed', bg: '#ede9fe', sign: '−' }
+  };
+
+  listEl.innerHTML = items.map(m => {
+    const meta = TYPE_META[m.movementType] || { label: m.movementType, color: '#64748b', bg: '#f1f5f9', sign: '' };
+    return `
+    <div class="record-card" style="border-left:4px solid ${meta.color}">
+      <div class="sw-record-head">
+        <div class="sw-record-chips">
+          <span class="sw-status" style="background:${meta.bg};color:${meta.color};font-weight:700">${meta.label}</span>
+          <span class="sw-doc-chip" title="วันที่">📅 ${fmtDate(m.movementDate)}</span>
+        </div>
+        <div class="sw-record-amount priv-amt" style="color:${meta.color};font-variant-numeric:tabular-nums">
+          ${meta.sign}${fmtBaht(m.amount)}
+        </div>
+      </div>
+      <div class="sw-record-title">🏦 ${escHtml(m.accountName || '(ไม่ระบุบัญชี)')}</div>
+      ${m.note ? `<div class="sw-record-sub priv-data" style="margin-top:4px">📝 ${escHtml(m.note)}</div>` : ''}
+      ${renderRecActions('capitalMovement', m.rowId || m.timestamp, m.note || meta.label)}
+    </div>`;
+  }).join('');
+}
+
+async function addCapitalMovement() {
+  if (!requireAuth()) return;
+  const date = document.getElementById('mov-date').value;
+  const accSel = document.getElementById('mov-account');
+  const accRowId = accSel.value;
+  const accName = accSel.options[accSel.selectedIndex]?.dataset?.name || '';
+  const type = document.getElementById('mov-type').value;
+  const amtRaw = (document.getElementById('mov-amount').value || '').replace(/,/g, '');
+  const amt = parseFloat(amtRaw);
+  const note = document.getElementById('mov-note').value.trim();
+
+  if (!date)               { showToast('กรุณาเลือกวันที่', 'warning'); return; }
+  if (!accRowId)           { showToast('กรุณาเลือกบัญชี', 'warning'); return; }
+  if (!type)               { showToast('กรุณาเลือกประเภท', 'warning'); return; }
+  if (!amt || amt <= 0)    { showToast('จำนวนเงินไม่ถูกต้อง', 'warning'); return; }
+
+  showLoading('กำลังบันทึก...');
+  try {
+    const r = await api('/api/save', {
+      type: 'capitalMovement',
+      data: { movementDate: date, accountRowId: accRowId, accountName: accName, movementType: type, amount: amt, note }
+    });
+    hideLoading();
+    if (!r.success) { showToast('บันทึกไม่สำเร็จ: ' + (r.error||''), 'error'); return; }
+    showToast('✅ บันทึกการเคลื่อนไหวแล้ว', 'success');
+    // Clear form (keep date + account + type for fast re-entry)
+    document.getElementById('mov-amount').value = '';
+    document.getElementById('mov-note').value = '';
+    await loadCapitalMovements();
+  } catch (e) {
+    hideLoading();
+    showToast('ผิดพลาด: ' + e.message, 'error');
+  }
 }
 
 // ─── Vehicle Assets ROI (separate from Working Capital cash flow) ───
@@ -13639,7 +13855,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.76';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.77';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
