@@ -4692,7 +4692,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.91 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.92 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -6660,7 +6660,12 @@
       </div>
       <div class="form-row"><label>เบอร์โทร</label><input type="tel" id="c-phone" placeholder="02-XXX-XXXX (ไม่บังคับ)" maxlength="20"></div>
       <div class="form-row"><label>อีเมล</label><input type="email" id="c-email" placeholder="example@email.com" maxlength="200"></div>
-      <div class="form-row"><label>ที่อยู่</label><textarea id="c-address" rows="2" placeholder="ที่อยู่สำหรับออกใบแจ้งหนี้"></textarea></div>
+      <!-- v14.92 — Province field (auto-fills จังหวัดต้นทาง/ปลายทาง when this customer is picked) -->
+      <div class="form-row">
+        <label>📍 จังหวัด <span style="font-size:.7rem;color:#94a3b8;font-weight:400">— เมื่อบันทึกเที่ยวรถจะเติมให้อัตโนมัติ</span></label>
+        <input type="text" id="c-province" placeholder="พิมพ์เพื่อค้นหาจังหวัด..." maxlength="60" autocomplete="off">
+      </div>
+      <div class="form-row"><label>ที่อยู่ (เพิ่มเติม)</label><textarea id="c-address" rows="2" placeholder="เลขที่ ถนน ตำบล อำเภอ (ไม่ต้องใส่จังหวัด)"></textarea></div>
       <div class="form-row-2">
         <div class="form-row"><label>เลขผู้เสียภาษี</label><input type="text" id="c-taxid" placeholder="0000000000000" maxlength="20"></div>
         <div class="form-row"><label>เงื่อนไขชำระเงิน</label>
@@ -6675,7 +6680,7 @@
       <div class="form-row"><label>หมายเหตุ</label><textarea id="c-notes" rows="2"></textarea></div>
     </div>
     <div class="submit-row"><button type="button" class="btn btn-primary btn-block" onclick="submitCustomer()" style="padding:15px;background:#4A148C">💾 บันทึกข้อมูลลูกค้า</button></div>
-    <div style="margin-top:8px"><button type="button" class="btn btn-secondary btn-block btn-small" onclick="resetFields(['c-name','c-contact','c-phone','c-email','c-address','c-taxid','c-terms','c-cargo','c-notes'])">🗑 ล้างข้อมูล</button></div>
+    <div style="margin-top:8px"><button type="button" class="btn btn-secondary btn-block btn-small" onclick="resetFields(['c-name','c-contact','c-phone','c-email','c-province','c-address','c-taxid','c-terms','c-cargo','c-notes'])">🗑 ล้างข้อมูล</button></div>
   </div>
   <div id="customer-list-view" style="display:none"><div id="cust-list" class="list-loading">กด "รายชื่อลูกค้า" เพื่อโหลด</div></div>
 </div>
@@ -9350,10 +9355,11 @@ function onCustomerSelectedFor(provinceFieldId) {
     const c = _master.customers.find(x => (x.customerName || x.name) === name);
     if (!c) return;
     let filledMsgs = [];
-    // 1) Auto-fill province from customer's address (only if empty)
+    // 1) Auto-fill province — prefer customer.province; fallback to extracting from address (v14.92)
     const provField = document.getElementById(provinceFieldId);
-    if (provField && !provField.value && c.address) {
-      const prov = _extractProvinceFromAddress(c.address);
+    if (provField && !provField.value) {
+      let prov = (c.province || '').trim();
+      if (!prov && c.address) prov = _extractProvinceFromAddress(c.address);
       if (prov) { provField.value = prov; filledMsgs.push(`📍 ${prov}`); }
     }
     // 2) Auto-fill cargo from customer's cargoItems (only if empty)
@@ -9391,6 +9397,8 @@ function initAllAutocompletes() {
   });
   acAttach('t-origin',       getProvinceOpts, null);
   acAttach('t-destination',  getProvinceOpts, null);
+  // v14.92 — province autocomplete on customer form
+  acAttach('c-province',     getProvinceOpts, null);
   // Income / Expense / Maintenance / Fuel — customer & plate fields
   acAttach('i-customerName', getCustomerOpts, null);
   acAttach('e-plateNumber',  getPlateOpts,    null);
@@ -10681,6 +10689,7 @@ const _PREFILL_MAP = {
   },
   customer: {
     customerName:'c-name', contactName:'c-contact', phone:'c-phone', email:'c-email',
+    province:'c-province',  // v14.92
     address:'c-address', taxId:'c-taxid', paymentTerms:'c-terms', cargoItems:'c-cargo', notes:'c-notes'
   },
   maintenance: {
@@ -11546,9 +11555,9 @@ function submitCustomer() {
   if (!gv('c-name'))  { showToast('กรุณากรอกชื่อบริษัท/ลูกค้า','warning'); return; }
   submitData('customer', {
     customerName:gv('c-name'), contactName:gv('c-contact'), phone:gv('c-phone'),
-    email:gv('c-email'), address:gv('c-address'), taxId:gv('c-taxid'),
+    email:gv('c-email'), province:gv('c-province'), address:gv('c-address'), taxId:gv('c-taxid'),
     paymentTerms:gv('c-terms')||'เงินสด', cargoItems:gv('c-cargo'), notes:gv('c-notes')
-  }, ()=>resetFields(['c-name','c-contact','c-phone','c-email','c-address','c-taxid','c-terms','c-cargo','c-notes']));
+  }, ()=>resetFields(['c-name','c-contact','c-phone','c-email','c-province','c-address','c-taxid','c-terms','c-cargo','c-notes']));
 }
 function renderCustomerList(items) {
   // v14.90 — Show ALL captured fields (was missing email, address, cargoItems, notes)
@@ -11560,6 +11569,7 @@ function renderCustomerList(items) {
       c.paymentTerms ? `💳 ${escHtml(c.paymentTerms)}` : ''
     ].filter(Boolean).map(s => `<span>${s}</span>`).join('');
     const taxLine  = c.taxId ? `<div class="rc-sub" style="color:#64748b"><span>🧾 เลขผู้เสียภาษี: ${escHtml(c.taxId)}</span></div>` : '';
+    const provLine = c.province ? `<div class="rc-sub" style="color:#0e7490"><span>📍 จังหวัด: <b>${escHtml(c.province)}</b></span></div>` : '';
     const addrLine = c.address ? `<div class="rc-sub" style="color:#64748b"><span>🏠 ${escHtml(c.address)}</span></div>` : '';
     const cargoLine = c.cargoItems ? `<div class="rc-sub" style="margin-top:6px;padding:6px 8px;background:#f3e8ff;border-radius:6px;color:#581c87;font-size:.78rem"><span>📦 สินค้าที่ขนส่ง: ${escHtml(c.cargoItems)}</span></div>` : '';
     const notesLine = c.notes ? `<div class="rc-sub" style="margin-top:6px;color:#94a3b8;font-size:.78rem">📝 ${escHtml(c.notes)}</div>` : '';
@@ -11568,6 +11578,7 @@ function renderCustomerList(items) {
       <div class="rc-title">🏢 ${escHtml(c.customerName||'')}</div>
       ${subFields ? `<div class="rc-sub">${subFields}</div>` : ''}
       ${taxLine}
+      ${provLine}
       ${addrLine}
       ${cargoLine}
       ${notesLine}
@@ -14002,7 +14013,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.91';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.92';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison

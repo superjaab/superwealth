@@ -129,15 +129,17 @@ const CONFIGS = {
   },
   customer: {
     name: 'Customers', color: '#4A148C', prefix: 'CUST',
+    // v14.92 — added province (used to auto-fill จังหวัดต้นทาง/ปลายทาง in truck form)
     headers: ['timestamp','customerName','contactName','phone','email',
-      'address','taxId','paymentTerms','notes','rowId','cargoItems'],
+      'address','taxId','paymentTerms','notes','rowId','cargoItems','province'],
     data: (d, now, id) => ({
       timestamp: now,
       customerName: d.customerName||'', contactName: d.contactName||'',
       phone: d.phone||'', email: d.email||'',
       address: d.address||'', taxId: d.taxId||'',
       paymentTerms: d.paymentTerms||'เงินสด', notes: d.notes||'',
-      rowId: id, cargoItems: d.cargoItems||''
+      rowId: id, cargoItems: d.cargoItems||'',
+      province: d.province||''  // v14.92
     })
   },
   maintenance: {
