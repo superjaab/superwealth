@@ -4823,7 +4823,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.97 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.98 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -9215,7 +9215,8 @@ const _master = {
   customers: [],       // [{customerName, contactName, phone, ...}]
   drivers:  [],        // [{driverName, driverPhone, ...}]
   truckHistory: [],    // recent truck records (for cargo + plate→driver autofill)
-  cargoSaved: JSON.parse(localStorage.getItem('cargo_saved') || '[]'),
+  // v14.98 — wrap JSON.parse: corrupted localStorage was crashing entire script load
+  cargoSaved: (() => { try { return JSON.parse(localStorage.getItem('cargo_saved') || '[]') || []; } catch { return []; } })(),
   // v14.75 — track whether initial load has completed (gates doc-number gen)
   _loaded: false
 };
@@ -11612,12 +11613,25 @@ function fmtBaht(n) {
 function fmtDate(d) {
   if (!d) return '-';
   try {
-    const [y,m,day] = d.split('-');
-    const mo=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-    return `${parseInt(day)} ${mo[parseInt(m)-1]} ${parseInt(y)+543}`;
-  } catch { return d; }
+    // v14.98 — defensive parsing: guard against malformed input + month out-of-range
+    const parts = String(d).split('-');
+    if (parts.length < 3) return String(d);
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    const day = parseInt(parts[2], 10);
+    if (!isFinite(y) || !isFinite(m) || !isFinite(day)) return String(d);
+    const mo = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    const monthIdx = Math.max(0, Math.min(11, m - 1));
+    return `${day} ${mo[monthIdx]} ${y + 543}`;
+  } catch { return String(d); }
 }
-const gv = id => { const el=document.getElementById(id); return el ? el.value.trim() : ''; };
+// v14.98 — guard against el.value === null (rare but happens with detached selects)
+const gv = id => {
+  const el = document.getElementById(id);
+  if (!el) return '';
+  const v = el.value;
+  return v == null ? '' : String(v).trim();
+};
 
 // ─── VEHICLE ───────────────────────────────────────────────────────────────
 function submitVehicle() {
@@ -13123,9 +13137,11 @@ function openCalDay(dateKey) {
 
   const [y, m, d] = dateKey.split('-').map(Number);
   const dateObj = new Date(y, m-1, d);
-  const dowTh = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'][dateObj.getDay()];
+  const dowTh = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'][dateObj.getDay()] || '';
+  // v14.98 — clamp month index to valid range (prevents undefined month label)
+  const safeMonth = CAL_TH_MONTHS[Math.max(0, Math.min(11, m - 1))] || '';
   document.getElementById('cal-modal-title').textContent =
-    `📅 วัน${dowTh}ที่ ${d} ${CAL_TH_MONTHS[m-1]} ${y + 543}` +
+    `📅 วัน${dowTh}ที่ ${d} ${safeMonth} ${y + 543}` +
     (_calPlate ? ` • ${_calPlate}` : '');
 
   const body = document.getElementById('cal-modal-body');
@@ -14174,7 +14190,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.97';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.98';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison

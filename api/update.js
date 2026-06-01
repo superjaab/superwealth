@@ -42,6 +42,7 @@ const CONFIGS = {
     data: (d, ts, id) => ({
       timestamp: ts,
       expenseDate: d.expenseDate||'', expenseTime: d.expenseTime||'',
+      docNumber: d.docNumber||'',  // v14.98 — was missing → caused field to be wiped on edit
       category: d.category||'', plateNumber: d.plateNumber||'',
       vendor: d.vendor||'', expenseDetail: d.expenseDetail||'',
       amount: +d.amount||0, paymentMethod: d.paymentMethod||'เงินสด',
