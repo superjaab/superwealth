@@ -4692,7 +4692,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.90 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.91 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -4794,20 +4794,35 @@
 
     <div class="card">
       <div class="card-title">📍 เส้นทางและลูกค้า</div>
-      <div class="form-row-2">
-        <div class="form-row">
-          <label>ต้นทาง</label>
-          <input type="text" id="t-origin" placeholder="พิมพ์เพื่อค้นหาจังหวัด..." maxlength="100" autocomplete="off">
-        </div>
-        <div class="form-row">
-          <label>ปลายทาง</label>
-          <input type="text" id="t-destination" placeholder="พิมพ์เพื่อค้นหาจังหวัด..." maxlength="100" autocomplete="off">
+      <!-- v14.91 — ต้นทาง row: customer + province -->
+      <div style="padding:10px 12px;background:linear-gradient(135deg,#fef3c7,#fde68a);border:1.5px solid #f59e0b;border-radius:10px;margin-bottom:10px">
+        <div style="font-size:.78rem;font-weight:800;color:#92400e;margin-bottom:6px">📥 ต้นทาง (จุดเข้ารับสินค้า)</div>
+        <div class="form-row-2" style="margin:0">
+          <div class="form-row" style="margin:0">
+            <label style="font-size:.75rem">ชื่อลูกค้าต้นทาง</label>
+            <input type="text" id="t-originCustomer" placeholder="พิมพ์เพื่อค้นหาลูกค้า..." maxlength="150" autocomplete="off">
+          </div>
+          <div class="form-row" style="margin:0">
+            <label style="font-size:.75rem">จังหวัดต้นทาง</label>
+            <input type="text" id="t-origin" placeholder="พิมพ์เพื่อค้นหาจังหวัด..." maxlength="100" autocomplete="off">
+          </div>
         </div>
       </div>
-      <div class="form-row">
-        <label>ชื่อลูกค้า</label>
-        <input type="text" id="t-customerName" placeholder="พิมพ์เพื่อค้นหาลูกค้า..." maxlength="150" autocomplete="off">
+      <!-- v14.91 — ปลายทาง row: customer + province -->
+      <div style="padding:10px 12px;background:linear-gradient(135deg,#dcfce7,#bbf7d0);border:1.5px solid #22c55e;border-radius:10px">
+        <div style="font-size:.78rem;font-weight:800;color:#166534;margin-bottom:6px">📤 ปลายทาง (จุดส่งสินค้า)</div>
+        <div class="form-row-2" style="margin:0">
+          <div class="form-row" style="margin:0">
+            <label style="font-size:.75rem">ชื่อลูกค้าปลายทาง</label>
+            <input type="text" id="t-customerName" placeholder="พิมพ์เพื่อค้นหาลูกค้า..." maxlength="150" autocomplete="off">
+          </div>
+          <div class="form-row" style="margin:0">
+            <label style="font-size:.75rem">จังหวัดปลายทาง</label>
+            <input type="text" id="t-destination" placeholder="พิมพ์เพื่อค้นหาจังหวัด..." maxlength="100" autocomplete="off">
+          </div>
+        </div>
       </div>
+      <p class="hint" style="font-size:.72rem;color:#64748b;margin-top:6px">💡 เลือกลูกค้า → ระบบเติมจังหวัด + รายการสินค้าให้อัตโนมัติ</p>
     </div>
 
     <div class="card">
@@ -4816,22 +4831,25 @@
         <label>รายการสินค้า</label>
         <input type="text" id="t-cargoList" placeholder="พิมพ์เพื่อค้นหา หรือเพิ่มสินค้าใหม่..." maxlength="200" autocomplete="off">
       </div>
-      <div class="form-row">
-        <label>น้ำหนัก (กก.)</label>
-        <input type="number" id="t-cargoWeight" placeholder="0" min="0" step="0.1">
+      <!-- v14.91 — น้ำหนัก + ค่าขนส่ง same row -->
+      <div class="form-row-2">
+        <div class="form-row">
+          <label>น้ำหนัก (ตัน)</label>
+          <input type="number" id="t-cargoWeight" placeholder="0" min="0" step="0.1">
+        </div>
+        <div class="form-row">
+          <label>ค่าขนส่ง (บาท)</label>
+          <input type="text" inputmode="numeric" id="t-freightCost" placeholder="⚠️ ค้างจ่าย"
+                 data-money="1" data-status-link="t-paymentStatus"
+                 style="text-align:right;font-variant-numeric:tabular-nums;font-weight:700">
+        </div>
       </div>
       <div class="form-row">
-        <label>ค่าขนส่ง (บาท) <span style="font-size:.7rem;color:#94a3b8;font-weight:400">— เลือกสถานะชำระเงินด้านขวา</span></label>
-        <div style="display:flex;gap:8px;align-items:stretch">
-          <!-- v14.16 — Money-formatted text input with comma separator -->
-          <input type="text" inputmode="numeric" id="t-freightCost" placeholder="⚠️ ค้างจ่าย — คลิกเพื่อกรอกตัวเลข"
-                 data-money="1" data-status-link="t-paymentStatus"
-                 style="flex:1;min-width:0;text-align:right;font-variant-numeric:tabular-nums;font-weight:700">
-          <select id="t-paymentStatus" style="flex:0 0 150px;font-weight:700" onchange="onFreightStatusChange(this)">
-            <option value="ค้างจ่าย" selected>⚠️ ค้างจ่าย</option>
-            <option value="จ่ายแล้ว">✅ จ่ายแล้ว</option>
-          </select>
-        </div>
+        <label>สถานะการชำระเงิน</label>
+        <select id="t-paymentStatus" style="font-weight:700" onchange="onFreightStatusChange(this)">
+          <option value="ค้างจ่าย" selected>⚠️ ค้างจ่าย</option>
+          <option value="จ่ายแล้ว">✅ จ่ายแล้ว</option>
+        </select>
       </div>
       <input type="hidden" id="t-tripCount" value="1">
       <div class="form-row">
@@ -9305,20 +9323,51 @@ function onPlateSelected(plate) {
   if (phoneField  && phone) phoneField.value  = phone;
   if (name) showToast(`👤 เติมคนขับ "${name}" อัตโนมัติ`, 'success');
 }
-// When customer is selected in truck form → suggest cargo from customer's cargoItems
-function onCustomerSelected(name) {
-  if (!name) return;
-  const c = _master.customers.find(x => (x.customerName || x.name) === name);
-  if (!c || !c.cargoItems) return;
-  const cargoField = document.getElementById('t-cargoList');
-  if (cargoField && !cargoField.value) {
-    // Fill with first cargo item; user can change to any other
-    const first = c.cargoItems.split(/[,;\n]/)[0].trim();
-    if (first) {
-      cargoField.value = first;
-      showToast(`📦 เติมสินค้า "${first}" จากข้อมูลลูกค้า`, 'info');
-    }
+// v14.91 — Extract Thai province name from a free-form address
+function _extractProvinceFromAddress(addr) {
+  if (!addr) return '';
+  const s = String(addr).trim();
+  // Special form: "จ.xxxxx" or "จังหวัด xxxxx"
+  const m = s.match(/จ(?:\.|ังหวัด)\s*([ก-๙]+)/);
+  if (m) {
+    const guess = m[1].trim();
+    const hit = TH_PROVINCES_LIST.find(p => guess.startsWith(p) || p.startsWith(guess));
+    if (hit) return hit;
   }
+  // Otherwise scan for longest match
+  const sorted = [...TH_PROVINCES_LIST].sort((a,b) => b.length - a.length);
+  for (const p of sorted) {
+    if (s.includes(p)) return p;
+  }
+  return '';
+}
+
+// v14.91 — Generalized handler for both origin + destination customer fields.
+// provinceFieldId = 't-origin' or 't-destination'
+function onCustomerSelectedFor(provinceFieldId) {
+  return function(name) {
+    if (!name) return;
+    const c = _master.customers.find(x => (x.customerName || x.name) === name);
+    if (!c) return;
+    let filledMsgs = [];
+    // 1) Auto-fill province from customer's address (only if empty)
+    const provField = document.getElementById(provinceFieldId);
+    if (provField && !provField.value && c.address) {
+      const prov = _extractProvinceFromAddress(c.address);
+      if (prov) { provField.value = prov; filledMsgs.push(`📍 ${prov}`); }
+    }
+    // 2) Auto-fill cargo from customer's cargoItems (only if empty)
+    const cargoField = document.getElementById('t-cargoList');
+    if (cargoField && !cargoField.value && c.cargoItems) {
+      const first = String(c.cargoItems).split(/[,;\n]/)[0].trim();
+      if (first) { cargoField.value = first; filledMsgs.push(`📦 ${first}`); }
+    }
+    if (filledMsgs.length) showToast(`เติมข้อมูลจากลูกค้า: ${filledMsgs.join(' · ')}`, 'success');
+  };
+}
+// Backward compat alias (some places still call onCustomerSelected directly)
+function onCustomerSelected(name) {
+  return onCustomerSelectedFor('t-destination')(name);
 }
 // When driver is selected in vehicle form → auto-fill phone
 function onVehicleDriverSelected(name) {
@@ -9331,7 +9380,9 @@ function onVehicleDriverSelected(name) {
 function initAllAutocompletes() {
   // Truck form — plate must come from vehicle list (validated on submit)
   acAttach('t-plateNumber',  getPlateOpts,    onPlateSelected);
-  acAttach('t-customerName', getCustomerOpts, onCustomerSelected);
+  // v14.91 — split customer into origin + destination
+  acAttach('t-originCustomer', getCustomerOpts, onCustomerSelectedFor('t-origin'));
+  acAttach('t-customerName',   getCustomerOpts, onCustomerSelectedFor('t-destination'));
   acAttach('t-cargoList',    getCargoOpts,    saveCargoIfNew);
   acAttach('t-driverName',   getDriverOpts,   (n) => {
     const p = getDriverPhone(n);
@@ -10213,7 +10264,9 @@ function collectFormData(formKey) {
       jobDate: pickupDate, jobTime: g('t-jobTime'),
       pickupDate, deliveryDate: g('t-deliveryDate'),
       plateNumber: g('t-plateNumber'), driverName: g('t-driverName'), driverPhone: g('t-driverPhone'),
-      origin: g('t-origin'), destination: g('t-destination'), customerName: g('t-customerName'),
+      origin: g('t-origin'), destination: g('t-destination'),
+      originCustomer: g('t-originCustomer'),  // v14.91
+      customerName: g('t-customerName'),
       cargoList: g('t-cargoList'), cargoWeight: g('t-cargoWeight'), tripCount: g('t-tripCount') || '1',
       freightCost: g('t-freightCost'), jobStatus: g('t-status') || 'รอโหลด', remark: g('t-remark'),
       tripRound: tripRoundNum,
@@ -10261,7 +10314,9 @@ function collectFormData(formKey) {
 // Maps the stored default keys → the form field element IDs.
 const QUICK_FIELDS = {
   truck:  { plateNumber:'t-plateNumber', driverName:'t-driverName', driverPhone:'t-driverPhone',
-            origin:'t-origin', destination:'t-destination', customerName:'t-customerName',
+            origin:'t-origin', destination:'t-destination',
+            originCustomer:'t-originCustomer',  // v14.91
+            customerName:'t-customerName',
             cargoList:'t-cargoList', freightCost:'t-freightCost', paymentStatus:'t-paymentStatus' },
   income: { customerName:'i-customerName', incomeItem:'i-incomeItem', amount:'i-amount', paymentMethod:'i-paymentMethod' },
   expense:{ category:'e-category', plateNumber:'e-plateNumber', vendor:'e-vendor',
@@ -10591,7 +10646,9 @@ const _PREFILL_MAP = {
   truck: {
     pickupDate:'t-pickupDate', deliveryDate:'t-deliveryDate', jobDate:'t-jobDate', jobTime:'t-jobTime',
     plateNumber:'t-plateNumber', driverName:'t-driverName', driverPhone:'t-driverPhone',
-    origin:'t-origin', destination:'t-destination', customerName:'t-customerName',
+    origin:'t-origin', destination:'t-destination',
+    originCustomer:'t-originCustomer',  // v14.91
+    customerName:'t-customerName',
     cargoList:'t-cargoList', cargoWeight:'t-cargoWeight', freightCost:'t-freightCost',
     jobStatus:'t-status', remark:'t-remark', tripCount:'t-tripCount',
     tripRound:'t-tripRound', paymentStatus:'t-paymentStatus'
@@ -12167,7 +12224,14 @@ function renderTruckList(items) {
       : '';
     const titleText = `${r.plateNumber || '-'}${routeText ? ' · ' + routeText : ''}`;
     const subParts = [];
-    if (r.customerName) subParts.push(`🏢 <span class="priv-data">${escHtml(r.customerName)}</span>`);
+    // v14.91 — show both origin + destination customers when present
+    if (r.originCustomer && r.customerName && r.originCustomer !== r.customerName) {
+      subParts.push(`🏢 <span class="priv-data">${escHtml(r.originCustomer)} → ${escHtml(r.customerName)}</span>`);
+    } else if (r.customerName) {
+      subParts.push(`🏢 <span class="priv-data">${escHtml(r.customerName)}</span>`);
+    } else if (r.originCustomer) {
+      subParts.push(`🏢 <span class="priv-data">${escHtml(r.originCustomer)}</span>`);
+    }
     if (r.driverName)   subParts.push(`👤 <span class="priv-data">${escHtml(r.driverName)}${r.driverPhone ? ' · ' + escHtml(r.driverPhone) : ''}</span>`);
     if (r.cargoList)    subParts.push(`📦 <span class="priv-data">${escHtml(r.cargoList)}${r.cargoWeight ? ' ' + r.cargoWeight + ' ตัน' : ''}</span>`);
 
@@ -12945,7 +13009,7 @@ function openCalDay(dateKey) {
           </div>
           <div class="cal-trip-row" style="color:#64748b;font-size:.75rem;margin-top:2px">${kindLabel}${time}</div>
           ${spanLabel}
-          ${trip.customerName ? `<div class="cal-trip-row">🏢 <b>ลูกค้า:</b> ${escHtml(trip.customerName)}</div>` : ''}
+          ${(trip.originCustomer || trip.customerName) ? `<div class="cal-trip-row">🏢 <b>ลูกค้า:</b> ${trip.originCustomer && trip.customerName && trip.originCustomer !== trip.customerName ? escHtml(trip.originCustomer) + ' → ' + escHtml(trip.customerName) : escHtml(trip.customerName || trip.originCustomer)}</div>` : ''}
           ${trip.driverName   ? `<div class="cal-trip-row">👤 <b>คนขับ:</b> ${escHtml(trip.driverName)}${trip.driverPhone ? ' · ☎️ ' + escHtml(trip.driverPhone) : ''}</div>` : ''}
           ${(trip.origin || trip.destination) ? `<div class="cal-trip-row">📍 <b>เส้นทาง:</b> ${escHtml(trip.origin||'-')} → ${escHtml(trip.destination||'-')}</div>` : ''}
           ${trip.cargoList    ? `<div class="cal-trip-row">📦 <b>สินค้า:</b> ${escHtml(trip.cargoList)}${trip.cargoWeight ? ' · ' + escHtml(trip.cargoWeight) + ' ตัน' : ''}</div>` : ''}
@@ -13938,7 +14002,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.90';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.91';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison

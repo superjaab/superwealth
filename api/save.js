@@ -36,8 +36,9 @@ function _safeImageUrlsJson(v) {
 const CONFIGS = {
   truck: {
     name: 'TruckJobs', color: '#1565C0', prefix: 'TRUCK',
+    // v14.91 — added originCustomer (customer at pickup point); existing customerName = destination customer
     headers: ['timestamp','jobDate','jobTime','plateNumber','driverName','driverPhone',
-      'origin','destination','customerName','cargoList','cargoWeight','tripCount',
+      'origin','destination','originCustomer','customerName','cargoList','cargoWeight','tripCount',
       'freightCost','jobStatus','remark','imageUrls','ocrText','userAgent','rowId',
       'pickupDate','deliveryDate','tripRound','paymentStatus'],
     data: (d, now, id) => ({
@@ -45,6 +46,7 @@ const CONFIGS = {
       jobDate: d.jobDate||'', jobTime: d.jobTime||'',
       plateNumber: d.plateNumber||'', driverName: d.driverName||'', driverPhone: d.driverPhone||'',
       origin: d.origin||'', destination: d.destination||'',
+      originCustomer: d.originCustomer||'',  // v14.91
       customerName: d.customerName||'', cargoList: d.cargoList||'',
       cargoWeight: +d.cargoWeight||0, tripCount: +d.tripCount||1, freightCost: +d.freightCost||0,
       jobStatus: d.jobStatus||'รอโหลด', remark: d.remark||'',
