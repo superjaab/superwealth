@@ -3899,16 +3899,16 @@
       font-size: .68rem !important;
       opacity: .85 !important;
     }
+    /* v14.83 — Stat value: fit-to-container without truncation */
     .dash-stat-value {
-      font-size: clamp(1.05rem, 3.5vw, 1.55rem) !important;
+      font-size: clamp(.95rem, 2.6vw, 1.35rem) !important;
       text-shadow: 0 1px 2px rgba(0,0,0,0.15);
-      line-height: 1.15 !important;
+      line-height: 1.2 !important;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      overflow: visible;            /* never cut text */
       font-variant-numeric: tabular-nums;
+      letter-spacing: -.3px;        /* tighter so big numbers fit */
     }
-    /* v14.82 — Sub label (e.g. ROI formula) wraps cleanly, never overflows */
     .dash-stat-sub {
       white-space: normal !important;
       word-break: break-word;
@@ -4692,7 +4692,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.82 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.83 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -13825,7 +13825,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.82';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.83';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
