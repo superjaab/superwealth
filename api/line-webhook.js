@@ -155,8 +155,16 @@ async function getLineImageBase64(messageId) {
   return Buffer.from(buf).toString('base64');
 }
 
-// Upload base64 image to ImgBB → return public URL
+// v14.64 — Upload image: Drive first (permanent), ImgBB fallback (fast CDN).
 async function uploadToImgBB(base64) {
+  // Try Google Drive first (PERMANENT storage in user's Drive folder)
+  try {
+    const url = await _uploadToDriveLine(base64);
+    if (url) return url;
+  } catch (e) {
+    console.warn('[line] Drive upload failed, trying ImgBB:', e.message);
+  }
+  // Fallback: ImgBB (faster CDN but may delete images)
   const apiKey = process.env.IMGBB_API_KEY;
   if (!apiKey) throw new Error('Missing IMGBB_API_KEY in env');
   const params = new URLSearchParams({ key: apiKey, image: base64 });
@@ -170,6 +178,39 @@ async function uploadToImgBB(base64) {
   catch { throw new Error(`ImgBB returned non-JSON (status ${r.status})`); }
   if (!json.success) throw new Error(json.error?.message || `ImgBB error (status ${r.status})`);
   return json.data.url;
+}
+
+let _lineDriveClient = null;
+async function _uploadToDriveLine(base64) {
+  const json = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  const folderId = process.env.DRIVE_FOLDER_ID;
+  if (!json || !folderId) return null;
+  try {
+    if (!_lineDriveClient) {
+      const { google } = require('googleapis');
+      const auth = new google.auth.GoogleAuth({
+        credentials: JSON.parse(json),
+        scopes: ['https://www.googleapis.com/auth/drive']
+      });
+      _lineDriveClient = google.drive({ version: 'v3', auth });
+    }
+    const { Readable } = require('stream');
+    const buf = Buffer.from(base64, 'base64');
+    const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+    const file = await _lineDriveClient.files.create({
+      requestBody: { name: `line_${stamp}.jpg`, parents: [folderId], mimeType: 'image/jpeg' },
+      media: { mimeType: 'image/jpeg', body: Readable.from(buf) },
+      fields: 'id'
+    });
+    await _lineDriveClient.permissions.create({
+      fileId: file.data.id,
+      requestBody: { role: 'reader', type: 'anyone' }
+    });
+    return `https://lh3.googleusercontent.com/d/${file.data.id}`;
+  } catch (e) {
+    console.warn('[line] Drive upload error:', e.message);
+    return null;
+  }
 }
 
 // OCR via OCR.space → return parsed text
