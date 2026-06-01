@@ -5,6 +5,31 @@
  */
 const { google } = require('googleapis');
 
+// v14.63 — Safe imageUrls serializer: ALWAYS produces a single-encoded JSON array string
+// Prevents the "\"[]\"" double-stringify bug when input is already a JSON string.
+function _safeImageUrlsJson(v) {
+  if (!v) return '[]';
+  if (Array.isArray(v)) return JSON.stringify(v.filter(x => typeof x === 'string' && x.trim()));
+  if (typeof v === 'string') {
+    let s = v.trim();
+    // Peel up to 3 layers of quote-wrapping
+    for (let i = 0; i < 3; i++) {
+      if (s.startsWith('"') && s.endsWith('"')) {
+        try { const p = JSON.parse(s); if (typeof p === 'string') { s = p.trim(); continue; } } catch {}
+      }
+      break;
+    }
+    if (!s || s === '[]') return '[]';
+    if (s.startsWith('[')) {
+      try { const arr = JSON.parse(s); if (Array.isArray(arr)) return JSON.stringify(arr.filter(x => typeof x === 'string' && x.trim())); } catch {}
+    }
+    // Fallback: comma-separated
+    const list = s.split(/[,;\n]/).map(x => x.trim()).filter(x => /^(https?:\/\/|data:image\/)/i.test(x));
+    return JSON.stringify(list);
+  }
+  return '[]';
+}
+
 // ─── Sheet configs ──────────────────────────────────────────
 // Each config returns a data OBJECT (key = column name). The save handler
 // maps it to a row aligned with the sheet's ACTUAL header order.
@@ -23,7 +48,7 @@ const CONFIGS = {
       customerName: d.customerName||'', cargoList: d.cargoList||'',
       cargoWeight: +d.cargoWeight||0, tripCount: +d.tripCount||1, freightCost: +d.freightCost||0,
       jobStatus: d.jobStatus||'รอโหลด', remark: d.remark||'',
-      imageUrls: JSON.stringify(d.imageUrls||[]), ocrText: d.ocrText||'', userAgent: d.userAgent||'',
+      imageUrls: _safeImageUrlsJson(d.imageUrls), ocrText: d.ocrText||'', userAgent: d.userAgent||'',
       rowId: id,
       pickupDate: d.pickupDate||'', deliveryDate: d.deliveryDate||'',
       tripRound: +d.tripRound||0, paymentStatus: d.paymentStatus||'ค้างจ่าย'
@@ -40,7 +65,7 @@ const CONFIGS = {
       docNumber: d.docNumber||'', customerName: d.customerName||'',
       incomeItem: d.incomeItem||'', amount: +d.amount||0,
       paymentMethod: d.paymentMethod||'เงินสด', remark: d.remark||'',
-      imageUrls: JSON.stringify(d.imageUrls||[]), ocrText: d.ocrText||'', userAgent: d.userAgent||'',
+      imageUrls: _safeImageUrlsJson(d.imageUrls), ocrText: d.ocrText||'', userAgent: d.userAgent||'',
       rowId: id,
       linkedTripRowId: d.linkedTripRowId||'', linkedTripRound: +d.linkedTripRound||0
     })
@@ -58,7 +83,7 @@ const CONFIGS = {
       vendor: d.vendor||'', expenseDetail: d.expenseDetail||'',
       amount: +d.amount||0, paymentMethod: d.paymentMethod||'เงินสด',
       remark: d.remark||'',
-      imageUrls: JSON.stringify(d.imageUrls||[]), ocrText: d.ocrText||'', userAgent: d.userAgent||'',
+      imageUrls: _safeImageUrlsJson(d.imageUrls), ocrText: d.ocrText||'', userAgent: d.userAgent||'',
       rowId: id,
       linkedTripRowId: d.linkedTripRowId||'', linkedTripRound: +d.linkedTripRound||0
     })
@@ -124,7 +149,7 @@ const CONFIGS = {
       cost: +d.cost||0, vendor: d.vendor||'',
       odometerKm: d.odometerKm||'', nextDueDate: d.nextDueDate||'',
       notes: d.notes||'',
-      imageUrls: JSON.stringify(d.imageUrls||[]), userAgent: d.userAgent||'',
+      imageUrls: _safeImageUrlsJson(d.imageUrls), userAgent: d.userAgent||'',
       rowId: id
     })
   },

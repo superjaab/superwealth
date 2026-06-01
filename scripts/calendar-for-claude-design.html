@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SuperWealth — ปฏิทินเที่ยวรถ (สำหรับ Claude Design)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ═══════════════════════════════════════════════════════════════
+       NOTE FOR CLAUDE DESIGN:
+       ─────────────────────────────────────────────────────────────
+       This is the "ปฏิทินเที่ยวรถ" (Truck Trip Calendar) page from
+       SuperWealth, a Thai trucking business management web app.
+
+       BEHAVIOR / FEATURES TO PRESERVE:
+       1. Month grid with up to 6 weeks shown (Sun → Sat columns)
+       2. Multi-day trip bars span across multiple cells (segments)
+       3. Each trip bar has a color = status:
+          - 🔵 #3b82f6 = กำลังขนส่ง (in transit)
+          - 🟢 #10b981 = ส่งถึงแล้ว (delivered)
+          - 🟠 #f59e0b = รอ (waiting)
+          - 🔴 #94a3b8 = ยกเลิก (cancelled)
+       4. Filter by plate-number (single dropdown)
+       5. Multi-month picker (popup): select 1+ months to render
+       6. "Today" button → jump to current month
+       7. Clicking a trip bar OR an empty day cell → opens day-detail modal
+          listing all trips for that day
+       8. Mobile-friendly (touch targets, responsive 6-col on small)
+       9. Thai Buddhist Era year display (พ.ค. 2569 etc.)
+       10. Overflow indicator (+N more) when too many trips per day
+
+       LIGHT MODE + DARK MODE both required.
+       Thai font is Noto Sans Thai.
+
+       DESIGN GOAL: Make it FAR more beautiful — modern, premium,
+       trucking-business feel. Hierarchy + spacing + delightful
+       micro-interactions. Keep all features above.
+       ═══════════════════════════════════════════════════════════════ */
+    :root {
+      --sw-primary: #2563eb;
+      --sw-bg: #f8fafc;
+      --sw-bg-card: #ffffff;
+      --sw-fg-primary: #0f172a;
+      --sw-fg-muted: #64748b;
+      --sw-border: #e2e8f0;
+      --sw-success: #16a34a;
+      --sw-warning: #f59e0b;
+      --sw-danger: #dc2626;
+    }
+    body.dark {
+      --sw-bg: #0f172a;
+      --sw-bg-card: #1e293b;
+      --sw-fg-primary: #f1f5f9;
+      --sw-fg-muted: #94a3b8;
+      --sw-border: #334155;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin:0; padding:0; }
+    body {
+      font-family: 'Noto Sans Thai', system-ui, -apple-system, sans-serif;
+      background: var(--sw-bg);
+      color: var(--sw-fg-primary);
+      min-height: 100vh;
+      padding: 20px 12px 60px;
+    }
+    .app-header {
+      max-width: 1100px; margin: 0 auto 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap;
+    }
+    .app-header h1 {
+      margin: 0; font-size: 1.4rem; font-weight: 800;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .btn-theme {
+      background: var(--sw-bg-card); border: 1px solid var(--sw-border);
+      border-radius: 10px; padding: 8px 14px; cursor: pointer;
+      font-family: inherit; font-weight: 600; color: var(--sw-fg-primary);
+    }
+    @keyframes rcMenuIn { from { opacity:0; transform: translateX(-50%) translateY(-6px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
+
+  /* ═══════ EXISTING CALENDAR STYLES (FROM PRODUCTION) ═══════ */
+    #cal-wrap { max-width:1100px; margin:0 auto; padding:16px 12px 32px }
+    .cal-toolbar { display:flex; align-items:center; gap:8px; margin-bottom:14px; flex-wrap:wrap }
+    .cal-month-nav { display:flex; align-items:center; gap:6px; background:white; border:1px solid #e2e8f0; border-radius:10px; padding:4px }
+    .cal-nav-btn { background:#f1f5f9; border:none; border-radius:6px; width:32px; height:32px; cursor:pointer; font-size:1rem; color:#475569; font-family:inherit }
+    .cal-nav-btn:hover { background:#e2e8f0 }
+    .cal-month-label { font-weight:800; font-size:.95rem; color:#1e293b; padding:6px 12px; min-width:140px; text-align:center; border-radius:6px; transition:background .12s; background:transparent; border:none; cursor:pointer; font-family:inherit }
+    .cal-month-label:hover { background:#f1f5f9 }
+
+    /* MONTH PICKER POPUP */
+    .month-picker {
+      display:none; position:absolute; top:calc(100% + 4px); left:50%; transform:translateX(-50%);
+      background:white; border-radius:10px; box-shadow:0 12px 36px rgba(0,0,0,.18);
+      border:1px solid #e2e8f0; padding:12px; z-index:120; width:260px;
+    }
+    .month-picker.open { display:block; animation:rcMenuIn .14s ease-out; }
+    .mp-year-row { display:flex; align-items:center; gap:8px; padding-bottom:10px; border-bottom:1px solid #e2e8f0; margin-bottom:10px; }
+    .mp-year-row button { background:#f1f5f9; border:none; border-radius:6px; width:30px; height:30px; cursor:pointer; color:#475569; font-family:inherit; font-size:.9rem; }
+    .mp-year-row button:hover { background:#e2e8f0 }
+    #mp-year-label { flex:1; text-align:center; font-weight:800; font-size:1rem; color:#1e293b }
+    .mp-months { display:grid; grid-template-columns:repeat(3,1fr); gap:6px }
+    .mp-month-btn {
+      background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px;
+      padding:8px 4px; cursor:pointer; font-family:inherit; font-size:.78rem; font-weight:600; color:#475569;
+      transition:background .1s, color .1s, border-color .1s;
+    }
+    .mp-month-btn:hover { background:#e0f2fe; color:#0369a1; border-color:#7dd3fc }
+    .mp-month-btn.selected { background:#1d4ed8; color:white; border-color:#1d4ed8 }
+    .mp-actions { display:flex; gap:6px; margin-top:10px; padding-top:10px; border-top:1px solid #e2e8f0 }
+    .mp-action-btn {
+      flex:1; padding:7px; border-radius:6px; cursor:pointer; font-family:inherit;
+      font-size:.78rem; font-weight:700; border:1px solid;
+    }
+    .mp-action-btn.clear { background:white; color:#dc2626; border-color:#fecaca }
+    .mp-action-btn.clear:hover { background:#fef2f2 }
+    .mp-action-btn.apply { background:#1d4ed8; color:white; border-color:#1d4ed8 }
+    .mp-action-btn.apply:hover { background:#1e40af }
+
+    .cal-today-btn { background:#1d4ed8; color:white; border:none; border-radius:10px; padding:8px 14px; font-weight:700; cursor:pointer; font-family:inherit; font-size:.85rem; display:flex; align-items:center; gap:6px; }
+    .cal-today-btn:hover { background:#1e40af }
+    .cal-plate-filter { background:white; border:1px solid #e2e8f0; border-radius:10px; padding:8px 12px; font-family:inherit; font-size:.85rem; min-width:160px; }
+    .cal-legend { display:flex; gap:14px; flex-wrap:wrap; font-size:.78rem; color:#475569; margin-left:auto }
+    .cal-leg-item { display:flex; align-items:center; gap:6px }
+    .cal-leg-dot { width:10px; height:10px; border-radius:50% }
+
+    /* GRID */
+    .cal-month-section { margin-bottom:18px }
+    .cal-month-section-title {
+      padding:10px 14px; font-weight:800; font-size:.95rem;
+      background:linear-gradient(135deg,#1d4ed8,#3b82f6); color:white;
+      border-radius:12px 12px 0 0;
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .month-trip-count {
+      background:rgba(255,255,255,.22); padding:2px 10px; border-radius:999px;
+      font-size:.72rem; font-weight:700;
+    }
+    .cal-grid {
+      background:white; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden;
+    }
+    .cal-weekdays {
+      display:grid; grid-template-columns:repeat(7,1fr);
+      background:#f8fafc; border-bottom:1px solid #e2e8f0;
+    }
+    .cal-weekday {
+      text-align:center; padding:8px 4px; font-weight:700; font-size:.78rem; color:#64748b;
+    }
+    .cal-weekday.sun { color:#dc2626 }
+    .cal-weekday.sat { color:#1d4ed8 }
+
+    .cal-week {
+      display:grid; grid-template-columns:repeat(7,1fr);
+      grid-template-rows: 32px repeat(4, 22px) 22px;
+      border-bottom:1px solid #f1f5f9;
+      position:relative;
+    }
+    .cal-week:last-child { border-bottom:none }
+    .cal-day-cell {
+      padding:4px 6px; cursor:pointer; transition:background .1s;
+      border-right:1px solid #f1f5f9;
+      grid-row: 1;
+    }
+    .cal-day-cell:last-child { border-right:none }
+    .cal-day-cell:hover { background:#f8fafc }
+    .cal-day-num {
+      font-weight:700; font-size:.85rem; color:#1e293b;
+    }
+    .cal-day-num.other-month { color:#cbd5e1; font-weight:500 }
+    .cal-day-num.sun { color:#dc2626 }
+    .cal-day-num.sat { color:#1d4ed8 }
+    .cal-day-num.today {
+      display:inline-flex; align-items:center; justify-content:center;
+      background:#1d4ed8; color:white; border-radius:50%;
+      width:22px; height:22px; font-size:.78rem;
+    }
+
+    /* Event bars across days (grid-area used in JS) */
+    .cal-evt-bar {
+      grid-row: 2;
+      margin:0 1px; padding:2px 8px;
+      font-size:.7rem; font-weight:600;
+      color:white; border-radius:6px;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      cursor:pointer; transition:transform .12s, filter .12s;
+      align-self:stretch; display:flex; align-items:center;
+    }
+    .cal-evt-bar:hover { transform:scale(1.02); filter:brightness(1.08) }
+    .cal-evt-bar.span-start  { border-radius:6px 2px 2px 6px }
+    .cal-evt-bar.span-end    { border-radius:2px 6px 6px 2px }
+    .cal-evt-bar.span-middle { border-radius:2px }
+    .cal-evt-bar.span-single { border-radius:6px }
+
+    .cal-evt-more {
+      grid-row: 6; margin:0 1px;
+      background:#e2e8f0; color:#475569; font-size:.66rem; font-weight:700;
+      padding:1px 6px; border-radius:4px; text-align:center;
+      cursor:pointer; align-self:stretch;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .cal-evt-more:hover { background:#cbd5e1 }
+
+    /* DAY DETAIL MODAL */
+    .cal-modal-bg {
+      display:none; position:fixed; inset:0; z-index:1500;
+      background:rgba(15,23,42,.55); backdrop-filter:blur(4px);
+      align-items:center; justify-content:center; padding:14px;
+    }
+    .cal-modal-bg.show { display:flex }
+    .cal-modal-box {
+      background:white; border-radius:16px; max-width:560px; width:100%;
+      max-height:85vh; overflow:hidden;
+      display:flex; flex-direction:column;
+      box-shadow:0 30px 80px rgba(0,0,0,.35);
+    }
+    .cal-modal-head {
+      padding:18px 20px; background:linear-gradient(135deg,#1d4ed8,#3b82f6); color:white;
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .cal-modal-title { font-weight:800; font-size:1.05rem }
+    .cal-modal-close {
+      background:rgba(255,255,255,.2); border:none; color:white;
+      width:32px; height:32px; border-radius:8px; cursor:pointer; font-size:1.1rem;
+    }
+    .cal-modal-body { padding:14px 18px; overflow-y:auto }
+
+    .cal-trip-card { padding:12px; border-radius:10px; background:#f8fafc; border-left:4px solid #3b82f6; margin-bottom:10px }
+    .cal-trip-card.s-wait    { border-left-color:#f59e0b }
+    .cal-trip-card.s-driving { border-left-color:#3b82f6 }
+    .cal-trip-card.s-done    { border-left-color:#10b981 }
+    .cal-trip-card.s-cancel  { border-left-color:#94a3b8 }
+    .cal-trip-head { display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap }
+    .cal-trip-plate { font-weight:800; color:#1e293b; font-size:.92rem }
+    .cal-trip-badge { font-size:.62rem; padding:2px 8px; border-radius:10px; color:white; font-weight:700 }
+    .cal-trip-badge.s-wait    { background:#f59e0b }
+    .cal-trip-badge.s-driving { background:#3b82f6 }
+    .cal-trip-badge.s-done    { background:#10b981 }
+    .cal-trip-badge.s-cancel  { background:#94a3b8 }
+    .cal-trip-row { font-size:.78rem; color:#475569; line-height:1.6 }
+    .cal-trip-row b { color:#1e293b; font-weight:700 }
+
+    /* Dark mode for everything */
+    body.dark { background: #0f172a; color: #f1f5f9; }
+    body.dark .cal-month-nav,
+    body.dark .cal-grid,
+    body.dark .cal-plate-filter,
+    body.dark .month-picker { background: #1e293b; border-color: #334155; }
+    body.dark .cal-weekdays { background: #0f172a; border-color: #334155 }
+    body.dark .cal-day-cell { border-color: #334155 }
+    body.dark .cal-day-cell:hover { background: #1e293b }
+    body.dark .cal-day-num { color: #e2e8f0 }
+    body.dark .cal-day-num.other-month { color: #475569 }
+    body.dark .cal-month-label { color: #f1f5f9 }
+    body.dark .cal-month-label:hover { background: #0f172a }
+    body.dark .cal-nav-btn { background:#334155; color:#cbd5e1 }
+    body.dark .cal-nav-btn:hover { background:#475569 }
+    body.dark .cal-legend { color: #cbd5e1 }
+    body.dark .cal-week { border-color: #334155 }
+    body.dark .mp-year-row { border-bottom-color: #334155 }
+    body.dark #mp-year-label { color:#f1f5f9 }
+    body.dark .mp-year-row button { background:#334155; color:#cbd5e1 }
+    body.dark .mp-month-btn { background:#0f172a; border-color:#334155; color:#cbd5e1 }
+    body.dark .mp-actions { border-color:#334155 }
+    body.dark .cal-modal-box { background:#1e293b }
+    body.dark .cal-trip-card { background:#0f172a }
+    body.dark .cal-trip-plate { color:#f1f5f9 }
+    body.dark .cal-trip-row { color:#cbd5e1 }
+    body.dark .cal-trip-row b { color:#f1f5f9 }
+
+    /* Mobile */
+    @media (max-width: 640px) {
+      .cal-weekday { font-size:.66rem; padding:6px 2px }
+      .cal-day-num { font-size:.78rem }
+      .cal-evt-bar { font-size:.6rem; padding:1px 4px }
+      .cal-month-section-title { font-size:.85rem; padding:8px 12px }
+      .cal-toolbar { gap:6px }
+      .cal-legend { width:100%; margin:0; justify-content:space-between; font-size:.7rem }
+    }
+  </style>
+</head>
+<body class="">
+
+<header class="app-header">
+  <h1>📅 ปฏิทินเที่ยวรถ <span style="font-size:.72rem;color:var(--sw-fg-muted);font-weight:500">— SuperWealth Truck Trip Calendar</span></h1>
+  <button class="btn-theme" onclick="document.body.classList.toggle('dark')">🌙 Toggle Dark</button>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     THE CALENDAR PANEL — paste from production index.html
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-calendar">
+  <div id="cal-wrap">
+    <!-- TOOLBAR -->
+    <div class="cal-toolbar">
+      <div class="cal-month-nav" style="position:relative">
+        <button class="cal-nav-btn" onclick="calNav(-1)" title="เดือนก่อน">◀</button>
+        <button class="cal-month-label" id="cal-month-label" onclick="toggleMonthPicker(event)">—</button>
+        <button class="cal-nav-btn" onclick="calNav(1)" title="เดือนถัดไป">▶</button>
+        <!-- MONTH PICKER -->
+        <div class="month-picker" id="month-picker">
+          <div class="mp-year-row">
+            <button onclick="mpYearShift(-1)">◀</button>
+            <div id="mp-year-label">2569</div>
+            <button onclick="mpYearShift(1)">▶</button>
+          </div>
+          <div class="mp-months" id="mp-months"></div>
+          <div class="mp-actions">
+            <button class="mp-action-btn clear" onclick="mpClear()">ล้าง</button>
+            <button class="mp-action-btn apply" onclick="mpApply()">ตกลง</button>
+          </div>
+        </div>
+      </div>
+      <button class="cal-today-btn" onclick="calGoToday()">📅 กลับวันนี้</button>
+      <select id="cal-plate-filter" class="cal-plate-filter" onchange="calChangePlate(this.value)">
+        <option value="">🚛 ดูรถทุกคัน</option>
+      </select>
+      <div class="cal-legend">
+        <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#f59e0b"></span>⏳ รอ</div>
+        <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#3b82f6"></span>🚚 กำลังขนส่ง</div>
+        <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#10b981"></span>✅ ส่งถึงแล้ว</div>
+      </div>
+    </div>
+
+    <!-- GRID CONTAINER (rendered by JS) -->
+    <div id="cal-container"></div>
+  </div>
+
+  <!-- DAY DETAIL MODAL -->
+  <div class="cal-modal-bg" id="cal-day-modal">
+    <div class="cal-modal-box">
+      <div class="cal-modal-head">
+        <div class="cal-modal-title" id="cal-day-modal-title">รายการเที่ยววันที่</div>
+        <button class="cal-modal-close" onclick="closeCalDay()">✕</button>
+      </div>
+      <div class="cal-modal-body" id="cal-day-modal-body"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   SAMPLE DATA — replace with real API in production
+   Trip object shape:
+     {
+       rowId, plateNumber, driverName, customerName,
+       origin, destination, cargoList, freightCost,
+       jobDate, pickupDate, deliveryDate,
+       jobStatus, paymentStatus, tripRound
+     }
+   ═══════════════════════════════════════════════════════════════ */
+const _master = {
+  truckHistory: [
+    { rowId:'T1', plateNumber:'70-4770', driverName:'พรมจิตร ประนา', customerName:'บริษัท พรีเมียร์ จำกัด',
+      origin:'ปทุมธานี', destination:'ขอนแก่น', cargoList:'ข้าวสาร', freightCost:'50000',
+      jobDate:'', pickupDate:'2026-06-02', deliveryDate:'2026-06-04',
+      jobStatus:'กำลังขนส่ง', paymentStatus:'ค้างจ่าย', tripRound:1 },
+    { rowId:'T2', plateNumber:'70-4770', driverName:'พรมจิตร ประนา', customerName:'บริษัท ABC',
+      origin:'กรุงเทพมหานคร', destination:'เชียงใหม่', cargoList:'สินค้าอุปโภค', freightCost:'70000',
+      jobDate:'', pickupDate:'2026-06-08', deliveryDate:'2026-06-10',
+      jobStatus:'กำลังขนส่ง', paymentStatus:'จ่ายแล้ว', tripRound:2 },
+    { rowId:'T3', plateNumber:'80-1234', driverName:'สมชาย ใจดี', customerName:'ร้านชำ XYZ',
+      origin:'นนทบุรี', destination:'ปทุมธานี', cargoList:'น้ำดื่ม', freightCost:'12000',
+      jobDate:'2026-06-12', pickupDate:'', deliveryDate:'',
+      jobStatus:'ส่งแล้ว', paymentStatus:'จ่ายแล้ว', tripRound:3 },
+    { rowId:'T4', plateNumber:'90-5678', driverName:'มานะ สู้สู้', customerName:'โรงงานเหล็ก',
+      origin:'ระยอง', destination:'สุราษฎร์ธานี', cargoList:'เหล็กม้วน', freightCost:'85000',
+      jobDate:'', pickupDate:'2026-06-15', deliveryDate:'2026-06-18',
+      jobStatus:'กำลังขนส่ง', paymentStatus:'ค้างจ่าย', tripRound:4 },
+    { rowId:'T5', plateNumber:'70-4770', driverName:'พรมจิตร ประนา', customerName:'บริษัท พรีเมียร์ จำกัด',
+      origin:'ปทุมธานี', destination:'นครราชสีมา', cargoList:'ข้าวโพด', freightCost:'45000',
+      jobDate:'2026-06-20', pickupDate:'', deliveryDate:'',
+      jobStatus:'ส่งแล้ว', paymentStatus:'จ่ายแล้ว', tripRound:5 },
+    { rowId:'T6', plateNumber:'80-1234', driverName:'สมชาย ใจดี', customerName:'ห้าง MN',
+      origin:'กรุงเทพ', destination:'ภูเก็ต', cargoList:'อุปกรณ์ไฟฟ้า', freightCost:'95000',
+      jobDate:'', pickupDate:'2026-06-25', deliveryDate:'2026-06-28',
+      jobStatus:'กำลังขนส่ง', paymentStatus:'ค้างจ่าย', tripRound:6 },
+  ],
+  vehicles: [
+    { plateNumber:'70-4770' }, { plateNumber:'80-1234' }, { plateNumber:'90-5678' }
+  ]
+};
+function fmtBaht(n) { return '฿' + Number(n||0).toLocaleString('th-TH'); }
+function fmtDate(d) {
+  if (!d) return '—';
+  const dt = new Date(d + 'T00:00:00');
+  if (isNaN(dt)) return d;
+  return `${dt.getDate()}/${dt.getMonth()+1}/${dt.getFullYear()+543}`;
+}
+function escHtml(s) { return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+function isAuthed() { return true; }
+function showToast(msg) { console.log('Toast:', msg); }
+
+/* ═══════════════════════════════════════════════════════════════
+   CALENDAR LOGIC — copied verbatim from production index.html
+   ═══════════════════════════════════════════════════════════════ */
+const CAL_TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const CAL_MAX_ROWS_PER_WEEK = 4;
+
+let _calYear, _calMonth;
+let _calMultiMonths = [];     // [{year, month}] when >1 month selected
+let _calPlate = '';           // filter
+let _calTrips = [];           // cached trip list
+let _mpYear = 0;              // year shown inside month-picker
+
+function initCalendar() {
+  const now = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Bangkok'}));
+  _calYear  = now.getFullYear();
+  _calMonth = now.getMonth();
+  _mpYear   = _calYear;
+  _calMultiMonths = [];
+  _calTrips = _master.truckHistory || [];
+  _populatePlateFilter();
+  renderCalendar();
+}
+
+function calNav(delta) {
+  _calMonth += delta;
+  if (_calMonth < 0)  { _calMonth = 11; _calYear--; }
+  if (_calMonth > 11) { _calMonth = 0;  _calYear++; }
+  _calMultiMonths = [];
+  renderCalendar();
+}
+function calGoToday() {
+  const now = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Bangkok'}));
+  _calYear  = now.getFullYear();
+  _calMonth = now.getMonth();
+  _calMultiMonths = [];
+  renderCalendar();
+}
+function calChangePlate(plate) {
+  _calPlate = plate || '';
+  renderCalendar();
+}
+
+function toggleMonthPicker(e) {
+  e.stopPropagation();
+  const mp = document.getElementById('month-picker');
+  const opening = !mp.classList.contains('open');
+  document.querySelectorAll('.month-picker.open').forEach(el => el.classList.remove('open'));
+  if (opening) {
+    _mpYear = _calYear;
+    _mpRender();
+    mp.classList.add('open');
+  }
+}
+document.addEventListener('click', (e) => {
+  const mp = document.getElementById('month-picker');
+  if (!mp || !mp.classList.contains('open')) return;
+  if (!mp.contains(e.target)) mp.classList.remove('open');
+});
+function mpYearShift(delta) {
+  _mpYear += delta;
+  _mpRender();
+}
+function _mpRender() {
+  document.getElementById('mp-year-label').textContent = _mpYear + 543;
+  const grid = document.getElementById('mp-months');
+  const sel = new Set(
+    (_calMultiMonths.length > 1 ? _calMultiMonths : [{year:_calYear, month:_calMonth}])
+      .map(m => `${m.year}-${m.month}`)
+  );
+  grid.innerHTML = CAL_TH_MONTHS.map((name, i) => {
+    const key = `${_mpYear}-${i}`;
+    const isSel = sel.has(key);
+    return `<button class="mp-month-btn ${isSel?'selected':''}" onclick="_mpToggle(${_mpYear},${i},event)">${name.slice(0,3)}</button>`;
+  }).join('');
+}
+function _mpToggle(year, month, e) {
+  e.stopPropagation();
+  const key = `${year}-${month}`;
+  let curr = _calMultiMonths.length > 0
+    ? _calMultiMonths.map(m => ({...m}))
+    : [{year:_calYear, month:_calMonth}];
+  const idx = curr.findIndex(m => `${m.year}-${m.month}` === key);
+  if (idx >= 0) {
+    if (curr.length > 1) curr.splice(idx, 1);
+  } else {
+    curr.push({year, month});
+  }
+  curr.sort((a, b) => (a.year - b.year) || (a.month - b.month));
+  _calMultiMonths = curr;
+  _mpRender();
+}
+function mpClear() {
+  _calMultiMonths = [];
+  document.getElementById('month-picker').classList.remove('open');
+  renderCalendar();
+}
+function mpApply() {
+  if (_calMultiMonths.length === 1) {
+    _calYear  = _calMultiMonths[0].year;
+    _calMonth = _calMultiMonths[0].month;
+    _calMultiMonths = [];
+  } else if (_calMultiMonths.length > 1) {
+    _calYear  = _calMultiMonths[0].year;
+    _calMonth = _calMultiMonths[0].month;
+  }
+  document.getElementById('month-picker').classList.remove('open');
+  renderCalendar();
+}
+
+function _populatePlateFilter() {
+  const sel = document.getElementById('cal-plate-filter');
+  if (!sel) return;
+  const plates = new Set();
+  (_master.vehicles || []).forEach(v => v.plateNumber && plates.add(v.plateNumber));
+  (_master.truckHistory || []).forEach(t => t.plateNumber && plates.add(t.plateNumber));
+  const opts = [...plates].sort().map(p => `<option value="${p}">🚛 ${p}</option>`).join('');
+  sel.innerHTML = `<option value="">🚛 ดูรถทุกคัน · ${_calTrips.length} เที่ยวรวม</option>` + opts;
+}
+
+function _autoTripStatus(r) {
+  // Heuristic: if has deliveryDate → ส่งแล้ว, else กำลังขนส่ง
+  if (r.jobStatus === 'ส่งแล้ว') return 'ส่งแล้ว';
+  return 'กำลังขนส่ง';
+}
+function _statusColor(s) {
+  if (s === 'ส่งแล้ว') return '#10b981';
+  if (s === 'รอ')       return '#f59e0b';
+  if (s === 'ยกเลิก')   return '#94a3b8';
+  return '#3b82f6';
+}
+function _calStatusClass(t) {
+  const s = _autoTripStatus(t);
+  if (s === 'ส่งแล้ว') return 's-done';
+  if (s === 'รอ')       return 's-wait';
+  if (s === 'ยกเลิก')   return 's-cancel';
+  return 's-driving';
+}
+function _numToDateKey(n) {
+  const dt = new Date(n * 86400000);
+  return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth()+1).padStart(2,'0')}-${String(dt.getUTCDate()).padStart(2,'0')}`;
+}
+function _getTripSpan(t) {
+  const start = t.pickupDate || t.jobDate;
+  const end   = t.deliveryDate || t.jobDate || start;
+  if (!start) return null;
+  const s = new Date(start + 'T00:00:00Z');
+  const e = new Date((end||start) + 'T00:00:00Z');
+  if (isNaN(s) || isNaN(e)) return null;
+  const startNum = Math.floor(s.getTime() / 86400000);
+  const endNum   = Math.floor(e.getTime() / 86400000);
+  return { startNum, endNum: Math.max(endNum, startNum) };
+}
+
+function renderCalendar() {
+  const labelEl = document.getElementById('cal-month-label');
+  if (labelEl) {
+    if (_calMultiMonths.length > 1) {
+      labelEl.textContent = `${_calMultiMonths.length} เดือนที่เลือก ▼`;
+    } else {
+      labelEl.textContent = `${CAL_TH_MONTHS[_calMonth]} ${_calYear + 543}`;
+    }
+  }
+  const trips = _calPlate ? _calTrips.filter(t => (t.plateNumber||'') === _calPlate) : _calTrips;
+  const monthsToRender = _calMultiMonths.length > 1
+    ? _calMultiMonths
+    : [{year:_calYear, month:_calMonth}];
+  const container = document.getElementById('cal-container');
+  if (!container) return;
+  container.innerHTML = monthsToRender.map(m => _buildMonthSection(m.year, m.month, trips)).join('');
+}
+
+function _buildMonthSection(year, month, trips) {
+  const showTitle = _calMultiMonths.length > 1;
+  const tripCount = trips.filter(t => {
+    const span = _getTripSpan(t);
+    if (!span) return false;
+    const monthStart = Math.floor(Date.UTC(year, month, 1) / 86400000);
+    const monthEnd   = Math.floor(Date.UTC(year, month + 1, 0) / 86400000);
+    return !(span.endNum < monthStart || span.startNum > monthEnd);
+  }).length;
+  const titleHtml = showTitle
+    ? `<div class="cal-month-section-title">📅 ${CAL_TH_MONTHS[month]} ${year + 543}<span class="month-trip-count">${tripCount} เที่ยว</span></div>`
+    : '';
+  return `<div class="cal-month-section">
+    ${titleHtml}
+    <div class="cal-grid" ${showTitle?'style="border-radius:0 0 12px 12px"':''}>
+      <div class="cal-weekdays">
+        <div class="cal-weekday sun">อา</div>
+        <div class="cal-weekday">จ</div>
+        <div class="cal-weekday">อ</div>
+        <div class="cal-weekday">พ</div>
+        <div class="cal-weekday">พฤ</div>
+        <div class="cal-weekday">ศ</div>
+        <div class="cal-weekday sat">ส</div>
+      </div>
+      <div>${_buildMonthGridWeeks(year, month, trips)}</div>
+    </div>
+  </div>`;
+}
+
+function _buildMonthGridWeeks(_calYear, _calMonth, trips) {
+  const firstDay = new Date(_calYear, _calMonth, 1);
+  const startDow = firstDay.getDay();
+  const gridStart = new Date(_calYear, _calMonth, 1 - startDow);
+  const lastDay = new Date(_calYear, _calMonth + 1, 0).getDate();
+  const totalCells = Math.ceil((startDow + lastDay) / 7) * 7;
+  const gridStartNum = Math.floor(Date.UTC(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate()) / 86400000);
+  const numWeeks = totalCells / 7;
+  const today = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Bangkok'}));
+  const todayNum = Math.floor(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()) / 86400000);
+  let html = '';
+
+  for (let w = 0; w < numWeeks; w++) {
+    const weekStartNum = gridStartNum + w * 7;
+    const weekEndNum   = weekStartNum + 6;
+    let numsHtml = '';
+    for (let c = 0; c < 7; c++) {
+      const dayNum = weekStartNum + c;
+      const dt = new Date(dayNum * 86400000);
+      const y = dt.getUTCFullYear(), m = dt.getUTCMonth(), d = dt.getUTCDate();
+      const isOther = (m !== _calMonth);
+      const isToday = (dayNum === todayNum);
+      const isSun = c === 0, isSat = c === 6;
+      const clsArr = ['cal-day-num'];
+      if (isOther) clsArr.push('other-month');
+      else {
+        if (isSun) clsArr.push('sun');
+        if (isSat) clsArr.push('sat');
+      }
+      if (isToday) clsArr.push('today');
+      const dateKey = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      numsHtml += `<div class="cal-day-cell" onclick="openCalDay('${dateKey}')">
+        <div class="${clsArr.join(' ')}">${d}</div>
+      </div>`;
+    }
+    // Build events for THIS week
+    const weekEvents = [];
+    trips.forEach(t => {
+      const span = _getTripSpan(t);
+      if (!span) return;
+      if (span.endNum < weekStartNum || span.startNum > weekEndNum) return;
+      const segStart = Math.max(span.startNum, weekStartNum);
+      const segEnd   = Math.min(span.endNum, weekEndNum);
+      weekEvents.push({
+        trip: t, segStart, segEnd,
+        isMultiDay: span.startNum !== span.endNum,
+        isContinuedLeft:  span.startNum < weekStartNum,
+        isContinuedRight: span.endNum   > weekEndNum,
+        row: 0
+      });
+    });
+    // Assign rows (greedy): events sorted by segStart then duration desc
+    weekEvents.sort((a,b) => a.segStart - b.segStart || (b.segEnd - b.segStart) - (a.segEnd - a.segStart));
+    const rowsOccupied = [];
+    weekEvents.forEach(ev => {
+      let r = 0;
+      while (rowsOccupied[r] && rowsOccupied[r].some(o => !(o.segEnd < ev.segStart || o.segStart > ev.segEnd))) r++;
+      if (!rowsOccupied[r]) rowsOccupied[r] = [];
+      rowsOccupied[r].push(ev);
+      ev.row = r;
+    });
+    let evtsHtml = '';
+    const overflowByCol = [0,0,0,0,0,0,0];
+    weekEvents.forEach(ev => {
+      if (ev.row >= CAL_MAX_ROWS_PER_WEEK) {
+        const colStart = ev.segStart - weekStartNum;
+        const colEnd   = ev.segEnd - weekStartNum;
+        for (let c = colStart; c <= colEnd; c++) overflowByCol[c]++;
+        return;
+      }
+      const colStart = ev.segStart - weekStartNum + 1;
+      const colSpan  = ev.segEnd - ev.segStart + 1;
+      const t = ev.trip;
+      const cls = _calStatusClass(t);
+      let posCls;
+      if (ev.isMultiDay) {
+        if (ev.isContinuedLeft && ev.isContinuedRight) posCls = 'span-middle';
+        else if (ev.isContinuedLeft)                   posCls = 'span-end';
+        else if (ev.isContinuedRight)                  posCls = 'span-start';
+        else                                            posCls = 'span-single';
+      } else {
+        posCls = 'span-single';
+      }
+      const tripStat = _autoTripStatus(t);
+      const fmtDM = n => {
+        const dt = new Date(n * 86400000);
+        return String(dt.getUTCDate()).padStart(2,'0') + '/' + String(dt.getUTCMonth()+1).padStart(2,'0');
+      };
+      let datePart = '';
+      if (ev.isMultiDay) {
+        if (!ev.isContinuedLeft && !ev.isContinuedRight) datePart = `${fmtDM(ev.segStart)} – ${fmtDM(ev.segEnd)}`;
+        else if (!ev.isContinuedLeft) datePart = `เริ่ม ${fmtDM(ev.segStart)} ›`;
+        else if (!ev.isContinuedRight) datePart = `‹ ถึง ${fmtDM(ev.segEnd)}`;
+        else datePart = '⋯ ต่อเนื่อง ⋯';
+      } else {
+        datePart = fmtDM(ev.segStart);
+      }
+      let labelParts = [];
+      if (t.tripRound) labelParts.push(`รอบ ${t.tripRound}`);
+      if (!_calPlate && t.plateNumber) labelParts.push(t.plateNumber);
+      if (t.origin || t.destination) labelParts.push((t.origin||'-') + ' → ' + (t.destination||'-'));
+      else if (t.customerName) labelParts.push(t.customerName);
+      const label = `${datePart} · ${labelParts.join(' · ')}`;
+      const isPaid = (t.paymentStatus || 'ค้างจ่าย') === 'จ่ายแล้ว';
+      const payBadge = isPaid
+        ? `<span style="background:rgba(255,255,255,.28);padding:1px 6px;border-radius:10px;font-size:.6rem;font-weight:700;margin-left:6px">✓ ชำระแล้ว</span>`
+        : `<span style="background:#fef2f2;color:#b91c1c;padding:1px 6px;border-radius:10px;font-size:.6rem;font-weight:800;margin-left:6px;border:1px solid rgba(185,28,28,.3)">⏰ ค้างจ่าย</span>`;
+      const tip = [
+        t.plateNumber || '?',
+        t.customerName ? '🏢 ' + t.customerName : '',
+        t.driverName ? '👤 ' + t.driverName : '',
+        (t.origin || t.destination) ? '📍 ' + (t.origin||'-') + ' → ' + (t.destination||'-') : '',
+        t.cargoList ? '📦 ' + t.cargoList : '',
+        t.freightCost ? '💰 ' + t.freightCost + '฿' : '',
+        ev.isMultiDay ? '📥 ' + (t.pickupDate||t.jobDate||'') + ' → 📤 ' + (t.deliveryDate||t.jobDate||'') : ''
+      ].filter(x => x).join('\n');
+      const clickDate = _numToDateKey(ev.segStart);
+      const bg = _statusColor(tripStat);
+      evtsHtml += `<div class="cal-evt-bar ${cls} ${posCls}"
+        style="background:${bg};grid-column:${colStart} / span ${colSpan}; grid-row:${ev.row + 1}"
+        title="${escHtml(tip)}"
+        onclick="event.stopPropagation();openCalDay('${clickDate}')">${escHtml(label)}${payBadge}</div>`;
+    });
+    overflowByCol.forEach((n, c) => {
+      if (n > 0) {
+        evtsHtml += `<div class="cal-evt-more"
+          style="grid-column:${c+1}; grid-row:${CAL_MAX_ROWS_PER_WEEK + 1}"
+          onclick="event.stopPropagation();openCalDay('${_numToDateKey(weekStartNum + c)}')">+ ${n} เที่ยว</div>`;
+      }
+    });
+    html += `<div class="cal-week">${numsHtml}${evtsHtml}</div>`;
+  }
+  return html;
+}
+
+function openCalDay(dateKey) {
+  const targetNum = Math.floor(new Date(dateKey + 'T00:00:00Z').getTime() / 86400000);
+  const trips = (_calPlate ? _calTrips.filter(t => (t.plateNumber||'') === _calPlate) : _calTrips)
+    .filter(t => {
+      const span = _getTripSpan(t);
+      if (!span) return false;
+      return span.startNum <= targetNum && targetNum <= span.endNum;
+    });
+  const dt = new Date(dateKey + 'T00:00:00');
+  const titleEl = document.getElementById('cal-day-modal-title');
+  const bodyEl = document.getElementById('cal-day-modal-body');
+  const dayName = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'][dt.getDay()];
+  titleEl.textContent = `📅 วัน${dayName} ${dt.getDate()} ${CAL_TH_MONTHS[dt.getMonth()]} ${dt.getFullYear()+543}`;
+  if (trips.length === 0) {
+    bodyEl.innerHTML = `<div style="text-align:center;color:#94a3b8;padding:30px 14px">📭 ไม่มีเที่ยวรถในวันนี้</div>`;
+  } else {
+    bodyEl.innerHTML = trips.map(t => {
+      const stat = _autoTripStatus(t);
+      const cls  = _calStatusClass(t);
+      const isPaid = (t.paymentStatus || 'ค้างจ่าย') === 'จ่ายแล้ว';
+      return `
+      <div class="cal-trip-card ${cls}">
+        <div class="cal-trip-head">
+          <span class="cal-trip-plate">🚛 ${escHtml(t.plateNumber||'?')}</span>
+          <span class="cal-trip-badge ${cls}">${escHtml(stat)}</span>
+          <span style="background:${isPaid?'#dcfce7':'#fee2e2'};color:${isPaid?'#166534':'#b91c1c'};padding:2px 8px;border-radius:10px;font-size:.62rem;font-weight:700">${isPaid?'💰 จ่ายแล้ว':'⏰ ค้างจ่าย'}</span>
+          ${t.tripRound ? `<span style="background:#eef2ff;color:#4338ca;padding:2px 8px;border-radius:8px;font-size:.7rem;font-weight:700">รอบ ${escHtml(t.tripRound)}</span>` : ''}
+        </div>
+        ${t.customerName ? `<div class="cal-trip-row"><b>🏢 ลูกค้า:</b> ${escHtml(t.customerName)}</div>` : ''}
+        ${t.driverName ? `<div class="cal-trip-row"><b>👤 คนขับ:</b> ${escHtml(t.driverName)}</div>` : ''}
+        ${(t.origin || t.destination) ? `<div class="cal-trip-row"><b>📍 เส้นทาง:</b> ${escHtml(t.origin||'-')} → ${escHtml(t.destination||'-')}</div>` : ''}
+        ${t.cargoList ? `<div class="cal-trip-row"><b>📦 สินค้า:</b> ${escHtml(t.cargoList)}</div>` : ''}
+        ${t.freightCost ? `<div class="cal-trip-row"><b>💰 ค่าขนส่ง:</b> ${fmtBaht(t.freightCost)}</div>` : ''}
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('cal-day-modal').classList.add('show');
+}
+function closeCalDay() {
+  document.getElementById('cal-day-modal').classList.remove('show');
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  initCalendar();
+});
+</script>
+</body>
+</html>

@@ -4552,7 +4552,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.62 | 01/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.63 | 01/06/2026</span>
   </div>
 </aside>
 
@@ -8975,22 +8975,57 @@ function _updateZoomImg() {
   if (counter) counter.style.display = single ? 'none' : '';
 }
 
-function renderImgThumbs(urls) {
-  // Parse url field (could be JSON, comma-separated, or array)
-  let list = [];
-  if (Array.isArray(urls)) list = urls;
-  else if (typeof urls === 'string' && urls.trim()) {
-    if (urls.trim().startsWith('[')) {
-      try { list = JSON.parse(urls); } catch { list = urls.split(/[,;\n]/).map(s=>s.trim()).filter(s=>s); }
-    } else {
-      list = urls.split(/[,;\n]/).map(s=>s.trim()).filter(s=>s);
-    }
+// v14.63 — Robust URL parser handles all observed shapes:
+//   - Array:                       ["http://..."]
+//   - JSON string:                 '["http://..."]'
+//   - Double-stringified JSON:     '"[]"'  or  '"[\"http://...\"]"'  (← the actual bug)
+//   - Comma/newline separated:     "http://a, http://b"
+//   - Empty/garbage:               "", "[]", null, undefined
+function _parseImageUrls(urls) {
+  if (!urls) return [];
+  if (Array.isArray(urls)) return urls.filter(_isValidUrl);
+  if (typeof urls !== 'string') return [];
+
+  let s = urls.trim();
+  if (!s || s === '[]' || s === '""' || s === '"[]"' || s === 'null') return [];
+
+  // Peel double-quoted JSON wrappers — up to 3 levels (defensive)
+  for (let i = 0; i < 3; i++) {
+    if (s.startsWith('"') && s.endsWith('"')) {
+      try { s = JSON.parse(s); } catch { break; }
+      if (typeof s !== 'string') break;
+      s = s.trim();
+      if (!s || s === '[]') return [];
+    } else break;
   }
+  if (typeof s !== 'string') {
+    return Array.isArray(s) ? s.filter(_isValidUrl) : [];
+  }
+
+  // Try as JSON array
+  if (s.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(s);
+      if (Array.isArray(parsed)) return parsed.filter(_isValidUrl);
+    } catch (_) {}
+  }
+  // Fallback: split by , ; newline
+  return s.split(/[,;\n]/).map(x => x.trim()).filter(_isValidUrl);
+}
+function _isValidUrl(u) {
+  if (!u || typeof u !== 'string') return false;
+  const t = u.trim();
+  // Must be a plausible URL — start with http(s):// or data:image/
+  return /^(https?:\/\/|data:image\/)/i.test(t);
+}
+
+function renderImgThumbs(urls) {
+  const list = _parseImageUrls(urls);
   if (list.length === 0) return '';
   const showCount = Math.min(list.length, 4);
   const more = list.length - showCount;
   const arr = list.slice(0, showCount).map((u,i) =>
-    `<img src="${escAttr(u)}" alt="img" onclick='openImgZoom(${JSON.stringify(list)},${i})'>`).join('');
+    `<img src="${escAttr(u)}" alt="img" loading="lazy" onclick='openImgZoom(${JSON.stringify(list)},${i})'>`).join('');
   const moreHtml = more > 0 ? `<div class="rc-imgs-more" onclick='openImgZoom(${JSON.stringify(list)},${showCount})'>+${more}</div>` : '';
   return `<div class="rc-imgs">${arr}${moreHtml}</div>`;
 }
@@ -13337,7 +13372,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.62';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.63';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison

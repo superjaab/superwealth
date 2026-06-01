@@ -1,0 +1,942 @@
+<div class="tab-panel" id="tab-calendar">
+  <style>
+    #cal-wrap { max-width:1100px; margin:0 auto; padding:16px 12px 32px }
+    .cal-toolbar { display:flex; align-items:center; gap:8px; margin-bottom:14px; flex-wrap:wrap }
+    .cal-month-nav { display:flex; align-items:center; gap:6px; background:white; border:1px solid #e2e8f0; border-radius:10px; padding:4px }
+    .cal-nav-btn { background:#f1f5f9; border:none; border-radius:6px; width:32px; height:32px; cursor:pointer; font-size:1rem; color:#475569; font-family:inherit }
+    .cal-nav-btn:hover { background:#e2e8f0 }
+    .cal-month-label { font-weight:800; font-size:.95rem; color:#1e293b; padding:6px 12px; min-width:140px; text-align:center; border-radius:6px; transition:background .12s; }
+    .cal-month-label:hover { background:#f1f5f9 }
+
+    /* ── MONTH PICKER POPUP ── */
+    .month-picker {
+      display:none; position:absolute; top:calc(100% + 4px); left:50%; transform:translateX(-50%);
+      background:white; border-radius:10px; box-shadow:0 12px 36px rgba(0,0,0,.18);
+      border:1px solid #e2e8f0; padding:12px; z-index:120; width:260px;
+    }
+    .month-picker.open { display:block; animation:rcMenuIn .14s ease-out; }
+    .mp-year-row { display:flex; align-items:center; gap:8px; padding-bottom:10px; border-bottom:1px solid #e2e8f0; margin-bottom:10px; }
+    .mp-year-row button {
+      background:#f1f5f9; border:none; border-radius:6px; width:30px; height:30px;
+      cursor:pointer; color:#475569; font-family:inherit; font-size:.9rem;
+    }
+    .mp-year-row button:hover { background:#e2e8f0 }
+    #mp-year-label { flex:1; text-align:center; font-weight:800; font-size:1rem; color:#1e293b }
+    .mp-months { display:grid; grid-template-columns:repeat(3,1fr); gap:6px }
+    .mp-month-btn {
+      background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px;
+      padding:8px 4px; cursor:pointer; font-family:inherit; font-size:.78rem; font-weight:600; color:#475569;
+      transition:background .1s, color .1s, border-color .1s;
+    }
+    .mp-month-btn:hover { background:#dbeafe; border-color:#3b82f6; color:#1d4ed8 }
+    .mp-month-btn.active { background:#3b82f6; color:white; border-color:#3b82f6 }
+    .mp-toggle-btn {
+      background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px;
+      padding:6px 12px; font-family:inherit; font-size:.78rem; font-weight:600; color:#475569;
+      cursor:pointer; width:100%;
+    }
+    .mp-toggle-btn:hover { background:#e2e8f0 }
+    .mp-apply {
+      width:100%; padding:9px; background:linear-gradient(135deg,#3b82f6,#1d4ed8); color:white;
+      border:none; border-radius:6px; font-family:inherit; font-weight:700; font-size:.85rem;
+      cursor:pointer; margin-bottom:6px;
+    }
+    .mp-apply:hover { filter:brightness(1.1) }
+    .mp-clear {
+      width:100%; padding:6px; background:#fef2f2; color:#dc2626; border:1px solid #fecaca;
+      border-radius:6px; font-family:inherit; font-weight:600; font-size:.74rem; cursor:pointer;
+    }
+
+    /* Multi-month section header */
+    .cal-month-section { margin-bottom:20px }
+    .cal-month-section-title {
+      font-size:.95rem; font-weight:800; color:#1e293b;
+      padding:8px 14px; background:linear-gradient(135deg,#1d4ed8,#1e40af);
+      color:white; border-radius:10px 10px 0 0; margin:0;
+      display:flex; align-items:center; gap:8px;
+    }
+    .cal-month-section-title .month-trip-count {
+      margin-left:auto; background:rgba(255,255,255,.25); padding:2px 10px;
+      border-radius:10px; font-size:.7rem;
+    }
+    .cal-today-btn { background:#3b82f6; color:white; border:none; border-radius:8px; padding:8px 14px; font-weight:700; font-size:.78rem; cursor:pointer; font-family:inherit }
+    .cal-today-btn:hover { background:#2563eb }
+    .cal-plate-filter { background:white; border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-family:inherit; font-size:.82rem; color:#1e293b; min-width:160px; cursor:pointer }
+    .cal-legend { display:flex; gap:10px; flex-wrap:wrap; margin-left:auto; font-size:.7rem; color:#64748b }
+    .cal-leg-item { display:flex; align-items:center; gap:5px }
+    .cal-leg-dot { width:10px; height:10px; border-radius:50% }
+
+    .cal-grid { background:white; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.06); overflow:hidden }
+    .cal-weekdays { display:grid; grid-template-columns:repeat(7,1fr); background:#f8fafc; border-bottom:1px solid #e2e8f0 }
+    .cal-weekday { padding:10px 6px; text-align:center; font-size:.72rem; font-weight:800; color:#475569 }
+    .cal-weekday.sun { color:#dc2626 } .cal-weekday.sat { color:#3b82f6 }
+
+    /* Week row container */
+    .cal-week { border-bottom:1px solid #f1f5f9; position:relative }
+    .cal-week:last-child { border-bottom:none }
+    /* Day-number row */
+    .cal-week-nums { display:grid; grid-template-columns:repeat(7,1fr) }
+    .cal-daycell { border-right:1px solid #f1f5f9; padding:6px 5px 2px; cursor:pointer; min-height:28px; transition:background .12s }
+    .cal-daycell:nth-child(7n) { border-right:none }
+    .cal-daycell:hover { background:#f8fafc }
+    .cal-daycell.other-month .cal-day-num { color:#cbd5e1 }
+    .cal-daycell.today { background:#dbeafe }
+    .cal-day-num { font-size:.78rem; font-weight:700; color:#334155; display:inline-block }
+    .cal-daycell.today .cal-day-num { background:#3b82f6; color:white; border-radius:50%; width:22px; height:22px; line-height:22px; text-align:center; font-weight:800 }
+    .cal-daycell.sun .cal-day-num { color:#dc2626 } .cal-daycell.sat .cal-day-num { color:#3b82f6 }
+
+    /* Event rows (grid same 7 cols, multiple rows) */
+    .cal-week-events { display:grid; grid-template-columns:repeat(7,1fr); grid-auto-rows:22px; gap:2px; padding:2px 3px 6px 3px; min-height:60px }
+    .cal-evt-bar {
+      font-size:.66rem; padding:3px 7px; color:white; font-weight:700;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      line-height:1.3; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; gap:4px;
+      text-align:center;
+      transition:filter .12s, transform .12s;
+      margin:0 1px;
+      text-shadow:0 1px 2px rgba(0,0,0,.2);
+    }
+    .cal-evt-bar:hover { filter:brightness(1.15); transform:translateY(-1px); }
+    .cal-evt-bar.s-cancel { background:#94a3b8 !important; text-decoration:line-through; opacity:.7; }
+    .cal-evt-bar.s-done   { box-shadow:inset 0 0 0 2px rgba(255,255,255,.3); }
+    /* Bar shape based on continuation */
+    .cal-evt-bar.span-start  { border-radius:4px 0 0 4px; box-shadow:inset 4px 0 0 rgba(0,0,0,.25) }
+    .cal-evt-bar.span-middle { border-radius:0; margin:0 -1px }
+    .cal-evt-bar.span-end    { border-radius:0 4px 4px 0; box-shadow:inset -4px 0 0 rgba(0,0,0,.25) }
+    .cal-evt-bar.span-single { border-radius:4px }
+    .cal-evt-bar .ico { font-size:.78rem; line-height:1 }
+    .cal-evt-more {
+      grid-column:1/-1; font-size:.62rem; color:#64748b; font-weight:700;
+      padding:2px 6px; text-align:center; background:#f8fafc; border-radius:3px;
+      cursor:pointer; margin:1px;
+    }
+    .cal-evt-more:hover { background:#e2e8f0 }
+
+    @media (max-width:640px) {
+      .cal-daycell { padding:4px 3px 2px; min-height:24px }
+      .cal-day-num { font-size:.7rem }
+      .cal-evt-bar { font-size:.55rem; padding:2px 4px }
+      .cal-week-events { grid-auto-rows:18px; min-height:40px }
+      .cal-month-label { font-size:.85rem; min-width:110px }
+      .cal-plate-filter { min-width:130px; font-size:.75rem }
+    }
+
+    /* Modal for day details */
+    #cal-day-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:300; align-items:center; justify-content:center; padding:14px }
+    #cal-day-modal.show { display:flex }
+    .cal-modal-box { background:white; border-radius:14px; max-width:560px; width:100%; max-height:90dvh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.4) }
+    .cal-modal-head { display:flex; align-items:center; justify-content:space-between; padding:16px 18px; border-bottom:1px solid #e2e8f0; position:sticky; top:0; background:white; border-radius:14px 14px 0 0 }
+    .cal-modal-title { font-weight:800; font-size:1rem; color:#1e293b }
+    .cal-modal-close { background:#f1f5f9; border:none; border-radius:6px; width:30px; height:30px; cursor:pointer; font-size:1rem; color:#64748b }
+    .cal-modal-body { padding:14px 18px }
+    .cal-trip-card { padding:12px; border-radius:10px; background:#f8fafc; border-left:4px solid #3b82f6; margin-bottom:10px }
+    .cal-trip-card.s-wait    { border-left-color:#f59e0b }
+    .cal-trip-card.s-driving { border-left-color:#3b82f6 }
+    .cal-trip-card.s-done    { border-left-color:#10b981 }
+    .cal-trip-card.s-cancel  { border-left-color:#94a3b8 }
+    .cal-trip-head { display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap }
+    .cal-trip-plate { font-weight:800; color:#1e293b; font-size:.92rem }
+    .cal-trip-badge { font-size:.62rem; padding:2px 8px; border-radius:10px; color:white; font-weight:700 }
+    .cal-trip-badge.s-wait    { background:#f59e0b }
+    .cal-trip-badge.s-driving { background:#3b82f6 }
+    .cal-trip-badge.s-done    { background:#10b981 }
+    .cal-trip-badge.s-cancel  { background:#94a3b8 }
+    .cal-trip-row { font-size:.78rem; color:#475569; line-height:1.6 }
+    .cal-trip-row b { color:#1e293b; font-weight:700 }
+    .cal-empty { text-align:center; padding:40px 20px; color:#94a3b8 }
+  </style>
+
+  <div id="cal-wrap">
+    <!-- Toolbar -->
+    <div class="cal-toolbar">
+      <div class="cal-month-nav" style="position:relative">
+        <button class="cal-nav-btn" onclick="calNav(-1)" title="เดือนก่อน">◀</button>
+        <button class="cal-month-label" id="cal-month-label" onclick="toggleMonthPicker(event)" style="background:transparent;border:none;cursor:pointer;font-family:inherit">—</button>
+        <button class="cal-nav-btn" onclick="calNav(1)" title="เดือนถัดไป">▶</button>
+        <div id="month-picker" class="month-picker" onclick="event.stopPropagation()">
+          <div class="mp-year-row">
+            <button onclick="calMpYear(-1)">◀</button>
+            <span id="mp-year-label">—</span>
+            <button onclick="calMpYear(1)">▶</button>
+          </div>
+          <div class="mp-months" id="mp-months"></div>
+          <div id="mp-footer" style="margin-top:10px"></div>
+        </div>
+      </div>
+      <button class="cal-today-btn" onclick="calGoToday()">📅 กลับวันนี้</button>
+      <select id="cal-plate-filter" class="cal-plate-filter" onchange="calChangePlate(this.value)">
+        <option value="">🚛 ดูรถทุกคัน</option>
+      </select>
+      <div class="cal-legend">
+        <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#3b82f6"></span>🚚 กำลังขนส่ง</div>
+        <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#10b981"></span>✅ ส่งถึงแล้ว</div>
+      </div>
+    </div>
+
+    <!-- Calendar container (single or multi-month) -->
+    <div id="cal-container"></div>
+  </div>
+
+  <!-- Day details modal -->
+  <div id="cal-day-modal" onclick="if(event.target===this)closeCalDay()">
+    <div class="cal-modal-box">
+      <div class="cal-modal-head">
+        <div class="cal-modal-title" id="cal-modal-title">—</div>
+        <button class="cal-modal-close" onclick="closeCalDay()">✕</button>
+      </div>
+      <div class="cal-modal-body" id="cal-modal-body">—</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB: Admin — จัดการรหัสและ Session ══ -->
+<div class="tab-panel" id="tab-admin">
+  <div style="max-width:900px;margin:0 auto">
+    <!-- Codes section -->
+    <div class="dash-card" style="margin-bottom:14px">
+      <div class="dash-card-head" style="margin-bottom:14px">
+        <div>
+          <div class="dash-card-title">🔑 รหัสผ่าน Login</div>
+          <div class="dash-card-sub">เพิ่มรหัสใหม่ให้ผู้ใช้คนอื่นเข้าระบบ</div>
+        </div>
+      </div>
+      <div style="background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:10px;padding:12px;margin-bottom:14px">
+        <div style="font-weight:700;color:#0f172a;margin-bottom:8px;font-size:.85rem">➕ เพิ่มรหัสใหม่</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input type="text" id="admin-new-code" placeholder="รหัส (อย่างน้อย 4 ตัว)" maxlength="20" style="flex:1;min-width:140px">
+          <input type="text" id="admin-new-label" placeholder="ชื่อ/คำอธิบาย" maxlength="60" style="flex:2;min-width:180px">
+          <button type="button" onclick="adminAddCode()" style="background:linear-gradient(135deg,#1d4ed8,#2563eb);color:white;border:none;border-radius:8px;padding:10px 18px;font-weight:700;font-size:.82rem;cursor:pointer;font-family:inherit">➕ เพิ่ม</button>
+        </div>
+      </div>
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:.78rem;color:#1e40af">
+        🔒 <b>รหัส Admin (Built-in):</b> เก็บไว้ในตัวระบบ — เปลี่ยนได้ผ่าน Environment Variable <code style="background:white;padding:2px 6px;border-radius:4px;font-weight:700;color:#1d4ed8">ADMIN_CODE</code> บน Vercel/Netlify
+      </div>
+      <div id="admin-codes-list" style="color:#94a3b8;text-align:center;padding:14px">⏳ กำลังโหลด...</div>
+    </div>
+
+    <!-- ⚡ Quick-entry templates section (v14.60 — multi-template) -->
+    <div id="admin-quick-section" class="dash-card" style="margin-bottom:14px">
+      <div class="dash-card-head" style="margin-bottom:10px">
+        <div>
+          <div class="dash-card-title">⚡ เทมเพลต "ลงด่วน"</div>
+          <div class="dash-card-sub">เก็บข้อความต้นแบบหลายชุด — เลือกใช้จาก dropdown ที่ฟอร์ม</div>
+        </div>
+      </div>
+      <div style="background:#ecfeff;border:1px solid #bae6fd;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:.78rem;color:#075985">
+        💡 <b>วิธีเพิ่มเทมเพลต:</b><br>
+        1️⃣ เปิดเมนู <b>บันทึกรถ / รายรับ / รายจ่าย</b> → กรอกค่าที่ใช้บ่อย<br>
+        2️⃣ กดปุ่ม <b>💾 บันทึกเป็นเทมเพลต</b> → ตั้งชื่อ (เช่น "ขนข้าว ปทุมธานี")<br>
+        3️⃣ ใช้งาน: เลือกเทมเพลตจาก dropdown แล้วกด <b>⚡ ลงด่วน</b> → เติมค่าให้ทันที<br>
+        4️⃣ <b>เปลี่ยนชื่อ/ลบ</b> เทมเพลตได้ที่ด้านล่างนี้
+      </div>
+      <div id="admin-quickdefaults" style="color:#94a3b8;text-align:center;padding:10px;font-size:.82rem">⏳ กำลังโหลด...</div>
+    </div>
+
+    <!-- Sessions section -->
+    <div class="dash-card">
+      <div class="dash-card-head" style="margin-bottom:14px">
+        <div>
+          <div class="dash-card-title">🖥 เครื่องที่เข้าสู่ระบบ</div>
+          <div class="dash-card-sub">กดปุ่ม "Logout" เพื่อบังคับออกจากระบบ</div>
+        </div>
+        <a class="dash-card-action" href="#" onclick="event.preventDefault();loadAdminSessions()">🔄 รีเฟรช</a>
+      </div>
+      <div id="admin-sessions-list" style="color:#94a3b8;text-align:center;padding:14px">⏳ กำลังโหลด...</div>
+    </div>
+
+    <!-- FAB Menu management section -->
+    <div class="dash-card" style="margin-top:14px">
+      <div class="dash-card-head" style="margin-bottom:14px">
+        <div>
+          <div class="dash-card-title">➕ เมนูปุ่มลอย (FAB)</div>
+          <div class="dash-card-sub">จัดการเมนูที่โผล่ขึ้นเมื่อกดปุ่ม + ลอยที่มุมขวาล่าง</div>
+        </div>
+        <a class="dash-card-action" href="#" onclick="event.preventDefault();loadAdminFab()">🔄 รีเฟรช</a>
+      </div>
+      <div style="background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:10px;padding:12px;margin-bottom:14px">
+        <div style="font-weight:700;color:#0f172a;margin-bottom:8px;font-size:.85rem">➕ เพิ่มเมนูใหม่</div>
+        <div style="display:grid;grid-template-columns:60px 1fr 1fr 80px auto;gap:8px;align-items:center">
+          <input type="text" id="admin-fab-icon"  placeholder="🎯" maxlength="4" style="text-align:center;font-size:1.1rem">
+          <input type="text" id="admin-fab-label" placeholder="ชื่อเมนู" maxlength="40">
+          <select id="admin-fab-tab"></select>
+          <input type="number" id="admin-fab-order" placeholder="ลำดับ" min="1" max="99" value="10">
+          <button type="button" onclick="adminAddFab()" style="background:linear-gradient(135deg,#059669,#10b981);color:white;border:none;border-radius:8px;padding:10px 16px;font-weight:700;font-size:.82rem;cursor:pointer;font-family:inherit;white-space:nowrap">➕ เพิ่ม</button>
+        </div>
+      </div>
+      <div id="admin-fab-list" style="color:#94a3b8;text-align:center;padding:14px">⏳ กำลังโหลด...</div>
+    </div>
+
+    <!-- v14.20 — Invoice items management -->
+    <div id="admin-inv-items-section" class="dash-card" style="margin-top:14px">
+      <div class="dash-card-head" style="margin-bottom:14px">
+        <div>
+          <div class="dash-card-title">🧾 รายการในใบเสร็จ</div>
+          <div class="dash-card-sub">เพิ่ม/ลบรายการที่ใช้บ่อยในใบเสร็จ — แสดงเป็น dropdown ให้เลือก</div>
+        </div>
+      </div>
+      <div style="background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:10px;padding:12px;margin-bottom:14px">
+        <div style="font-weight:700;color:#0f172a;margin-bottom:8px;font-size:.85rem">➕ เพิ่มรายการใหม่</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input type="text" id="admin-inv-item-name" placeholder="เช่น ค่าน้ำมัน, ค่าจอดรถ, ค่ามัดจำ..." maxlength="120" style="flex:1;min-width:240px">
+          <button type="button" onclick="adminAddInvItem()" style="background:linear-gradient(135deg,#0891b2,#06b6d4);color:white;border:none;border-radius:8px;padding:10px 18px;font-weight:700;font-size:.82rem;cursor:pointer;font-family:inherit">➕ เพิ่ม</button>
+        </div>
+      </div>
+      <div style="background:#ecfeff;border:1px solid #a5f3fc;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:.78rem;color:#155e75">
+        💡 คลิก <b>✏️ แก้ไข</b> เพื่อเปลี่ยนชื่อ หรือ <b>🗑 ลบ</b> เพื่อเอาออก (กดทีเดียวลบทันที — รีเซ็ตคืนได้)
+      </div>
+      <div id="admin-inv-items-list" style="color:#94a3b8;text-align:center;padding:14px">⏳ กำลังโหลด...</div>
+    </div>
+
+    <!-- v14.28 — Income items management -->
+    <div id="admin-inc-items-section" class="dash-card" style="margin-top:14px">
+      <div class="dash-card-head" style="margin-bottom:14px">
+        <div>
+          <div class="dash-card-title">💰 รายการรายรับ</div>
+          <div class="dash-card-sub">เพิ่ม/ลบรายการที่ใช้บ่อยตอนบันทึกรายรับ — แสดงเป็น dropdown ให้เลือก</div>
+        </div>
+      </div>
+      <div style="background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:10px;padding:12px;margin-bottom:14px">
+        <div style="font-weight:700;color:#0f172a;margin-bottom:8px;font-size:.85rem">➕ เพิ่มรายการใหม่</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input type="text" id="admin-inc-item-name" placeholder="เช่น ค่าน้ำมัน, ค่าจอดรถ, ค่ามัดจำ..." maxlength="120" style="flex:1;min-width:240px">
+          <button type="button" onclick="adminAddIncItem()" style="background:linear-gradient(135deg,#059669,#10b981);color:white;border:none;border-radius:8px;padding:10px 18px;font-weight:700;font-size:.82rem;cursor:pointer;font-family:inherit">➕ เพิ่ม</button>
+        </div>
+      </div>
+      <div style="background:#dcfce7;border:1px solid #86efac;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:.78rem;color:#166534">
+        💡 คลิก <b>✏️ แก้ไข</b> เพื่อเปลี่ยนชื่อ หรือ <b>🗑 ลบ</b> เพื่อเอาออก (กดทีเดียวลบทันที — รีเซ็ตคืนได้)
+      </div>
+      <div id="admin-inc-items-list" style="color:#94a3b8;text-align:center;padding:14px">⏳ กำลังโหลด...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB 4: GPS — Launch OneTrack (v14.44) — เปิดแท็บใหม่ login อัตโนมัติ ══ -->
+<div class="tab-panel" id="tab-gps">
+  <div class="gps-shell">
+
+    <!-- Provider picker (default) — เลือกผู้ให้บริการ GPS -->
+    <div id="gps-launch" class="gps-providers">
+      <!-- Header -->
+      <div class="gps-prov-head">
+        <div class="gps-prov-badge">
+          <span class="gps-dot" id="gps-dot"></span>
+          <span id="gps-status-text">ONLINE</span>
+        </div>
+        <h2>📡 GPS ติดตามรถ</h2>
+        <p>เลือกระบบ GPS ที่ต้องการเข้าใช้งาน</p>
+      </div>
+
+      <!-- Provider cards -->
+      <div class="gps-prov-list">
+
+        <!-- OneTrack Smart — เปิดหน้า login (login เอง) -->
+        <button type="button" class="gps-prov-card onetrack" id="gps-onetrack-card" onclick="openGPS('onelink')">
+          <div class="gps-prov-icon">📍</div>
+          <div class="gps-prov-body">
+            <div class="gps-prov-name">OneTrack Smart</div>
+            <div class="gps-prov-desc">Onelink Technology — ติดตามรถยนต์/รถบรรทุก</div>
+            <div class="gps-prov-url">onetracksmart.onelink.co.th</div>
+          </div>
+          <div class="gps-prov-arrow">↗</div>
+        </button>
+
+        <!-- Hino Connect -->
+        <button type="button" class="gps-prov-card hino" onclick="openGPS('hino')">
+          <div class="gps-prov-icon">🚛</div>
+          <div class="gps-prov-body">
+            <div class="gps-prov-name">Hino Connect</div>
+            <div class="gps-prov-desc">Hino Motors — Telematics สำหรับรถ Hino</div>
+            <div class="gps-prov-url">hino-connect.onelink-iot.com</div>
+          </div>
+          <div class="gps-prov-arrow">↗</div>
+        </button>
+
+      </div>
+
+      <!-- Info notice -->
+      <div class="gps-prov-note">
+        <span>💡</span>
+        <span>กดการ์ดเพื่อเปิดระบบ GPS ในแท็บใหม่ แล้ว login ตามปกติ — ใช้งานได้เต็มรูปแบบ (แผนที่ + ข้อมูลสด)</span>
+      </div>
+    </div>
+
+    <!-- Setup wizard (shown when not configured) -->
+    <div id="gps-setup" class="gps-setup" style="display:none">
+      <div class="gps-setup-card">
+        <div class="gps-setup-icon">⚙️</div>
+        <h3>ตั้งค่า GPS ครั้งแรก</h3>
+        <p>ต้องใส่ user/pass ของ OneTrack ใน Vercel เพื่อให้ระบบดึงข้อมูลได้</p>
+        <ol class="gps-setup-steps">
+          <li>เข้า <b>Vercel Dashboard</b> → โปรเจกต์ <code>superwealth</code></li>
+          <li>เลือก <b>Settings</b> → <b>Environment Variables</b></li>
+          <li>เพิ่ม 2 ตัว:
+            <div class="gps-env">
+              <div><code>GPS_ONETRACK_USER</code> <span class="gps-eg">= ชื่อผู้ใช้ OneTrack</span></div>
+              <div><code>GPS_ONETRACK_PASS</code> <span class="gps-eg">= รหัสผ่าน</span></div>
+            </div>
+          </li>
+          <li>คลิก <b>Redeploy</b> → กลับมาที่หน้านี้</li>
+        </ol>
+        <div class="gps-setup-fallback">
+          ตอนนี้ใช้ได้: <a href="https://onetracksmart.onelink.co.th/onetrack.smart.new/login.jsp" target="_blank" rel="noopener">เปิด OneTrack →</a>
+          &nbsp;·&nbsp;
+          <a href="https://hino-connect.onelink-iot.com" target="_blank" rel="noopener">เปิด Hino Connect →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error state -->
+    <div id="gps-error" class="gps-error" style="display:none">
+      <div class="gps-error-icon">⚠️</div>
+      <div>
+        <div class="gps-error-title">เชื่อมต่อ GPS ไม่สำเร็จ</div>
+        <div class="gps-error-msg" id="gps-error-msg">—</div>
+        <button class="gps-retry-btn" onclick="gpsRefresh(true)">ลองอีกครั้ง</button>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="gps-empty" class="gps-empty" style="display:none">
+      <div style="font-size:2.5rem;opacity:.4;margin-bottom:8px">🛰️</div>
+      <div>ยังไม่มีรถในระบบ GPS</div>
+    </div>
+  </div>
+</div>
+
+<style>
+  @keyframes gps-pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  @keyframes gps-ring  { 0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.6)} 50%{box-shadow:0 0 0 6px rgba(34,197,94,0)} }
+  @keyframes gps-spin  { to { transform: rotate(360deg) } }
+  @keyframes gps-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+
+  /* ── Provider picker (v14.45 — restored 2-card layout) ── */
+  .gps-providers {
+    max-width: 520px; margin: 0 auto; padding: 28px 18px;
+    min-height: calc(100dvh - 120px);
+  }
+  .gps-prov-head { text-align: center; margin-bottom: 26px; }
+  .gps-prov-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 14px; border-radius: 999px; margin-bottom: 14px;
+    background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.3);
+    font-size: .72rem; font-weight: 800; color: #16a34a;
+  }
+  body.dark .gps-prov-badge { color: #86efac; }
+  .gps-prov-head h2 {
+    margin: 0 0 6px; font-size: 1.4rem; font-weight: 900;
+    color: var(--sw-fg-primary, #1a1f2e); letter-spacing: -.01em;
+  }
+  body.dark .gps-prov-head h2 { color: #f8fafc; }
+  .gps-prov-head p { margin: 0; font-size: .85rem; color: var(--sw-fg-tertiary, #5a6577); }
+
+  .gps-prov-list { display: flex; flex-direction: column; gap: 14px; }
+  .gps-prov-card {
+    display: flex; align-items: center; gap: 14px; width: 100%;
+    padding: 18px; border-radius: 16px; cursor: pointer; text-align: left;
+    font-family: inherit; color: #fff; border: 1px solid transparent;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .gps-prov-card.onetrack {
+    background: linear-gradient(135deg, #1d4ed8, #1e40af);
+    border-color: #3b82f6; box-shadow: 0 8px 24px rgba(29,78,216,.35);
+  }
+  .gps-prov-card.onetrack:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(29,78,216,.5); }
+  .gps-prov-card.hino {
+    background: linear-gradient(135deg, #dc2626, #991b1b);
+    border-color: #ef4444; box-shadow: 0 8px 24px rgba(220,38,38,.35);
+  }
+  .gps-prov-card.hino:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(220,38,38,.5); }
+  .gps-prov-card:disabled { opacity: .7; cursor: progress; transform: none; }
+  .gps-prov-card.gps-loading .gps-prov-arrow {
+    animation: gps-spin .8s linear infinite;
+  }
+  .gps-prov-card.gps-loading .gps-prov-icon::after {
+    content: ''; position: absolute; width: 54px; height: 54px;
+    border: 3px solid rgba(255,255,255,.3); border-top-color: #fff;
+    border-radius: 12px; animation: gps-spin .8s linear infinite;
+  }
+  .gps-prov-icon {
+    width: 54px; height: 54px; flex-shrink: 0; border-radius: 12px;
+    background: rgba(255,255,255,.15);
+    display: flex; align-items: center; justify-content: center; font-size: 1.8rem;
+  }
+  .gps-prov-body { flex: 1; min-width: 0; }
+  .gps-prov-name {
+    font-size: 1rem; font-weight: 800; margin-bottom: 3px;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .gps-prov-tag {
+    font-size: .6rem; font-weight: 800; padding: 2px 8px; border-radius: 999px;
+    background: rgba(255,255,255,.22); letter-spacing: .02em;
+  }
+  .gps-prov-desc { font-size: .72rem; opacity: .85; margin-bottom: 6px; }
+  .gps-prov-url { font-size: .65rem; opacity: .7; font-family: 'JetBrains Mono', monospace; }
+  .gps-prov-arrow { font-size: 1.5rem; opacity: .7; flex-shrink: 0; }
+
+  .gps-prov-note {
+    display: flex; gap: 10px; align-items: flex-start;
+    max-width: 520px; margin: 22px auto 0; padding: 12px 14px;
+    background: rgba(59,130,246,.08); border: 1px solid rgba(59,130,246,.25);
+    border-radius: 10px; font-size: .74rem; line-height: 1.6;
+    color: var(--sw-fg-secondary, #4a5568);
+  }
+  body.dark .gps-prov-note { color: #93c5fd; background: rgba(68,147,248,.08); border-color: rgba(68,147,248,.25); }
+  .gps-prov-note b { color: var(--sw-fg-primary, #1a1f2e); }
+  body.dark .gps-prov-note b { color: #dbeafe; }
+
+  /* Shell */
+  .gps-shell {
+    padding: 18px;
+    max-width: 1280px;
+    margin: 0 auto;
+    min-height: calc(100dvh - 96px);
+  }
+
+  /* Status bar */
+  .gps-statusbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    background: var(--sw-bg-card, #fff);
+    border: 1px solid var(--sw-border, #e4e8ee);
+    border-radius: 14px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  body.dark .gps-statusbar { background: #131826; border-color: #2d3548; }
+  .gps-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(34,197,94,.12);
+    border: 1px solid rgba(34,197,94,.3);
+    font-size: .78rem;
+    font-weight: 700;
+    color: #16a34a;
+  }
+  body.dark .gps-status-pill { color: #86efac; }
+  .gps-status-pill.offline {
+    background: rgba(239,68,68,.12);
+    border-color: rgba(239,68,68,.3);
+    color: #dc2626;
+  }
+  body.dark .gps-status-pill.offline { color: #fca5a5; }
+  .gps-status-pill.loading {
+    background: rgba(59,130,246,.12);
+    border-color: rgba(59,130,246,.3);
+    color: #2563eb;
+  }
+  body.dark .gps-status-pill.loading { color: #93c5fd; }
+  .gps-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #22c55e; box-shadow: 0 0 6px #22c55e;
+    animation: gps-ring 1.5s infinite, gps-pulse 1.5s infinite;
+  }
+  .gps-status-pill.offline .gps-dot { background: #ef4444; box-shadow: 0 0 6px #ef4444; animation: none; }
+  .gps-status-pill.loading .gps-dot { background: #3b82f6; box-shadow: 0 0 6px #3b82f6; animation: gps-pulse 1s infinite; }
+  .gps-meta {
+    font-size: .8rem;
+    color: var(--sw-fg-tertiary, #5a6577);
+    font-variant-numeric: tabular-nums;
+  }
+  .gps-meta span { font-weight: 700; color: var(--sw-fg-primary, #1a1f2e); }
+  body.dark .gps-meta span { color: #f1f5f9; }
+  .gps-refresh-btn {
+    width: 38px; height: 38px;
+    border: 1px solid var(--sw-border, #e4e8ee);
+    background: var(--sw-bg-subtle, #f1f3f7);
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: var(--sw-fg-secondary, #4a5568);
+    transition: all .2s;
+  }
+  body.dark .gps-refresh-btn { background: #1f2538; border-color: #2d3548; color: #cbd5e1; }
+  .gps-refresh-btn:hover { background: var(--sw-primary-soft, #eff6ff); color: var(--sw-primary, #2563eb); }
+  .gps-refresh-btn.spinning { animation: gps-spin .8s linear infinite; }
+
+  /* Grid */
+  .gps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+  }
+
+  /* Vehicle card */
+  .gps-card {
+    background: var(--sw-bg-card, #fff);
+    border: 1px solid var(--sw-border, #e4e8ee);
+    border-radius: 16px;
+    padding: 16px;
+    transition: all .2s;
+  }
+  body.dark .gps-card { background: #131826; border-color: #2d3548; }
+  .gps-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px -10px rgba(15,23,42,.15);
+    border-color: var(--sw-primary, #2563eb);
+  }
+  .gps-card-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .gps-card-plate {
+    font-size: 1.05rem;
+    font-weight: 900;
+    letter-spacing: .02em;
+    color: var(--sw-fg-primary, #1a1f2e);
+    font-variant-numeric: tabular-nums;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  body.dark .gps-card-plate { color: #f1f5f9; }
+  .gps-card-status {
+    font-size: .65rem;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 999px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  .gps-card-status.moving  { background: rgba(34,197,94,.15); color: #16a34a; }
+  .gps-card-status.idle    { background: rgba(245,158,11,.15); color: #d97706; }
+  .gps-card-status.offline { background: rgba(148,163,184,.15); color: #64748b; }
+  body.dark .gps-card-status.moving  { color: #86efac; }
+  body.dark .gps-card-status.idle    { color: #fcd34d; }
+  body.dark .gps-card-status.offline { color: #cbd5e1; }
+  .gps-card-driver {
+    font-size: .8rem;
+    color: var(--sw-fg-tertiary, #5a6577);
+    margin-bottom: 12px;
+  }
+  body.dark .gps-card-driver { color: #94a3b8; }
+  .gps-card-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-top: 1px dashed var(--sw-border, #e4e8ee);
+    font-size: .82rem;
+    color: var(--sw-fg-secondary, #4a5568);
+  }
+  body.dark .gps-card-row { border-color: #2d3548; color: #cbd5e1; }
+  .gps-card-row .gps-icon { font-size: 1rem; opacity: .7; flex-shrink: 0; width: 18px; text-align: center; }
+  .gps-card-row .gps-label { font-size: .68rem; color: var(--sw-fg-muted, #98a1b0); margin-right: 4px; text-transform: uppercase; letter-spacing: .04em; font-weight: 700; }
+  .gps-card-row .gps-val { font-variant-numeric: tabular-nums; font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gps-card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--sw-border, #e4e8ee);
+  }
+  body.dark .gps-card-actions { border-color: #2d3548; }
+  .gps-card-actions a {
+    flex: 1;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--sw-primary-soft, #eff6ff);
+    color: var(--sw-primary, #2563eb);
+    text-align: center;
+    font-size: .76rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all .15s;
+  }
+  .gps-card-actions a:hover { background: var(--sw-primary, #2563eb); color: white; }
+  body.dark .gps-card-actions a { background: rgba(68,147,248,.16); color: #4493f8; }
+  body.dark .gps-card-actions a:hover { background: #4493f8; color: white; }
+
+  /* Setup wizard */
+  .gps-setup { display: flex; justify-content: center; padding: 40px 16px; }
+  .gps-setup-card {
+    max-width: 520px;
+    background: var(--sw-bg-card, #fff);
+    border: 1px solid var(--sw-border, #e4e8ee);
+    border-radius: 18px;
+    padding: 28px 26px;
+    text-align: left;
+  }
+  body.dark .gps-setup-card { background: #131826; border-color: #2d3548; }
+  .gps-setup-icon { font-size: 2.5rem; text-align: center; margin-bottom: 8px; }
+  .gps-setup-card h3 { margin: 0 0 8px; text-align: center; font-size: 1.15rem; font-weight: 800; color: var(--sw-fg-primary, #1a1f2e); }
+  body.dark .gps-setup-card h3 { color: #f1f5f9; }
+  .gps-setup-card p { text-align: center; color: var(--sw-fg-tertiary, #5a6577); margin: 0 0 18px; font-size: .85rem; line-height: 1.6; }
+  .gps-setup-steps {
+    padding-left: 22px;
+    margin: 0 0 18px;
+    font-size: .85rem;
+    line-height: 1.7;
+    color: var(--sw-fg-secondary, #4a5568);
+  }
+  body.dark .gps-setup-steps { color: #cbd5e1; }
+  .gps-setup-steps li { margin-bottom: 8px; }
+  .gps-env {
+    margin-top: 6px;
+    padding: 10px 12px;
+    background: var(--sw-bg-subtle, #f1f3f7);
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .78rem;
+    line-height: 1.7;
+  }
+  body.dark .gps-env { background: #1f2538; }
+  .gps-env code {
+    background: rgba(37,99,235,.12);
+    color: var(--sw-primary, #2563eb);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+  }
+  body.dark .gps-env code { background: rgba(68,147,248,.16); color: #4493f8; }
+  .gps-eg { color: var(--sw-fg-muted, #98a1b0); font-size: .72rem; }
+  .gps-setup-fallback {
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: rgba(59,130,246,.06);
+    border: 1px dashed rgba(59,130,246,.3);
+    border-radius: 8px;
+    font-size: .78rem;
+    text-align: center;
+    color: var(--sw-fg-secondary, #4a5568);
+  }
+  body.dark .gps-setup-fallback { background: rgba(68,147,248,.06); color: #cbd5e1; }
+  .gps-setup-fallback a { color: var(--sw-primary, #2563eb); font-weight: 700; text-decoration: none; }
+  .gps-setup-fallback a:hover { text-decoration: underline; }
+
+  /* Error state */
+  .gps-error {
+    display: flex;
+    gap: 14px;
+    padding: 18px 20px;
+    background: rgba(239,68,68,.06);
+    border: 1px solid rgba(239,68,68,.25);
+    border-radius: 14px;
+    margin-bottom: 16px;
+  }
+  .gps-error-icon { font-size: 1.8rem; flex-shrink: 0; }
+  .gps-error-title { font-weight: 800; color: #dc2626; margin-bottom: 4px; }
+  body.dark .gps-error-title { color: #fca5a5; }
+  .gps-error-msg { font-size: .8rem; color: var(--sw-fg-tertiary, #5a6577); margin-bottom: 10px; }
+  .gps-retry-btn {
+    background: #dc2626; color: white; border: none;
+    padding: 7px 16px; border-radius: 8px;
+    font-weight: 700; font-size: .82rem; cursor: pointer;
+    font-family: inherit;
+  }
+  .gps-retry-btn:hover { background: #b91c1c; }
+
+  /* Empty state */
+  .gps-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--sw-fg-tertiary, #5a6577);
+    font-size: .9rem;
+  }
+
+  /* ───── v14.41 — iframe + mode toggle ───── */
+  .gps-mode-toggle {
+    display: inline-flex;
+    background: var(--sw-bg-subtle, #f1f3f7);
+    border: 1px solid var(--sw-border, #e4e8ee);
+    border-radius: 10px;
+    padding: 3px;
+    gap: 2px;
+  }
+  body.dark .gps-mode-toggle { background: #1f2538; border-color: #2d3548; }
+  .gps-mode-btn {
+    border: none;
+    background: transparent;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: .78rem;
+    font-weight: 700;
+    color: var(--sw-fg-tertiary, #5a6577);
+    cursor: pointer;
+    transition: all .15s;
+  }
+  body.dark .gps-mode-btn { color: #94a3b8; }
+  .gps-mode-btn:hover { color: var(--sw-fg-primary, #1a1f2e); }
+  .gps-mode-btn.active {
+    background: var(--sw-bg-card, #fff);
+    color: var(--sw-primary, #2563eb);
+    box-shadow: 0 1px 3px rgba(15,23,42,.08);
+  }
+  body.dark .gps-mode-btn.active { background: #2a3245; color: #4493f8; }
+  .gps-open-new {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 7px 14px; border-radius: 10px;
+    border: 1px solid var(--sw-border, #e4e8ee);
+    background: var(--sw-bg-subtle, #f1f3f7);
+    color: var(--sw-fg-secondary, #4a5568);
+    font-size: .78rem; font-weight: 700; text-decoration: none;
+    transition: all .15s;
+  }
+  body.dark .gps-open-new { background: #1f2538; border-color: #2d3548; color: #cbd5e1; }
+  .gps-open-new:hover { background: var(--sw-primary-soft, #eff6ff); color: var(--sw-primary, #2563eb); border-color: var(--sw-primary, #2563eb); }
+  .gps-open-new.primary {
+    background: var(--sw-primary, #2563eb); color: #fff;
+    border-color: var(--sw-primary, #2563eb);
+    box-shadow: 0 4px 12px -4px rgba(37,99,235,.5);
+  }
+  .gps-open-new.primary:hover { background: var(--sw-primary-hover, #1d4ed8); color: #fff; }
+  .gps-open-new:disabled { opacity: .6; cursor: progress; }
+
+  /* Hint bar */
+  .gps-hint-bar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 10px 14px; margin-bottom: 14px;
+    background: rgba(245,158,11,.1);
+    border: 1px solid rgba(245,158,11,.3);
+    border-radius: 12px;
+    font-size: .8rem; color: var(--sw-fg-secondary, #4a5568);
+  }
+  body.dark .gps-hint-bar { color: #cbd5e1; }
+  .gps-hint-bar > button {
+    background: var(--sw-primary, #2563eb); color: #fff; border: none;
+    padding: 7px 14px; border-radius: 8px; font-family: inherit;
+    font-size: .78rem; font-weight: 700; cursor: pointer;
+  }
+  .gps-hint-bar > button:hover { background: var(--sw-primary-hover, #1d4ed8); }
+  .gps-hint-bar .gps-hint-close {
+    background: transparent !important; color: var(--sw-fg-muted, #98a1b0) !important;
+    padding: 4px 8px !important; margin-left: auto; font-size: .9rem !important;
+  }
+
+  .gps-map-wrap {
+    position: relative;
+    width: 100%;
+    height: calc(100dvh - 220px);
+    min-height: 500px;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--sw-border, #e4e8ee);
+    background: var(--sw-bg-subtle, #f1f3f7);
+    box-shadow: 0 8px 24px -8px rgba(15,23,42,.12);
+  }
+  body.dark .gps-map-wrap { background: #0a0e1a; border-color: #2d3548; }
+  .gps-iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+    background: white;
+  }
+  .gps-iframe-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: var(--sw-bg-subtle, #f1f3f7);
+    color: var(--sw-fg-tertiary, #5a6577);
+    font-size: .9rem;
+    transition: opacity .3s;
+  }
+  body.dark .gps-iframe-loading { background: #0a0e1a; color: #94a3b8; }
+  .gps-iframe-loading.hide { opacity: 0; pointer-events: none; }
+  .gps-slow-hint { text-align: center; }
+  .gps-slow-btn {
+    background: var(--sw-primary, #2563eb); color: #fff; border: none;
+    padding: 11px 20px; border-radius: 10px; font-family: inherit;
+    font-size: .88rem; font-weight: 800; cursor: pointer;
+    box-shadow: 0 8px 20px -6px rgba(37,99,235,.5); transition: all .15s;
+  }
+  .gps-slow-btn:hover { background: var(--sw-primary-hover, #1d4ed8); transform: translateY(-1px); }
+  .gps-iframe-spinner {
+    width: 44px; height: 44px;
+    border: 3px solid var(--sw-border, #e4e8ee);
+    border-top-color: var(--sw-primary, #2563eb);
+    border-radius: 50%;
+    animation: gps-spin .8s linear infinite;
+  }
+  @media (max-width: 768px) {
+    .gps-map-wrap { height: calc(100dvh - 250px); min-height: 400px; }
+    .gps-mode-btn { padding: 6px 10px; font-size: .72rem; }
+  }
+
+  /* Skeleton card */
+  .gps-card.skeleton {
+    background: linear-gradient(90deg, var(--sw-bg-subtle, #f1f3f7) 30%, var(--sw-bg-card, #fff) 50%, var(--sw-bg-subtle, #f1f3f7) 70%);
+    background-size: 200% 100%;
+    border-color: transparent;
+    pointer-events: none;
+    min-height: 200px;
+    animation: gps-shimmer 1.4s linear infinite;
+  }
+  body.dark .gps-card.skeleton {
+    background: linear-gradient(90deg, #1a1f31 30%, #131826 50%, #1a1f31 70%);
+    background-size: 200% 100%;
+  }
+  @keyframes gps-shimmer { from { background-position: 200% 0 } to { background-position: -200% 0 } }
+</style>
+
+<!-- ══ TAB 5: อ่านตัวหนังสือจากภาพ ══ -->
+<div class="tab-panel" id="tab-ocr">
+
+  <div class="card">
+    <div class="card-title">🔍 อ่านตัวหนังสือจากภาพ (OCR)</div>
+    <p class="hint" style="margin-bottom:14px">อัปโหลดภาพใบเสร็จ / ใบชั่งน้ำหนัก / สลิปโอนเงิน แล้วระบบจะอ่านข้อความให้อัตโนมัติ · รองรับ JPG, PNG, HEIC</p>
+
+    <!-- Upload zone -->
+    <div id="ocr-tab-zone" class="upload-zone"
+         ondragover="event.preventDefault(); document.getElementById('ocr-tab-zone').classList.add('dragover')"
+         ondragleave="document.getElementById('ocr-tab-zone').classList.remove('dragover')"
+         ondrop="ocrTabDrop(event)">
+      <div class="upload-icon">🖼</div>
+      <p>ลากไฟล์มาวางที่นี่ หรือกดปุ่มด้านล่าง<br>ขนาดสูงสุด 4MB ต่อภาพ</p>
+      <div class="upload-btns">
+        <label class="btn-upload-action" for="ocr-tab-file">
+          🖼 เลือกจากอัลบั้ม
+          <input type="file" id="ocr-tab-file" accept="image/*" multiple onchange="ocrTabInput(event)">
+        </label>
+        <label class="btn-upload-action" for="ocr-tab-camera">
+          📷 ถ่ายภาพ
+          <input type="file" id="ocr-tab-camera" accept="image/*" capture="environment" onchange="ocrTabInput(event)">
+        </label>
+      </div>
+      <p class="hint" style="margin-top:8px">หรือวางภาพจาก Clipboard ด้วย Ctrl+V</p>
+    </div>
+
+    <!-- Preview grid -->
+    <div id="ocr-tab-preview" class="preview-grid" style="margin-top:10px"></div>
+    <div id="ocr-tab-status" class="upload-status"></div>
+
+    <!-- Action buttons -->
+    <div id="ocr-tab-btns" style="display:none;gap:10px;margin-top:14px;flex-wrap:wrap">
+      <button type="button" class="btn btn-primary" onclick="runOCRTab()">🔍 อ่านภาพ</button>
+      <button type="button" class="btn btn-secondary" onclick="clearOCRTab()">🗑 ล้างทั้งหมด</button>
+    </div>
+  </div>
+
+  <!-- Result card -->
+  <div class="card" id="ocr-tab-result" style="display:none">
+    <div class="card-title">📄 ข้อความที่อ่านได้</div>
+    <div id="ocr-tab-text" class="ocr-result-text"></div>
+    <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+      <button type="button" class="btn btn-primary btn-small" onclick="copyOCRTabText()">📋 คัดลอกข้อความ</button>
+      <button type="button" class="btn btn-secondary btn-small" onclick="clearOCRTab()">🗑 ล้าง</button>
+    </div>
+
+    <!-- Parsed structured data -->
+    <div id="ocr-tab-parsed" style="display:none;margin-top:18px">
+      <div style="font-size:.82rem;font-weight:700;color:var(--green);margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid #E8F5E9">📊 ข้อมูลที่แยกได้จากภาพ</div>
+      <div id="ocr-tab-parsed-grid" class="parsed-data-grid"></div>
+    </div>
+  </div>
+
+</div>
+
