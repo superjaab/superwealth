@@ -4657,7 +4657,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.73 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.74 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -10315,10 +10315,8 @@ function resetForm(formKey, silent) {
 
   // 3) Reset defaults
   setDefaultDates();
-  // v14.70 — Re-generate auto doc numbers after reset
-  if (formKey === 'income')  setTimeout(() => genIncNum(true), 50);
-  if (formKey === 'expense') setTimeout(() => genExpNum(true), 50);
-  if (formKey === 'invoice') setTimeout(() => genInvNum(true), 50);
+  // v14.74 — Don't regenerate doc number here — loadMasterData() does it
+  // after save (single source of truth, no double-increment skipping).
   if (formKey === 'truck') {
     const st = document.getElementById('t-status'); if (st) st.value = 'รอโหลด';
     const tc = document.getElementById('t-tripCount'); if (tc) tc.value = '1';
@@ -11418,12 +11416,11 @@ function calcInv() {
   setTxt('inv-vat-amount', fmt(vat));
   setTxt('inv-total-display', '฿' + fmt(sub+vat));
 }
-// v14.73 — Sequential doc-number generator (never resets)
-// Format: RV-000001, RV-000002, RV-000003... PV-000001... IV-000001...
-// Scans ALL existing records → max seq → +1. localStorage = collision guard.
+// v14.74 — Sequential doc-number generator (FIX: no skipping)
+// Pure sheet-based: max existing seq + 1. No localStorage = no skip-on-reload.
 // Handles legacy year-month numbers (e.g., "RV-202606-0001") gracefully.
 function _genDocNumber(prefix, existingNumbers) {
-  // Match any "PREFIX-...-NNN" or "PREFIX-NNN" — extract trailing number
+  // Match either "PREFIX-NNN" (new) or "PREFIX-YYYYMM-NNN" (legacy)
   const rePlain = new RegExp('^' + prefix + '-(\\d+)$');
   const reYM    = new RegExp('^' + prefix + '-\\d{6}-(\\d+)$');
   let maxSeq = 0;
@@ -11432,12 +11429,7 @@ function _genDocNumber(prefix, existingNumbers) {
     let m = s.match(rePlain) || s.match(reYM);
     if (m) maxSeq = Math.max(maxSeq, parseInt(m[1]));
   });
-  // Local seq (collision guard for back-to-back unsaved entries)
-  const lsKey = `${prefix.toLowerCase()}_seq_global`;
-  const lsSeq = parseInt(localStorage.getItem(lsKey) || '0');
-  const next = Math.max(maxSeq, lsSeq) + 1;
-  localStorage.setItem(lsKey, String(next));
-  return `${prefix}-${String(next).padStart(6, '0')}`;
+  return `${prefix}-${String(maxSeq + 1).padStart(6, '0')}`;
 }
 
 // v14.71 — Use formal Thai accounting prefixes
@@ -13604,7 +13596,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.73';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.74';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
