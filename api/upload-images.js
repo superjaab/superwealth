@@ -123,15 +123,16 @@ module.exports = async function handler(req, res) {
     }
 
     let stored = null;
-    let lastErr = '';
+    let driveErr = '';
+    let imgbbErr = '';
 
     // 1) Try Drive first (permanent)
     try {
       stored = await uploadToDrive(img);
       stored.source = 'drive';
     } catch (e) {
-      lastErr = '[Drive] ' + e.message;
-      console.warn('[upload-images] Drive failed, trying ImgBB:', e.message);
+      driveErr = e.message;
+      console.warn('[upload-images] Drive failed:', e.message);
     }
 
     // 2) Fallback to ImgBB
@@ -140,7 +141,7 @@ module.exports = async function handler(req, res) {
         stored = await uploadToImgBB(img);
         stored.source = 'imgbb';
       } catch (e) {
-        lastErr += ' | [ImgBB] ' + e.message;
+        imgbbErr = e.message;
       }
     }
 
@@ -150,10 +151,11 @@ module.exports = async function handler(req, res) {
         url:          stored.url,
         thumbnailUrl: stored.thumbnailUrl || stored.url,
         driveFileId:  stored.driveFileId || null,
-        source:       stored.source
+        source:       stored.source,
+        driveError:   driveErr || undefined  // v14.65 — expose for diagnostic
       });
     } else {
-      results.push({ filename: img.filename, url: '', error: lastErr });
+      results.push({ filename: img.filename, url: '', error: `Drive: ${driveErr || 'unknown'} | ImgBB: ${imgbbErr || 'unknown'}` });
     }
   }
 
