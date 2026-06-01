@@ -14,6 +14,7 @@ const CONFIGS = {
       jobDate: d.jobDate||'', jobTime: d.jobTime||'',
       plateNumber: d.plateNumber||'', driverName: d.driverName||'', driverPhone: d.driverPhone||'',
       origin: d.origin||'', destination: d.destination||'',
+      originCustomer: d.originCustomer||'',  // v14.93 — was missing → caused field to be dropped on edit
       customerName: d.customerName||'', cargoList: d.cargoList||'',
       cargoWeight: +d.cargoWeight||0, tripCount: +d.tripCount||1, freightCost: +d.freightCost||0,
       jobStatus: d.jobStatus||'รอโหลด', remark: d.remark||'',
@@ -86,7 +87,8 @@ const CONFIGS = {
       phone: d.phone||'', email: d.email||'',
       address: d.address||'', taxId: d.taxId||'',
       paymentTerms: d.paymentTerms||'เงินสด', notes: d.notes||'',
-      rowId: id, cargoItems: d.cargoItems||''
+      rowId: id, cargoItems: d.cargoItems||'',
+      province: d.province||''  // v14.93 — was missing → caused field to be dropped on edit
     })
   },
   maintenance: {
@@ -172,7 +174,20 @@ module.exports = async function handler(req, res) {
     const rows = resp.data.values || [];
     if (rows.length < 2) return res.status(404).json({ success:false, error:'No data in sheet' });
 
-    const headers  = rows[0];
+    // v14.93 — Auto-add missing columns based on what cfg.data() produces.
+    // Without this, NEW fields (e.g. province, originCustomer) silently disappear on update.
+    const sampleObj = cfg.data(data, '', '');
+    const expectedKeys = Object.keys(sampleObj);
+    let headers = rows[0];
+    const missing = expectedKeys.filter(k => !headers.includes(k));
+    if (missing.length > 0) {
+      headers = [...headers, ...missing];
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: sheetId, range: `${cfg.name}!A1`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [headers] }
+      });
+    }
     const rowIdIdx = headers.indexOf('rowId');
     if (rowIdIdx < 0) return res.status(400).json({ success:false, error:'Sheet has no rowId column' });
 
