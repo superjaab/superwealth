@@ -79,10 +79,45 @@ function loginOneTrack(user, pass) {
 // ─────────────────────────────────────────
 
 function doGet(e) {
+  // Health check route (so we can verify the deployment works)
+  if (e && e.parameter && e.parameter.action === 'ping') {
+    return ContentService
+      .createTextOutput(JSON.stringify({ ok: true, ts: new Date().toISOString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
   return HtmlService.createHtmlOutputFromFile('index')
     .setTitle('ระบบขนส่งรถบรรทุก')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1.0, maximum-scale=1.0')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+// v14.66 — POST entry-point — routes by `action` field in the JSON body.
+// Vercel /api/upload-images forwards image uploads here so files are
+// owned by the SHEET OWNER (uses user's Drive quota — no SA quota issue).
+function doPost(e) {
+  try {
+    if (!e || !e.postData || !e.postData.contents) {
+      return _gasJson({ success: false, error: 'no body' });
+    }
+    const body = JSON.parse(e.postData.contents);
+    const action = body.action || '';
+    switch (action) {
+      case 'uploadImages':
+        return _gasJson(uploadImages(body));
+      case 'ping':
+        return _gasJson({ ok: true, ts: new Date().toISOString() });
+      default:
+        return _gasJson({ success: false, error: 'unknown action: ' + action });
+    }
+  } catch (err) {
+    return _gasJson({ success: false, error: String(err && err.message || err) });
+  }
+}
+
+function _gasJson(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 // ─────────────────────────────────────────
