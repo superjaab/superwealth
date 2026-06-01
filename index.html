@@ -4532,25 +4532,25 @@
     }
     body.logged-out .sw-doc-chip { filter: blur(6px) !important; user-select: none !important; }
 
-    /* v14.73 — Auto-generated document numbers (soft pale-blue readonly) */
+    /* v14.76 — Auto-generated document numbers — clean minimal style (per user mock) */
     .sw-doc-auto {
-      background: #e8ecf3 !important;
-      border: 1.5px solid #c7d0e0 !important;
-      color: #1e293b !important;
-      font-weight: 800 !important;
+      background: #fafafa !important;
+      border: 1.5px solid #e5e7eb !important;
+      color: #6b7280 !important;
+      font-weight: 500 !important;
       font-family: 'JetBrains Mono', 'IBM Plex Mono', 'Roboto Mono', ui-monospace, monospace !important;
-      letter-spacing: 1.5px;
+      letter-spacing: 0.5px;
       cursor: not-allowed;
     }
-    .sw-doc-auto::placeholder { color: #94a3b8 !important; opacity: .65; }
-    .sw-doc-auto:focus { outline: none !important; box-shadow: none !important; border-color: #c7d0e0 !important; }
-    .sw-doc-auto:hover { background: #dfe4ed !important; border-color: #b6c0d4 !important; }
+    .sw-doc-auto::placeholder { color: #9ca3af !important; opacity: 1; }
+    .sw-doc-auto:focus { outline: none !important; box-shadow: none !important; border-color: #e5e7eb !important; }
+    .sw-doc-auto:hover { background: #f4f4f5 !important; border-color: #d4d4d8 !important; }
     body.dark .sw-doc-auto {
-      background: #1e2336 !important;
-      border-color: #334155 !important;
-      color: #e2e8f0 !important;
+      background: #1f2937 !important;
+      border-color: #374151 !important;
+      color: #9ca3af !important;
     }
-    body.dark .sw-doc-auto:hover { background: #252b40 !important; }
+    body.dark .sw-doc-auto:hover { background: #283142 !important; border-color: #4b5563 !important; }
 
     /* ARIA live region for screen readers (visually hidden) */
     .sw-sr-only {
@@ -4680,7 +4680,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.75 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.76 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -13639,7 +13639,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.75';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.76';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
