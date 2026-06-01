@@ -4396,6 +4396,34 @@
       .sw-toast { min-width: 0; width: 100%; }
     }
 
+    /* v14.61 — Icon-only "save as template" button */
+    .sw-tpl-save-btn {
+      width: 42px; height: 42px;
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 0;
+      border: 1.5px solid #0284c7;
+      border-radius: 10px;
+      background: #fff;
+      color: #0284c7;
+      cursor: pointer;
+      font-family: inherit;
+      flex-shrink: 0;
+      transition: background .15s, transform .15s, box-shadow .15s, border-color .15s;
+      box-shadow: 0 1px 2px rgba(2,132,199,.08);
+    }
+    .sw-tpl-save-btn:hover {
+      background: #f0f9ff;
+      border-color: #0369a1;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(2,132,199,.22);
+    }
+    .sw-tpl-save-btn:active { transform: translateY(0); box-shadow: 0 1px 2px rgba(2,132,199,.18); }
+    .sw-tpl-save-btn svg { display: block; }
+    body.dark .sw-tpl-save-btn {
+      background: #0c1e3a; border-color: #38bdf8; color: #7dd3fc;
+    }
+    body.dark .sw-tpl-save-btn:hover { background: #0e2d52; border-color: #7dd3fc; }
+
     /* ARIA live region for screen readers (visually hidden) */
     .sw-sr-only {
       position: absolute !important; width: 1px; height: 1px;
@@ -4524,7 +4552,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.60 | 01/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.61 | 01/06/2026</span>
   </div>
 </aside>
 
@@ -4573,7 +4601,19 @@
     <div class="card sw-quick-card" data-key="truck" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:linear-gradient(135deg,#ecfeff,#e0f2fe);border:1.5px solid #7dd3fc">
       <select id="quick-tpl-truck" class="sw-quick-tpl" style="flex:1;min-width:130px;padding:10px 12px;border-radius:10px;border:1.5px solid #7dd3fc;background:#fff;color:#0c4a6e;font-weight:700;font-size:.86rem;font-family:inherit;cursor:pointer"></select>
       <button type="button" onclick="quickFill('truck')" style="padding:11px 16px;font-weight:800;font-size:.9rem;border:none;border-radius:10px;background:#0EA5E9;color:#fff;cursor:pointer;font-family:inherit;white-space:nowrap">⚡ ลงด่วน</button>
-      <button type="button" class="admin-only" onclick="saveQuickDefaults('truck')" style="padding:11px 14px;font-weight:700;font-size:.82rem;border:1.5px solid #0284c7;border-radius:10px;background:#fff;color:#0284c7;cursor:pointer;font-family:inherit;white-space:nowrap">💾 บันทึกเป็นเทมเพลต</button>
+      <button type="button" class="admin-only sw-tpl-save-btn" onclick="saveQuickDefaults('truck')" title="บันทึกฟอร์มเป็นเทมเพลตใหม่" aria-label="บันทึกฟอร์มเป็นเทมเพลตใหม่">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <!-- Document outline -->
+          <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-6z"/>
+          <polyline points="14 2 14 8 19 8"/>
+          <!-- Form lines -->
+          <line x1="8" y1="13" x2="13" y2="13"/>
+          <line x1="8" y1="17" x2="11" y2="17"/>
+          <!-- Star badge (bottom-right) signifies template/favorite -->
+          <circle cx="18" cy="18" r="4.2" fill="#f59e0b" stroke="#fff" stroke-width="1.2"/>
+          <path d="M18 16.2l.7 1.4 1.6.2-1.15 1.1.27 1.55L18 19.8l-1.42.7.27-1.55L15.7 17.8l1.6-.2z" fill="#fff" stroke="none"/>
+        </svg>
+      </button>
     </div>
 
     <div class="card">
@@ -4694,7 +4734,16 @@
     <div class="card" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:linear-gradient(135deg,#ecfeff,#e0f2fe);border:1.5px solid #7dd3fc">
       <select id="quick-tpl-income" class="sw-quick-tpl" style="flex:1;min-width:130px;padding:10px 12px;border-radius:10px;border:1.5px solid #7dd3fc;background:#fff;color:#0c4a6e;font-weight:700;font-size:.86rem;font-family:inherit;cursor:pointer"></select>
       <button type="button" onclick="quickFill('income')" style="padding:11px 16px;font-weight:800;font-size:.9rem;border:none;border-radius:10px;background:#0EA5E9;color:#fff;cursor:pointer;font-family:inherit;white-space:nowrap">⚡ ลงด่วน</button>
-      <button type="button" class="admin-only" onclick="saveQuickDefaults('income')" style="padding:11px 14px;font-weight:700;font-size:.82rem;border:1.5px solid #0284c7;border-radius:10px;background:#fff;color:#0284c7;cursor:pointer;font-family:inherit;white-space:nowrap">💾 บันทึกเป็นเทมเพลต</button>
+      <button type="button" class="admin-only sw-tpl-save-btn" onclick="saveQuickDefaults('income')" title="บันทึกฟอร์มเป็นเทมเพลตใหม่" aria-label="บันทึกฟอร์มเป็นเทมเพลตใหม่">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-6z"/>
+          <polyline points="14 2 14 8 19 8"/>
+          <line x1="8" y1="13" x2="13" y2="13"/>
+          <line x1="8" y1="17" x2="11" y2="17"/>
+          <circle cx="18" cy="18" r="4.2" fill="#f59e0b" stroke="#fff" stroke-width="1.2"/>
+          <path d="M18 16.2l.7 1.4 1.6.2-1.15 1.1.27 1.55L18 19.8l-1.42.7.27-1.55L15.7 17.8l1.6-.2z" fill="#fff" stroke="none"/>
+        </svg>
+      </button>
     </div>
 
     <div class="card">
@@ -4793,7 +4842,16 @@
     <div class="card" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:linear-gradient(135deg,#ecfeff,#e0f2fe);border:1.5px solid #7dd3fc">
       <select id="quick-tpl-expense" class="sw-quick-tpl" style="flex:1;min-width:130px;padding:10px 12px;border-radius:10px;border:1.5px solid #7dd3fc;background:#fff;color:#0c4a6e;font-weight:700;font-size:.86rem;font-family:inherit;cursor:pointer"></select>
       <button type="button" onclick="quickFill('expense')" style="padding:11px 16px;font-weight:800;font-size:.9rem;border:none;border-radius:10px;background:#0EA5E9;color:#fff;cursor:pointer;font-family:inherit;white-space:nowrap">⚡ ลงด่วน</button>
-      <button type="button" class="admin-only" onclick="saveQuickDefaults('expense')" style="padding:11px 14px;font-weight:700;font-size:.82rem;border:1.5px solid #0284c7;border-radius:10px;background:#fff;color:#0284c7;cursor:pointer;font-family:inherit;white-space:nowrap">💾 บันทึกเป็นเทมเพลต</button>
+      <button type="button" class="admin-only sw-tpl-save-btn" onclick="saveQuickDefaults('expense')" title="บันทึกฟอร์มเป็นเทมเพลตใหม่" aria-label="บันทึกฟอร์มเป็นเทมเพลตใหม่">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-6z"/>
+          <polyline points="14 2 14 8 19 8"/>
+          <line x1="8" y1="13" x2="13" y2="13"/>
+          <line x1="8" y1="17" x2="11" y2="17"/>
+          <circle cx="18" cy="18" r="4.2" fill="#f59e0b" stroke="#fff" stroke-width="1.2"/>
+          <path d="M18 16.2l.7 1.4 1.6.2-1.15 1.1.27 1.55L18 19.8l-1.42.7.27-1.55L15.7 17.8l1.6-.2z" fill="#fff" stroke="none"/>
+        </svg>
+      </button>
     </div>
 
     <div class="card">
@@ -13251,7 +13309,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.60';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.61';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
