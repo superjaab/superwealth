@@ -4424,6 +4424,91 @@
     }
     body.dark .sw-tpl-save-btn:hover { background: #0e2d52; border-color: #7dd3fc; }
 
+    /* ═══════════════════════════════════════════════════════════
+       v14.68 — Custom prompt modal (replaces browser prompt())
+       ═══════════════════════════════════════════════════════════ */
+    .sw-prompt-bg {
+      display: none; position: fixed; inset: 0; z-index: 99999;
+      background: rgba(15,23,42,0.55); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center; padding: 14px;
+      animation: swPromptBgIn .18s ease-out;
+    }
+    .sw-prompt-bg.show { display: flex; }
+    @keyframes swPromptBgIn  { from { opacity:0; } to { opacity:1; } }
+    @keyframes swPromptBoxIn { from { opacity:0; transform: scale(.94) translateY(8px); } to { opacity:1; transform: scale(1) translateY(0); } }
+    .sw-prompt-box {
+      background: white; border-radius: 16px; max-width: 440px; width: 100%;
+      box-shadow: 0 30px 80px rgba(0,0,0,.35);
+      animation: swPromptBoxIn .22s ease-out;
+      overflow: hidden;
+      font-family: 'Noto Sans Thai', system-ui, sans-serif;
+    }
+    .sw-prompt-head {
+      padding: 18px 22px 14px;
+      background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+      color: white;
+    }
+    .sw-prompt-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px; border-radius: 10px;
+      background: rgba(255,255,255,.2);
+      font-size: 1.25rem; margin-bottom: 8px;
+    }
+    .sw-prompt-title {
+      font-weight: 800; font-size: 1.05rem; letter-spacing: .2px;
+    }
+    .sw-prompt-body { padding: 18px 22px 12px; }
+    .sw-prompt-msg {
+      color: #475569; font-size: .88rem; line-height: 1.55; margin-bottom: 12px;
+      white-space: pre-wrap;
+    }
+    .sw-prompt-input {
+      width: 100%; padding: 12px 14px; border-radius: 10px;
+      border: 1.5px solid #e2e8f0; font-family: inherit;
+      font-size: 1rem; color: #0f172a; background: #f8fafc;
+      transition: border-color .15s, box-shadow .15s, background .15s;
+      box-sizing: border-box;
+    }
+    .sw-prompt-input:focus {
+      outline: none; border-color: #1d4ed8;
+      box-shadow: 0 0 0 4px rgba(29,78,216,.15);
+      background: white;
+    }
+    .sw-prompt-actions {
+      display: flex; gap: 10px; justify-content: flex-end;
+      padding: 14px 22px 20px;
+    }
+    .sw-prompt-btn {
+      padding: 10px 18px; border-radius: 10px;
+      font-weight: 700; font-size: .88rem;
+      cursor: pointer; font-family: inherit;
+      border: none; transition: all .15s ease;
+      min-width: 90px;
+    }
+    .sw-prompt-btn-cancel {
+      background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;
+    }
+    .sw-prompt-btn-cancel:hover { background: #e2e8f0; color: #1e293b; }
+    .sw-prompt-btn-ok {
+      background: linear-gradient(135deg, #1d4ed8, #3b82f6); color: white;
+      box-shadow: 0 4px 12px rgba(29,78,216,.3);
+    }
+    .sw-prompt-btn-ok:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(29,78,216,.42); }
+    .sw-prompt-btn-ok:active { transform: translateY(0); }
+    /* Dark mode */
+    body.dark .sw-prompt-box { background: #1e293b; }
+    body.dark .sw-prompt-msg { color: #cbd5e1; }
+    body.dark .sw-prompt-input { background: #0f172a; border-color: #334155; color: #f1f5f9; }
+    body.dark .sw-prompt-input:focus { background: #1e293b; }
+    body.dark .sw-prompt-btn-cancel { background: #334155; color: #cbd5e1; border-color: #475569; }
+    body.dark .sw-prompt-btn-cancel:hover { background: #475569; color: #f1f5f9; }
+    /* Mobile */
+    @media (max-width: 480px) {
+      .sw-prompt-box { max-width: 100%; }
+      .sw-prompt-actions { flex-direction: column-reverse; }
+      .sw-prompt-btn { width: 100%; }
+    }
+
     /* ARIA live region for screen readers (visually hidden) */
     .sw-sr-only {
       position: absolute !important; width: 1px; height: 1px;
@@ -4552,7 +4637,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.66 | 01/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.68 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -7028,6 +7113,55 @@
 <div id="toast" class="hidden"></div>
 
 <!-- ══ LOGIN MODAL ══ -->
+<!-- v14.68 — Custom prompt modal (replaces ugly browser prompt) -->
+<div id="sw-prompt-modal" class="sw-prompt-bg" onclick="if(event.target===this)swPromptCancel()">
+  <div class="sw-prompt-box" role="dialog" aria-modal="true" aria-labelledby="sw-prompt-title">
+    <div class="sw-prompt-head">
+      <div class="sw-prompt-icon" id="sw-prompt-icon">✏️</div>
+      <div class="sw-prompt-title" id="sw-prompt-title">ตั้งชื่อ</div>
+    </div>
+    <div class="sw-prompt-body">
+      <div class="sw-prompt-msg" id="sw-prompt-msg"></div>
+      <input type="text" id="sw-prompt-input" class="sw-prompt-input" autocomplete="off"
+             onkeydown="if(event.key==='Enter'){event.preventDefault();swPromptOk()}if(event.key==='Escape'){swPromptCancel()}">
+    </div>
+    <div class="sw-prompt-actions">
+      <button type="button" class="sw-prompt-btn sw-prompt-btn-cancel" onclick="swPromptCancel()">ยกเลิก</button>
+      <button type="button" class="sw-prompt-btn sw-prompt-btn-ok" onclick="swPromptOk()">ตกลง</button>
+    </div>
+  </div>
+</div>
+<script>
+  // Promise-based custom prompt — replaces window.prompt()
+  let _swPromptResolver = null;
+  function swPrompt(message, defaultValue, opts) {
+    opts = opts || {};
+    return new Promise((resolve) => {
+      _swPromptResolver = resolve;
+      const m = document.getElementById('sw-prompt-modal');
+      document.getElementById('sw-prompt-icon').textContent = opts.icon || '✏️';
+      document.getElementById('sw-prompt-title').textContent = opts.title || 'ใส่ข้อความ';
+      document.getElementById('sw-prompt-msg').textContent = message || '';
+      const input = document.getElementById('sw-prompt-input');
+      input.value = defaultValue || '';
+      input.placeholder = opts.placeholder || '';
+      m.classList.add('show');
+      setTimeout(() => { input.focus(); input.select(); }, 60);
+    });
+  }
+  function swPromptOk() {
+    const m = document.getElementById('sw-prompt-modal');
+    const val = document.getElementById('sw-prompt-input').value;
+    m.classList.remove('show');
+    if (_swPromptResolver) { _swPromptResolver(val); _swPromptResolver = null; }
+  }
+  function swPromptCancel() {
+    const m = document.getElementById('sw-prompt-modal');
+    m.classList.remove('show');
+    if (_swPromptResolver) { _swPromptResolver(null); _swPromptResolver = null; }
+  }
+</script>
+
 <div id="login-modal" style="display:none;position:fixed;inset:0;z-index:600;align-items:center;justify-content:center;padding:14px;background:radial-gradient(ellipse at top,rgba(29,78,216,.4),rgba(15,23,42,.85));backdrop-filter:blur(8px)">
   <div id="login-box" style="background:white;border-radius:22px;max-width:420px;width:100%;overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,.5);position:relative;animation:loginFadeIn .35s ease-out">
     <!-- TOP: Gradient header with brand -->
@@ -7396,11 +7530,13 @@ function adminRemoveInvItem(i) {
   loadAdminInvItems();
   showToast(`🗑 ลบ "${name}" แล้ว`, 'success');
 }
-function adminEditInvItem(i) {
+async function adminEditInvItem(i) {
   const items = getInvItemPresets();
   const oldName = items[i];
   if (!oldName) return;
-  const newName = prompt('แก้ไขรายการ:', oldName);
+  const newName = await swPrompt('พิมพ์ชื่อรายการใหม่', oldName, {
+    title: '✏️ แก้ไขรายการในใบเสร็จ', icon: '🧾'
+  });
   if (newName == null) return; // canceled
   const trimmed = newName.trim();
   if (!trimmed) { showToast('ชื่อว่างไม่ได้', 'warning'); return; }
@@ -7505,11 +7641,13 @@ function adminRemoveIncItem(i) {
   loadAdminIncItems();
   showToast(`🗑 ลบ "${name}" แล้ว`, 'success');
 }
-function adminEditIncItem(i) {
+async function adminEditIncItem(i) {
   const items = getIncItemPresets();
   const oldName = items[i];
   if (!oldName) return;
-  const newName = prompt('แก้ไขรายการ:', oldName);
+  const newName = await swPrompt('พิมพ์ชื่อรายการใหม่', oldName, {
+    title: '✏️ แก้ไขรายการรายรับ', icon: '💰'
+  });
   if (newName == null) return;
   const trimmed = newName.trim();
   if (!trimmed) { showToast('ชื่อว่างไม่ได้', 'warning'); return; }
@@ -7872,7 +8010,11 @@ function renderVehicleAssets(vehicles, trucks, expenses) {
 
 async function quickSetVehicleValue(rowId, plate) {
   if (!requireAuth()) return;
-  const v = prompt(`ใส่มูลค่ารถ "${plate}" (บาท):\n\nเช่น 850000 = 8.5 แสน`, '');
+  const v = await swPrompt(
+    `ใส่มูลค่ารถ "${plate}" (บาท)\n\nตัวอย่าง: 850000 = 8.5 แสน`,
+    '',
+    { title: '💰 บันทึกมูลค่ารถ', icon: '🚛', placeholder: '850000' }
+  );
   if (v === null) return;
   const value = parseFloat(v);
   if (isNaN(value) || value < 0) { showToast('มูลค่าไม่ถูกต้อง', 'error'); return; }
@@ -8209,7 +8351,11 @@ async function capAddAccount() {
 
 async function capEditBalance(rowId, name, currentBalance) {
   if (!requireAuth()) return;
-  const v = prompt(`ปรับยอดบัญชี "${name}"\nยอดปัจจุบัน: ${fmtBaht(currentBalance)}\n\nกรอกยอดใหม่:`, currentBalance);
+  const v = await swPrompt(
+    `บัญชี: ${name}\nยอดปัจจุบัน: ${fmtBaht(currentBalance)}\n\nกรอกยอดเงินใหม่ (บาท)`,
+    String(currentBalance),
+    { title: '💼 ปรับยอดบัญชี', icon: '🏦', placeholder: '0' }
+  );
   if (v === null) return;
   const newBalance = parseFloat(v);
   if (isNaN(newBalance)) { showToast('ยอดไม่ถูกต้อง', 'error'); return; }
@@ -9946,7 +10092,11 @@ async function saveQuickDefaults(formKey) {
   const sel = document.getElementById('quick-tpl-' + formKey);
   const existingTpl = sel && sel.value ? tpls.find(t => t.id === sel.value) : null;
   const suggested = existingTpl ? existingTpl.name : _quickSuggestName(formKey, obj);
-  const name = prompt('ตั้งชื่อเทมเพลตนี้ (กดตกลงเพื่อเขียนทับเทมเพลตที่เลือก):', suggested);
+  const name = await swPrompt(
+    'ตั้งชื่อเทมเพลต (ถ้าชื่อตรงกับเทมเพลตที่มีอยู่ → จะเขียนทับ)',
+    suggested,
+    { title: '💾 บันทึกเป็นเทมเพลต', icon: '📋', placeholder: 'เช่น "ขนข้าว ปทุมธานี"' }
+  );
   if (name == null) return;  // user canceled
   const trimmedName = name.trim() || suggested || 'เทมเพลตใหม่';
 
@@ -10028,7 +10178,11 @@ async function renameQuickTemplate(formKey, tplId) {
   const tpls = _quickGetTemplates(formKey);
   const tpl = tpls.find(t => t.id === tplId);
   if (!tpl) return;
-  const newName = prompt('ตั้งชื่อเทมเพลตใหม่:', tpl.name);
+  const newName = await swPrompt(
+    'พิมพ์ชื่อเทมเพลตใหม่ที่ต้องการ',
+    tpl.name,
+    { title: '✏️ เปลี่ยนชื่อเทมเพลต', icon: '📋' }
+  );
   if (newName == null) return;
   const trimmed = newName.trim();
   if (!trimmed) { showToast('ชื่อว่างไม่ได้', 'warning'); return; }
@@ -13372,7 +13526,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.66';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.68';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
