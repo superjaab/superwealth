@@ -4680,7 +4680,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.77 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.78 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -6398,11 +6398,17 @@
       <!-- Add-movement form -->
       <div class="dash-card" style="padding:18px 20px;margin-bottom:14px;background:linear-gradient(135deg,#fef3c7,#ffffff);border:1.5px solid #fde68a">
         <div style="font-weight:800;font-size:.95rem;color:#92400e;margin-bottom:12px">➕ บันทึกการเคลื่อนไหวเงินทุน</div>
-        <div class="form-row-3">
+        <div class="form-row-2">
+          <div class="form-row">
+            <label>เลขที่เอกสาร</label>
+            <input type="text" id="mov-docNumber" placeholder="JV-000001" readonly class="sw-doc-auto" title="ใบสำคัญทั่วไป (Journal Voucher) — ระบบรันให้อัตโนมัติ">
+          </div>
           <div class="form-row">
             <label>วันที่ <span class="req">*</span></label>
             <input type="date" id="mov-date" required>
           </div>
+        </div>
+        <div class="form-row-2">
           <div class="form-row">
             <label>บัญชี <span class="req">*</span></label>
             <select id="mov-account"></select>
@@ -8033,6 +8039,8 @@ async function loadCapitalMovements() {
       String(b.movementDate||b.timestamp||'').localeCompare(String(a.movementDate||a.timestamp||''))
     );
     renderCapitalMovements();
+    // v14.78 — Generate next JV number after fetching
+    genMovNum(true);
   } catch (e) {
     listEl.innerHTML = `<div style="text-align:center;color:#dc2626;padding:18px">❌ ${escHtml(e.message)}</div>`;
   }
@@ -8083,12 +8091,16 @@ function renderCapitalMovements() {
 
   listEl.innerHTML = items.map(m => {
     const meta = TYPE_META[m.movementType] || { label: m.movementType, color: '#64748b', bg: '#f1f5f9', sign: '' };
+    const docChip = m.docNumber
+      ? `<span class="sw-doc-chip" title="เลขที่เอกสาร">📄 ${escHtml(m.docNumber)}</span>`
+      : '';
     return `
     <div class="record-card" style="border-left:4px solid ${meta.color}">
       <div class="sw-record-head">
         <div class="sw-record-chips">
           <span class="sw-status" style="background:${meta.bg};color:${meta.color};font-weight:700">${meta.label}</span>
-          <span class="sw-doc-chip" title="วันที่">📅 ${fmtDate(m.movementDate)}</span>
+          ${docChip}
+          <span class="sw-doc-chip" title="วันที่" style="background:#f1f5f9;border-color:#e2e8f0">📅 ${fmtDate(m.movementDate)}</span>
         </div>
         <div class="sw-record-amount priv-amt" style="color:${meta.color};font-variant-numeric:tabular-nums">
           ${meta.sign}${fmtBaht(m.amount)}
@@ -8119,9 +8131,10 @@ async function addCapitalMovement() {
 
   showLoading('กำลังบันทึก...');
   try {
+    const docNumber = document.getElementById('mov-docNumber').value || '';
     const r = await api('/api/save', {
       type: 'capitalMovement',
-      data: { movementDate: date, accountRowId: accRowId, accountName: accName, movementType: type, amount: amt, note }
+      data: { docNumber, movementDate: date, accountRowId: accRowId, accountName: accName, movementType: type, amount: amt, note }
     });
     hideLoading();
     if (!r.success) { showToast('บันทึกไม่สำเร็จ: ' + (r.error||''), 'error'); return; }
@@ -11707,6 +11720,15 @@ function genExpNum(force) {
   const existing = (_master.expenseHistory || []).map(x => x.docNumber);
   el.value = _genDocNumber('PV', existing);
 }
+// v14.78 — Journal Voucher number for capital movements
+function genMovNum(force) {
+  const el = document.getElementById('mov-docNumber');
+  if (!el) return;
+  if (!force && el.value) return;
+  // Use _capitalMovements (in-memory list) — already fetched on movements tab open
+  const existing = (_capitalMovements || []).map(x => x.docNumber);
+  el.value = _genDocNumber('JV', existing);
+}
 function submitInvoice() {
   if (!gv('inv-number')) { showToast('กรุณากรอกเลขที่เอกสาร','warning'); return; }
   if (!gv('inv-date'))   { showToast('กรุณาเลือกวันที่จัดทำเอกสาร','warning'); return; }
@@ -13855,7 +13877,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.77';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.78';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison

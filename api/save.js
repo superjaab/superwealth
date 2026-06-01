@@ -216,10 +216,11 @@ const CONFIGS = {
   },
   capitalMovement: {
     name: 'CapitalMovements', color: '#a855f7', prefix: 'MOV',
-    headers: ['timestamp','movementDate','accountRowId','accountName',
+    headers: ['timestamp','docNumber','movementDate','accountRowId','accountName',
       'movementType','amount','note','rowId'],
     data: (d, now, id) => ({
       timestamp: now,
+      docNumber: d.docNumber || '',
       movementDate: d.movementDate || new Date().toISOString().slice(0,10),
       accountRowId: d.accountRowId || '',
       accountName: d.accountName || '',
