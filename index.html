@@ -4692,7 +4692,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.83 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.84 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -8496,6 +8496,8 @@ function renderCapitalInsight(initialCap, currentCap, netProfit, income, expense
   body.innerHTML = lines.map(l => `<div style="padding:4px 0">${l}</div>`).join('');
 }
 
+// v14.84 — Group accounts by type → one consolidated card per type.
+// Individual account details live in '📋 รายการเงินทุน' tab.
 function renderCapitalList() {
   const list = document.getElementById('cap-accounts-list');
   if (!list) return;
@@ -8503,41 +8505,64 @@ function renderCapitalList() {
     list.innerHTML = emptyStateHtml('capital');
     return;
   }
-  const typeMeta = {
-    bank:  { icon:'🏦', label:'ธนาคาร',  color:'#2563eb', bg:'#eff6ff' },
-    cash:  { icon:'💵', label:'เงินสด',  color:'#059669', bg:'#ecfdf5' },
-    loan:  { icon:'📋', label:'เงินกู้',  color:'#dc2626', bg:'#fef2f2' }
+  const TYPE_META = {
+    bank: { icon:'🏦', label:'ธนาคารทั้งหมด', color:'#2563eb', bg:'#eff6ff', grad:'linear-gradient(135deg,#eff6ff,#dbeafe)' },
+    cash: { icon:'💵', label:'เงินสดทั้งหมด', color:'#059669', bg:'#ecfdf5', grad:'linear-gradient(135deg,#ecfdf5,#d1fae5)' },
+    loan: { icon:'📋', label:'เงินกู้ทั้งหมด', color:'#dc2626', bg:'#fef2f2', grad:'linear-gradient(135deg,#fef2f2,#fee2e2)' }
   };
-  list.innerHTML = _capitalAccounts.map(a => {
-    const m = typeMeta[a.accountType] || typeMeta.bank;
-    const balance = parseFloat(a.currentBalance) || 0;
-    const initial = parseFloat(a.initialBalance) || 0;
-    const diff = balance - initial;
-    const diffPct = initial > 0 ? ((diff/initial)*100).toFixed(1) : 0;
+  // Group + summarize
+  const groups = { bank: [], cash: [], loan: [] };
+  _capitalAccounts.forEach(a => {
+    const k = TYPE_META[a.accountType] ? a.accountType : 'bank';
+    groups[k].push(a);
+  });
+
+  const blocks = ['bank','cash','loan'].map(type => {
+    const accs = groups[type];
+    if (!accs.length) return '';
+    const m = TYPE_META[type];
+    const totalCurrent = accs.reduce((s,a) => s + (parseFloat(a.currentBalance) || 0), 0);
+    const totalInitial = accs.reduce((s,a) => s + (parseFloat(a.initialBalance) || 0), 0);
+    const diff = totalCurrent - totalInitial;
+    const diffPct = totalInitial > 0 ? ((diff/totalInitial)*100).toFixed(1) : 0;
     const diffColor = diff >= 0 ? '#059669' : '#dc2626';
-    const diffSign  = diff >= 0 ? '+' : '';
+    const diffSign = diff >= 0 ? '+' : '';
+
     return `
-    <div class="record-card" style="padding:14px;border-left:4px solid ${m.color}">
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
-        <span style="background:${m.bg};color:${m.color};padding:4px 10px;border-radius:8px;font-weight:700;font-size:.8rem">${m.icon} ${m.label}</span>
-        <span style="font-weight:800;font-size:1rem">${escHtml(a.accountName||'(ไม่ระบุชื่อ)')}</span>
-        ${a.bankName ? `<span style="font-size:.78rem;color:#64748b">· ${escHtml(a.bankName)}</span>` : ''}
-        ${a.accountNumber ? `<span style="font-size:.78rem;color:#94a3b8;font-family:monospace">· ${escHtml(a.accountNumber)}</span>` : ''}
+    <div class="record-card" style="padding:18px;border-left:5px solid ${m.color};background:${m.grad}">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        <span style="background:white;color:${m.color};padding:6px 14px;border-radius:10px;font-weight:800;font-size:.95rem;box-shadow:0 1px 3px rgba(0,0,0,.06)">${m.icon} ${m.label}</span>
+        <span style="background:rgba(255,255,255,.7);color:#475569;padding:4px 10px;border-radius:8px;font-size:.74rem;font-weight:700">${accs.length} ${type === 'cash' ? 'จุด' : 'บัญชี'}</span>
       </div>
       <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:10px;flex-wrap:wrap">
-        <div>
-          <div style="font-size:.7rem;color:#64748b;font-weight:600">ยอดปัจจุบัน</div>
-          <div class="priv-amt" style="font-size:1.4rem;font-weight:800;color:${m.color}">${fmtBaht(balance)}</div>
-          ${initial > 0 ? `<div style="font-size:.72rem;color:#64748b;margin-top:2px">เริ่มต้น ${fmtBaht(initial)} <span style="color:${diffColor};font-weight:700">${diffSign}${fmtBaht(diff)} (${diffSign}${diffPct}%)</span></div>` : ''}
+        <div style="flex:1;min-width:200px">
+          <div style="font-size:.74rem;color:#64748b;font-weight:600;margin-bottom:2px">ยอดรวมปัจจุบัน</div>
+          <div class="priv-amt" style="font-size:1.8rem;font-weight:900;color:${m.color};font-variant-numeric:tabular-nums;letter-spacing:-.5px">${fmtBaht(totalCurrent)}</div>
+          ${totalInitial > 0 && diff !== 0 ? `
+          <div style="font-size:.74rem;color:#64748b;margin-top:4px">
+            เริ่มต้นรวม <b>${fmtBaht(totalInitial)}</b>
+            <span style="color:${diffColor};font-weight:700;margin-left:6px">${diffSign}${fmtBaht(diff)} (${diffSign}${diffPct}%)</span>
+          </div>` : ''}
         </div>
-        <div style="display:flex;gap:6px">
-          <button onclick="capEditBalance('${escAttr(a.rowId)}','${escAttr(a.accountName)}',${balance})" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:6px;padding:6px 12px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit">✏️ ปรับยอด</button>
-          <button onclick="capDeleteAccount('${escAttr(a.rowId)}','${escAttr(a.accountName)}')" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;border-radius:6px;padding:6px 12px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit">🗑</button>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          <a href="#" onclick="event.preventDefault();_capJumpToMovements()" style="font-size:.74rem;color:${m.color};text-decoration:none;font-weight:700;background:white;padding:6px 12px;border-radius:8px;border:1px solid ${m.color}30">
+            🔍 ดูรายละเอียด →
+          </a>
         </div>
       </div>
-      ${a.notes ? `<div style="font-size:.78rem;color:#64748b;margin-top:8px;padding-top:8px;border-top:1px dashed #e2e8f0">📝 ${escHtml(a.notes)}</div>` : ''}
     </div>`;
-  }).join('');
+  }).filter(Boolean).join('');
+
+  list.innerHTML = blocks + `
+    <div style="text-align:center;color:#94a3b8;padding:10px;font-size:.78rem">
+      💡 รายละเอียดของแต่ละบัญชี (เพิ่มทุนวันไหน · ยอดเท่าไหร่) ดูได้ที่ <a href="#" onclick="event.preventDefault();_capJumpToMovements()" style="color:#0284c7;font-weight:700;text-decoration:none">📋 รายการเงินทุน</a>
+    </div>`;
+}
+
+// Switch to movements sub-tab
+function _capJumpToMovements() {
+  const btn = document.querySelector('#tab-capital .inner-btn[onclick*="movements"]');
+  if (btn) btn.click();
 }
 
 async function capAddAccount() {
@@ -13825,7 +13850,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.83';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.84';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
