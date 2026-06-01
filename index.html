@@ -4680,7 +4680,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.79 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.81 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -6373,9 +6373,17 @@
             </div>
           </div>
         </div>
-        <!-- Balance -->
-        <label class="cap-field-label">ยอดเริ่มต้น (บาท) <span style="color:#dc2626">*</span></label>
-        <input id="cap-new-balance" class="cap-field-input" type="number" step="100" min="0" placeholder="0">
+        <!-- Balance + Date (v14.81) -->
+        <div class="cap-grid-2" style="margin-top:8px">
+          <div>
+            <label class="cap-field-label">ยอดเริ่มต้น (บาท) <span style="color:#dc2626">*</span></label>
+            <input id="cap-new-balance" class="cap-field-input" type="number" step="100" min="0" placeholder="0">
+          </div>
+          <div>
+            <label class="cap-field-label">วันที่เพิ่มทุน <span style="color:#dc2626">*</span></label>
+            <input id="cap-new-date" class="cap-field-input" type="date">
+          </div>
+        </div>
         <!-- Notes -->
         <label class="cap-field-label">หมายเหตุ <span style="color:#94a3b8;font-weight:500">(ไม่บังคับ)</span></label>
         <textarea id="cap-new-notes" class="cap-field-input" placeholder="หมายเหตุ..." style="min-height:60px;resize:vertical"></textarea>
@@ -7941,6 +7949,8 @@ let _capTrendChart = null;
 
 async function initCapitalTab() {
   if (!requireAuth()) return;
+  // v14.81 — Default date to today on entry
+  if (typeof _setCapDateToday === 'function') _setCapDateToday();
   await loadCapital();
 }
 
@@ -7974,8 +7984,10 @@ function renderCapitalMovements() {
   // Use existing accounts as the "movement" records — each account = one entry
   const accounts = (_capitalAccounts || []).filter(a => !filter || a.accountType === filter);
   // Sort newest first by timestamp (when the account was created)
+  // v14.81 — Prefer user-chosen addedDate over auto timestamp
+  const _entryDate = a => (a.startDate || a.timestamp || '').slice(0, 10);
   const items = [...accounts].sort((a,b) =>
-    String(b.timestamp || '').localeCompare(String(a.timestamp || ''))
+    String(_entryDate(b)).localeCompare(String(_entryDate(a)))
   );
 
   // Totals strip — grouped by accountType
@@ -8022,7 +8034,8 @@ function renderCapitalMovements() {
     const diff = current - initial;
     const diffColor = diff >= 0 ? '#059669' : '#dc2626';
     const diffSign  = diff >= 0 ? '+' : '';
-    const dateLabel = a.timestamp ? fmtDate(String(a.timestamp).slice(0,10)) : '—';
+    const _dt = a.addedDate || (a.timestamp ? String(a.timestamp).slice(0,10) : '');
+    const dateLabel = _dt ? fmtDate(_dt) : '—';
     return `
     <div class="record-card" style="border-left:4px solid ${meta.color}">
       <div class="sw-record-head">
@@ -8500,6 +8513,8 @@ async function capAddAccount() {
   if (!requireAuth()) return;
   const name = document.getElementById('cap-new-name').value.trim();
   if (!name) { showToast('กรุณากรอกชื่อบัญชี', 'warning'); return; }
+  const date = (document.getElementById('cap-new-date')||{}).value;
+  if (!date) { showToast('กรุณาเลือกวันที่เพิ่มทุน', 'warning'); return; }
   const type = document.getElementById('cap-new-type').value;
   const data = {
     accountType: type,
@@ -8508,6 +8523,7 @@ async function capAddAccount() {
     accountNumber: document.getElementById('cap-new-accountno').value.trim(),
     currentBalance: parseFloat(document.getElementById('cap-new-balance').value) || 0,
     initialBalance: parseFloat(document.getElementById('cap-new-balance').value) || 0,
+    startDate: date,         // v14.81 — user-chosen date (reuses existing column)
     notes: document.getElementById('cap-new-notes').value.trim()
   };
   showLoading('กำลังเพิ่มบัญชี...');
@@ -8516,17 +8532,27 @@ async function capAddAccount() {
     hideLoading();
     if (!r.success) { showToast('ไม่สำเร็จ: ' + (r.error||''), 'error'); return; }
     showToast('✅ เพิ่มบัญชี "' + name + '" สำเร็จ', 'success');
-    // Clear form
+    // Clear form (keep date as today for next entry)
     document.getElementById('cap-new-name').value = '';
     document.getElementById('cap-new-bank').value = '';
     document.getElementById('cap-new-accountno').value = '';
     document.getElementById('cap-new-balance').value = '';
     document.getElementById('cap-new-notes').value = '';
+    _setCapDateToday();
     loadCapital();
   } catch (e) {
     hideLoading();
     showToast('ผิดพลาด: ' + e.message, 'error');
   }
+}
+
+// v14.81 — Set today as default for the date field
+function _setCapDateToday() {
+  const el = document.getElementById('cap-new-date');
+  if (!el) return;
+  const today = new Date().toISOString().slice(0,10);
+  if (el._flatpickr) el._flatpickr.setDate(today, false);
+  else el.value = today;
 }
 
 async function capEditBalance(rowId, name, currentBalance) {

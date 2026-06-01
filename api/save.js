@@ -196,7 +196,7 @@ const CONFIGS = {
       accountNumber: d.accountNumber || '',
       currentBalance: +d.currentBalance || 0,
       initialBalance: +d.initialBalance || +d.currentBalance || 0,
-      startDate: d.startDate || new Date().toISOString().slice(0,10),
+      startDate: d.startDate || d.addedDate || new Date().toISOString().slice(0,10),
       color: d.color || '#3b82f6',
       notes: d.notes || '',
       active: d.active === false ? 'false' : 'true',
