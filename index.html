@@ -4509,6 +4509,29 @@
       .sw-prompt-btn { width: 100%; }
     }
 
+    /* v14.75 — Document number chip on record cards (next to round/type chip) */
+    .sw-doc-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', 'IBM Plex Mono', 'Roboto Mono', ui-monospace, monospace;
+      font-weight: 700;
+      font-size: .72rem;
+      letter-spacing: .8px;
+      background: #e8ecf3;
+      color: #1e293b;
+      border: 1px solid #c7d0e0;
+      white-space: nowrap;
+    }
+    body.dark .sw-doc-chip {
+      background: #1e2336;
+      color: #e2e8f0;
+      border-color: #334155;
+    }
+    body.logged-out .sw-doc-chip { filter: blur(6px) !important; user-select: none !important; }
+
     /* v14.73 — Auto-generated document numbers (soft pale-blue readonly) */
     .sw-doc-auto {
       background: #e8ecf3 !important;
@@ -4657,7 +4680,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v14.74 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v14.75 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -8824,7 +8847,9 @@ const _master = {
   customers: [],       // [{customerName, contactName, phone, ...}]
   drivers:  [],        // [{driverName, driverPhone, ...}]
   truckHistory: [],    // recent truck records (for cargo + plate→driver autofill)
-  cargoSaved: JSON.parse(localStorage.getItem('cargo_saved') || '[]')
+  cargoSaved: JSON.parse(localStorage.getItem('cargo_saved') || '[]'),
+  // v14.75 — track whether initial load has completed (gates doc-number gen)
+  _loaded: false
 };
 
 async function loadMasterData() {
@@ -8860,6 +8885,7 @@ async function loadMasterData() {
     if (plateDl) plateDl.innerHTML = _master.vehicles.map(v => `<option value="${escAttr(v.plateNumber||'')}">`).join('');
     const custDl = document.getElementById('cust-dl');
     if (custDl) custDl.innerHTML = _master.customers.map(c => `<option value="${escAttr(c.customerName||c.name||'')}">`).join('');
+    _master._loaded = true;  // v14.75 — flag first load complete
   } catch (e) { console.warn('Master data load failed:', e); }
 }
 function escAttr(s) { return String(s||'').replace(/"/g, '&quot;'); }
@@ -11436,11 +11462,14 @@ function _genDocNumber(prefix, existingNumbers) {
 //   RV = ใบสำคัญรับ (Receipt Voucher) — รายรับ
 //   PV = ใบสำคัญจ่าย (Payment Voucher) — รายจ่าย
 //   IV = ใบกำกับ (Invoice/Tax Invoice) — ใบเสร็จ
+// v14.75 — Gate doc-number generation behind master data load
+// (prevents flashing RV-000001 before showing real next number)
 function genInvNum(force) {
   const el = document.getElementById('inv-number');
   if (!el) return;
   if (!force && el.value) return;
-  // Backward-compat: also check legacy INV-prefixed numbers
+  if (!_master._loaded) { el.value = ''; el.placeholder = '⏳ กำลังโหลด...'; return; }
+  el.placeholder = 'IV-000001';
   const existing = (_master.invoices || []).map(x => x.invoiceNumber);
   el.value = _genDocNumber('IV', existing);
 }
@@ -11448,6 +11477,8 @@ function genIncNum(force) {
   const el = document.getElementById('i-docNumber');
   if (!el) return;
   if (!force && el.value) return;
+  if (!_master._loaded) { el.value = ''; el.placeholder = '⏳ กำลังโหลด...'; return; }
+  el.placeholder = 'RV-000001';
   const existing = (_master.incomeHistory || []).map(x => x.docNumber);
   el.value = _genDocNumber('RV', existing);
 }
@@ -11455,6 +11486,8 @@ function genExpNum(force) {
   const el = document.getElementById('e-docNumber');
   if (!el) return;
   if (!force && el.value) return;
+  if (!_master._loaded) { el.value = ''; el.placeholder = '⏳ กำลังโหลด...'; return; }
+  el.placeholder = 'PV-000001';
   const existing = (_master.expenseHistory || []).map(x => x.docNumber);
   el.value = _genDocNumber('PV', existing);
 }
@@ -11942,12 +11975,17 @@ function renderIncomeList(items) {
     const roundChipI = tripRound
       ? `<span class="sw-round-chip">🔄 รอบ #${tripRound}</span>`
       : '';
+    // v14.75 — Show doc number (RV-XXXXXX) as a chip
+    const docChipI = r.docNumber
+      ? `<span class="sw-doc-chip" title="เลขที่เอกสาร">📄 ${escHtml(r.docNumber)}</span>`
+      : '';
     return `
     <div class="record-card" style="border-left:4px solid #16a34a">
       <div class="sw-record-head">
         <div class="sw-record-chips">
           ${roundChipI}
           <span class="sw-status sw-status--income">💰 รายรับ</span>
+          ${docChipI}
         </div>
         <div class="sw-record-amount priv-amt" style="color:var(--sw-success,#16a34a)">+${fmtBaht(amount)}</div>
       </div>
@@ -12000,6 +12038,10 @@ function renderExpenseList(items) {
     const roundChipE = tripRound
       ? `<span class="sw-round-chip">🔄 รอบ #${tripRound}</span>`
       : '';
+    // v14.75 — Show doc number (PV-XXXXXX) as a chip
+    const docChipE = r.docNumber
+      ? `<span class="sw-doc-chip" title="เลขที่เอกสาร">📄 ${escHtml(r.docNumber)}</span>`
+      : '';
     return `
     <div class="record-card" style="border-left:4px solid #dc2626">
       <div class="sw-record-head">
@@ -12007,6 +12049,7 @@ function renderExpenseList(items) {
           ${roundChipE}
           <span class="sw-status sw-status--expense">💸 รายจ่าย</span>
           ${r.category ? `<span class="sw-status sw-status--pending" style="background:#fee2e2;color:#b91c1c">${escHtml(r.category)}</span>` : ''}
+          ${docChipE}
         </div>
         <div class="sw-record-amount priv-amt" style="color:var(--sw-danger,#dc2626)">−${fmtBaht(amount)}</div>
       </div>
@@ -13596,7 +13639,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v14.74';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v14.75';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
