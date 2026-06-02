@@ -1082,6 +1082,17 @@
     .dash-list-value { font-weight: 700; color: #0f172a; }
     .dash-bar { height: 6px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
     .dash-bar-fill { height: 100%; border-radius: 4px; transition: width .3s; }
+    /* v15.04 — Average per-record + grand total footer */
+    .dash-list-avg { font-size: .68rem; color: #94a3b8; margin-top: 4px; padding-left: 14px; }
+    .dash-list-total {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 12px; padding-top: 10px; border-top: 1.5px dashed #e2e8f0;
+      font-size: .8rem; font-weight: 700; color: #475569;
+    }
+    .dash-list-total span:last-child { color: #b91c1c; font-weight: 900; }
+    body.dark .dash-list-avg { color: #6b7280; }
+    body.dark .dash-list-total { border-top-color: #334155; color: #94a3b8; }
+    body.dark .dash-list-total span:last-child { color: #fca5a5; }
 
     /* Top customers list */
     .dash-cust { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
@@ -1105,9 +1116,11 @@
     }
     .dc-chip--trip { background: #eff6ff; color: #1d4ed8; }
     .dc-chip--inc  { background: #ecfdf5; color: #047857; }
+    .dc-chip--exp  { background: #fef2f2; color: #b91c1c; }
     body.dark .dc-chip      { background: #1e293b; color: #94a3b8; }
     body.dark .dc-chip--trip { background: #1e3a5f; color: #93c5fd; }
     body.dark .dc-chip--inc  { background: #064e3b; color: #6ee7b7; }
+    body.dark .dc-chip--exp  { background: #5b1d1d; color: #fca5a5; }
 
     /* Old sum-card legacy (still used elsewhere) */
     .sum-card {
@@ -4920,7 +4933,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.03 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.04 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -6410,7 +6423,7 @@
       <div class="dash-card-head">
         <div>
           <div class="dash-card-title">💸 หมวดรายจ่ายสูงสุด</div>
-          <div class="dash-card-sub">เรียงตามยอด</div>
+          <div class="dash-card-sub">ยอดรวม · จำนวนรายการ · เฉลี่ย</div>
         </div>
       </div>
       <div class="dash-list" id="sum-top-categories"></div>
@@ -13557,33 +13570,50 @@ function renderStatusDonut(truck) {
 }
 
 // ─── TOP CATEGORIES (expense) ──────────────────────────────────────────────
+// v15.04 — Top categories: เพิ่มจำนวนรายการต่อหมวด + ยอดรวมทั้งหมดด้านล่าง
 function renderTopCategories(expense) {
   const el = document.getElementById('sum-top-categories');
   if (!el) return;
-  const catMap = {};
+  const catMap = {};   // cat → { amt, count }
   expense.forEach(r => {
     const cat = r.category || 'อื่นๆ';
-    catMap[cat] = (catMap[cat] || 0) + _detectAmount(r);
+    if (!catMap[cat]) catMap[cat] = { amt: 0, count: 0 };
+    catMap[cat].amt += _detectAmount(r);
+    catMap[cat].count++;
   });
-  const sorted = Object.entries(catMap).sort((a,b) => b[1] - a[1]).slice(0, 8);
-  const max = sorted[0]?.[1] || 1;
+  const entries = Object.entries(catMap)
+    .sort((a, b) => b[1].amt - a[1].amt);
+  const sorted = entries.slice(0, 8);
+  const max = sorted[0]?.[1].amt || 1;
+  const grandTotal  = entries.reduce((s, [, o]) => s + o.amt, 0);
+  const grandCount  = entries.reduce((s, [, o]) => s + o.count, 0);
   const colors = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#f43f5e','#84cc16'];
-  const fmt = n => '฿' + n.toLocaleString('th-TH',{maximumFractionDigits:0});
+  const fmt = n => '฿' + n.toLocaleString('th-TH', { maximumFractionDigits: 0 });
   if (sorted.length === 0) {
     el.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:.78rem;padding:14px">📭 ไม่มีข้อมูล</div>';
     return;
   }
-  el.innerHTML = sorted.map(([cat, amt], i) => {
-    const pct = (amt / max) * 100;
+  const items = sorted.map(([cat, o], i) => {
+    const pct = (o.amt / max) * 100;
     const c = colors[i % colors.length];
+    const avg = o.count > 0 ? o.amt / o.count : 0;
     return `<div class="dash-list-item">
       <div class="dash-list-row">
-        <div class="dash-list-name"><span class="dash-list-dot" style="background:${c}"></span>${escHtml(cat)}</div>
-        <div class="dash-list-value">${fmt(amt)}</div>
+        <div class="dash-list-name">
+          <span class="dash-list-dot" style="background:${c}"></span>${escHtml(cat)}
+          <span class="dc-chip dc-chip--exp">📝 ${o.count} รายการ</span>
+        </div>
+        <div class="dash-list-value priv-amt">${fmt(o.amt)}</div>
       </div>
       <div class="dash-bar"><div class="dash-bar-fill" style="width:${pct}%;background:${c}"></div></div>
+      <div class="dash-list-avg">เฉลี่ย ${fmt(avg)} / รายการ</div>
     </div>`;
   }).join('');
+  const totalRow = `<div class="dash-list-total">
+    <span>รวม ${grandCount} รายการ · ${entries.length} หมวด</span>
+    <span class="priv-amt">${fmt(grandTotal)}</span>
+  </div>`;
+  el.innerHTML = items + totalRow;
 }
 
 // ─── TOP CUSTOMERS (income + trip count) ───────────────────────────────────
@@ -14318,7 +14348,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.03';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.04';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
