@@ -4985,8 +4985,10 @@
     }
     body.dark .sw-doc-auto:hover { background: #283142 !important; border-color: #4b5563 !important; }
 
-    /* v15.57 — ช่องเวลาแบบพิมพ์ง่าย (แทน native time spinner) */
-    .sw-time-input { font-variant-numeric: tabular-nums; letter-spacing: 1px; }
+    /* v15.58 — เวลาเป็น drop list (ชั่วโมง : นาที) */
+    .sw-time-pick { display: flex; align-items: center; gap: 6px; }
+    .sw-time-pick select { flex: 1; min-width: 0; text-align: center; font-variant-numeric: tabular-nums; cursor: pointer; }
+    .sw-time-colon { font-weight: 800; color: #94a3b8; }
 
     /* v15.02 — Trip round chip: compact pill ที่มุมขวาบนของ card-title
        สไตล์ off-white minimal เหมือน sw-doc-auto แต่แก้ตัวเลขได้ + ปุ่ม refresh */
@@ -5201,7 +5203,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.57 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.58 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -5423,9 +5425,12 @@
         </div>
         <div class="form-row">
           <label>เวลา</label>
-          <input type="text" id="i-incomeTime" class="sw-time-input" inputmode="numeric" maxlength="5"
-                 placeholder="00:00" autocomplete="off" title="พิมพ์ตัวเลข 24 ชม. เช่น 0930 → 09:30"
-                 oninput="onTimeInput(this)" onblur="onTimeBlur(this)">
+          <div class="sw-time-pick">
+            <select class="sw-time-h" aria-label="ชั่วโมง" onchange="onTimePartChange('i-incomeTime')"></select>
+            <span class="sw-time-colon">:</span>
+            <select class="sw-time-m" aria-label="นาที" onchange="onTimePartChange('i-incomeTime')"></select>
+            <input type="hidden" id="i-incomeTime">
+          </div>
         </div>
         <div class="form-row">
           <label>เลขที่เอกสาร</label>
@@ -5534,9 +5539,12 @@
         </div>
         <div class="form-row">
           <label>เวลา</label>
-          <input type="text" id="e-expenseTime" class="sw-time-input" inputmode="numeric" maxlength="5"
-                 placeholder="00:00" autocomplete="off" title="พิมพ์ตัวเลข 24 ชม. เช่น 0930 → 09:30"
-                 oninput="onTimeInput(this)" onblur="onTimeBlur(this)">
+          <div class="sw-time-pick">
+            <select class="sw-time-h" aria-label="ชั่วโมง" onchange="onTimePartChange('e-expenseTime')"></select>
+            <span class="sw-time-colon">:</span>
+            <select class="sw-time-m" aria-label="นาที" onchange="onTimePartChange('e-expenseTime')"></select>
+            <input type="hidden" id="e-expenseTime">
+          </div>
         </div>
         <div class="form-row">
           <label>เลขที่เอกสาร</label>
@@ -7362,7 +7370,14 @@
       <div class="card-title" style="color:#F57F17">⛽ บันทึกการเติมน้ำมัน</div>
       <div class="form-row-3">
         <div class="form-row"><label>วันที่ <span class="req">*</span></label><input type="date" id="fuel-date"></div>
-        <div class="form-row"><label>เวลา</label><input type="text" id="fuel-time" class="sw-time-input" inputmode="numeric" maxlength="5" placeholder="00:00" autocomplete="off" title="พิมพ์ตัวเลข 24 ชม. เช่น 0930 → 09:30" oninput="onTimeInput(this)" onblur="onTimeBlur(this)"></div>
+        <div class="form-row"><label>เวลา</label>
+          <div class="sw-time-pick">
+            <select class="sw-time-h" aria-label="ชั่วโมง" onchange="onTimePartChange('fuel-time')"></select>
+            <span class="sw-time-colon">:</span>
+            <select class="sw-time-m" aria-label="นาที" onchange="onTimePartChange('fuel-time')"></select>
+            <input type="hidden" id="fuel-time">
+          </div>
+        </div>
         <div class="form-row"><label>ทะเบียนรถ <span class="req">*</span></label><input type="text" id="fuel-plate" placeholder="กข-1234" maxlength="20" autocomplete="off"></div>
       </div>
       <div class="form-row-3">
@@ -9527,6 +9542,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if (typeof initFlatpickr === 'function') initFlatpickr();
   setTimeout(() => { if (typeof initFlatpickr === 'function') initFlatpickr(); }, 300);
   setTimeout(() => { if (typeof initFlatpickr === 'function') initFlatpickr(); }, 1500);
+  if (typeof _initTimePickers === 'function') _initTimePickers();  // v15.58 — เติมตัวเลือกเวลาใน drop list
   setDefaultDates();
   buildUploadArea('truck',       'truck-upload-area');
   buildUploadArea('income',      'income-upload-area');
@@ -10238,25 +10254,49 @@ function setDefaultDates() {
     if (el._flatpickr) el._flatpickr.setDate(now, false);
     else el.value = now;
   });
+  if (typeof refreshAllTimePickers === 'function') refreshAllTimePickers();  // v15.58 — sync time drop-lists
 }
 
-// v15.57 — พิมพ์เวลาง่ายแบบ 24 ชม. (แทน native time spinner ที่กรอกยาก)
-// พิมพ์ตัวเลขล้วน → ใส่ ":" ให้อัตโนมัติ (0930 → 09:30) แล้วปรับให้ถูกต้องตอนออกจากช่อง
-function onTimeInput(el) {
-  let v = String(el.value).replace(/\D/g, '').slice(0, 4);   // เก็บเฉพาะตัวเลข สูงสุด 4 หลัก
-  if (v.length > 2) v = v.slice(0, 2) + ':' + v.slice(2);
-  el.value = v;
+// v15.58 — เวลาเป็น drop list (ชั่วโมง 00–23 + นาที ทุก 5 นาที) แทนการพิมพ์
+//   - input[type=hidden] (id เดิม) เก็บค่า "HH:MM" → โค้ดเดิมทั้งหมด (g()/prefill/OCR/save) ทำงานต่อได้
+//   - select 2 ตัวเป็นตัวเลือก, sync ค่าเข้า hidden เมื่อเปลี่ยน
+function _initTimePickers() {
+  let hOpts = '';
+  for (let h = 0; h < 24; h++) { const v = String(h).padStart(2,'0'); hOpts += `<option value="${v}">${v}</option>`; }
+  let mOpts = '';
+  for (let m = 0; m < 60; m += 5) { const v = String(m).padStart(2,'0'); mOpts += `<option value="${v}">${v}</option>`; }
+  document.querySelectorAll('.sw-time-pick').forEach(box => {
+    const hs = box.querySelector('.sw-time-h'), ms = box.querySelector('.sw-time-m');
+    if (hs && !hs._filled) { hs.innerHTML = hOpts; hs._filled = true; }
+    if (ms && !ms._filled) { ms.innerHTML = mOpts; ms._filled = true; }
+  });
+  refreshAllTimePickers();
 }
-function onTimeBlur(el) {
-  const digits = String(el.value).replace(/\D/g, '');
-  if (!digits) { el.value = ''; return; }                    // เว้นว่างได้
-  let hh, mm;
-  if (digits.length <= 2)       { hh = digits;            mm = '0'; }              // "9" → 09:00
-  else if (digits.length === 3) { hh = digits.slice(0,1); mm = digits.slice(1); }  // "915" → 09:15
-  else                          { hh = digits.slice(0,2); mm = digits.slice(2,4); }// "0930" → 09:30
-  const H = Math.max(0, Math.min(23, parseInt(hh, 10) || 0));  // 00–23
-  const M = Math.max(0, Math.min(59, parseInt(mm, 10) || 0));  // 00–59
-  el.value = String(H).padStart(2, '0') + ':' + String(M).padStart(2, '0');
+// select เปลี่ยน → อัปเดตค่า hidden
+function onTimePartChange(baseId) {
+  const hidden = document.getElementById(baseId); if (!hidden) return;
+  const box = hidden.closest('.sw-time-pick'); if (!box) return;
+  const h = box.querySelector('.sw-time-h')?.value || '00';
+  const m = box.querySelector('.sw-time-m')?.value || '00';
+  hidden.value = h + ':' + m;
+}
+// hidden (ตั้งค่าโดยโค้ด เช่น default/OCR/prefill) → ปรับ select ให้ตรง (ปัดนาทีเป็นช่วง 5 นาที)
+function _applyTimeToSelects(baseId) {
+  const hidden = document.getElementById(baseId); if (!hidden) return;
+  const box = hidden.closest('.sw-time-pick'); if (!box) return;
+  const hs = box.querySelector('.sw-time-h'), ms = box.querySelector('.sw-time-m');
+  const mt = String(hidden.value || '').match(/(\d{1,2}):(\d{1,2})/);
+  let H = mt ? Math.min(23, Math.max(0, parseInt(mt[1],10) || 0)) : 0;
+  let M = mt ? Math.min(59, Math.max(0, parseInt(mt[2],10) || 0)) : 0;
+  M = Math.round(M / 5) * 5;
+  if (M === 60) { M = 0; if (H < 23) H++; }
+  const hh = String(H).padStart(2,'0'), mm = String(M).padStart(2,'0');
+  if (hs) hs.value = hh;
+  if (ms) ms.value = mm;
+  hidden.value = hh + ':' + mm;   // normalize ให้ตรงกับตัวเลือก
+}
+function refreshAllTimePickers() {
+  document.querySelectorAll('.sw-time-pick > input[type="hidden"]').forEach(h => _applyTimeToSelects(h.id));
 }
 
 // ─── TAB ──────────────────────────────────
@@ -10650,6 +10690,7 @@ function autoFillFields(formKey, parsed) {
     _syncExpAmount();
   }
 
+  if (typeof refreshAllTimePickers === 'function') refreshAllTimePickers();  // v15.58 — sync เวลาเข้า drop list
   if (filled > 0) showToast(`✅ เติมข้อมูลอัตโนมัติ ${filled} ช่องแล้ว`, 'success');
   else showToast('อ่านภาพได้ แต่ไม่พบข้อมูลที่จะเติม — ลอง scroll ดูข้อความ OCR', 'warning');
 }
@@ -10804,6 +10845,7 @@ function fillFormFromOCR(formKey) {
     _syncExpAmount();   // v15.56 — จัดรูปแบบจำนวนเงิน + อัปเดตยอดรวม (oninput ไม่ทำงานตอน set ด้วยโค้ด)
   }
 
+  if (typeof refreshAllTimePickers === 'function') refreshAllTimePickers();  // v15.58 — sync เวลาเข้า drop list
   if (filled > 0) { showToast(`✅ เติมข้อมูลลงฟอร์ม ${filled} ช่องแล้ว`, 'success'); closeOCRPanel(formKey); }
   else showToast('ไม่พบข้อมูลที่จะเติม — ลองตรวจ OCR text ด้านบน', 'warning');
 }
@@ -11564,6 +11606,8 @@ function _prefillForm(type, record) {
     const el = document.getElementById('e-docNumber');
     if (el && !/^PV-\d/.test(el.value)) { try { genExpNum(true); } catch(e){} }
   }
+  // v15.58 — sync เวลาที่โหลดมาเข้า drop list
+  if (typeof refreshAllTimePickers === 'function') refreshAllTimePickers();
 }
 
 function updateSubmitLabel(type, editing) {
@@ -15561,7 +15605,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.57';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.58';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
