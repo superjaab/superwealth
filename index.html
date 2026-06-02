@@ -5203,7 +5203,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.66 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.67 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -6676,8 +6676,8 @@
         <span class="hero-date-sep">→</span>
         <input type="date" id="sum-dateTo">
         <button type="button" class="hero-load-btn" onclick="loadSummary()">🔄 โหลด</button>
-        <!-- v15.65 — ปุ่มคาดคะเน (ประมาณการ ไม่บันทึกลง Sheet) — v15.66 สีม่วงให้เด่น ไม่จม -->
-        <button type="button" class="hero-load-btn" onclick="openForecast()" title="คาดคะเนรายได้จากรอบที่ยังไม่จ่าย (ไม่บันทึกจริง)" style="background:linear-gradient(135deg,#c084fc,#7c3aed);color:#fff;border:none;box-shadow:0 4px 14px -3px rgba(124,58,237,.55);font-weight:700">🔮 คาดคะเน</button>
+        <!-- v15.65 — ปุ่มคาดการณ์ (ประมาณการ ไม่บันทึกลง Sheet) — v15.66 สีม่วงให้เด่น ไม่จม -->
+        <button type="button" class="hero-load-btn" onclick="openForecast()" title="คาดการณ์รายได้จากรอบที่ยังไม่จ่าย (ไม่บันทึกจริง)" style="background:linear-gradient(135deg,#c084fc,#7c3aed);color:#fff;border:none;box-shadow:0 4px 14px -3px rgba(124,58,237,.55);font-weight:700">🔮 คาดการณ์</button>
       </div>
     </div>
   </div>
@@ -6687,7 +6687,7 @@
     <div style="background:#fff;border-radius:18px;max-width:560px;width:100%;box-shadow:0 24px 60px -12px rgba(0,0,0,.4);overflow:hidden">
       <div style="background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px">
         <div>
-          <div style="font-weight:800;font-size:1.05rem">🔮 คาดคะเนรายได้</div>
+          <div style="font-weight:800;font-size:1.05rem">🔮 คาดการณ์รายได้</div>
           <div style="font-size:.72rem;opacity:.9;margin-top:2px">ประมาณการจากรอบที่ยังไม่จ่าย — ไม่ใช่ตัวเลขจริง · ไม่บันทึกลง Sheet</div>
         </div>
         <button type="button" onclick="closeForecast()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:34px;height:34px;border-radius:10px;cursor:pointer;font-size:1.1rem;flex-shrink:0">✕</button>
@@ -14467,7 +14467,7 @@ function _calEditTrip(identifier) {
 // ─── SUMMARY TAB ──────────────────────────────────────────────────────────────
 let _barChart = null;
 let _tripBarChart = null;   // v15.55 — กำไรเที่ยวรถรายเดือน (ตามเดือนต้นทาง)
-let _fcSnapshot = null;     // v15.65 — snapshot สำหรับฟีเจอร์คาดคะเน (ไม่บันทึก, หายเมื่อรีเฟรช)
+let _fcSnapshot = null;     // v15.65 — snapshot สำหรับฟีเจอร์คาดการณ์ (ไม่บันทึก, หายเมื่อรีเฟรช)
 let _doughnutChart = null;
 let _summaryInited = false;
 
@@ -14570,7 +14570,7 @@ function _detectAmount(r) {
   return 0;
 }
 
-// ─── v15.65 — FORECAST (คาดคะเน) — ใส่ค่าเที่ยวสมมุติของรอบที่ยังไม่จ่าย → ดูภาพรวมที่คาดว่าจะได้
+// ─── v15.65 — FORECAST (คาดการณ์) — ใส่ค่าเที่ยวสมมุติของรอบที่ยังไม่จ่าย → ดูภาพรวมที่คาดว่าจะได้
 //   เป็นการประมาณการล้วน ไม่บันทึกลง Sheet, อยู่ใน memory/DOM, หายเมื่อรีเฟรช
 function openForecast() {
   if (!_fcSnapshot || !Array.isArray(_fcSnapshot.trucks)) {
@@ -14588,7 +14588,7 @@ function openForecast() {
 
   const list = document.getElementById('fc-list');
   if (!unpaid.length) {
-    list.innerHTML = '<div style="text-align:center;color:#16a34a;padding:24px;font-weight:700">✅ ทุกรอบในช่วงนี้จ่ายครบแล้ว<br><span style="font-size:.8rem;font-weight:500;color:#94a3b8">ไม่มีรอบค้างจ่ายให้คาดคะเน</span></div>';
+    list.innerHTML = '<div style="text-align:center;color:#16a34a;padding:24px;font-weight:700">✅ ทุกรอบในช่วงนี้จ่ายครบแล้ว<br><span style="font-size:.8rem;font-weight:500;color:#94a3b8">ไม่มีรอบค้างจ่ายให้คาดการณ์</span></div>';
   } else {
     list.innerHTML =
       `<div style="font-size:.8rem;color:#64748b;margin-bottom:10px">พบ <b style="color:#7c3aed">${unpaid.length}</b> รอบที่ยังไม่จ่าย — ใส่ยอดค่าเที่ยวที่คาดว่าจะได้ (สมมุติ) แล้วกด "คำนวณ"</div>` +
@@ -14628,7 +14628,7 @@ function forecastCalc() {
   res.style.display = 'block';
   res.innerHTML = `
     <div style="background:#f5f3ff;border:1.5px solid #ddd6fe;border-radius:12px;padding:14px">
-      <div style="font-weight:800;color:#6d28d9;margin-bottom:10px">🔮 ผลคาดคะเน <span style="font-size:.7rem;font-weight:600;color:#a78bfa">(ประมาณการ ไม่ใช่ตัวเลขจริง)</span></div>
+      <div style="font-weight:800;color:#6d28d9;margin-bottom:10px">🔮 ผลคาดการณ์ <span style="font-size:.7rem;font-weight:600;color:#a78bfa">(ประมาณการ ไม่ใช่ตัวเลขจริง)</span></div>
       <div style="display:grid;grid-template-columns:1fr auto;gap:6px 8px;font-size:.86rem;color:#334155">
         <div>รายรับจริง</div><div style="text-align:right;font-weight:700">${fmt(realInc)}</div>
         <div>+ คาดว่าจะได้ (${n} รอบ)</div><div style="text-align:right;font-weight:700;color:#16a34a">+${fmt(extra)}</div>
@@ -14654,7 +14654,7 @@ function renderSummary(data, dateFrom, dateTo) {
   const totalFreight = truck.reduce((s, r)   => s + _tripRevenue(r), 0);  // v15.61 — freightCost หรือรายรับที่ลิงก์
   const profit       = totalIncome - totalExpense;
   const profitMargin = totalIncome > 0 ? (profit / totalIncome * 100) : 0;
-  // v15.65 — เก็บ snapshot ไว้ให้ฟีเจอร์ "คาดคะเน" (ไม่บันทึก, หายเมื่อรีเฟรช)
+  // v15.65 — เก็บ snapshot ไว้ให้ฟีเจอร์ "คาดการณ์" (ไม่บันทึก, หายเมื่อรีเฟรช)
   _fcSnapshot = { income: totalIncome, expense: totalExpense, trucks: truck };
 
   const fmt = n => n.toLocaleString('th-TH', { maximumFractionDigits: 0 });
@@ -15741,7 +15741,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.66';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.67';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
