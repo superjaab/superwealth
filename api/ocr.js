@@ -174,12 +174,18 @@ function parseOCR(text) {
   } else if (boxDt) {
     r.date = `${_toAD(boxDt[3], true)}-${String(boxDt[2]).padStart(2,'0')}-${String(boxDt[1]).padStart(2,'0')}`;
   } else if (numDt) {
-    // ปี 2 หลัก: <70 → ค.ศ. 20xx, ≥70 → พ.ศ. 25xx
-    let yr = numDt[3];
-    if (yr.length === 2) yr = parseInt(yr,10) < 70 ? '20'+yr : '25'+yr;
-    const num = parseInt(yr,10);
-    const adYear = num > 2400 ? num - 543 : num;
-    r.date = `${adYear}-${String(numDt[2]).padStart(2,'0')}-${String(numDt[1]).padStart(2,'0')}`;
+    // v15.64 — ปี 2 หลักของสลิปไทยมักเป็น พ.ศ. (68 = 2568 = 2025) → ใช้เกณฑ์เดียวกับเดือนไทย
+    // (เดิม <70 → 20xx ทำให้ 68/69 กลายเป็น 2068/2069 และไม่ตรงกับสาขาเดือนไทย)
+    r.date = `${_toAD(numDt[3], true)}-${String(numDt[2]).padStart(2,'0')}-${String(numDt[1]).padStart(2,'0')}`;
+  }
+
+  // v15.64 — ตรวจความถูกต้องของวันที่ ถ้าเป็นไปไม่ได้ (OCR อ่านเพี้ยน เช่น 2025-13-45) ให้ทิ้ง
+  if (r.date) {
+    const p = r.date.split('-').map(n => parseInt(n, 10));
+    const dt = new Date(p[0], p[1] - 1, p[2]);
+    const ok = p[1] >= 1 && p[1] <= 12 && p[2] >= 1 && p[2] <= 31 &&
+               dt.getFullYear() === p[0] && dt.getMonth() === p[1] - 1 && dt.getDate() === p[2];
+    if (!ok) delete r.date;
   }
 
   // เวลา — รองรับ HH:MM และ HH.MM (รูปแบบไทย "22.43 น." ก็รับ)

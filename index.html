@@ -5203,7 +5203,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.63 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.64 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -10290,8 +10290,10 @@ function _applyTimeToSelects(baseId) {
   const box = hidden.closest('.sw-time-pick'); if (!box) return;
   const hs = box.querySelector('.sw-time-h'), ms = box.querySelector('.sw-time-m');
   const mt = String(hidden.value || '').match(/(\d{1,2}):(\d{1,2})/);
-  const H = mt ? Math.min(23, Math.max(0, parseInt(mt[1],10) || 0)) : 0;
-  const M = mt ? Math.min(59, Math.max(0, parseInt(mt[2],10) || 0)) : 0;  // v15.60 — ละเอียด 1 นาที ไม่ปัดแล้ว
+  // v15.64 — ถ้าไม่มีเวลา (record เก่าที่เวลาว่าง) อย่าบังคับเป็น 00:00 → คงค่าว่างไว้
+  if (!mt) { if (hs) hs.value = '00'; if (ms) ms.value = '00'; return; }
+  const H = Math.min(23, Math.max(0, parseInt(mt[1],10) || 0));
+  const M = Math.min(59, Math.max(0, parseInt(mt[2],10) || 0));  // v15.60 — ละเอียด 1 นาที
   const hh = String(H).padStart(2,'0'), mm = String(M).padStart(2,'0');
   if (hs) hs.value = hh;
   if (ms) ms.value = mm;
@@ -11070,13 +11072,14 @@ function collectFormData(formKey) {
     if (!g('i-incomeDate'))   { showToast('กรุณาเลือกวันที่', 'warning');       return null; }
     if (!g('i-customerName')) { showToast('กรุณากรอกชื่อลูกค้า', 'warning');    return null; }
     if (!g('i-incomeItem'))   { showToast('กรุณากรอกรายการรายรับ', 'warning');  return null; }
-    if (!g('i-amount'))       { showToast('กรุณากรอกจำนวนเงิน', 'warning');     return null; }
+    if (!(parseFloat(g('i-amount')) > 0)) { showToast('กรุณากรอกจำนวนเงิน', 'warning'); return null; }  // v15.64 — ต้อง > 0
     const linkedSel  = document.getElementById('i-linkedTrip');
     const linkedOpt  = linkedSel && linkedSel.options[linkedSel.selectedIndex];
     const linkedRound = (linkedOpt && linkedOpt.dataset.round) ? +linkedOpt.dataset.round : 0;
     // v15.53 — รายรับต้องมีเลข RV เสมอ แม้สร้างจากสลิป (เลขอ้างอิงสลิป ≠ เลข RV) → รันใหม่ให้
     let iDoc = g('i-docNumber');
     if (!/^RV-\d/.test(iDoc)) { try { genIncNum(true); } catch(e){} iDoc = g('i-docNumber'); }
+    if (!iDoc) { showToast('ระบบกำลังโหลดเลขเอกสาร กรุณาลองอีกครั้ง', 'warning'); return null; }  // v15.64 — กันบันทึกไม่มีเลข RV
     return {
       incomeDate: g('i-incomeDate'), incomeTime: g('i-incomeTime'),
       docNumber: iDoc,
@@ -11100,6 +11103,7 @@ function collectFormData(formKey) {
     // v15.53 — รายจ่ายต้องมีเลข PV เสมอ แม้สร้างจากสลิป → รันใหม่ให้ถ้าไม่ใช่รูปแบบ PV
     let eDoc = g('e-docNumber');
     if (!/^PV-\d/.test(eDoc)) { try { genExpNum(true); } catch(e){} eDoc = g('e-docNumber'); }
+    if (!eDoc) { showToast('ระบบกำลังโหลดเลขเอกสาร กรุณาลองอีกครั้ง', 'warning'); return null; }  // v15.64 — กันบันทึกไม่มีเลข PV
     return {
       expenseDate: g('e-expenseDate'), expenseTime: g('e-expenseTime'),
       docNumber: eDoc,     // v14.70 — auto-generated (v15.53 — บังคับเลข PV)
@@ -14522,6 +14526,9 @@ async function loadSummary() {
     }
     // Save to cache for next time
     try { sessionStorage.setItem(cacheKey, JSON.stringify(json.data)); } catch {}
+    // v15.64 — รายได้ต่อเที่ยว (_tripRevenue) อ่านจาก _master.incomeHistory → ต้องโหลดเสร็จก่อน
+    // ไม่งั้นยอดค่าขนส่ง/สถานะจ่ายของตารางเที่ยวจะเป็น ฿0 ตอนเปิดครั้งแรก
+    if (!_master._loaded && typeof loadMasterData === 'function') { try { await loadMasterData(); } catch(e){} }
     renderSummary(json.data, dateFrom, dateTo);
     if (placeholder) placeholder.style.display = 'none';
   } catch (e) {
@@ -15167,7 +15174,7 @@ function renderDoughnutChart(expense) {
   const catMap = {};
   expense.forEach(r => {
     const cat = r.category || 'อื่นๆ';
-    catMap[cat] = (catMap[cat] || 0) + (parseFloat(r.amount) || 0);
+    catMap[cat] = (catMap[cat] || 0) + _detectAmount(r);  // v15.64 — ใช้ _detectAmount ให้ตรงกับ KPI/หมวดสูงสุด
   });
   const labels = Object.keys(catMap);
   const values = labels.map(k => catMap[k]);
@@ -15636,7 +15643,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.63';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.64';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
