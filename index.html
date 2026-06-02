@@ -5170,7 +5170,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.48 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.49 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -5509,10 +5509,11 @@
                  class="sw-doc-auto" title="ใบสำคัญจ่าย — ระบบรันให้อัตโนมัติ (แก้ไม่ได้)">
         </div>
       </div>
-      <div class="form-row-2">
-        <div class="form-row">
-          <label>หมวดรายจ่าย <span class="req">*</span></label>
-          <select id="e-category" required>
+      <div class="form-row">
+        <label>หมวดรายจ่าย <span class="req">*</span> <span style="font-size:.7rem;color:#94a3b8;font-weight:400">— เลือกได้หลายหมวด กด ➕ เพื่อเพิ่ม</span></label>
+        <!-- v15.49 — multi-category: 1 required + ➕ to add more -->
+        <div id="e-cat-list">
+          <select id="e-category" class="e-cat-sel" required>
             <option value="ค่าเดินทาง" selected>🚗 ค่าเดินทาง</option>
             <option value="ค่าน้ำมัน">⛽ ค่าน้ำมัน</option>
             <option value="เงินเดือน">💼 เงินเดือน</option>
@@ -5532,6 +5533,7 @@
             <option value="อื่นๆ">📌 อื่นๆ</option>
           </select>
         </div>
+        <button type="button" onclick="addExpenseCategory()" style="margin-top:8px;background:#ecfdf5;color:#047857;border:1.5px solid #86efac;border-radius:8px;padding:8px 14px;font-weight:700;font-size:.82rem;cursor:pointer;font-family:inherit">➕ เพิ่มหมวด</button>
       </div>
       <div class="form-row">
         <label>📋 ลิงก์รอบเที่ยวรถ <span style="font-size:.7rem;color:#94a3b8;font-weight:400">(ถ้ารายจ่ายนี้เกี่ยวกับรอบเที่ยว)</span></label>
@@ -10963,7 +10965,7 @@ function collectFormData(formKey) {
     return {
       expenseDate: g('e-expenseDate'), expenseTime: g('e-expenseTime'),
       docNumber: g('e-docNumber'),     // v14.70 — auto-generated
-      category: g('e-category'),
+      category: _collectExpenseCategories(),   // v15.49 — multi-category joined with " + "
       plateNumber: g('e-plateNumber'), vendor: g('e-vendor'),
       expenseDetail: g('e-expenseDetail'), amount: g('e-amount'),
       paymentMethod: g('e-paymentMethod'), remark: g('e-remark'),
@@ -11268,6 +11270,8 @@ function resetForm(formKey, silent) {
     const st = document.getElementById('t-status'); if (st) st.value = 'รอโหลด';
     const tc = document.getElementById('t-tripCount'); if (tc) tc.value = '1';
   }
+  // v15.49 — clear extra expense-category rows
+  if (formKey === 'expense' && typeof _resetExpenseCategories === 'function') _resetExpenseCategories();
 
   // 4) Clear editing mode if active
   if (_editingMode[formKey]) {
@@ -11451,6 +11455,10 @@ function _prefillForm(type, record) {
     const sSel = document.getElementById('t-paymentStatus');
     if (sSel) onFreightStatusChange(sSel);
   }
+  // v15.49 — expense may have multiple categories ("A + B") → rebuild category selects
+  if (type === 'expense' && typeof _prefillExpenseCategories === 'function') {
+    _prefillExpenseCategories(record.category);
+  }
 }
 
 function updateSubmitLabel(type, editing) {
@@ -11528,6 +11536,55 @@ async function performEditUpdate(type, data) {
   } catch (e) {
     hideLoading();
     showToast('ผิดพลาด: ' + e.message, 'error');
+  }
+}
+
+// ─── v15.49 — Expense multi-category ───────────────────────────────
+function addExpenseCategory() {
+  const list = document.getElementById('e-cat-list');
+  if (!list) return;
+  const first = list.querySelector('select.e-cat-sel');
+  if (!first) return;
+  const row = document.createElement('div');
+  row.className = 'e-cat-row';
+  row.style.cssText = 'display:flex;gap:6px;margin-top:6px';
+  const sel = document.createElement('select');
+  sel.className = 'e-cat-sel';
+  sel.style.flex = '1';
+  sel.innerHTML = first.innerHTML;        // same options
+  sel.selectedIndex = 0;
+  const rm = document.createElement('button');
+  rm.type = 'button'; rm.textContent = '✕'; rm.title = 'ลบหมวดนี้';
+  rm.style.cssText = 'background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;border-radius:8px;width:44px;flex-shrink:0;cursor:pointer;font-family:inherit;font-weight:700';
+  rm.onclick = () => row.remove();
+  row.appendChild(sel); row.appendChild(rm);
+  list.appendChild(row);
+}
+function _collectExpenseCategories() {
+  const sels = document.querySelectorAll('#e-cat-list select.e-cat-sel');
+  const cats = [];
+  sels.forEach(s => { const v = (s.value || '').trim(); if (v && !cats.includes(v)) cats.push(v); });
+  return cats.join(' + ');
+}
+function _resetExpenseCategories() {
+  const list = document.getElementById('e-cat-list');
+  if (!list) return;
+  list.querySelectorAll('.e-cat-row').forEach(r => r.remove());   // remove extras
+  const first = document.getElementById('e-category');
+  if (first) first.selectedIndex = 0;
+}
+// Prefill multi-category on edit: "A + B" → first select = A, add rows for the rest
+function _prefillExpenseCategories(catStr) {
+  _resetExpenseCategories();
+  const cats = String(catStr || '').split(/\s*\+\s*/).map(c => c.trim()).filter(Boolean);
+  if (!cats.length) return;
+  const first = document.getElementById('e-category');
+  if (first) first.value = cats[0];
+  for (let i = 1; i < cats.length; i++) {
+    addExpenseCategory();
+    const rows = document.querySelectorAll('#e-cat-list .e-cat-row select.e-cat-sel');
+    const sel = rows[rows.length - 1];
+    if (sel) sel.value = cats[i];
   }
 }
 
@@ -15190,7 +15247,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.48';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.49';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
