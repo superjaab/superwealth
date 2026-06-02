@@ -5170,7 +5170,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.42 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.43 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -12888,8 +12888,7 @@ function buildReport() {
 function _expDocWrap(title, range, bodyHtml) {
   const now = new Date();
   const stamp = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()+543} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  // v15.40 — formal/official report layout: centered letterhead, doc number, signature block
-  const docNo = `RPT-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+  // v15.43 — เอาเลขที่เอกสารออก (เหลือแค่วันที่ออกรายงาน)
   return `<div class="exp-doc exp-doc--formal" id="exp-report-doc">
     <div class="exp-pg-block">
       <div class="exp-letterhead">
@@ -12900,7 +12899,7 @@ function _expDocWrap(title, range, bodyHtml) {
         <div class="exp-doc-title2">${title}</div>
         ${range ? `<div class="exp-doc-range2">${range}</div>` : ''}
       </div>
-      <div class="exp-doc-meta"><span>เลขที่เอกสาร: <b>${docNo}</b></span><span>วันที่ออกรายงาน: <b>${stamp} น.</b></span></div>
+      <div class="exp-doc-meta" style="justify-content:flex-end"><span>วันที่ออกรายงาน: <b>${stamp} น.</b></span></div>
     </div>
     ${bodyHtml}
     <div class="exp-pg-block">
@@ -12908,7 +12907,7 @@ function _expDocWrap(title, range, bodyHtml) {
         <div class="exp-sign"><div class="exp-sign-line"></div>ผู้จัดทำรายงาน</div>
         <div class="exp-sign"><div class="exp-sign-line"></div>ผู้ตรวจสอบ / อนุมัติ</div>
       </div>
-      <div class="exp-doc-foot"><span>เอกสารนี้ออกโดยระบบอัตโนมัติ · SuperWealth Transport</span><span>${docNo}</span></div>
+      <div class="exp-doc-foot"><span>เอกสารนี้ออกโดยระบบอัตโนมัติ · SuperWealth Transport</span><span></span></div>
     </div>
   </div>`;
 }
@@ -15182,7 +15181,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.42';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.43';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
