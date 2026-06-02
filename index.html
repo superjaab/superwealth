@@ -5203,7 +5203,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.59 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.60 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -10266,7 +10266,7 @@ function _initTimePickers() {
   let hOpts = '';
   for (let h = 0; h < 24; h++) { const v = String(h).padStart(2,'0'); hOpts += `<option value="${v}">${v}</option>`; }
   let mOpts = '';
-  for (let m = 0; m < 60; m += 5) { const v = String(m).padStart(2,'0'); mOpts += `<option value="${v}">${v}</option>`; }
+  for (let m = 0; m < 60; m++) { const v = String(m).padStart(2,'0'); mOpts += `<option value="${v}">${v}</option>`; }  // v15.60 — ทุก 1 นาที (00–59)
   document.querySelectorAll('.sw-time-pick').forEach(box => {
     const hs = box.querySelector('.sw-time-h'), ms = box.querySelector('.sw-time-m');
     if (hs && !hs._filled) { hs.innerHTML = hOpts; hs._filled = true; }
@@ -10288,10 +10288,8 @@ function _applyTimeToSelects(baseId) {
   const box = hidden.closest('.sw-time-pick'); if (!box) return;
   const hs = box.querySelector('.sw-time-h'), ms = box.querySelector('.sw-time-m');
   const mt = String(hidden.value || '').match(/(\d{1,2}):(\d{1,2})/);
-  let H = mt ? Math.min(23, Math.max(0, parseInt(mt[1],10) || 0)) : 0;
-  let M = mt ? Math.min(59, Math.max(0, parseInt(mt[2],10) || 0)) : 0;
-  M = Math.round(M / 5) * 5;
-  if (M === 60) { M = 0; if (H < 23) H++; }
+  const H = mt ? Math.min(23, Math.max(0, parseInt(mt[1],10) || 0)) : 0;
+  const M = mt ? Math.min(59, Math.max(0, parseInt(mt[2],10) || 0)) : 0;  // v15.60 — ละเอียด 1 นาที ไม่ปัดแล้ว
   const hh = String(H).padStart(2,'0'), mm = String(M).padStart(2,'0');
   if (hs) hs.value = hh;
   if (ms) ms.value = mm;
@@ -15607,7 +15605,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.59';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.60';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
