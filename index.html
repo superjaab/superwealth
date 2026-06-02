@@ -5203,7 +5203,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.61 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.62 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -5446,7 +5446,7 @@
           </select>
           <button type="button" onclick="refreshLinkedTripsDropdown()" title="รีเฟรชรายการรอบเที่ยว" style="background:#dbeafe;border:1.5px solid #93c5fd;border-radius:8px;width:46px;cursor:pointer;font-size:1.1rem;color:#1d4ed8;flex-shrink:0">🔄</button>
         </div>
-        <p class="hint" style="font-size:.7rem;color:#94a3b8;margin-top:4px">💡 ⚠️ = ยังค้างจ่าย, ✅ = จ่ายแล้ว — เลือกแล้วบันทึกจะอัปเดตเป็น "จ่ายแล้ว" อัตโนมัติ</p>
+        <p class="hint" style="font-size:.7rem;color:#94a3b8;margin-top:4px">💡 🔒 = รอบนี้ลงรายรับไปแล้ว — เลือกซ้ำได้หากต้องการ · เลือกแล้วบันทึกจะอัปเดตรอบเป็น "จ่ายแล้ว" อัตโนมัติ</p>
       </div>
       <div class="form-row">
         <label>ลูกค้า <span class="req">*</span></label>
@@ -9881,15 +9881,17 @@ function populateLinkedTripsDropdown(editingRecord) {
     ? editingRecord.linkedTripRowId
     : null;
 
+  // v15.62 — รอบที่ "ลงรายรับไปแล้ว" อิงลิงก์จริงจาก incomeHistory (ไม่อิง paymentStatus
+  //   ที่อาจไม่ sync ตอนแก้ไข → ทำให้รอบหาย/รอบที่ใช้แล้วยังโผล่). กันรายการที่กำลังแก้ออก.
+  const usedTripIds = new Set(
+    (_master.incomeHistory || [])
+      .filter(inc => inc.linkedTripRowId && (!editingRecord || inc.rowId !== editingRecord.rowId))
+      .map(inc => inc.linkedTripRowId)
+  );
+
+  // แสดง "ทุกรอบ" ที่มีเลขรอบ (ไม่ซ่อน) — กันรอบหาย แล้วค่อย mark รอบที่ใช้แล้ว
   const candidates = (_master.truckHistory || [])
-    .filter(t => {
-      if (!t.rowId || t.tripRound == null || t.tripRound === '') return false;
-      // ค้างจ่าย: always include
-      if ((t.paymentStatus || 'ค้างจ่าย') === 'ค้างจ่าย') return true;
-      // จ่ายแล้ว: include ONLY if it's the editing record's currently-linked trip
-      if (editingLinkId && t.rowId === editingLinkId) return true;
-      return false;
-    })
+    .filter(t => t.rowId && t.tripRound != null && t.tripRound !== '')
     .sort((a,b) => (+b.tripRound||0) - (+a.tripRound||0));
 
   sel.innerHTML = '<option value="">— ไม่ลิงก์รอบเที่ยว —</option>' + candidates.map(t => {
@@ -9898,8 +9900,8 @@ function populateLinkedTripsDropdown(editingRecord) {
       : fmtDate(t.pickupDate || t.jobDate);
     const cust = t.customerName ? ` • ${t.customerName}` : '';
     const amt  = t.freightCost ? ` (฿${(+t.freightCost).toLocaleString('en-US')})` : '';
-    const paid = (t.paymentStatus === 'จ่ายแล้ว') ? ' ✅ (ลิงก์ปัจจุบัน)' : '';
-    return `<option value="${escAttr(t.rowId)}" data-round="${t.tripRound}" data-amount="${t.freightCost||''}" data-customer="${escAttr(t.customerName||'')}" data-origin="${escAttr(t.originCustomer||'')}">รอบ #${t.tripRound}${paid} • ${escAttr(t.plateNumber||'')} • ${escAttr(dates)}${escAttr(cust)}${amt}</option>`;
+    const used = usedTripIds.has(t.rowId) ? ' 🔒(ลงรายรับแล้ว)' : '';
+    return `<option value="${escAttr(t.rowId)}" data-round="${t.tripRound}" data-amount="${t.freightCost||''}" data-customer="${escAttr(t.customerName||'')}" data-origin="${escAttr(t.originCustomer||'')}">รอบ #${t.tripRound}${used} • ${escAttr(t.plateNumber||'')} • ${escAttr(dates)}${escAttr(cust)}${amt}</option>`;
   }).join('');
   if (editingLinkId) sel.value = editingLinkId;
   else if (currentVal) sel.value = currentVal;
@@ -15630,7 +15632,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.61';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.62';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
