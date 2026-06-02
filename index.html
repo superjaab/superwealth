@@ -5198,7 +5198,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.55 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.56 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -10620,6 +10620,8 @@ function autoFillFields(formKey, parsed) {
     setSelect('e-category',      parsed.expenseCategory);
     // วิธีจ่ายเงิน: detect จาก OCR
     setSelect('e-paymentMethod', parsed.paymentMethod);
+    // v15.56 — การตั้งค่า .value ด้วยโค้ดไม่ทริกเกอร์ oninput → จัดรูปแบบ + อัปเดตยอดรวมเอง
+    _syncExpAmount();
   }
 
   if (filled > 0) showToast(`✅ เติมข้อมูลอัตโนมัติ ${filled} ช่องแล้ว`, 'success');
@@ -10773,6 +10775,7 @@ function fillFormFromOCR(formKey) {
     set('e-expenseDetail', parsed.cargoList || parsed.incomeItem);
     setSelect('e-category',      parsed.expenseCategory);
     setSelect('e-paymentMethod', parsed.paymentMethod);
+    _syncExpAmount();   // v15.56 — จัดรูปแบบจำนวนเงิน + อัปเดตยอดรวม (oninput ไม่ทำงานตอน set ด้วยโค้ด)
   }
 
   if (filled > 0) { showToast(`✅ เติมข้อมูลลงฟอร์ม ${filled} ช่องแล้ว`, 'success'); closeOCRPanel(formKey); }
@@ -11119,6 +11122,8 @@ function quickFill(formKey) {
   // v15.31 — ไม่ตั้งวันที่ให้อัตโนมัติ (ผู้ใช้กรอกเอง) ตามคำขอ
   // Trip round runs normally (next number)
   if (formKey === 'truck' && typeof setTripRoundField === 'function') setTripRoundField();
+  // v15.56 — รายจ่าย: อัปเดตยอดรวมหลังเติมจำนวนเงินด้วยโค้ด
+  if (formKey === 'expense' && typeof _syncExpAmount === 'function') _syncExpAmount();
   showToast(filled
     ? `⚡ "${tpl.name}" เติม ${filled} ช่องแล้ว — กรอกวันที่แล้วกดบันทึก`
     : '⚠️ เทมเพลตนี้ว่าง — ลองเลือกเทมเพลตอื่น', filled ? 'success' : 'warning');
@@ -11655,6 +11660,14 @@ function _updateExpTotal() {
   const total = _expRows().reduce((s, r) => s + r.amount, 0);
   const el = document.getElementById('e-total');
   if (el) el.textContent = fmtBaht(total);
+}
+// v15.56 — จัดรูปแบบจำนวนเงินทุกแถว + อัปเดตยอดรวม (ใช้หลังตั้งค่าด้วยโค้ด เช่น OCR/ลงด่วน
+// ที่ไม่ทริกเกอร์ oninput ของช่องจำนวนเงิน)
+function _syncExpAmount() {
+  document.querySelectorAll('#e-cat-list .e-cat-amt').forEach(inp => {
+    if (inp.value) inp.value = formatMoneyDisplay(inp.value);
+  });
+  _updateExpTotal();
 }
 function _resetExpenseCategories() {
   const list = document.getElementById('e-cat-list');
@@ -15522,7 +15535,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.55';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.56';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
