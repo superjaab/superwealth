@@ -4,6 +4,7 @@
  * Writes by COLUMN NAME (resilient to header reordering).
  */
 const { google } = require('googleapis');
+const { appendActivityLog } = require('./_logger');  // v15.44 — audit log
 
 // v15.33 — keep only short http(s) URLs (drop base64 → avoids 50k-char cell error)
 function _safeImgs(v) {
@@ -300,6 +301,9 @@ module.exports = async function handler(req, res) {
       valueInputOption: 'USER_ENTERED',
       requestBody: { values: [newRow] }
     });
+
+    // v15.44 — audit log (never blocks the update)
+    await appendActivityLog({ action: 'update', type, rowId, data, req });
 
     return res.json({ success:true, message:'อัปเดตข้อมูลสำเร็จ' });
   } catch(e) {

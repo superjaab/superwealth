@@ -4,6 +4,7 @@
  * Writes a row to Google Sheets by COLUMN NAME (resilient to header reordering).
  */
 const { google } = require('googleapis');
+const { appendActivityLog } = require('./_logger');  // v15.44 — audit log
 
 // v14.63 — Safe imageUrls serializer: ALWAYS produces a single-encoded JSON array string
 // Prevents the "\"[]\"" double-stringify bug when input is already a JSON string.
@@ -333,6 +334,9 @@ module.exports = async function handler(req, res) {
       valueInputOption: 'USER_ENTERED',
       requestBody: { values: [row] }
     });
+
+    // v15.44 — audit log (never blocks the save)
+    await appendActivityLog({ action: 'create', type, rowId, data, req });
 
     return res.json({ success:true, rowId, message: MSG[type] || 'บันทึกสำเร็จ' });
   } catch(e) {

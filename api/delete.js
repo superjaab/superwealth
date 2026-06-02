@@ -5,6 +5,7 @@
  * → { success, message }
  */
 const { google } = require('googleapis');
+const { appendActivityLog } = require('./_logger');  // v15.44 — audit log
 
 const SHEET_NAMES = {
   truck:'TruckJobs', income:'Income', expense:'Expense',
@@ -60,6 +61,10 @@ module.exports = async function handler(req, res) {
     }
     if (foundIdx < 0) return res.status(404).json({ success:false, error:'rowId not found: ' + target });
 
+    // v15.44 — snapshot the row BEFORE deleting, so the audit log keeps the data
+    const snapshot = {};
+    headers.forEach((h, i) => { if (h) snapshot[h] = rows[foundIdx][i]; });
+
     // Delete the row (0-based; row 0 = header)
     await sheets.spreadsheets.batchUpdate({
       spreadsheetId: sheetId,
@@ -76,6 +81,9 @@ module.exports = async function handler(req, res) {
         }]
       }
     });
+
+    // v15.44 — log the deletion with the deleted record's snapshot
+    await appendActivityLog({ action: 'delete', type, rowId, data: snapshot, req });
 
     return res.json({ success:true, message:'ลบข้อมูลสำเร็จ' });
   } catch(e) {
