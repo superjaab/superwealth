@@ -4985,6 +4985,9 @@
     }
     body.dark .sw-doc-auto:hover { background: #283142 !important; border-color: #4b5563 !important; }
 
+    /* v15.57 — ช่องเวลาแบบพิมพ์ง่าย (แทน native time spinner) */
+    .sw-time-input { font-variant-numeric: tabular-nums; letter-spacing: 1px; }
+
     /* v15.02 — Trip round chip: compact pill ที่มุมขวาบนของ card-title
        สไตล์ off-white minimal เหมือน sw-doc-auto แต่แก้ตัวเลขได้ + ปุ่ม refresh */
     .sw-round-auto {
@@ -5198,7 +5201,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.56 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.57 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -5420,7 +5423,9 @@
         </div>
         <div class="form-row">
           <label>เวลา</label>
-          <input type="time" id="i-incomeTime">
+          <input type="text" id="i-incomeTime" class="sw-time-input" inputmode="numeric" maxlength="5"
+                 placeholder="00:00" autocomplete="off" title="พิมพ์ตัวเลข 24 ชม. เช่น 0930 → 09:30"
+                 oninput="onTimeInput(this)" onblur="onTimeBlur(this)">
         </div>
         <div class="form-row">
           <label>เลขที่เอกสาร</label>
@@ -5529,7 +5534,9 @@
         </div>
         <div class="form-row">
           <label>เวลา</label>
-          <input type="time" id="e-expenseTime">
+          <input type="text" id="e-expenseTime" class="sw-time-input" inputmode="numeric" maxlength="5"
+                 placeholder="00:00" autocomplete="off" title="พิมพ์ตัวเลข 24 ชม. เช่น 0930 → 09:30"
+                 oninput="onTimeInput(this)" onblur="onTimeBlur(this)">
         </div>
         <div class="form-row">
           <label>เลขที่เอกสาร</label>
@@ -7355,7 +7362,7 @@
       <div class="card-title" style="color:#F57F17">⛽ บันทึกการเติมน้ำมัน</div>
       <div class="form-row-3">
         <div class="form-row"><label>วันที่ <span class="req">*</span></label><input type="date" id="fuel-date"></div>
-        <div class="form-row"><label>เวลา</label><input type="time" id="fuel-time"></div>
+        <div class="form-row"><label>เวลา</label><input type="text" id="fuel-time" class="sw-time-input" inputmode="numeric" maxlength="5" placeholder="00:00" autocomplete="off" title="พิมพ์ตัวเลข 24 ชม. เช่น 0930 → 09:30" oninput="onTimeInput(this)" onblur="onTimeBlur(this)"></div>
         <div class="form-row"><label>ทะเบียนรถ <span class="req">*</span></label><input type="text" id="fuel-plate" placeholder="กข-1234" maxlength="20" autocomplete="off"></div>
       </div>
       <div class="form-row-3">
@@ -10231,6 +10238,25 @@ function setDefaultDates() {
     if (el._flatpickr) el._flatpickr.setDate(now, false);
     else el.value = now;
   });
+}
+
+// v15.57 — พิมพ์เวลาง่ายแบบ 24 ชม. (แทน native time spinner ที่กรอกยาก)
+// พิมพ์ตัวเลขล้วน → ใส่ ":" ให้อัตโนมัติ (0930 → 09:30) แล้วปรับให้ถูกต้องตอนออกจากช่อง
+function onTimeInput(el) {
+  let v = String(el.value).replace(/\D/g, '').slice(0, 4);   // เก็บเฉพาะตัวเลข สูงสุด 4 หลัก
+  if (v.length > 2) v = v.slice(0, 2) + ':' + v.slice(2);
+  el.value = v;
+}
+function onTimeBlur(el) {
+  const digits = String(el.value).replace(/\D/g, '');
+  if (!digits) { el.value = ''; return; }                    // เว้นว่างได้
+  let hh, mm;
+  if (digits.length <= 2)       { hh = digits;            mm = '0'; }              // "9" → 09:00
+  else if (digits.length === 3) { hh = digits.slice(0,1); mm = digits.slice(1); }  // "915" → 09:15
+  else                          { hh = digits.slice(0,2); mm = digits.slice(2,4); }// "0930" → 09:30
+  const H = Math.max(0, Math.min(23, parseInt(hh, 10) || 0));  // 00–23
+  const M = Math.max(0, Math.min(59, parseInt(mm, 10) || 0));  // 00–59
+  el.value = String(H).padStart(2, '0') + ':' + String(M).padStart(2, '0');
 }
 
 // ─── TAB ──────────────────────────────────
@@ -15535,7 +15561,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.56';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.57';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
