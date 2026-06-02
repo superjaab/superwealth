@@ -8,8 +8,11 @@ const { google } = require('googleapis');
 // v14.63 — Safe imageUrls serializer: ALWAYS produces a single-encoded JSON array string
 // Prevents the "\"[]\"" double-stringify bug when input is already a JSON string.
 function _safeImageUrlsJson(v) {
+  // v15.33 — only keep short http(s) URLs. Drop base64 data: URLs which can be
+  // hundreds of KB and blow past Google Sheets' 50,000-char-per-cell limit.
+  const ok = x => typeof x === 'string' && /^https?:\/\//i.test(x.trim());
   if (!v) return '[]';
-  if (Array.isArray(v)) return JSON.stringify(v.filter(x => typeof x === 'string' && x.trim()));
+  if (Array.isArray(v)) return JSON.stringify(v.filter(ok).map(x => x.trim()));
   if (typeof v === 'string') {
     let s = v.trim();
     // Peel up to 3 layers of quote-wrapping
@@ -21,10 +24,10 @@ function _safeImageUrlsJson(v) {
     }
     if (!s || s === '[]') return '[]';
     if (s.startsWith('[')) {
-      try { const arr = JSON.parse(s); if (Array.isArray(arr)) return JSON.stringify(arr.filter(x => typeof x === 'string' && x.trim())); } catch {}
+      try { const arr = JSON.parse(s); if (Array.isArray(arr)) return JSON.stringify(arr.filter(ok).map(x => x.trim())); } catch {}
     }
     // Fallback: comma-separated
-    const list = s.split(/[,;\n]/).map(x => x.trim()).filter(x => /^(https?:\/\/|data:image\/)/i.test(x));
+    const list = s.split(/[,;\n]/).map(x => x.trim()).filter(ok);
     return JSON.stringify(list);
   }
   return '[]';

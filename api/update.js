@@ -5,6 +5,17 @@
  */
 const { google } = require('googleapis');
 
+// v15.33 — keep only short http(s) URLs (drop base64 → avoids 50k-char cell error)
+function _safeImgs(v) {
+  const ok = x => typeof x === 'string' && /^https?:\/\//i.test(x.trim());
+  let arr = [];
+  try {
+    if (Array.isArray(v)) arr = v;
+    else if (typeof v === 'string' && v.trim().startsWith('[')) arr = JSON.parse(v);
+  } catch {}
+  return JSON.stringify((Array.isArray(arr) ? arr : []).filter(ok).map(x => x.trim()));
+}
+
 // v15.30 — up to 4 image columns (mirror of save.js) so edits show ALL images
 const IMG_COLS = ['🖼 รูป1','🖼 รูป2','🖼 รูป3','🖼 รูป4'];
 function _imageFormulaForUrl(url) {
@@ -43,7 +54,7 @@ const CONFIGS = {
       customerName: d.customerName||'', cargoList: d.cargoList||'',
       cargoWeight: +d.cargoWeight||0, tripCount: +d.tripCount||1, freightCost: +d.freightCost||0,
       jobStatus: d.jobStatus||'รอโหลด', remark: d.remark||'',
-      imageUrls: JSON.stringify(d.imageUrls||[]), ocrText: d.ocrText||'', userAgent: d.userAgent||'',
+      imageUrls: _safeImgs(d.imageUrls), ocrText: d.ocrText||'', userAgent: d.userAgent||'',
       rowId: id,
       pickupDate: d.pickupDate||'', deliveryDate: d.deliveryDate||'',
       tripRound: +d.tripRound||0, paymentStatus: d.paymentStatus||'ค้างจ่าย'
@@ -57,7 +68,7 @@ const CONFIGS = {
       docNumber: d.docNumber||'', customerName: d.customerName||'',
       incomeItem: d.incomeItem||'', amount: +d.amount||0,
       paymentMethod: d.paymentMethod||'เงินสด', remark: d.remark||'',
-      imageUrls: JSON.stringify(d.imageUrls||[]), ocrText: d.ocrText||'', userAgent: d.userAgent||'',
+      imageUrls: _safeImgs(d.imageUrls), ocrText: d.ocrText||'', userAgent: d.userAgent||'',
       rowId: id,
       linkedTripRowId: d.linkedTripRowId||'', linkedTripRound: +d.linkedTripRound||0
     })
@@ -72,7 +83,7 @@ const CONFIGS = {
       vendor: d.vendor||'', expenseDetail: d.expenseDetail||'',
       amount: +d.amount||0, paymentMethod: d.paymentMethod||'เงินสด',
       remark: d.remark||'',
-      imageUrls: JSON.stringify(d.imageUrls||[]), ocrText: d.ocrText||'', userAgent: d.userAgent||'',
+      imageUrls: _safeImgs(d.imageUrls), ocrText: d.ocrText||'', userAgent: d.userAgent||'',
       rowId: id,
       linkedTripRowId: d.linkedTripRowId||'', linkedTripRound: +d.linkedTripRound||0
     })
@@ -127,7 +138,7 @@ const CONFIGS = {
       cost: +d.cost||0, vendor: d.vendor||'',
       odometerKm: d.odometerKm||'', nextDueDate: d.nextDueDate||'',
       notes: d.notes||'',
-      imageUrls: JSON.stringify(d.imageUrls||[]), userAgent: d.userAgent||'',
+      imageUrls: _safeImgs(d.imageUrls), userAgent: d.userAgent||'',
       rowId: id
     })
   },
