@@ -33,6 +33,8 @@ function _safeImageUrlsJson(v) {
 // v15.26 — Column that renders the uploaded image as a clickable thumbnail in the sheet.
 const IMG_COL = '🖼 รูปภาพ';
 // Build a Google-Sheets formula that shows the first image + links to full size.
+// v15.27 — Google =IMAGE() does NOT render lh3.googleusercontent.com/d/ URLs reliably.
+// Extract the Drive file ID and use drive.google.com/thumbnail?id=… which =IMAGE() supports.
 function _imagePreviewFormula(imageUrls) {
   let arr = [];
   try {
@@ -41,11 +43,16 @@ function _imagePreviewFormula(imageUrls) {
   } catch {}
   const first = (Array.isArray(arr) ? arr : []).find(u => typeof u === 'string' && /^https?:\/\//.test(u));
   if (!first) return '';
-  // strip any existing size suffix (=w800 etc.) → base Drive/lh3 URL
-  const base  = String(first).replace(/=[swh]\d+(-[a-z0-9]+)*$/i, '');
-  const thumb = base + '=w400';
-  // HYPERLINK(viewFull, IMAGE(thumb, mode 4 = explicit size, height, width))
-  return `=HYPERLINK("${base}", IMAGE("${thumb}", 4, 96, 130))`;
+  // Extract Drive file ID from lh3 (/d/ID) or drive (/file/d/ID or ?id=ID) URLs
+  const m = String(first).match(/\/d\/([a-zA-Z0-9_-]{20,})/) || String(first).match(/[?&]id=([a-zA-Z0-9_-]{20,})/);
+  if (m) {
+    const id    = m[1];
+    const thumb = `https://drive.google.com/thumbnail?id=${id}&sz=w400`;
+    const view  = `https://drive.google.com/file/d/${id}/view`;
+    return `=HYPERLINK("${view}", IMAGE("${thumb}", 4, 96, 130))`;
+  }
+  // Non-Drive direct image URL (e.g. ImgBB) — use as-is
+  return `=HYPERLINK("${first}", IMAGE("${first}", 4, 96, 130))`;
 }
 
 // ─── Sheet configs ──────────────────────────────────────────

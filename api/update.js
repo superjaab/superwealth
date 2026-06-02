@@ -15,9 +15,15 @@ function _imagePreviewFormula(imageUrls) {
   } catch {}
   const first = (Array.isArray(arr) ? arr : []).find(u => typeof u === 'string' && /^https?:\/\//.test(u));
   if (!first) return '';
-  const base  = String(first).replace(/=[swh]\d+(-[a-z0-9]+)*$/i, '');
-  const thumb = base + '=w400';
-  return `=HYPERLINK("${base}", IMAGE("${thumb}", 4, 96, 130))`;
+  // v15.27 — Drive file ID → drive.google.com/thumbnail (=IMAGE supports this, not lh3)
+  const m = String(first).match(/\/d\/([a-zA-Z0-9_-]{20,})/) || String(first).match(/[?&]id=([a-zA-Z0-9_-]{20,})/);
+  if (m) {
+    const id    = m[1];
+    const thumb = `https://drive.google.com/thumbnail?id=${id}&sz=w400`;
+    const view  = `https://drive.google.com/file/d/${id}/view`;
+    return `=HYPERLINK("${view}", IMAGE("${thumb}", 4, 96, 130))`;
+  }
+  return `=HYPERLINK("${first}", IMAGE("${first}", 4, 96, 130))`;
 }
 
 // Same as save.js — each type has a `data` function returning {column: value} object.
@@ -248,9 +254,16 @@ module.exports = async function handler(req, res) {
 
     // Build new row by HEADER NAME (so any column order works)
     const dataObj = cfg.data(data, origTimestamp, rowId);
-    // v15.26 — refresh image-thumbnail formula if this sheet has the column + new images provided
-    if (headers.includes(IMG_COL) && data.imageUrls !== undefined) {
-      dataObj[IMG_COL] = _imagePreviewFormula(data.imageUrls);
+    // v15.27 — (re)build image-thumbnail formula. If no new images provided on this
+    // edit, fall back to the imageUrls already stored in the row → re-saving any old
+    // record backfills its thumbnail.
+    if (headers.includes(IMG_COL)) {
+      let urls = data.imageUrls;
+      if (urls === undefined) {
+        const iuIdx = headers.indexOf('imageUrls');
+        if (iuIdx >= 0) urls = rows[foundIdx][iuIdx];
+      }
+      dataObj[IMG_COL] = _imagePreviewFormula(urls);
     }
     const newRow = headers.map(h => {
       const v = dataObj[h];
