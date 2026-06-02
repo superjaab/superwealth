@@ -1095,6 +1095,19 @@
     .dash-cust-name { font-size: .82rem; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .dash-cust-sub { font-size: .68rem; color: #94a3b8; margin-top: 2px; }
     .dash-cust-amount { font-size: .85rem; font-weight: 800; color: #059669; flex-shrink: 0; }
+    /* v15.01 — stat chips below customer name (trips + income count) */
+    .dash-cust-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+    .dc-chip {
+      display: inline-flex; align-items: center; gap: 2px;
+      font-size: .64rem; font-weight: 700; line-height: 1;
+      padding: 3px 7px; border-radius: 20px;
+      background: #f1f5f9; color: #64748b; white-space: nowrap;
+    }
+    .dc-chip--trip { background: #eff6ff; color: #1d4ed8; }
+    .dc-chip--inc  { background: #ecfdf5; color: #047857; }
+    body.dark .dc-chip      { background: #1e293b; color: #94a3b8; }
+    body.dark .dc-chip--trip { background: #1e3a5f; color: #93c5fd; }
+    body.dark .dc-chip--inc  { background: #064e3b; color: #6ee7b7; }
 
     /* Old sum-card legacy (still used elsewhere) */
     .sum-card {
@@ -4884,7 +4897,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.00 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.01 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -6384,7 +6397,7 @@
       <div class="dash-card-head">
         <div>
           <div class="dash-card-title">🏢 ลูกค้ารายได้สูงสุด</div>
-          <div class="dash-card-sub">All time</div>
+          <div class="dash-card-sub">ยอดรายรับ · จำนวนเที่ยวที่ส่ง</div>
         </div>
       </div>
       <div id="sum-top-customers"></div>
@@ -13450,7 +13463,7 @@ function renderSummary(data, dateFrom, dateTo) {
   // ── 3-col insights ──
   document.getElementById('sum-3col').style.display = '';
   renderTopCategories(expense);
-  renderTopCustomers(income);
+  renderTopCustomers(income, truck);
   renderTopVehicles(truck);
 
   // ── Truck table ──
@@ -13550,10 +13563,12 @@ function renderTopCategories(expense) {
   }).join('');
 }
 
-// ─── TOP CUSTOMERS (income/freight) ────────────────────────────────────────
-function renderTopCustomers(income) {
+// ─── TOP CUSTOMERS (income + trip count) ───────────────────────────────────
+// v15.01 — แสดงทั้ง ยอดรายรับรวม + จำนวนเที่ยวที่ส่ง + จำนวนรายการรายรับ
+function renderTopCustomers(income, truck) {
   const el = document.getElementById('sum-top-customers');
   if (!el) return;
+  truck = truck || [];
   // Filter out garbage names (rowIds, times, pure numbers)
   const isJunk = s => {
     if (!s) return true;
@@ -13564,31 +13579,59 @@ function renderTopCustomers(income) {
     if (s.length < 2) return true;
     return false;
   };
-  const map = {};
+  const norm = s => String(s || '').trim();
+
+  // Aggregate by customer: revenue + income-record count + trip count
+  const map = {};   // name → { revenue, incCount, trips }
+  const ensure = n => (map[n] || (map[n] = { revenue: 0, incCount: 0, trips: 0 }));
+
+  // 1) Revenue + income record count (from income sheet)
   income.forEach(r => {
-    let name = (r.customerName || '').trim();
-    // If customerName is junk, try incomeItem as fallback
-    if (isJunk(name) && !isJunk(r.incomeItem)) name = r.incomeItem;
+    let name = norm(r.customerName);
+    if (isJunk(name) && !isJunk(r.incomeItem)) name = norm(r.incomeItem);
     if (!name || isJunk(name)) name = '(ไม่ระบุ)';
-    map[name] = (map[name] || 0) + _detectAmount(r);
+    const o = ensure(name);
+    o.revenue += _detectAmount(r);
+    o.incCount++;
   });
-  const sorted = Object.entries(map).sort((a,b) => b[1] - a[1]).slice(0, 6);
+
+  // 2) Trip / delivery count (from truck sheet — match destination OR origin customer)
+  truck.forEach(t => {
+    const dest = norm(t.customerName);
+    const orig = norm(t.originCustomer);
+    const seen = new Set();
+    [dest, orig].forEach(nm => {
+      if (!nm || isJunk(nm) || seen.has(nm)) return;
+      seen.add(nm);
+      ensure(nm).trips++;
+    });
+  });
+
+  // Sort by revenue desc; tiebreak by trips
+  const sorted = Object.entries(map)
+    .sort((a, b) => (b[1].revenue - a[1].revenue) || (b[1].trips - a[1].trips))
+    .slice(0, 6);
+
   const colors = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4'];
   const fmt = n => '฿' + n.toLocaleString('th-TH',{maximumFractionDigits:0});
   if (sorted.length === 0) {
     el.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:.78rem;padding:14px">📭 ไม่มีข้อมูล</div>';
     return;
   }
-  el.innerHTML = sorted.map(([name, amt], i) => {
+  el.innerHTML = sorted.map(([name, o], i) => {
     const initials = (name.match(/\S+/g) || []).slice(0,2).map(w => w[0]).join('').toUpperCase().slice(0,2) || '?';
     const c = colors[i % colors.length];
+    const chips = [];
+    if (o.trips > 0)    chips.push(`<span class="dc-chip dc-chip--trip">📦 ${o.trips} เที่ยว</span>`);
+    if (o.incCount > 0) chips.push(`<span class="dc-chip dc-chip--inc">📥 ${o.incCount} รายการ</span>`);
+    if (!chips.length)  chips.push(`<span class="dc-chip">—</span>`);
     return `<div class="dash-cust">
       <div class="dash-cust-avatar" style="background:${c}">${escHtml(initials)}</div>
       <div class="dash-cust-info">
         <div class="dash-cust-name">${escHtml(name)}</div>
-        <div class="dash-cust-sub">${income.filter(r => (r.customerName||'(ไม่ระบุ)') === name).length} รายการ</div>
+        <div class="dash-cust-chips">${chips.join('')}</div>
       </div>
-      <div class="dash-cust-amount">${fmt(amt)}</div>
+      <div class="dash-cust-amount priv-amt">${fmt(o.revenue)}</div>
     </div>`;
   }).join('');
 }
@@ -14252,7 +14295,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.00';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.01';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
