@@ -2413,6 +2413,67 @@
       box-shadow: 0 4px 14px rgba(0,0,0,.18);
     }
 
+    /* ════ v15.32 — EXPORT REPORT TAB ════ */
+    .exp-type-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+    @media (max-width:640px){ .exp-type-grid{ grid-template-columns:repeat(2,1fr);} }
+    .exp-type-chip {
+      display:flex; flex-direction:column; align-items:center; gap:6px;
+      padding:16px 10px; border:1.5px solid #e2e8f0; border-radius:14px;
+      background:#fff; cursor:pointer; font-family:inherit; font-weight:700;
+      font-size:.8rem; color:#475569; transition:all .15s; font-size:1.5rem;
+    }
+    .exp-type-chip span { font-size:.8rem; }
+    .exp-type-chip:hover { border-color:#93c5fd; background:#f8fafc; transform:translateY(-1px); }
+    .exp-type-chip.active { border-color:#2563eb; background:#eff6ff; color:#1d4ed8; box-shadow:0 2px 8px rgba(37,99,235,.15); }
+    body.dark .exp-type-chip { background:#1e293b; border-color:#334155; color:#94a3b8; }
+    body.dark .exp-type-chip.active { background:#1e3a5f; border-color:#3b82f6; color:#93c5fd; }
+    .exp-month-chip {
+      display:inline-flex; align-items:center; gap:5px; padding:7px 13px; margin:3px;
+      border:1.5px solid #e2e8f0; border-radius:999px; background:#fff; cursor:pointer;
+      font-family:inherit; font-size:.8rem; font-weight:700; color:#475569; transition:all .12s;
+    }
+    .exp-month-chip:hover { border-color:#93c5fd; }
+    .exp-month-chip.on { border-color:#2563eb; background:#2563eb; color:#fff; }
+    body.dark .exp-month-chip { background:#1e293b; border-color:#334155; color:#cbd5e1; }
+    body.dark .exp-month-chip.on { background:#2563eb; color:#fff; border-color:#2563eb; }
+    .exp-opt-box { padding:12px 14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; }
+    body.dark .exp-opt-box { background:#0f172a; border-color:#334155; }
+    .exp-opt-label { font-size:.78rem; font-weight:800; color:#475569; margin-bottom:8px; }
+    body.dark .exp-opt-label { color:#94a3b8; }
+
+    /* The printable report document (captured by html2canvas) */
+    .exp-doc {
+      background:#fff; color:#0f172a; width:794px; max-width:100%; margin:0 auto;
+      padding:36px 40px; font-family:'Noto Sans Thai',Arial,sans-serif; box-sizing:border-box;
+      box-shadow:0 2px 14px rgba(0,0,0,.12); border-radius:6px;
+    }
+    .exp-doc * { box-sizing:border-box; }
+    .exp-doc-head { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #0f172a; padding-bottom:16px; margin-bottom:20px; }
+    .exp-doc-brand { font-size:20px; font-weight:900; color:#0f172a; letter-spacing:-.3px; }
+    .exp-doc-sub { font-size:11px; color:#64748b; margin-top:2px; }
+    .exp-doc-title { font-size:22px; font-weight:900; color:#1d4ed8; text-align:right; }
+    .exp-doc-range { font-size:12px; color:#64748b; text-align:right; margin-top:2px; }
+    .exp-tbl { width:100%; border-collapse:collapse; font-size:12.5px; margin-bottom:8px; }
+    .exp-tbl th { background:#1e293b; color:#fff; padding:9px 10px; text-align:left; font-weight:700; }
+    .exp-tbl th.num, .exp-tbl td.num { text-align:right; font-variant-numeric:tabular-nums; }
+    .exp-tbl td { padding:8px 10px; border-bottom:1px solid #e8edf3; }
+    .exp-tbl tr:nth-child(even) td { background:#f8fafc; }
+    .exp-sec-title { font-size:15px; font-weight:900; color:#0f172a; margin:18px 0 8px; padding-left:8px; border-left:4px solid #2563eb; }
+    .exp-kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:16px; }
+    .exp-kpi { padding:14px; border-radius:12px; border:1.5px solid #e2e8f0; }
+    .exp-kpi-label { font-size:11px; font-weight:700; color:#64748b; }
+    .exp-kpi-val { font-size:18px; font-weight:900; margin-top:3px; font-variant-numeric:tabular-nums; }
+    .exp-doc-foot { margin-top:20px; padding-top:12px; border-top:1px dashed #cbd5e1; font-size:10.5px; color:#94a3b8; display:flex; justify-content:space-between; }
+    /* Mini calendar grid for export */
+    .exp-cal { width:100%; border-collapse:collapse; margin-bottom:18px; table-layout:fixed; }
+    .exp-cal th { background:#eef2f7; color:#475569; font-size:11px; padding:6px 2px; text-align:center; border:1px solid #d1d9e2; font-weight:800; }
+    .exp-cal td { border:1px solid #d1d9e2; vertical-align:top; height:74px; padding:3px 4px; font-size:10px; }
+    .exp-cal td .d { font-weight:800; color:#334155; font-size:11px; }
+    .exp-cal td.other .d { color:#cbd5e1; }
+    .exp-cal-evt { display:block; background:#dbeafe; color:#1e40af; border-radius:3px; padding:1px 4px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:700; }
+    .exp-cal-evt.done { background:#dcfce7; color:#166534; }
+    .exp-empty { text-align:center; color:#94a3b8; padding:40px 16px; }
+
     /* ─── REDUCED MOTION ─── */
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
@@ -5069,6 +5130,7 @@
     <div class="sb-section">ปฏิบัติการ</div>
     <button class="tab-btn" onclick="switchTab('maintenance',this)"><span class="icon">🔧</span>ซ่อมบำรุง</button>
     <button class="tab-btn" onclick="switchTab('invoice',this)"><span class="icon">🧾</span>ใบเสร็จรับเงิน</button>
+    <button class="tab-btn" onclick="switchTab('export',this);initExportTab()"><span class="icon">📤</span>ส่งออกรายงาน</button>
     <div class="sb-section">เครื่องมือ</div>
     <button class="tab-btn admin-only" onclick="switchTab('admin',this);initAdminTab()"><span class="icon">⚙️</span>Admin</button>
     <button class="tab-btn" onclick="switchTab('gps',this);initGPS()"><span class="icon">📡</span>GPS</button>
@@ -5079,7 +5141,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.31 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.32 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -7340,6 +7402,39 @@
     <div style="margin-top:8px"><button type="button" class="btn btn-secondary btn-block btn-small" onclick="resetInvoice()">🗑 ล้างข้อมูล</button></div>
   </div>
   <div id="invoice-list-view" style="display:none"><div id="inv-list" class="list-loading">กด "รายการ Invoice" เพื่อโหลด</div></div>
+</div>
+
+<!-- ══ TAB: 📤 ส่งออกรายงาน ══ -->
+<div class="tab-panel" id="tab-export">
+  <div style="max-width:1100px;margin:0 auto">
+    <div class="card">
+      <div class="card-title">📤 ส่งออกรายงาน (PDF / JPG)</div>
+      <p class="hint" style="margin-bottom:12px">เลือกประเภทรายงาน → ตั้งค่า → กดดูตัวอย่าง → ส่งออกเป็น PDF หรือ JPG · ดึงข้อมูลจากระบบโดยตรง</p>
+
+      <!-- Report type chips -->
+      <div class="exp-type-grid" id="exp-type-grid">
+        <button type="button" class="exp-type-chip active" data-type="calendar" onclick="exportSetType('calendar',this)">📅<span>ปฏิทินเที่ยวรถ</span></button>
+        <button type="button" class="exp-type-chip" data-type="finance" onclick="exportSetType('finance',this)">💰<span>รายรับ-รายจ่าย</span></button>
+        <button type="button" class="exp-type-chip" data-type="trips" onclick="exportSetType('trips',this)">🚚<span>สรุปเที่ยวรถ</span></button>
+        <button type="button" class="exp-type-chip" data-type="dashboard" onclick="exportSetType('dashboard',this)">📊<span>สรุปผลรวม</span></button>
+      </div>
+
+      <!-- Dynamic options -->
+      <div id="exp-opts" style="margin-top:14px"></div>
+
+      <!-- Actions -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+        <button type="button" class="btn btn-primary" onclick="buildReport()" style="flex:1 1 30%;min-width:130px">👁 ดูตัวอย่าง</button>
+        <button type="button" class="btn btn-secondary" onclick="exportReportPDF()" style="flex:1 1 30%;min-width:120px;background:#fee2e2;color:#b91c1c;border-color:#fca5a5">📄 PDF</button>
+        <button type="button" class="btn btn-secondary" onclick="exportReportJPG()" style="flex:1 1 30%;min-width:120px;background:#dcfce7;color:#166534;border-color:#86efac">🖼️ JPG</button>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div id="exp-preview-wrap" style="margin-top:16px;overflow-x:auto">
+      <div id="exp-preview" style="min-height:120px"></div>
+    </div>
+  </div>
 </div>
 
 <!-- ══ TAB 11: แจ้งเตือน ══ -->
@@ -10049,6 +10144,7 @@ const PAGE_NAMES = {
   capital:'💼 เงินทุน — Working Capital',
   vehicle:'ทะเบียนรถ', driver:'คนขับ', customer:'ลูกค้า',
   maintenance:'ซ่อมบำรุง', fuel:'น้ำมัน', invoice:'ใบเสร็จรับเงิน',
+  export:'📤 ส่งออกรายงาน',
   summary:'สรุปผล', calendar:'ปฏิทินเที่ยวรถ', alert:'แจ้งเตือน', gps:'GPS', ocr:'อ่านภาพ',
   admin:'⚙️ Admin — จัดการระบบ'
 };
@@ -10060,7 +10156,7 @@ function goToCalendar() {
 // ─── ROUTER ────────────────────────
 // Valid tabs that can be in URL
 const VALID_TABS = ['summary','calendar','truck','income','expense','capital','vehicle','driver','customer',
-                    'maintenance','fuel','invoice','admin','gps','ocr'];
+                    'maintenance','fuel','invoice','export','admin','gps','ocr'];
 // Default tab when URL is "/"
 const DEFAULT_TAB = 'summary';
 // Map URL path → tab name (and vice versa)
@@ -12657,6 +12753,237 @@ async function exportInvoicePDF() {
   }
 }
 
+// ════════════════════════════════════════════════════════════════
+// v15.32 — EXPORT REPORT MODULE (PDF / JPG, no sheet dependency)
+// ════════════════════════════════════════════════════════════════
+const EXPORT_STATE = { type:'calendar', months:new Set(), dateFrom:'', dateTo:'', incInc:true, incExp:true, cats:new Set() };
+
+async function initExportTab() {
+  if (!_master._loaded && typeof loadMasterData === 'function') { try { await loadMasterData(); } catch(e){} }
+  exportSetType(EXPORT_STATE.type, null);
+}
+function exportSetType(type, btn) {
+  EXPORT_STATE.type = type;
+  document.querySelectorAll('.exp-type-chip').forEach(c => c.classList.toggle('active', c.dataset.type === type));
+  _expRenderOpts();
+  const pv = document.getElementById('exp-preview'); if (pv) pv.innerHTML = '';
+}
+function _expAvailableMonths() {
+  const set = new Set();
+  const add = d => { const s = String(d||'').slice(0,7); if (/^\d{4}-\d{2}$/.test(s)) set.add(s); };
+  (_master.truckHistory||[]).forEach(t => { add(t.pickupDate||t.jobDate); if (t.deliveryDate) add(t.deliveryDate); });
+  (_master.incomeHistory||[]).forEach(r => add(r.incomeDate));
+  (_master.expenseHistory||[]).forEach(r => add(r.expenseDate));
+  return [...set].sort().reverse();
+}
+function _expMonthLabel(ym) { const [y,m] = ym.split('-').map(Number); return `${CAL_TH_MONTHS[m-1]} ${y+543}`; }
+function _expExpenseCats() { const s = new Set(); (_master.expenseHistory||[]).forEach(r => { const c=(r.category||'').trim(); if (c) s.add(c); }); return [...s].sort(); }
+function _expToggleMonth(el) { const ym = el.dataset.ym; if (EXPORT_STATE.months.has(ym)) { EXPORT_STATE.months.delete(ym); el.classList.remove('on'); } else { EXPORT_STATE.months.add(ym); el.classList.add('on'); } }
+function _expToggleCat(el) { const c = el.dataset.cat; if (EXPORT_STATE.cats.has(c)) { EXPORT_STATE.cats.delete(c); el.classList.remove('on'); } else { EXPORT_STATE.cats.add(c); el.classList.add('on'); } }
+
+function _expRenderOpts() {
+  const box = document.getElementById('exp-opts'); if (!box) return;
+  const t = EXPORT_STATE.type;
+  if (t === 'calendar') {
+    const months = _expAvailableMonths();
+    box.innerHTML = `<div class="exp-opt-box">
+      <div class="exp-opt-label">📅 เลือกเดือน (เลือกได้หลายเดือน)</div>
+      <div>${months.length ? months.map(ym => `<button type="button" class="exp-month-chip" data-ym="${ym}" onclick="_expToggleMonth(this)">${_expMonthLabel(ym)}</button>`).join('') : '<span style="color:#94a3b8">— ยังไม่มีข้อมูลเที่ยวรถ —</span>'}</div>
+    </div>`;
+    EXPORT_STATE.months.clear();
+  } else {
+    const today = new Date().toISOString().slice(0,10);
+    const monthAgo = new Date(Date.now() - 30*86400000).toISOString().slice(0,10);
+    EXPORT_STATE.dateFrom = EXPORT_STATE.dateFrom || monthAgo;
+    EXPORT_STATE.dateTo   = EXPORT_STATE.dateTo   || today;
+    let extra = '';
+    if (t === 'finance') {
+      const cats = _expExpenseCats();
+      extra = `<div class="exp-opt-label" style="margin-top:12px">ประเภท</div>
+        <label style="margin-right:16px;font-size:.85rem;font-weight:700"><input type="checkbox" checked onchange="EXPORT_STATE.incInc=this.checked"> 💰 รายรับ</label>
+        <label style="font-size:.85rem;font-weight:700"><input type="checkbox" checked onchange="EXPORT_STATE.incExp=this.checked"> 💸 รายจ่าย</label>
+        ${cats.length ? `<div class="exp-opt-label" style="margin-top:12px">หมวดรายจ่าย <span style="font-weight:400;color:#94a3b8">(ไม่เลือก = ทุกหมวด)</span></div>
+        <div>${cats.map(c => `<button type="button" class="exp-month-chip" data-cat="${escAttr(c)}" onclick="_expToggleCat(this)">${escHtml(c)}</button>`).join('')}</div>` : ''}`;
+    }
+    box.innerHTML = `<div class="exp-opt-box">
+      <div class="exp-opt-label">📆 ช่วงวันที่</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <input type="date" value="${EXPORT_STATE.dateFrom}" onchange="EXPORT_STATE.dateFrom=this.value" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-family:inherit">
+        <span style="color:#64748b">ถึง</span>
+        <input type="date" value="${EXPORT_STATE.dateTo}" onchange="EXPORT_STATE.dateTo=this.value" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-family:inherit">
+      </div>${extra}
+    </div>`;
+    EXPORT_STATE.cats.clear();
+  }
+}
+function buildReport() {
+  const pv = document.getElementById('exp-preview'); if (!pv) return;
+  const t = EXPORT_STATE.type;
+  let html = '';
+  try {
+    if (t === 'calendar')       html = _expCalendarDoc();
+    else if (t === 'finance')   html = _expFinanceDoc();
+    else if (t === 'trips')     html = _expTripsDoc();
+    else if (t === 'dashboard') html = _expDashboardDoc();
+  } catch (e) { html = `<div class="exp-doc" id="exp-report-doc"><div class="exp-empty">❌ ${escHtml(e.message)}</div></div>`; }
+  pv.innerHTML = html;
+  pv.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+function _expDocWrap(title, range, bodyHtml) {
+  const now = new Date();
+  const stamp = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()+543} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  return `<div class="exp-doc" id="exp-report-doc">
+    <div class="exp-doc-head">
+      <div><div class="exp-doc-brand">🚛 SuperWealth Transport</div><div class="exp-doc-sub">ระบบขนส่งรถบรรทุก · รายงาน</div></div>
+      <div><div class="exp-doc-title">${title}</div>${range ? `<div class="exp-doc-range">${range}</div>` : ''}</div>
+    </div>
+    ${bodyHtml}
+    <div class="exp-doc-foot"><span>ออกรายงานเมื่อ ${stamp} น.</span><span>SuperWealth Transport</span></div>
+  </div>`;
+}
+function _expFinanceDoc() {
+  const from = EXPORT_STATE.dateFrom, to = EXPORT_STATE.dateTo;
+  const inRange = d => { const s = String(d||'').slice(0,10); return s && s >= from && s <= to; };
+  const rows = []; let sumInc = 0, sumExp = 0;
+  if (EXPORT_STATE.incInc) (_master.incomeHistory||[]).forEach(r => { if (!inRange(r.incomeDate)) return; const amt = _detectAmount(r); sumInc += amt; rows.push({ date:r.incomeDate, type:'รายรับ', doc:r.docNumber||'', item:r.incomeItem||'', party:r.customerName||'', amt, sign:'+' }); });
+  if (EXPORT_STATE.incExp) (_master.expenseHistory||[]).forEach(r => { if (!inRange(r.expenseDate)) return; const cat=(r.category||'').trim(); if (EXPORT_STATE.cats.size && !EXPORT_STATE.cats.has(cat)) return; const amt = _detectAmount(r); sumExp += amt; rows.push({ date:r.expenseDate, type:'รายจ่าย', doc:r.docNumber||'', item:cat||r.expenseDetail||'', party:r.vendor||'', amt, sign:'−' }); });
+  rows.sort((a,b) => String(a.date).localeCompare(String(b.date)));
+  const body = rows.length ? `
+    <table class="exp-tbl"><thead><tr><th>วันที่</th><th>ประเภท</th><th>เลขที่</th><th>รายการ</th><th>คู่ค้า</th><th class="num">จำนวนเงิน</th></tr></thead>
+    <tbody>${rows.map(r => `<tr><td>${fmtDate(r.date)}</td><td>${r.type}</td><td>${escHtml(r.doc)}</td><td>${escHtml(r.item)}</td><td>${escHtml(r.party)}</td><td class="num" style="color:${r.sign==='+'?'#059669':'#dc2626'};font-weight:700">${r.sign}${fmtBaht(r.amt)}</td></tr>`).join('')}</tbody></table>
+    <div class="exp-kpi-row" style="grid-template-columns:repeat(3,1fr)">
+      <div class="exp-kpi" style="border-color:#86efac;background:#f0fdf4"><div class="exp-kpi-label">💰 รายรับรวม</div><div class="exp-kpi-val" style="color:#059669">${fmtBaht(sumInc)}</div></div>
+      <div class="exp-kpi" style="border-color:#fca5a5;background:#fef2f2"><div class="exp-kpi-label">💸 รายจ่ายรวม</div><div class="exp-kpi-val" style="color:#dc2626">${fmtBaht(sumExp)}</div></div>
+      <div class="exp-kpi" style="border-color:#93c5fd;background:#eff6ff"><div class="exp-kpi-label">📈 คงเหลือ</div><div class="exp-kpi-val" style="color:${sumInc-sumExp>=0?'#1d4ed8':'#dc2626'}">${fmtBaht(sumInc-sumExp)}</div></div>
+    </div>` : '<div class="exp-empty">📭 ไม่มีข้อมูลในช่วงที่เลือก</div>';
+  return _expDocWrap('รายงานรายรับ-รายจ่าย', `${fmtDate(from)} – ${fmtDate(to)} · ${rows.length} รายการ`, body);
+}
+function _expTripsDoc() {
+  const from = EXPORT_STATE.dateFrom, to = EXPORT_STATE.dateTo;
+  const inRange = d => { const s = String(d||'').slice(0,10); return s && s >= from && s <= to; };
+  const rows = (_master.truckHistory||[]).filter(t => inRange(t.pickupDate||t.jobDate)).sort((a,b)=>(parseInt(b.tripRound)||0)-(parseInt(a.tripRound)||0));
+  let sumFreight = 0; rows.forEach(r => sumFreight += parseFloat(r.freightCost)||0);
+  const body = rows.length ? `
+    <table class="exp-tbl"><thead><tr><th>รอบ</th><th>วันที่</th><th>ทะเบียน</th><th>ลูกค้า</th><th>เส้นทาง</th><th>สินค้า</th><th class="num">ค่าขนส่ง</th><th>สถานะ</th></tr></thead>
+    <tbody>${rows.map(r => { const paid=(r.paymentStatus||'ค้างจ่าย')==='จ่ายแล้ว'; return `<tr><td>${r.tripRound?'#'+escHtml(r.tripRound):'-'}</td><td>${fmtDate(r.pickupDate||r.jobDate)}</td><td>${escHtml(r.plateNumber||'-')}</td><td>${escHtml(r.customerName||r.originCustomer||'-')}</td><td>${escHtml((r.origin||'-')+' → '+(r.destination||'-'))}</td><td>${escHtml(r.cargoList||'-')}</td><td class="num">${r.freightCost?fmtBaht(r.freightCost):'-'}</td><td style="color:${paid?'#059669':'#d97706'};font-weight:700">${paid?'✓ จ่ายแล้ว':'⏰ ค้างจ่าย'}</td></tr>`; }).join('')}</tbody></table>
+    <div class="exp-kpi-row" style="grid-template-columns:repeat(2,1fr)">
+      <div class="exp-kpi" style="border-color:#93c5fd;background:#eff6ff"><div class="exp-kpi-label">🚚 จำนวนเที่ยว</div><div class="exp-kpi-val" style="color:#1d4ed8">${rows.length} เที่ยว</div></div>
+      <div class="exp-kpi" style="border-color:#86efac;background:#f0fdf4"><div class="exp-kpi-label">💰 ค่าขนส่งรวม</div><div class="exp-kpi-val" style="color:#059669">${fmtBaht(sumFreight)}</div></div>
+    </div>` : '<div class="exp-empty">📭 ไม่มีเที่ยวรถในช่วงที่เลือก</div>';
+  return _expDocWrap('รายงานสรุปเที่ยวรถ', `${fmtDate(from)} – ${fmtDate(to)}`, body);
+}
+function _expDashboardDoc() {
+  const from = EXPORT_STATE.dateFrom, to = EXPORT_STATE.dateTo;
+  const inRange = d => { const s = String(d||'').slice(0,10); return s && s >= from && s <= to; };
+  const inc = (_master.incomeHistory||[]).filter(r => inRange(r.incomeDate));
+  const exp = (_master.expenseHistory||[]).filter(r => inRange(r.expenseDate));
+  const trips = (_master.truckHistory||[]).filter(t => inRange(t.pickupDate||t.jobDate));
+  const sumInc = inc.reduce((s,r)=>s+_detectAmount(r),0);
+  const sumExp = exp.reduce((s,r)=>s+_detectAmount(r),0);
+  const profit = sumInc - sumExp;
+  const catMap = {}; exp.forEach(r => { const c=(r.category||'อื่นๆ'); catMap[c]=(catMap[c]||0)+_detectAmount(r); });
+  const topCats = Object.entries(catMap).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const custMap = {}; inc.forEach(r => { const c=(r.customerName||'(ไม่ระบุ)'); custMap[c]=(custMap[c]||0)+_detectAmount(r); });
+  const topCust = Object.entries(custMap).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const body = `
+    <div class="exp-kpi-row">
+      <div class="exp-kpi" style="border-color:#86efac;background:#f0fdf4"><div class="exp-kpi-label">💰 รายรับรวม</div><div class="exp-kpi-val" style="color:#059669">${fmtBaht(sumInc)}</div></div>
+      <div class="exp-kpi" style="border-color:#fca5a5;background:#fef2f2"><div class="exp-kpi-label">💸 รายจ่ายรวม</div><div class="exp-kpi-val" style="color:#dc2626">${fmtBaht(sumExp)}</div></div>
+      <div class="exp-kpi" style="border-color:#c4b5fd;background:#f5f3ff"><div class="exp-kpi-label">📈 กำไรสุทธิ</div><div class="exp-kpi-val" style="color:${profit>=0?'#7c3aed':'#dc2626'}">${profit>=0?'+':''}${fmtBaht(profit)}</div></div>
+      <div class="exp-kpi" style="border-color:#93c5fd;background:#eff6ff"><div class="exp-kpi-label">🚚 เที่ยวรถ</div><div class="exp-kpi-val" style="color:#1d4ed8">${trips.length} เที่ยว</div></div>
+    </div>
+    <div class="exp-sec-title">💸 หมวดรายจ่ายสูงสุด</div>
+    ${topCats.length ? `<table class="exp-tbl"><thead><tr><th>หมวด</th><th class="num">ยอดรวม</th></tr></thead><tbody>${topCats.map(([c,a])=>`<tr><td>${escHtml(c)}</td><td class="num">${fmtBaht(a)}</td></tr>`).join('')}</tbody></table>` : '<div class="exp-empty">— ไม่มีรายจ่าย —</div>'}
+    <div class="exp-sec-title">🏢 ลูกค้ารายได้สูงสุด</div>
+    ${topCust.length ? `<table class="exp-tbl"><thead><tr><th>ลูกค้า</th><th class="num">ยอดรวม</th></tr></thead><tbody>${topCust.map(([c,a])=>`<tr><td>${escHtml(c)}</td><td class="num">${fmtBaht(a)}</td></tr>`).join('')}</tbody></table>` : '<div class="exp-empty">— ไม่มีรายรับ —</div>'}`;
+  return _expDocWrap('สรุปผลรวม (Dashboard)', `${fmtDate(from)} – ${fmtDate(to)}`, body);
+}
+function _expCalendarDoc() {
+  const months = [...EXPORT_STATE.months].sort();
+  if (!months.length) return _expDocWrap('ปฏิทินเที่ยวรถ', '', '<div class="exp-empty">⚠️ กรุณาเลือกอย่างน้อย 1 เดือน</div>');
+  const trips = _master.truckHistory || [];
+  const dow = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+  let body = '';
+  months.forEach(ym => {
+    const [y,m] = ym.split('-').map(Number);
+    body += `<div class="exp-sec-title">📅 ${_expMonthLabel(ym)}</div>`;
+    const startDow = new Date(y, m-1, 1).getDay();
+    const daysIn = new Date(y, m, 0).getDate();
+    const dayTrips = {};
+    trips.forEach(t => {
+      const span = _getTripSpan(t); if (!span) return;
+      for (let d = 1; d <= daysIn; d++) {
+        const num = _calDateNum(`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
+        if (num >= span.startNum && num <= span.endNum) (dayTrips[d] = dayTrips[d] || []).push(t);
+      }
+    });
+    const cells = [];
+    for (let i = 0; i < startDow; i++) cells.push('<td class="other"></td>');
+    for (let d = 1; d <= daysIn; d++) {
+      const ts = dayTrips[d] || [];
+      const evts = ts.slice(0,3).map(t => { const done = _autoTripStatus(t)==='ส่งแล้ว'; return `<span class="exp-cal-evt ${done?'done':''}">${escHtml(t.plateNumber||'')}${t.tripRound?' #'+escHtml(t.tripRound):''}</span>`; }).join('');
+      const more = ts.length > 3 ? `<span style="color:#94a3b8;font-size:9px">+${ts.length-3} เที่ยว</span>` : '';
+      cells.push(`<td><span class="d">${d}</span>${evts}${more}</td>`);
+    }
+    while (cells.length % 7 !== 0) cells.push('<td class="other"></td>');
+    const rowsHtml = [];
+    for (let i = 0; i < cells.length; i += 7) rowsHtml.push('<tr>' + cells.slice(i, i+7).join('') + '</tr>');
+    body += `<table class="exp-cal"><thead><tr>${dow.map(d=>`<th>${d}</th>`).join('')}</tr></thead><tbody>${rowsHtml.join('')}</tbody></table>`;
+  });
+  return _expDocWrap('ปฏิทินเที่ยวรถ', months.map(_expMonthLabel).join(' · '), body);
+}
+function _expFileName() {
+  const map = { calendar:'ปฏิทินเที่ยวรถ', finance:'รายรับรายจ่าย', trips:'สรุปเที่ยวรถ', dashboard:'สรุปผลรวม' };
+  return 'รายงาน-' + (map[EXPORT_STATE.type] || 'report') + '-' + new Date().toISOString().slice(0,10);
+}
+async function _expEnsureDoc() {
+  let node = document.getElementById('exp-report-doc');
+  if (!node) { buildReport(); node = document.getElementById('exp-report-doc'); }
+  return node;
+}
+async function exportReportJPG() {
+  if (typeof html2canvas === 'undefined') { showToast('⏳ กำลังโหลดไลบรารี... ลองอีกครั้ง', 'warning'); return; }
+  const node = await _expEnsureDoc();
+  if (!node) { showToast('กรุณากดดูตัวอย่างก่อน', 'warning'); return; }
+  showLoading('กำลังสร้าง JPG...');
+  try {
+    const canvas = await html2canvas(node, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/jpeg', 0.92);
+    a.download = _expFileName() + '.jpg';
+    document.body.appendChild(a); a.click(); a.remove();
+    hideLoading(); showToast('✅ ดาวน์โหลด JPG สำเร็จ', 'success');
+  } catch (e) { hideLoading(); showToast('❌ Export JPG ล้มเหลว: ' + e.message, 'error'); }
+}
+async function exportReportPDF() {
+  if (typeof html2canvas === 'undefined' || !window.jspdf) { showToast('⏳ กำลังโหลดไลบรารี... ลองอีกครั้ง', 'warning'); return; }
+  const node = await _expEnsureDoc();
+  if (!node) { showToast('กรุณากดดูตัวอย่างก่อน', 'warning'); return; }
+  showLoading('กำลังสร้าง PDF...');
+  try {
+    const canvas = await html2canvas(node, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ unit:'mm', format:'a4', orientation:'portrait' });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const imgW = pageW - 16;
+    const imgH = canvas.height * imgW / canvas.width;
+    if (imgH <= pageH - 16) {
+      pdf.addImage(imgData, 'JPEG', 8, 8, imgW, imgH);
+    } else {
+      let remaining = imgH, srcY = 0; const pageImgH = pageH - 16;
+      while (remaining > 0) {
+        pdf.addImage(imgData, 'JPEG', 8, 8 - srcY, imgW, imgH);
+        remaining -= pageImgH;
+        if (remaining > 0) { pdf.addPage(); srcY += pageImgH; }
+      }
+    }
+    pdf.save(_expFileName() + '.pdf');
+    hideLoading(); showToast('✅ ดาวน์โหลด PDF สำเร็จ', 'success');
+  } catch (e) { hideLoading(); showToast('❌ Export PDF ล้มเหลว: ' + e.message, 'error'); }
+}
+
 // ─── ALERT ─────────────────────────────────────────────────────────────────
 let _alertLoaded = false;
 async function loadAlerts(force) {
@@ -14701,7 +15028,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.31';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.32';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
