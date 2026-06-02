@@ -873,6 +873,16 @@
       border-radius: 4px; font-size: 0.6rem; padding: 2px 5px;
       cursor: pointer; font-family: inherit;
     }
+    /* v15.24 — Rotate button (bottom-left) */
+    .preview-item .rotate-btn {
+      position: absolute; bottom: 3px; left: 3px;
+      width: 24px; height: 24px; background: rgba(0,0,0,0.6); color: white;
+      border: none; border-radius: 5px; font-size: 0.95rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; line-height: 1;
+      transition: background .12s, transform .12s;
+    }
+    .preview-item .rotate-btn:hover { background: rgba(0,0,0,0.82); }
+    .preview-item .rotate-btn:active { transform: rotate(90deg) scale(.9); }
     .upload-status { font-size: 0.78rem; color: var(--gray3); margin-top: 6px; text-align: center; }
 
     /* ─── OCR PANEL ─── */
@@ -5069,7 +5079,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.23 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.24 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -10433,7 +10443,8 @@ function renderPreview(formKey) {
     div.className = 'preview-item';
     div.innerHTML = `
       <img src="${item.previewUrl}" alt="ภาพ ${idx+1}" loading="lazy">
-      <button type="button" class="remove-btn" onclick="removeImage(${idx},'${formKey}')">✕</button>
+      <button type="button" class="remove-btn" onclick="removeImage(${idx},'${formKey}')" title="ลบภาพ">✕</button>
+      <button type="button" class="rotate-btn" onclick="rotateImage(${idx},'${formKey}')" title="หมุนภาพ 90°">↻</button>
       <button type="button" class="ocr-btn-img" onclick="runOCR(${idx},'${formKey}')">OCR</button>`;
     grid.appendChild(div);
   });
@@ -10442,6 +10453,32 @@ function renderPreview(formKey) {
 }
 
 function removeImage(idx, formKey) { state[formKey].images.splice(idx, 1); renderPreview(formKey); }
+
+// v15.24 — Rotate an attached image 90° clockwise (re-encodes so upload + OCR use rotated version)
+async function rotateImage(idx, formKey) {
+  const item = state[formKey] && state[formKey].images[idx];
+  if (!item || !item.previewUrl) return;
+  try {
+    const img = new Image();
+    await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = item.previewUrl; });
+    const canvas = document.createElement('canvas');
+    canvas.width  = img.naturalHeight || img.height;   // swap dimensions for 90°
+    canvas.height = img.naturalWidth  || img.width;
+    const ctx = canvas.getContext('2d');
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate(Math.PI / 2);                            // 90° clockwise
+    ctx.drawImage(img, -(img.naturalWidth||img.width) / 2, -(img.naturalHeight||img.height) / 2);
+    // Export rotated image
+    const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.9));
+    if (!blob) throw new Error('canvas export ล้มเหลว');
+    item.previewUrl = canvas.toDataURL('image/jpeg', 0.9);
+    const baseName = (item.file && item.file.name ? item.file.name : `image_${idx+1}.jpg`).replace(/\.\w+$/, '');
+    item.file = new File([blob], baseName + '.jpg', { type: 'image/jpeg' });
+    renderPreview(formKey);
+  } catch (e) {
+    showToast('หมุนภาพไม่สำเร็จ: ' + e.message, 'error');
+  }
+}
 
 // ─── OCR (fetch → /api/ocr) ──────────────
 async function runOCR(idx, formKey) {
@@ -14632,7 +14669,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.23';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.24';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
