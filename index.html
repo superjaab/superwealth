@@ -5064,7 +5064,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.17 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.18 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -13424,10 +13424,11 @@ function _buildMonthGridWeeks(_calYear, _calMonth, trips) {
       const line2 = custHtml
         ? `<span class="cal-evt-l2">${custHtml}</span>`
         : '';
+      const focusId = (t.rowId || t.timestamp || '');
       evtsHtml += `<div class="cal-evt-bar ${cls} ${posCls}"
         style="background:${bg};grid-column:${colStart} / span ${colSpan}; grid-row:${ev.row + 1}"
         title="${escHtml(tip)}"
-        onclick="event.stopPropagation();openCalDay('${clickDate}')"><span class="cal-evt-l1"><span class="cal-evt-l1-text">${escHtml(label)}</span>${payBadge}</span>${line2}</div>`;
+        onclick="event.stopPropagation();openCalDay('${clickDate}','${escAttr(focusId)}')"><span class="cal-evt-l1"><span class="cal-evt-l1-text">${escHtml(label)}</span>${payBadge}</span>${line2}</div>`;
     });
 
     // Add overflow indicators per column
@@ -13455,13 +13456,13 @@ function _buildMonthGridWeeks(_calYear, _calMonth, trips) {
   return html;
 }
 
-function openCalDay(dateKey) {
+function openCalDay(dateKey, focusRowId) {
   // Apply plate filter to lookups
   const tripsAll = _calPlate ? _calTrips.filter(t => (t.plateNumber||'') === _calPlate) : _calTrips;
   const targetNum = _calDateNum(dateKey);
 
   // Find all trips whose span covers this date
-  const matches = [];
+  let matches = [];
   tripsAll.forEach(t => {
     const span = _getTripSpan(t);
     if (!span) return;
@@ -13476,6 +13477,13 @@ function openCalDay(dateKey) {
     else if (isJob)      kind = 'job';
     matches.push({ trip: t, kind, span });
   });
+
+  // v15.18 — If a specific event bar was clicked, show ONLY that trip
+  let focused = false;
+  if (focusRowId) {
+    const only = matches.filter(({trip}) => (trip.rowId || trip.timestamp || '') === focusRowId);
+    if (only.length) { matches = only; focused = true; }
+  }
 
   const [y, m, d] = dateKey.split('-').map(Number);
   const dateObj = new Date(y, m-1, d);
@@ -13499,7 +13507,14 @@ function openCalDay(dateKey) {
       const dt = new Date(n * 86400000);
       return String(dt.getUTCDate()).padStart(2,'0') + '/' + String(dt.getUTCMonth()+1).padStart(2,'0');
     };
-    body.innerHTML = `<div style="font-size:.78rem;color:#64748b;padding:0 4px 10px">พบ <b style="color:#0f172a">${matches.length}</b> เที่ยวรถในวันนี้</div>` +
+    // v15.18 — header differs for single-trip focus vs whole-day view
+    const headerHtml = focused
+      ? `<div style="font-size:.78rem;color:#64748b;padding:0 4px 10px;display:flex;justify-content:space-between;align-items:center;gap:8px">
+           <span>🚛 รายละเอียดเที่ยวรถ</span>
+           <button type="button" onclick="openCalDay('${dateKey}')" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:8px;padding:4px 10px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit">📋 ดูทั้งวัน</button>
+         </div>`
+      : `<div style="font-size:.78rem;color:#64748b;padding:0 4px 10px">พบ <b style="color:#0f172a">${matches.length}</b> เที่ยวรถในวันนี้</div>`;
+    body.innerHTML = headerHtml +
     matches.map(({trip, kind, span}) => {
       const cls = _calStatusClass(trip);
       const autoStat = _autoTripStatus(trip);
@@ -14585,7 +14600,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.17';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.18';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
