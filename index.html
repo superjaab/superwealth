@@ -661,6 +661,23 @@
     body.dark .sw-record-title { color: #f8fafc; }
     body.dark .sw-record-sub { color: #94a3b8; }
 
+    /* v15.11 — Vertical list of detail rows (one per line) inside record cards */
+    .sw-record-details {
+      display: flex; flex-direction: column; gap: 4px;
+      margin-top: 6px;
+      font-size: .82rem; line-height: 1.4;
+      color: var(--sw-fg-secondary, #475569);
+    }
+    .sw-record-details > div {
+      display: flex; align-items: center; gap: 6px;
+      flex-wrap: wrap;
+      padding: 1px 0;
+    }
+    .sw-record-details .ico { flex-shrink: 0; font-size: .9rem; opacity: .9; }
+    .sw-record-details b { color: var(--sw-fg-primary, #0f172a); font-weight: 700; }
+    body.dark .sw-record-details { color: #cbd5e1; }
+    body.dark .sw-record-details b { color: #f1f5f9; }
+
     /* ── 3-column bottom analysis cards layout ── */
     .sum-analysis-grid {
       display: grid;
@@ -5032,7 +5049,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.10 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.11 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -8429,28 +8446,26 @@ function renderCapitalMovements() {
     const diffSign  = diff >= 0 ? '+' : '';
     const _dt = a.addedDate || (a.timestamp ? String(a.timestamp).slice(0,10) : '');
     const dateLabel = _dt ? fmtDate(_dt) : '—';
+    // v15.11 — Vertical detail rows
+    const detailRows = [];
+    detailRows.push(`<div><span class="ico">🏦</span><b>${escHtml(a.accountName || '(ไม่ระบุชื่อ)')}</b></div>`);
+    if (a.bankName)      detailRows.push(`<div><span class="ico">🏛</span><span>${escHtml(a.bankName)}</span></div>`);
+    if (a.accountNumber) detailRows.push(`<div><span class="ico">🔢</span><span style="font-family:monospace">${escHtml(a.accountNumber)}</span></div>`);
+    detailRows.push(`<div><span class="ico">💰</span><span class="priv-data">ทุนที่บันทึก: <b>${fmtBaht(initial)}</b></span></div>`);
+    detailRows.push(`<div><span class="ico">📊</span><span class="priv-data">ยอดปัจจุบัน: <b>${fmtBaht(current)}</b>${diff !== 0 ? ` <span style="color:${diffColor};font-weight:700">(${diffSign}${fmtBaht(diff)})</span>` : ''}</span></div>`);
+    detailRows.push(`<div><span class="ico">📅</span><span>${dateLabel}</span></div>`);
     return `
     <div class="record-card" style="border-left:4px solid ${meta.color}">
       <div class="sw-record-head">
         <div class="sw-record-chips">
           <span class="sw-status" style="background:${meta.bg};color:${meta.color};font-weight:700">${meta.label}</span>
-          <span class="sw-doc-chip" title="วันที่บันทึก" style="background:#f1f5f9;border-color:#e2e8f0">📅 ${dateLabel}</span>
         </div>
         <div class="sw-record-amount priv-amt" style="color:${meta.color};font-variant-numeric:tabular-nums">
           ${meta.sign}${fmtBaht(initial)}
         </div>
       </div>
-      <div class="sw-record-title">
-        🏦 ${escHtml(a.accountName || '(ไม่ระบุชื่อ)')}
-        ${a.bankName ? ` <span style="font-size:.78rem;color:#64748b;font-weight:500">· ${escHtml(a.bankName)}</span>` : ''}
-        ${a.accountNumber ? ` <span style="font-size:.72rem;color:#94a3b8;font-weight:500;font-family:monospace">· ${escHtml(a.accountNumber)}</span>` : ''}
-      </div>
-      <div class="sw-record-sub" style="margin-top:4px;display:flex;gap:10px;flex-wrap:wrap">
-        <span class="priv-data">💰 ทุนที่บันทึก: <b>${fmtBaht(initial)}</b></span>
-        <span class="priv-data">📊 ยอดปัจจุบัน: <b>${fmtBaht(current)}</b></span>
-        ${diff !== 0 ? `<span class="priv-data" style="color:${diffColor};font-weight:700">${diffSign}${fmtBaht(diff)}</span>` : ''}
-      </div>
-      ${a.notes ? `<div class="sw-record-sub priv-data" style="color:#94a3b8;font-style:italic;margin-top:4px">📝 ${escHtml(a.notes)}</div>` : ''}
+      <div class="sw-record-details">${detailRows.join('')}</div>
+      ${a.notes ? `<div class="sw-record-sub priv-data" style="color:#94a3b8;font-style:italic;margin-top:6px">📝 ${escHtml(a.notes)}</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -12668,21 +12683,26 @@ function renderTruckList(items) {
     const amountColor = showAmount > 0
       ? (paid ? 'var(--sw-success,#16a34a)' : '#d97706')
       : 'var(--sw-fg-muted,#94a3b8)';
-    const routeText = (r.origin || r.destination)
-      ? `${r.origin || '-'} → ${r.destination || '-'}`
-      : '';
-    const titleText = `${r.plateNumber || '-'}${routeText ? ' · ' + routeText : ''}`;
-    const subParts = [];
-    // v14.91 — show both origin + destination customers when present
+    // v15.11 — Vertical detail rows (one per line) instead of " · " joined sub-line
+    const detailRows = [];
+    detailRows.push(`<div><span class="ico">🚛</span><b class="priv-data">${escHtml(r.plateNumber || '-')}</b></div>`);
     if (r.originCustomer && r.customerName && r.originCustomer !== r.customerName) {
-      subParts.push(`🏢 <span class="priv-data">${escHtml(r.originCustomer)} → ${escHtml(r.customerName)}</span>`);
+      detailRows.push(`<div><span class="ico">🏢</span><span class="priv-data">${escHtml(r.originCustomer)} → ${escHtml(r.customerName)}</span></div>`);
     } else if (r.customerName) {
-      subParts.push(`🏢 <span class="priv-data">${escHtml(r.customerName)}</span>`);
+      detailRows.push(`<div><span class="ico">🏢</span><span class="priv-data">${escHtml(r.customerName)}</span></div>`);
     } else if (r.originCustomer) {
-      subParts.push(`🏢 <span class="priv-data">${escHtml(r.originCustomer)}</span>`);
+      detailRows.push(`<div><span class="ico">🏢</span><span class="priv-data">${escHtml(r.originCustomer)}</span></div>`);
     }
-    if (r.driverName)   subParts.push(`👤 <span class="priv-data">${escHtml(r.driverName)}${r.driverPhone ? ' · ' + escHtml(r.driverPhone) : ''}</span>`);
-    if (r.cargoList)    subParts.push(`📦 <span class="priv-data">${escHtml(r.cargoList)}${r.cargoWeight ? ' ' + r.cargoWeight + ' ตัน' : ''}</span>`);
+    if (r.origin || r.destination) {
+      detailRows.push(`<div><span class="ico">📍</span><span>${escHtml(r.origin||'-')} → ${escHtml(r.destination||'-')}</span></div>`);
+    }
+    if (r.driverName || r.driverPhone) {
+      detailRows.push(`<div><span class="ico">👤</span><span class="priv-data">${escHtml(r.driverName||'-')}${r.driverPhone ? ' · ' + escHtml(r.driverPhone) : ''}</span></div>`);
+    }
+    if (r.cargoList || r.cargoWeight) {
+      detailRows.push(`<div><span class="ico">📦</span><span class="priv-data">${escHtml(r.cargoList||'-')}${r.cargoWeight ? ' · ' + escHtml(r.cargoWeight) + ' ตัน' : ''}</span></div>`);
+    }
+    detailRows.push(`<div><span class="ico">📅</span><span>${dateLabel}</span></div>`);
 
     // v14.19 — รอบ as the prominent title chip (no code chip)
     const roundChip = r.tripRound
@@ -12701,12 +12721,8 @@ function renderTruckList(items) {
           ${amountSource ? `<div style="font-size:.6rem;color:#94a3b8;font-weight:600;margin-top:2px">${amountSource}</div>` : ''}
         </div>
       </div>
-      <div class="sw-record-title">
-        🚛 ${escHtml(titleText)}
-        <span style="font-size:.72rem;color:#94a3b8;font-weight:500;margin-left:6px">· ${dateLabel}</span>
-      </div>
-      ${subParts.length ? `<div class="sw-record-sub">${subParts.join(' · ')}</div>` : ''}
-      ${r.notes || r.remark ? `<div class="sw-record-sub" style="color:#94a3b8;font-style:italic;margin-top:4px">📝 ${escHtml(r.notes || r.remark)}</div>` : ''}
+      <div class="sw-record-details">${detailRows.join('')}</div>
+      ${r.notes || r.remark ? `<div class="sw-record-sub" style="color:#94a3b8;font-style:italic;margin-top:6px">📝 ${escHtml(r.notes || r.remark)}</div>` : ''}
       ${renderImgThumbs(r.imageUrls)}
       ${renderRecActions('truck', r.rowId || r.timestamp,`${r.plateNumber||''} - ${r.customerName||''}`)}
     </div>`;
@@ -12749,12 +12765,13 @@ function renderIncomeList(items) {
     // Don't show numeric values as payment method
     if (/^[\d,.฿\s]+$/.test(paymentMethod) && paymentMethod) paymentMethod = '';
     if (/^[\d,.฿\s]+$/.test(docNumber) && docNumber) docNumber = '';
-    // Claude Design v14.11 layout
-    const subParts = [];
-    if (r.customerName) subParts.push(`🏢 <span class="priv-data">${escHtml(r.customerName)}</span>`);
-    if (r.incomeItem)   subParts.push(`📋 <span class="priv-data">${escHtml(r.incomeItem)}</span>`);
-    if (paymentMethod)  subParts.push(`💵 ${escHtml(paymentMethod)}`);
-    if (docNumber)      subParts.push(`📄 <span class="priv-data">${escHtml(docNumber)}</span>`);
+    // v15.11 — Vertical detail rows
+    const detailRows = [];
+    if (r.customerName) detailRows.push(`<div><span class="ico">🏢</span><b class="priv-data">${escHtml(r.customerName)}</b></div>`);
+    if (r.incomeItem)   detailRows.push(`<div><span class="ico">📋</span><span class="priv-data">${escHtml(r.incomeItem)}</span></div>`);
+    if (paymentMethod)  detailRows.push(`<div><span class="ico">💵</span><span>${escHtml(paymentMethod)}</span></div>`);
+    if (docNumber)      detailRows.push(`<div><span class="ico">📄</span><span class="priv-data">${escHtml(docNumber)}</span></div>`);
+    detailRows.push(`<div><span class="ico">📅</span><span>${dateLabel}</span></div>`);
     // v14.19 — prominent รอบ chip in place of code chip
     const roundChipI = tripRound
       ? `<span class="sw-round-chip">🔄 รอบ #${tripRound}</span>`
@@ -12773,9 +12790,8 @@ function renderIncomeList(items) {
         </div>
         <div class="sw-record-amount priv-amt" style="color:var(--sw-success,#16a34a)">+${fmtBaht(amount)}</div>
       </div>
-      <div class="sw-record-title">${escHtml(r.customerName || r.incomeItem || 'รายรับ')}<span style="font-size:.72rem;color:#94a3b8;font-weight:500;margin-left:6px">· ${dateLabel}</span></div>
-      ${subParts.length ? `<div class="sw-record-sub">${subParts.join(' · ')}</div>` : ''}
-      ${r.remark ? `<div class="sw-record-sub" style="color:#94a3b8;font-style:italic;margin-top:4px">📝 ${escHtml(r.remark)}</div>` : ''}
+      <div class="sw-record-details">${detailRows.join('')}</div>
+      ${r.remark ? `<div class="sw-record-sub" style="color:#94a3b8;font-style:italic;margin-top:6px">📝 ${escHtml(r.remark)}</div>` : ''}
       ${renderImgThumbs(r.imageUrls)}
       ${renderRecActions('income', r.rowId || r.timestamp,`${fmtBaht(amount)} - ${r.customerName||''}`)}
     </div>`;
@@ -12812,12 +12828,14 @@ function renderExpenseList(items) {
       }
     }
     if (/^[\d,.฿\s]+$/.test(paymentMethodE) && paymentMethodE) paymentMethodE = '';
-    // Claude Design v14.11 layout
-    const subParts = [];
-    if (r.plateNumber)   subParts.push(`🚛 ${escHtml(r.plateNumber)}`);
-    if (r.vendor)        subParts.push(`👤 <span class="priv-data">${escHtml(r.vendor)}</span>`);
-    if (r.expenseDetail) subParts.push(`📋 <span class="priv-data">${escHtml(r.expenseDetail)}</span>`);
-    if (paymentMethodE)  subParts.push(`💵 ${escHtml(paymentMethodE)}`);
+    // v15.11 — Vertical detail rows
+    const detailRows = [];
+    if (r.category)      detailRows.push(`<div><span class="ico">🏷</span><b>${escHtml(r.category)}</b></div>`);
+    if (r.plateNumber)   detailRows.push(`<div><span class="ico">🚛</span><span>${escHtml(r.plateNumber)}</span></div>`);
+    if (r.vendor)        detailRows.push(`<div><span class="ico">👤</span><span class="priv-data">${escHtml(r.vendor)}</span></div>`);
+    if (r.expenseDetail) detailRows.push(`<div><span class="ico">📋</span><span class="priv-data">${escHtml(r.expenseDetail)}</span></div>`);
+    if (paymentMethodE)  detailRows.push(`<div><span class="ico">💵</span><span>${escHtml(paymentMethodE)}</span></div>`);
+    detailRows.push(`<div><span class="ico">📅</span><span>${dateLabel}</span></div>`);
     // v14.19 — prominent รอบ chip in place of code chip
     const roundChipE = tripRound
       ? `<span class="sw-round-chip">🔄 รอบ #${tripRound}</span>`
@@ -12832,14 +12850,12 @@ function renderExpenseList(items) {
         <div class="sw-record-chips">
           ${roundChipE}
           <span class="sw-status sw-status--expense">💸 รายจ่าย</span>
-          ${r.category ? `<span class="sw-status sw-status--pending" style="background:#fee2e2;color:#b91c1c">${escHtml(r.category)}</span>` : ''}
           ${docChipE}
         </div>
         <div class="sw-record-amount priv-amt" style="color:var(--sw-danger,#dc2626)">−${fmtBaht(amount)}</div>
       </div>
-      <div class="sw-record-title">${escHtml(r.category || r.vendor || 'รายจ่าย')}${r.plateNumber ? ` · ${escHtml(r.plateNumber)}` : ''}<span style="font-size:.72rem;color:#94a3b8;font-weight:500;margin-left:6px">· ${dateLabel}</span></div>
-      ${subParts.length ? `<div class="sw-record-sub">${subParts.join(' · ')}</div>` : ''}
-      ${r.remark ? `<div class="sw-record-sub" style="color:#94a3b8;font-style:italic;margin-top:4px">📝 ${escHtml(r.remark)}</div>` : ''}
+      <div class="sw-record-details">${detailRows.join('')}</div>
+      ${r.remark ? `<div class="sw-record-sub" style="color:#94a3b8;font-style:italic;margin-top:6px">📝 ${escHtml(r.remark)}</div>` : ''}
       ${renderImgThumbs(r.imageUrls)}
       ${renderRecActions('expense', r.rowId || r.timestamp,`${fmtBaht(amount)} - ${r.category||''}`)}
     </div>`;
@@ -14506,7 +14522,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.10';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.11';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
