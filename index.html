@@ -5141,7 +5141,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.35 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.36 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -5811,9 +5811,9 @@
         <option value="">🚛 ดูรถทุกคัน</option>
       </select>
       <div class="cal-legend">
-        <div class="cal-leg-item">🎨 สีแยกตามรอบ</div>
-        <div class="cal-leg-item">🚚 กำลังขนส่ง</div>
-        <div class="cal-leg-item">✅ ส่งถึงแล้ว</div>
+        <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#1d4ed8"></span>🚚 กำลังขนส่ง</div>
+        <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#b45309"></span>⏰ ค้างจ่าย</div>
+        <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#047857"></span>✅ จ่ายแล้ว</div>
       </div>
     </div>
 
@@ -13625,28 +13625,16 @@ function _autoTripStatus(r) {
 function _statusColor(s) {
   return s === 'ส่งแล้ว' ? '#10b981' : '#3b82f6';   // green | blue
 }
-// v15.34/35 — Pastel palette per trip round (bg = soft pastel, fg = strong tone for text/border).
-// Same round → same color across its day-segments. No round → stable color by plate.
-const CAL_PALETTE = [
-  { bg:'#dbeafe', fg:'#1d4ed8' }, // blue
-  { bg:'#d1fae5', fg:'#047857' }, // emerald
-  { bg:'#fef3c7', fg:'#b45309' }, // amber
-  { bg:'#ede9fe', fg:'#6d28d9' }, // violet
-  { bg:'#fce7f3', fg:'#be185d' }, // pink
-  { bg:'#cffafe', fg:'#0e7490' }, // cyan
-  { bg:'#fee2e2', fg:'#b91c1c' }, // red
-  { bg:'#ccfbf1', fg:'#0f766e' }, // teal
-  { bg:'#e0e7ff', fg:'#4338ca' }, // indigo
-  { bg:'#fef9c3', fg:'#a16207' }, // yellow
-  { bg:'#fbcfe8', fg:'#9d174d' }, // rose
-  { bg:'#dcfce7', fg:'#15803d' }  // green
-];
-function _calRoundColor(t) {
-  const r = parseInt(t.tripRound) || 0;
-  if (r > 0) return CAL_PALETTE[(r - 1) % CAL_PALETTE.length];
-  const s = String(t.plateNumber || t.rowId || '');
-  let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-  return CAL_PALETTE[h % CAL_PALETTE.length];
+// v15.36 — 3 pastel colors by STATUS:
+//   กำลังขนส่ง = ฟ้า · ส่งแล้ว+จ่ายแล้ว = เขียว · ส่งแล้ว+ค้างจ่าย = เหลืองอำพัน
+const CAL_PAL_TRANSIT = { bg:'#dbeafe', fg:'#1d4ed8' }; // blue
+const CAL_PAL_PAID    = { bg:'#d1fae5', fg:'#047857' }; // green
+const CAL_PAL_UNPAID  = { bg:'#fef3c7', fg:'#b45309' }; // amber
+function _calStatusPal(t) {
+  const delivered = _autoTripStatus(t) === 'ส่งแล้ว';
+  if (!delivered) return CAL_PAL_TRANSIT;
+  const paid = (t.paymentStatus || 'ค้างจ่าย') === 'จ่ายแล้ว';
+  return paid ? CAL_PAL_PAID : CAL_PAL_UNPAID;
 }
 function _statusDot(s) {
   return s === 'ส่งแล้ว' ? '🟢' : '🔵';
@@ -13881,7 +13869,7 @@ function _buildMonthGridWeeks(_calYear, _calMonth, trips) {
 
       // Click → open day modal of the segment's start day
       const clickDate = _numToDateKey(ev.segStart);
-      const pal = _calRoundColor(t);   // v15.35 — pastel {bg,fg} by round
+      const pal = _calStatusPal(t);   // v15.36 — pastel {bg,fg} by status (3 colors)
       const line2 = custHtml
         ? `<span class="cal-evt-l2">${custHtml}</span>`
         : '';
@@ -15061,7 +15049,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.35';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.36';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
