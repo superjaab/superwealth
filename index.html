@@ -1315,6 +1315,14 @@
     }
     .sum-table td { padding: 8px 10px; border-bottom: 1px solid var(--gray1); }
     .sum-table tr:last-child td { border-bottom: none; }
+    /* v15.54 — เลื่อนดูรายเที่ยวรถในกรอบ (header + แถวรวม ติดขอบ) */
+    .sum-table-scroll { max-height: 430px; overflow-y: auto; overflow-x: hidden; border-radius: 10px; -webkit-overflow-scrolling: touch; }
+    .sum-table-scroll .sum-table thead th { position: sticky; top: 0; z-index: 3; box-shadow: inset 0 -1.5px 0 var(--gray2); }
+    .sum-table-scroll .sum-table tfoot td { position: sticky; bottom: 0; z-index: 3; background: #f8fafc; box-shadow: inset 0 1.5px 0 var(--gray2); border-bottom: none; }
+    body.dark .sum-table-scroll .sum-table tfoot td { background: #1e293b !important; }
+    .sum-table-scroll::-webkit-scrollbar { width: 8px; }
+    .sum-table-scroll::-webkit-scrollbar-thumb { background: rgba(148,163,184,.5); border-radius: 4px; }
+    .sum-table-scroll::-webkit-scrollbar-track { background: transparent; }
     .sum-badge {
       display: inline-block; padding: 2px 10px; border-radius: 12px;
       font-size: 0.72rem; font-weight: 600;
@@ -5190,7 +5198,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.53 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.54 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -6744,10 +6752,13 @@
       </div>
       <a class="dash-card-action" href="#" onclick="goToTruckList(event)">ดูทั้งหมด →</a>
     </div>
-    <table class="sum-table" id="sum-truck-table">
-      <thead><tr><th>รอบเที่ยว / งาน</th><th style="text-align:center">สถานะ</th><th style="text-align:right">ค่าขนส่ง</th></tr></thead>
-      <tbody id="sum-truck-tbody"></tbody>
-    </table>
+    <div class="sum-table-scroll">
+      <table class="sum-table" id="sum-truck-table">
+        <thead><tr><th>รอบเที่ยว / งาน</th><th style="text-align:center">สถานะ</th><th style="text-align:right">ค่าขนส่ง</th></tr></thead>
+        <tbody id="sum-truck-tbody"></tbody>
+        <tfoot id="sum-truck-tfoot"></tfoot>
+      </table>
+    </div>
   </div>
 
   <!-- 3-COLUMN INSIGHTS: top expense categories / top customers / top vehicles -->
@@ -6767,7 +6778,7 @@
       <div class="dash-card-head">
         <div>
           <div class="dash-card-title">🏢 ลูกค้ารายได้สูงสุด</div>
-          <div class="dash-card-sub">ยอดรายรับ · จำนวนเที่ยวที่ส่ง</div>
+          <div class="dash-card-sub">ลูกค้าต้นทาง · ยอดรายรับ · จำนวนเที่ยว</div>
         </div>
       </div>
       <div id="sum-top-customers"></div>
@@ -13108,7 +13119,18 @@ function _expDashboardDoc() {
   const profit = sumInc - sumExp;
   const catMap = {}; exp.forEach(r => { const c=(r.category||'อื่นๆ'); catMap[c]=(catMap[c]||0)+_detectAmount(r); });
   const topCats = Object.entries(catMap).sort((a,b)=>b[1]-a[1]).slice(0,6);
-  const custMap = {}; inc.forEach(r => { const c=(r.customerName||'(ไม่ระบุ)'); custMap[c]=(custMap[c]||0)+_detectAmount(r); });
+  // v15.54 — รายได้ผูกกับลูกค้าต้นทาง (origin) ของรอบที่ลิงก์ — ให้ตรงกับ dashboard
+  const _allTrips = _master.truckHistory || [];
+  const _tByRow = {}, _tByRound = {};
+  _allTrips.forEach(t => { if (t.rowId) _tByRow[t.rowId]=t; const rd=parseInt(t.tripRound); if (rd) _tByRound[rd]=t; });
+  const _originCust = r => {
+    const t = (r.linkedTripRowId && _tByRow[r.linkedTripRowId]) || _tByRound[parseInt(r.linkedTripRound)] || null;
+    const o = t && String(t.originCustomer||'').trim();
+    if (o) return o;
+    const d = t && String(t.customerName||'').trim();
+    return d || String(r.customerName||'').trim() || '(ไม่ระบุ)';
+  };
+  const custMap = {}; inc.forEach(r => { const c=_originCust(r); custMap[c]=(custMap[c]||0)+_detectAmount(r); });
   const topCust = Object.entries(custMap).sort((a,b)=>b[1]-a[1]).slice(0,6);
   const body = `
     <div class="exp-pg-block exp-kpi-row">
@@ -14624,26 +14646,43 @@ function renderTopCustomers(income, truck) {
   const map = {};   // name → { revenue, incCount, trips }
   const ensure = n => (map[n] || (map[n] = { revenue: 0, incCount: 0, trips: 0 }));
 
-  // 1) Revenue + income record count (from income sheet)
+  // v15.54 — ผูกรายได้กับ "ลูกค้าต้นทาง" (ผู้ว่าจ้าง/ผู้โอนเงิน) ไม่ใช่ปลายทาง
+  // สร้าง lookup ของเที่ยวรถ เพื่อหาต้นทางจากรายรับที่ลิงก์รอบเอาไว้
+  const tripByRow = {}, tripByRound = {};
+  truck.forEach(t => {
+    if (t.rowId) tripByRow[t.rowId] = t;
+    const rd = parseInt(t.tripRound); if (rd) tripByRound[rd] = t;
+  });
+  // ชื่อลูกค้าของเที่ยว = ต้นทาง (originCustomer) ก่อน ถ้าไม่มีค่อยใช้ปลายทาง
+  const tripCustomer = t => {
+    if (!t) return '';
+    const o = norm(t.originCustomer);
+    if (o && !isJunk(o)) return o;
+    const d = norm(t.customerName);
+    return (d && !isJunk(d)) ? d : '';
+  };
+
+  // 1) Revenue + income record count — ยกให้ "ลูกค้าต้นทาง" ของรอบที่ลิงก์ไว้
   income.forEach(r => {
-    let name = norm(r.customerName);
-    if (isJunk(name) && !isJunk(r.incomeItem)) name = norm(r.incomeItem);
+    let trip = null;
+    if (r.linkedTripRowId && tripByRow[r.linkedTripRowId]) trip = tripByRow[r.linkedTripRowId];
+    else { const rd = parseInt(r.linkedTripRound); if (rd && tripByRound[rd]) trip = tripByRound[rd]; }
+    let name = tripCustomer(trip);   // ต้นทาง
+    if (!name) {                     // ไม่ได้ลิงก์รอบ → ใช้ชื่อในรายการรายรับ
+      name = norm(r.customerName);
+      if (isJunk(name) && !isJunk(r.incomeItem)) name = norm(r.incomeItem);
+    }
     if (!name || isJunk(name)) name = '(ไม่ระบุ)';
     const o = ensure(name);
     o.revenue += _detectAmount(r);
     o.incCount++;
   });
 
-  // 2) Trip / delivery count (from truck sheet — match destination OR origin customer)
+  // 2) จำนวนเที่ยว — นับตามลูกค้าต้นทางของแต่ละรอบ
   truck.forEach(t => {
-    const dest = norm(t.customerName);
-    const orig = norm(t.originCustomer);
-    const seen = new Set();
-    [dest, orig].forEach(nm => {
-      if (!nm || isJunk(nm) || seen.has(nm)) return;
-      seen.add(nm);
-      ensure(nm).trips++;
-    });
+    const nm = tripCustomer(t);
+    if (!nm || isJunk(nm)) return;
+    ensure(nm).trips++;
   });
 
   // Sort by revenue desc; tiebreak by trips
@@ -14982,14 +15021,15 @@ function renderTruckTable(truck) {
   };
   const fmt = n => '฿' + (n||0).toLocaleString('th-TH', { maximumFractionDigits: 0 });
   const tbody = document.getElementById('sum-truck-tbody');
+  const tfoot = document.getElementById('sum-truck-tfoot');
 
-  // Sort by tripRound DESC (latest first) + show only 5 most recent in summary
+  // v15.54 — แสดงทุกเที่ยว แล้วเลื่อนดูในกรอบ (เดิม slice 5) — header/รวม ติดขอบ
   const sorted = [...truck].sort((a, b) => {
     const ar = parseInt(a.tripRound) || 0;
     const br = parseInt(b.tripRound) || 0;
     if (br !== ar) return br - ar;
     return (b.timestamp || '').localeCompare(a.timestamp || '');
-  }).slice(0, 5);
+  });
 
   let rowsHtml = sorted.map(r => {
     const status = _autoTripStatus(r);
@@ -15017,18 +15057,19 @@ function renderTruckTable(truck) {
     </tr>`;
   }).join('');
 
-  // Totals row
+  // Totals row → sticky footer (อยู่นอก tbody เลื่อนแล้วยังเห็น)
   const totalFreight = truck.reduce((s, r) => s + (parseFloat(r.freightCost)||0), 0);
   const totalCount = truck.length;
   const countDrv = truck.filter(r => _autoTripStatus(r) === 'กำลังขนส่ง').length;
   const countDone = totalCount - countDrv;
-  rowsHtml += `<tr style="background:#f8fafc;font-weight:700">
+  const footHtml = `<tr style="font-weight:700">
     <td style="font-weight:800;color:#0f172a">📊 รวม ${totalCount} เที่ยว</td>
     <td style="text-align:center;font-size:.74rem;color:#64748b">🔵${countDrv} • 🟢${countDone}</td>
     <td style="text-align:right;color:var(--green);font-weight:800;font-size:.95rem">${fmt(totalFreight)}</td>
   </tr>`;
 
   tbody.innerHTML = rowsHtml;
+  if (tfoot) tfoot.innerHTML = footHtml;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -15340,7 +15381,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.53';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.54';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
