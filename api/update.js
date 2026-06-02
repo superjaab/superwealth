@@ -119,6 +119,7 @@ const CONFIGS = {
   },
   invoice: {
     name: 'Invoices',
+    // v15.13 — เพิ่ม payment-receipt fields ตรงกับ save.js
     data: (d, ts, id) => ({
       timestamp: ts,
       invoiceDate: d.invoiceDate||'', invoiceNumber: d.invoiceNumber||'',
@@ -126,7 +127,13 @@ const CONFIGS = {
       items: typeof d.items==='string' ? d.items : JSON.stringify(d.items||[]),
       subtotal: +d.subtotal||0, vatAmount: +d.vatAmount||0, total: +d.total||0,
       dueDate: d.dueDate||'', status: d.status||'รอชำระ',
-      notes: d.notes||'', rowId: id
+      notes: d.notes||'', rowId: id,
+      paymentDate:   d.paymentDate   || '',
+      payeeName:     d.payeeName     || '',
+      payeePlate:    d.payeePlate    || '',
+      payeePosition: d.payeePosition || '',
+      paymentMethod: d.paymentMethod || '',
+      bankAccount:   d.bankAccount   || ''
     })
   },
   capital: {

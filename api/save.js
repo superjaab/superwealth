@@ -175,9 +175,11 @@ const CONFIGS = {
   },
   invoice: {
     name: 'Invoices', color: '#006064', prefix: 'INV',
+    // v15.13 — v14.20 payment-receipt fields ถูก drop เงียบๆ ทั้ง 6 ตัว
     headers: ['timestamp','invoiceDate','invoiceNumber','customerName',
       'items','subtotal','vatAmount','total','dueDate',
-      'status','notes','rowId'],
+      'status','notes','rowId',
+      'paymentDate','payeeName','payeePlate','payeePosition','paymentMethod','bankAccount'],
     data: (d, now, id) => ({
       timestamp: now,
       invoiceDate: d.invoiceDate||'', invoiceNumber: d.invoiceNumber||'',
@@ -185,7 +187,13 @@ const CONFIGS = {
       items: typeof d.items==='string' ? d.items : JSON.stringify(d.items||[]),
       subtotal: +d.subtotal||0, vatAmount: +d.vatAmount||0, total: +d.total||0,
       dueDate: d.dueDate||'', status: d.status||'รอชำระ',
-      notes: d.notes||'', rowId: id
+      notes: d.notes||'', rowId: id,
+      paymentDate:   d.paymentDate   || '',
+      payeeName:     d.payeeName     || '',
+      payeePlate:    d.payeePlate    || '',
+      payeePosition: d.payeePosition || '',
+      paymentMethod: d.paymentMethod || '',
+      bankAccount:   d.bankAccount   || ''
     })
   },
   capital: {
