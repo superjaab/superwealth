@@ -77,6 +77,12 @@
       transition: transform .2s, box-shadow .2s;
     }
     .dash-stat:hover { transform: translateY(-3px) !important; }
+    /* v15.52 — clickable summary cards (รายรับ/รายจ่าย/เที่ยวรถ) */
+    .dash-stat--link { cursor: pointer !important; }
+    .dash-stat--link:focus-visible { outline: 3px solid rgba(255,255,255,.85); outline-offset: 2px; }
+    .dash-stat-go { display:inline-block; opacity:.65; font-weight:800; transition: transform .2s, opacity .2s; }
+    .dash-stat--link:hover .dash-stat-go { transform: translateX(3px); opacity:1; }
+    .dash-stat.blue:not(.dash-stat--link) { cursor: default !important; }
     .dash-stat::before {
       content:''; position:absolute; inset:0;
       background: radial-gradient(circle at top right, rgba(255,255,255,.18) 0%, transparent 60%);
@@ -5184,7 +5190,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.51 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.52 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -6657,15 +6663,17 @@
 
   <!-- TOP STAT CARDS (6 cards, gradient) -->
   <div class="summary-grid">
-    <div class="dash-stat green">
+    <div class="dash-stat green dash-stat--link" role="button" tabindex="0" title="ดูรายการรายรับทั้งหมด →"
+         onclick="goToTabList('income')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();goToTabList('income')}">
       <div class="dash-stat-icon">💰</div>
-      <div class="dash-stat-label">รายรับรวม</div>
+      <div class="dash-stat-label">รายรับรวม <span class="dash-stat-go">›</span></div>
       <div class="dash-stat-value" id="sum-total-income">฿0</div>
       <div class="dash-stat-sub" id="sum-income-count">📥 — รายการ</div>
     </div>
-    <div class="dash-stat red">
+    <div class="dash-stat red dash-stat--link" role="button" tabindex="0" title="ดูรายการรายจ่ายทั้งหมด →"
+         onclick="goToTabList('expense')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();goToTabList('expense')}">
       <div class="dash-stat-icon">💸</div>
-      <div class="dash-stat-label">รายจ่ายรวม</div>
+      <div class="dash-stat-label">รายจ่ายรวม <span class="dash-stat-go">›</span></div>
       <div class="dash-stat-value" id="sum-total-expense">฿0</div>
       <div class="dash-stat-sub" id="sum-expense-count">📤 — รายการ</div>
     </div>
@@ -6675,9 +6683,10 @@
       <div class="dash-stat-value" id="sum-profit">฿0</div>
       <div class="dash-stat-sub" id="sum-profit-sub">—</div>
     </div>
-    <div class="dash-stat orange">
+    <div class="dash-stat orange dash-stat--link" role="button" tabindex="0" title="ดูบันทึกเที่ยวรถทั้งหมด →"
+         onclick="goToTabList('truck')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();goToTabList('truck')}">
       <div class="dash-stat-icon">🚚</div>
-      <div class="dash-stat-label">เที่ยวรถทั้งหมด</div>
+      <div class="dash-stat-label">เที่ยวรถทั้งหมด <span class="dash-stat-go">›</span></div>
       <div class="dash-stat-value" id="sum-truck-count">0</div>
       <div class="dash-stat-sub" id="sum-truck-sub">฿0</div>
     </div>
@@ -14304,13 +14313,13 @@ let _doughnutChart = null;
 let _summaryInited = false;
 
 function initSummaryOnce() {
-  // Always set date range to current month + auto-load
+  // v15.52 — ช่วงเริ่มต้น: 1 มกราคม → สิ้นเดือนปัจจุบัน (ขยายเองทุกเดือนที่ผ่านไป)
   const now = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Bangkok'}));
   const y = now.getFullYear();
   const m = String(now.getMonth() + 1).padStart(2, '0');
   const lastDay = new Date(y, now.getMonth() + 1, 0).getDate();
-  document.getElementById('sum-dateFrom').value = `${y}-${m}-01`;
-  document.getElementById('sum-dateTo').value   = `${y}-${m}-${lastDay}`;
+  document.getElementById('sum-dateFrom').value = `${y}-01-01`;            // ต้นปี (มกราคม)
+  document.getElementById('sum-dateTo').value   = `${y}-${m}-${lastDay}`;  // สิ้นเดือนปัจจุบัน
   if (!_summaryInited) {
     _summaryInited = true;
     // Auto-load current month data on first open
@@ -14321,11 +14330,17 @@ function initSummaryOnce() {
 // Navigate to truck list view from summary "ดูทั้งหมด" link
 function goToTruckList(e) {
   if (e) e.preventDefault();
-  const tabBtn = Array.from(document.querySelectorAll('.tab-btn'))
-    .find(b => b.getAttribute('onclick')?.includes("switchTab('truck'"));
+  goToTabList('truck', e);
+}
+
+// v15.52 — generic: switch to a tab then open its 📋 list view
+// (ใช้กับการ์ดสรุปผล: รายรับรวม→รายรับ, รายจ่ายรวม→รายจ่าย, เที่ยวรถ→บันทึกเที่ยวรถ)
+function goToTabList(tab, e) {
+  if (e) e.preventDefault();
+  const tabBtn = document.querySelector(`.tab-btn[onclick*="'${tab}'"]`);
   if (tabBtn) tabBtn.click();
   setTimeout(() => {
-    const listBtn = document.querySelector('#tab-truck .inner-btn[onclick*="list"]');
+    const listBtn = document.querySelector(`#tab-${tab} .inner-btn[onclick*="'${tab}','list'"]`);
     if (listBtn) listBtn.click();
   }, 100);
 }
@@ -15311,7 +15326,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.51';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.52';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
