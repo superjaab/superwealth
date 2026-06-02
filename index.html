@@ -5141,7 +5141,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.33 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.34 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -5799,8 +5799,9 @@
         <option value="">🚛 ดูรถทุกคัน</option>
       </select>
       <div class="cal-legend">
-        <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#3b82f6"></span>🚚 กำลังขนส่ง</div>
-        <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#10b981"></span>✅ ส่งถึงแล้ว</div>
+        <div class="cal-leg-item">🎨 สีแยกตามรอบ</div>
+        <div class="cal-leg-item">🚚 กำลังขนส่ง</div>
+        <div class="cal-leg-item">✅ ส่งถึงแล้ว</div>
       </div>
     </div>
 
@@ -13612,6 +13613,16 @@ function _autoTripStatus(r) {
 function _statusColor(s) {
   return s === 'ส่งแล้ว' ? '#10b981' : '#3b82f6';   // green | blue
 }
+// v15.34 — Distinct color per trip round (so a busy calendar isn't all one color).
+// Same round → same color across its day-segments. No round → stable color by plate.
+const CAL_PALETTE = ['#2563eb','#059669','#d97706','#7c3aed','#db2777','#0891b2','#dc2626','#0d9488','#4f46e5','#ca8a04','#be185d','#15803d'];
+function _calRoundColor(t) {
+  const r = parseInt(t.tripRound) || 0;
+  if (r > 0) return CAL_PALETTE[(r - 1) % CAL_PALETTE.length];
+  const s = String(t.plateNumber || t.rowId || '');
+  let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return CAL_PALETTE[h % CAL_PALETTE.length];
+}
 function _statusDot(s) {
   return s === 'ส่งแล้ว' ? '🟢' : '🔵';
 }
@@ -13809,25 +13820,13 @@ function _buildMonthGridWeeks(_calYear, _calMonth, trips) {
         const dt = new Date(n * 86400000);
         return String(dt.getUTCDate()).padStart(2,'0') + '/' + String(dt.getUTCMonth()+1).padStart(2,'0');
       };
-      let datePart = '';
-      if (ev.isMultiDay) {
-        if (!ev.isContinuedLeft && !ev.isContinuedRight) {
-          datePart = `${fmtDM(ev.segStart)} – ${fmtDM(ev.segEnd)}`;
-        } else if (!ev.isContinuedLeft) {
-          datePart = `เริ่ม ${fmtDM(ev.segStart)} ›`;
-        } else if (!ev.isContinuedRight) {
-          datePart = `‹ ถึง ${fmtDM(ev.segEnd)}`;
-        } else {
-          datePart = '⋯ ต่อเนื่อง ⋯';
-        }
-      } else {
-        datePart = fmtDM(ev.segStart);
-      }
+      // v15.34 — รอบ ขึ้นต้น, ตัดข้อความวันที่ (เริ่ม/ถึง) ออก, สถานะแสดงด้วยไอคอน
+      const statusIcon = tripStat === 'ส่งแล้ว' ? '✅' : '🚚';
       let labelParts = [];
-      if (t.tripRound) labelParts.push(`รอบ ${t.tripRound}`);
+      labelParts.push(t.tripRound ? `รอบ ${t.tripRound}` : 'ไม่ระบุรอบ');
       if (!_calPlate && t.plateNumber) labelParts.push(t.plateNumber);
       if (t.origin || t.destination) labelParts.push((t.origin||'-') + ' → ' + (t.destination||'-'));
-      const label = `${datePart} · ${labelParts.join(' · ')}`;
+      const label = `${statusIcon} ${labelParts.join(' · ')}`;
       // v15.15 / v15.16 / v15.17 — Second line: origin customer → destination customer
       // Labels rendered as highlighted chips (no emoji). Customer names escaped.
       const oc = (t.originCustomer || '').trim();
@@ -13857,7 +13856,7 @@ function _buildMonthGridWeeks(_calYear, _calMonth, trips) {
 
       // Click → open day modal of the segment's start day
       const clickDate = _numToDateKey(ev.segStart);
-      const bg = _statusColor(tripStat);
+      const bg = _calRoundColor(t);   // v15.34 — color by round (varied), not status
       const line2 = custHtml
         ? `<span class="cal-evt-l2">${custHtml}</span>`
         : '';
@@ -15037,7 +15036,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.33';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.34';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
