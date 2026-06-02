@@ -661,6 +661,21 @@
     body.dark .sw-record-title { color: #f8fafc; }
     body.dark .sw-record-sub { color: #94a3b8; }
 
+    /* v15.12 — "ค้างจ่าย" pill shown in amount slot when freight=0 */
+    .sw-amount-pending {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 10px; border-radius: 999px;
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      border: 1.5px solid #fbbf24;
+      color: #b45309; font-weight: 800; font-size: .76rem;
+      letter-spacing: .2px; white-space: nowrap;
+      box-shadow: 0 1px 2px rgba(180,83,9,.08);
+    }
+    body.dark .sw-amount-pending {
+      background: linear-gradient(135deg, #5b3a00, #78350f);
+      border-color: #b45309; color: #fcd34d;
+    }
+
     /* v15.11 — Vertical list of detail rows (one per line) inside record cards */
     .sw-record-details {
       display: flex; flex-direction: column; gap: 4px;
@@ -5049,7 +5064,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.11 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.12 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -12717,7 +12732,9 @@ function renderTruckList(items) {
           <span class="sw-status ${payClass}">${payIcon} ${paid ? 'จ่ายแล้ว' : 'ค้างจ่าย'}</span>
         </div>
         <div class="sw-record-amount priv-amt" style="color:${amountColor}">
-          ${showAmount > 0 ? fmtBaht(showAmount) : '฿0'}
+          ${showAmount > 0
+            ? fmtBaht(showAmount)
+            : `<span class="sw-amount-pending">⚠️ ค้างจ่าย</span>`}
           ${amountSource ? `<div style="font-size:.6rem;color:#94a3b8;font-weight:600;margin-top:2px">${amountSource}</div>` : ''}
         </div>
       </div>
@@ -14522,7 +14539,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.11';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.12';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
