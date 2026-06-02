@@ -5203,7 +5203,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.60 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.61 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -14545,7 +14545,7 @@ function renderSummary(data, dateFrom, dateTo) {
 
   const totalIncome  = income.reduce((s, r)  => s + _detectAmount(r), 0);
   const totalExpense = expense.reduce((s, r) => s + _detectAmount(r), 0);
-  const totalFreight = truck.reduce((s, r)   => s + (parseFloat(r.freightCost)  || 0), 0);
+  const totalFreight = truck.reduce((s, r)   => s + _tripRevenue(r), 0);  // v15.61 — freightCost หรือรายรับที่ลิงก์
   const profit       = totalIncome - totalExpense;
   const profitMargin = totalIncome > 0 ? (profit / totalIncome * 100) : 0;
 
@@ -15238,6 +15238,31 @@ function renderDoughnutChart(expense) {
   });
 }
 
+// v15.61 — รายได้จริงต่อเที่ยว: ใช้ freightCost ถ้ามี, ถ้าไม่มีใช้รายรับที่ลิงก์รอบมา
+// (รายรับมักบันทึกแยกแล้วลิงก์รอบ → freightCost เป็น 0) — cache ตาม _master.incomeHistory
+let _incByTripCache = null, _incByTripSrc = null;
+function _incomeByTripMaps() {
+  const src = _master.incomeHistory || [];
+  if (_incByTripCache && _incByTripSrc === src) return _incByTripCache;
+  const byRow = {}, byRound = {};
+  src.forEach(inc => {
+    const amt = parseFloat(inc.amount) || _detectAmount(inc) || 0;
+    if (!amt) return;
+    if (inc.linkedTripRowId) byRow[inc.linkedTripRowId] = (byRow[inc.linkedTripRowId] || 0) + amt;
+    const rd = parseInt(inc.linkedTripRound); if (rd) byRound[rd] = (byRound[rd] || 0) + amt;
+  });
+  _incByTripCache = { byRow, byRound }; _incByTripSrc = src;
+  return _incByTripCache;
+}
+function _tripRevenue(r) {
+  const fc = parseFloat(r.freightCost) || 0;
+  if (fc > 0) return fc;
+  const { byRow, byRound } = _incomeByTripMaps();
+  if (r.rowId && byRow[r.rowId]) return byRow[r.rowId];
+  const rd = parseInt(r.tripRound); if (rd && byRound[rd]) return byRound[rd];
+  return 0;
+}
+
 function renderTruckTable(truck) {
   const statusMap = {
     'กำลังขนส่ง': { cls: 'driving', label: '🔵 กำลังขนส่ง' },
@@ -15275,14 +15300,14 @@ function renderTruckTable(truck) {
       </td>
       <td style="text-align:center"><span class="sum-badge ${info.cls}">${info.label}</span></td>
       <td style="text-align:right">
-        <div style="font-weight:800;color:var(--green)">${fmt(parseFloat(r.freightCost))}</div>
+        <div style="font-weight:800;color:var(--green)">${fmt(_tripRevenue(r))}</div>
         <div style="margin-top:3px">${payBadge}</div>
       </td>
     </tr>`;
   }).join('');
 
   // Totals row → sticky footer (อยู่นอก tbody เลื่อนแล้วยังเห็น)
-  const totalFreight = truck.reduce((s, r) => s + (parseFloat(r.freightCost)||0), 0);
+  const totalFreight = truck.reduce((s, r) => s + _tripRevenue(r), 0);
   const totalCount = truck.length;
   const countDrv = truck.filter(r => _autoTripStatus(r) === 'กำลังขนส่ง').length;
   const countDone = totalCount - countDrv;
@@ -15605,7 +15630,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.60';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.61';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
