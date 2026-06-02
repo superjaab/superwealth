@@ -5,25 +5,29 @@
  */
 const { google } = require('googleapis');
 
-// v15.26 — image-thumbnail column (mirror of save.js) so edits refresh the preview
-const IMG_COL = '🖼 รูปภาพ';
-function _imagePreviewFormula(imageUrls) {
-  let arr = [];
-  try {
-    if (Array.isArray(imageUrls)) arr = imageUrls;
-    else if (typeof imageUrls === 'string' && imageUrls.trim().startsWith('[')) arr = JSON.parse(imageUrls);
-  } catch {}
-  const first = (Array.isArray(arr) ? arr : []).find(u => typeof u === 'string' && /^https?:\/\//.test(u));
-  if (!first) return '';
-  // v15.27 — Drive file ID → drive.google.com/thumbnail (=IMAGE supports this, not lh3)
-  const m = String(first).match(/\/d\/([a-zA-Z0-9_-]{20,})/) || String(first).match(/[?&]id=([a-zA-Z0-9_-]{20,})/);
+// v15.30 — up to 4 image columns (mirror of save.js) so edits show ALL images
+const IMG_COLS = ['🖼 รูป1','🖼 รูป2','🖼 รูป3','🖼 รูป4'];
+function _imageFormulaForUrl(url) {
+  if (!url || typeof url !== 'string' || !/^https?:\/\//.test(url)) return '';
+  const m = url.match(/\/d\/([a-zA-Z0-9_-]{20,})/) || url.match(/[?&]id=([a-zA-Z0-9_-]{20,})/);
   if (m) {
     const id    = m[1];
     const thumb = `https://drive.google.com/thumbnail?id=${id}&sz=w400`;
     const view  = `https://drive.google.com/file/d/${id}/view`;
     return `=HYPERLINK("${view}", IMAGE("${thumb}", 4, 96, 130))`;
   }
-  return `=HYPERLINK("${first}", IMAGE("${first}", 4, 96, 130))`;
+  return `=HYPERLINK("${url}", IMAGE("${url}", 4, 96, 130))`;
+}
+function _imageColValues(imageUrls) {
+  let arr = [];
+  try {
+    if (Array.isArray(imageUrls)) arr = imageUrls;
+    else if (typeof imageUrls === 'string' && imageUrls.trim().startsWith('[')) arr = JSON.parse(imageUrls);
+  } catch {}
+  const urls = (Array.isArray(arr) ? arr : []).filter(u => typeof u === 'string' && /^https?:\/\//.test(u));
+  const out = {};
+  IMG_COLS.forEach((col, i) => { out[col] = urls[i] ? _imageFormulaForUrl(urls[i]) : ''; });
+  return out;
 }
 
 // Same as save.js — each type has a `data` function returning {column: value} object.
@@ -223,9 +227,11 @@ module.exports = async function handler(req, res) {
     // Without this, NEW fields (e.g. province, originCustomer) silently disappear on update.
     const sampleObj = cfg.data(data, '', '');
     const expectedKeys = Object.keys(sampleObj);
-    // v15.29 — IMG_COL is injected after cfg.data(), so add it here too for image types
-    // (otherwise the column is never created on update → thumbnail never written)
-    if ('imageUrls' in sampleObj && !expectedKeys.includes(IMG_COL)) expectedKeys.push(IMG_COL);
+    // v15.29/30 — IMG_COLS are injected after cfg.data(), so add them here too for image types
+    // (otherwise the columns are never created on update → thumbnails never written)
+    if ('imageUrls' in sampleObj) {
+      IMG_COLS.forEach(c => { if (!expectedKeys.includes(c)) expectedKeys.push(c); });
+    }
     let headers = rows[0];
     const missing = expectedKeys.filter(k => !headers.includes(k));
     if (missing.length > 0) {
@@ -260,13 +266,13 @@ module.exports = async function handler(req, res) {
     // v15.27 — (re)build image-thumbnail formula. If no new images provided on this
     // edit, fall back to the imageUrls already stored in the row → re-saving any old
     // record backfills its thumbnail.
-    if (headers.includes(IMG_COL)) {
+    if (headers.includes(IMG_COLS[0])) {
       let urls = data.imageUrls;
       if (urls === undefined) {
         const iuIdx = headers.indexOf('imageUrls');
         if (iuIdx >= 0) urls = rows[foundIdx][iuIdx];
       }
-      dataObj[IMG_COL] = _imagePreviewFormula(urls);
+      Object.assign(dataObj, _imageColValues(urls));
     }
     const newRow = headers.map(h => {
       const v = dataObj[h];

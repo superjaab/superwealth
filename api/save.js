@@ -30,29 +30,34 @@ function _safeImageUrlsJson(v) {
   return '[]';
 }
 
-// v15.26 — Column that renders the uploaded image as a clickable thumbnail in the sheet.
-const IMG_COL = '🖼 รูปภาพ';
-// Build a Google-Sheets formula that shows the first image + links to full size.
-// v15.27 — Google =IMAGE() does NOT render lh3.googleusercontent.com/d/ URLs reliably.
-// Extract the Drive file ID and use drive.google.com/thumbnail?id=… which =IMAGE() supports.
-function _imagePreviewFormula(imageUrls) {
-  let arr = [];
-  try {
-    if (Array.isArray(imageUrls)) arr = imageUrls;
-    else if (typeof imageUrls === 'string' && imageUrls.trim().startsWith('[')) arr = JSON.parse(imageUrls);
-  } catch {}
-  const first = (Array.isArray(arr) ? arr : []).find(u => typeof u === 'string' && /^https?:\/\//.test(u));
-  if (!first) return '';
-  // Extract Drive file ID from lh3 (/d/ID) or drive (/file/d/ID or ?id=ID) URLs
-  const m = String(first).match(/\/d\/([a-zA-Z0-9_-]{20,})/) || String(first).match(/[?&]id=([a-zA-Z0-9_-]{20,})/);
+// v15.30 — Up to 4 image columns so MULTIPLE uploaded images each show in the sheet.
+const IMG_COLS = ['🖼 รูป1','🖼 รูป2','🖼 รูป3','🖼 รูป4'];
+const IMG_MAX  = IMG_COLS.length;
+
+// Build the =IMAGE/=HYPERLINK formula for ONE image url (Drive thumbnail endpoint).
+function _imageFormulaForUrl(url) {
+  if (!url || typeof url !== 'string' || !/^https?:\/\//.test(url)) return '';
+  const m = url.match(/\/d\/([a-zA-Z0-9_-]{20,})/) || url.match(/[?&]id=([a-zA-Z0-9_-]{20,})/);
   if (m) {
     const id    = m[1];
     const thumb = `https://drive.google.com/thumbnail?id=${id}&sz=w400`;
     const view  = `https://drive.google.com/file/d/${id}/view`;
     return `=HYPERLINK("${view}", IMAGE("${thumb}", 4, 96, 130))`;
   }
-  // Non-Drive direct image URL (e.g. ImgBB) — use as-is
-  return `=HYPERLINK("${first}", IMAGE("${first}", 4, 96, 130))`;
+  return `=HYPERLINK("${url}", IMAGE("${url}", 4, 96, 130))`;
+}
+
+// Parse imageUrls → { '🖼 รูป1': formula, '🖼 รูป2': formula, ... } for each image (up to IMG_MAX)
+function _imageColValues(imageUrls) {
+  let arr = [];
+  try {
+    if (Array.isArray(imageUrls)) arr = imageUrls;
+    else if (typeof imageUrls === 'string' && imageUrls.trim().startsWith('[')) arr = JSON.parse(imageUrls);
+  } catch {}
+  const urls = (Array.isArray(arr) ? arr : []).filter(u => typeof u === 'string' && /^https?:\/\//.test(u));
+  const out = {};
+  IMG_COLS.forEach((col, i) => { out[col] = urls[i] ? _imageFormulaForUrl(urls[i]) : ''; });
+  return out;
 }
 
 // ─── Sheet configs ──────────────────────────────────────────
@@ -65,7 +70,7 @@ const CONFIGS = {
     headers: ['timestamp','jobDate','jobTime','plateNumber','driverName','driverPhone',
       'origin','destination','originCustomer','customerName','cargoList','cargoWeight','tripCount',
       'freightCost','jobStatus','remark','imageUrls','ocrText','userAgent','rowId',
-      'pickupDate','deliveryDate','tripRound','paymentStatus','🖼 รูปภาพ'],
+      'pickupDate','deliveryDate','tripRound','paymentStatus','🖼 รูป1','🖼 รูป2','🖼 รูป3','🖼 รูป4'],
     data: (d, now, id) => ({
       timestamp: now,
       jobDate: d.jobDate||'', jobTime: d.jobTime||'',
@@ -85,7 +90,7 @@ const CONFIGS = {
     name: 'Income', color: '#2E7D32', prefix: 'INC',
     headers: ['timestamp','incomeDate','incomeTime','docNumber','customerName',
       'incomeItem','amount','paymentMethod','remark','imageUrls','ocrText','userAgent','rowId',
-      'linkedTripRowId','linkedTripRound','🖼 รูปภาพ'],
+      'linkedTripRowId','linkedTripRound','🖼 รูป1','🖼 รูป2','🖼 รูป3','🖼 รูป4'],
     data: (d, now, id) => ({
       timestamp: now,
       incomeDate: d.incomeDate||'', incomeTime: d.incomeTime||'',
@@ -102,7 +107,7 @@ const CONFIGS = {
     headers: ['timestamp','expenseDate','expenseTime','docNumber','category','plateNumber',
       'vendor','expenseDetail','amount','paymentMethod','remark',
       'imageUrls','ocrText','userAgent','rowId',
-      'linkedTripRowId','linkedTripRound','🖼 รูปภาพ'],
+      'linkedTripRowId','linkedTripRound','🖼 รูป1','🖼 รูป2','🖼 รูป3','🖼 รูป4'],
     data: (d, now, id) => ({
       timestamp: now,
       expenseDate: d.expenseDate||'', expenseTime: d.expenseTime||'',
@@ -173,7 +178,7 @@ const CONFIGS = {
     name: 'Maintenance', color: '#E65100', prefix: 'MNT',
     headers: ['timestamp','maintenanceDate','plateNumber','maintenanceType',
       'description','cost','vendor','odometerKm','nextDueDate',
-      'notes','imageUrls','userAgent','rowId','🖼 รูปภาพ'],
+      'notes','imageUrls','userAgent','rowId','🖼 รูป1','🖼 รูป2','🖼 รูป3','🖼 รูป4'],
     data: (d, now, id) => ({
       timestamp: now,
       maintenanceDate: d.maintenanceDate||'', plateNumber: d.plateNumber||'',
@@ -309,9 +314,9 @@ module.exports = async function handler(req, res) {
     const actualHeaders = await syncHeaders(sheets, sheetId, cfg.name, cfg.headers);
     // 2) Build data OBJECT (key = column name)
     const dataObj = cfg.data(data, now, rowId);
-    // v15.26 — inject clickable image-thumbnail formula if this sheet has the column
-    if (actualHeaders.includes(IMG_COL)) {
-      dataObj[IMG_COL] = _imagePreviewFormula(data.imageUrls);
+    // v15.30 — inject one image-thumbnail formula per uploaded image (up to 4 columns)
+    if (actualHeaders.includes(IMG_COLS[0])) {
+      Object.assign(dataObj, _imageColValues(data.imageUrls));
     }
     // 3) Build row aligned with ACTUAL headers in the sheet
     const row = actualHeaders.map(h => {
