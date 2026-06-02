@@ -5203,7 +5203,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.62 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.63 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -13549,11 +13549,6 @@ function renderTruckList(items) {
       : (r.pickupDate ? `📥 ${fmtDate(r.pickupDate)}` :
          r.deliveryDate ? `📤 ${fmtDate(r.deliveryDate)}` :
          `📅 ${fmtDate(r.jobDate)}${r.jobTime?' '+r.jobTime:''}`);
-    const paid = (r.paymentStatus || 'ค้างจ่าย') === 'จ่ายแล้ว';
-    const payHtml = paid
-      ? `<span style="padding:2px 8px;border-radius:10px;background:#E8F5E9;color:#2E7D32;font-weight:700;font-size:.7rem">💰 จ่ายแล้ว</span>`
-      : `<span style="padding:2px 8px;border-radius:10px;background:#FEE2E2;color:#B91C1C;font-weight:700;font-size:.7rem">⚠️ ค้างจ่าย</span>`;
-
     // ── ค่าขนส่ง: ใช้ freightCost ก่อน → ถ้า 0 ใช้รายรับที่ link มา ──
     const freight = parseFloat(r.freightCost) || 0;
     const linkedIncome = incomeByTrip[r.rowId] || 0;
@@ -13561,6 +13556,12 @@ function renderTruckList(items) {
     const amountSource = freight > 0
       ? '' // ค่าเที่ยวจากฟอร์มเอง — ไม่ต้องระบุ
       : (linkedIncome > 0 ? '🔗 จากรายรับ' : '');
+    // v15.63 — "จ่ายแล้ว" อิงรายรับที่ลิงก์จริง (กัน paymentStatus ค้างค่าเก่าตอนแก้/ย้ายรอบ
+    //   ที่ทำให้แสดง "จ่ายแล้ว" คู่กับ "⚠️ ค้างจ่าย" ขัดกัน). มีค่าขนส่ง+ทำเครื่องหมายเองก็นับ.
+    const paid = linkedIncome > 0 || (freight > 0 && r.paymentStatus === 'จ่ายแล้ว');
+    const payHtml = paid
+      ? `<span style="padding:2px 8px;border-radius:10px;background:#E8F5E9;color:#2E7D32;font-weight:700;font-size:.7rem">💰 จ่ายแล้ว</span>`
+      : `<span style="padding:2px 8px;border-radius:10px;background:#FEE2E2;color:#B91C1C;font-weight:700;font-size:.7rem">⚠️ ค้างจ่าย</span>`;
 
     // Claude Design v14.11 layout — code chip + status pill + amount-right
     const codeChipClass = paid ? 'sw-code-chip--trip'
@@ -15290,7 +15291,10 @@ function renderTruckTable(truck) {
       ? `${fmtDate(r.pickupDate)} → ${fmtDate(r.deliveryDate)}`
       : fmtDate(r.pickupDate || r.jobDate);
     const job = [r.plateNumber, r.customerName].filter(x => x).join(' • ') || '-';
-    const paid = (r.paymentStatus || 'ค้างจ่าย') === 'จ่ายแล้ว';
+    // v15.63 — "จ่ายแล้ว" อิงรายรับที่ลิงก์จริง (เหมือนหน้ารายการเที่ยว) กันสถานะค้างค่าเก่า
+    const _m = _incomeByTripMaps();
+    const _li = (r.rowId && _m.byRow[r.rowId]) || _m.byRound[parseInt(r.tripRound)] || 0;
+    const paid = _li > 0 || ((parseFloat(r.freightCost)||0) > 0 && r.paymentStatus === 'จ่ายแล้ว');
     const payBadge = paid
       ? '<span style="font-size:.65rem;padding:1px 6px;border-radius:8px;background:#E8F5E9;color:#2E7D32;font-weight:700">จ่ายแล้ว</span>'
       : '<span style="font-size:.65rem;padding:1px 6px;border-radius:8px;background:#FEE2E2;color:#B91C1C;font-weight:700">ค้างจ่าย</span>';
@@ -15632,7 +15636,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.62';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.63';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
