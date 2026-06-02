@@ -5064,7 +5064,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.19 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.20 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -7017,7 +7017,7 @@
       </div>
       <div class="form-row-2">
         <div class="form-row"><label>ประกันภัยรถ</label><input type="date" id="v-ins"></div>
-        <div class="form-row"><label>ตรวจสภาพรถ (ครั้งต่อไป)</label><input type="date" id="v-inspect"></div>
+        <div class="form-row"><label>ต่ออายุพาสปอร์ตรถ</label><input type="date" id="v-inspect"></div>
       </div>
       <div class="form-row"><label>หมายเหตุ</label><textarea id="v-notes" rows="2" placeholder="หมายเหตุ..."></textarea></div>
     </div>
@@ -9979,7 +9979,7 @@ async function loadBellAlerts() {
       checkDate(x.regExpiry,        `🚛 ${p} - ภาษีรถ`);
       checkDate(x.prbExpiry,        `🚛 ${p} - พ.ร.บ.`);
       checkDate(x.insuranceExpiry,  `🚛 ${p} - ประกันภัย`);
-      checkDate(x.inspectionExpiry, `🚛 ${p} - ตรวจสภาพ`);
+      checkDate(x.inspectionExpiry, `🚛 ${p} - พาสปอร์ตรถ`);
     });
     ((d.data||{}).driver||[]).forEach(x => {
       if (x.licExpiry || x['lic-exp']) checkDate(x.licExpiry || x['lic-exp'], `👤 ${x.name||'?'} - ใบขับขี่`);
@@ -11770,7 +11770,7 @@ const CSV_HEAD_TH = {
   incomeDate:'วันที่', docNumber:'เลขเอกสาร', incomeItem:'รายการ', amount:'จำนวนเงิน', paymentMethod:'ช่องทาง',
   linkedTripRound:'เที่ยวที่เชื่อม', expenseDate:'วันที่', category:'ประเภท', vendor:'ผู้ขาย/ร้าน', expenseDetail:'รายละเอียด',
   vehicleType:'ประเภทรถ', brand:'ยี่ห้อ', model:'รุ่น', year:'ปี', loadCapacity:'น้ำหนักบรรทุก',
-  regExpiry:'ทะเบียนหมดอายุ', prbExpiry:'พรบหมดอายุ', insuranceExpiry:'ประกันหมดอายุ', inspectionExpiry:'ตรวจสภาพหมดอายุ',
+  regExpiry:'ทะเบียนหมดอายุ', prbExpiry:'พรบหมดอายุ', insuranceExpiry:'ประกันหมดอายุ', inspectionExpiry:'พาสปอร์ตรถหมดอายุ',
   assignedDriver:'คนขับประจำ', assignedDriverPhone:'เบอร์คนขับ', driverPhone:'เบอร์โทร', idCard:'เลขบัตรปชช',
   licenseType:'ประเภทใบขับขี่', licenseExpiry:'ใบขับขี่หมดอายุ', address:'ที่อยู่', contactPerson:'ผู้ติดต่อ',
   customerPhone:'เบอร์โทร', taxId:'เลขผู้เสียภาษี', maintenanceDate:'วันที่ซ่อม', maintenanceType:'ประเภทซ่อม',
@@ -11969,7 +11969,7 @@ function renderVehicleList(items) {
         <span>📋 ภาษี: <b>${fmtExp(v.regExpiry)}</b></span>
         <span>🛡 พ.ร.บ.: <b>${fmtExp(v.prbExpiry)}</b></span>
         <span>🔒 ประกัน: <b>${fmtExp(v.insuranceExpiry)}</b></span>
-        <span>🔍 ตรวจสภาพ: <b>${fmtExp(v.inspectionExpiry)}</b></span>
+        <span>📕 พาสปอร์ตรถ: <b>${fmtExp(v.inspectionExpiry)}</b></span>
       </div>`;
     const notesLine = v.notes
       ? `<div class="rc-sub" style="margin-top:6px;color:#94a3b8;font-size:.78rem">📝 ${escHtml(v.notes)}</div>` : '';
@@ -11986,7 +11986,7 @@ function renderVehicleList(items) {
       ${subLine1 ? `<div class="rc-sub">${subLine1}</div>` : ''}
       ${chassisLine}
       ${driverLine}
-      <div class="rc-badges">${expiryBadge(v.regExpiry,'ภาษี')}${expiryBadge(v.prbExpiry,'พ.ร.บ.')}${expiryBadge(v.insuranceExpiry,'ประกัน')}${expiryBadge(v.inspectionExpiry,'ตรวจสภาพ')}</div>
+      <div class="rc-badges">${expiryBadge(v.regExpiry,'ภาษี')}${expiryBadge(v.prbExpiry,'พ.ร.บ.')}${expiryBadge(v.insuranceExpiry,'ประกัน')}${expiryBadge(v.inspectionExpiry,'พาสปอร์ต')}</div>
       ${expDetail}
       ${valueLine}
       ${notesLine}
@@ -12593,7 +12593,7 @@ async function loadAlerts(force) {
 function renderAlerts(el, vehicles, drivers, invoices) {
   const alerts = [];
   vehicles.forEach(v => {
-    [[v.regExpiry,'ภาษีรถยนต์'],[v.prbExpiry,'พ.ร.บ.'],[v.insuranceExpiry,'ประกันภัย'],[v.inspectionExpiry,'ตรวจสภาพ']]
+    [[v.regExpiry,'ภาษีรถยนต์'],[v.prbExpiry,'พ.ร.บ.'],[v.insuranceExpiry,'ประกันภัย'],[v.inspectionExpiry,'พาสปอร์ตรถ']]
       .forEach(([d,label]) => {
         if (!d) return;
         const days = daysUntil(d);
@@ -14614,7 +14614,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.19';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.20';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
