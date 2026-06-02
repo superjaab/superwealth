@@ -1106,6 +1106,14 @@
     .dash-cust-name { font-size: .82rem; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .dash-cust-sub { font-size: .68rem; color: #94a3b8; margin-top: 2px; }
     .dash-cust-amount { font-size: .85rem; font-weight: 800; color: #059669; flex-shrink: 0; }
+    /* v15.05 — trip-count variant (used in 🚛 ทะเบียนที่ใช้บ่อย) */
+    .dash-cust-amount--count {
+      color: #1d4ed8; font-size: 1.1rem; line-height: 1;
+      display: inline-flex; align-items: baseline; gap: 4px;
+    }
+    .dash-cust-amount--count .dc-unit { font-size: .72rem; font-weight: 700; color: #64748b; }
+    body.dark .dash-cust-amount--count { color: #93c5fd; }
+    body.dark .dash-cust-amount--count .dc-unit { color: #94a3b8; }
     /* v15.01 — stat chips below customer name (trips + income count) */
     .dash-cust-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
     .dc-chip {
@@ -4933,7 +4941,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.04 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.05 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -13690,32 +13698,38 @@ function renderTopCustomers(income, truck) {
 }
 
 // ─── TOP VEHICLES (by trip count) ─────────────────────────────────────────
+// v15.05 — เอาค่าเงินออก แสดงจำนวนเที่ยวเป็นยอดหลักทางขวา
 function renderTopVehicles(truck) {
   const el = document.getElementById('sum-top-vehicles');
   if (!el) return;
   const map = {};
   truck.forEach(r => {
     const plate = r.plateNumber || '(ไม่ระบุ)';
-    if (!map[plate]) map[plate] = { count:0, freight:0 };
+    if (!map[plate]) map[plate] = { count:0, paid:0, unpaid:0 };
     map[plate].count++;
-    map[plate].freight += parseFloat(r.freightCost) || 0;
+    if (typeof _autoTripStatus === 'function') {
+      if (_autoTripStatus(r) === 'ส่งแล้ว') map[plate].paid++;
+      else map[plate].unpaid++;
+    }
   });
   const sorted = Object.entries(map).sort((a,b) => b[1].count - a[1].count).slice(0, 6);
   const colors = ['#1d4ed8','#059669','#d97706','#7c3aed','#db2777','#0891b2'];
-  const fmt = n => '฿' + n.toLocaleString('th-TH',{maximumFractionDigits:0});
   if (sorted.length === 0) {
     el.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:.78rem;padding:14px">📭 ไม่มีข้อมูล</div>';
     return;
   }
   el.innerHTML = sorted.map(([plate, v], i) => {
     const c = colors[i % colors.length];
+    const subParts = [];
+    if (v.paid > 0)   subParts.push(`<span class="dc-chip dc-chip--inc">✅ ส่งแล้ว ${v.paid}</span>`);
+    if (v.unpaid > 0) subParts.push(`<span class="dc-chip dc-chip--trip">🚚 กำลังขนส่ง ${v.unpaid}</span>`);
     return `<div class="dash-cust">
       <div class="dash-cust-avatar" style="background:${c}">🚛</div>
       <div class="dash-cust-info">
         <div class="dash-cust-name">${escHtml(plate)}</div>
-        <div class="dash-cust-sub">${v.count} เที่ยว</div>
+        ${subParts.length ? `<div class="dash-cust-chips">${subParts.join('')}</div>` : ''}
       </div>
-      <div class="dash-cust-amount">${fmt(v.freight)}</div>
+      <div class="dash-cust-amount dash-cust-amount--count">${v.count} <span class="dc-unit">เที่ยว</span></div>
     </div>`;
   }).join('');
 }
@@ -14348,7 +14362,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.04';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.05';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
