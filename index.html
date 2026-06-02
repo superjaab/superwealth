@@ -5170,7 +5170,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.46 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.47 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -12171,6 +12171,11 @@ function fmtBaht(n) {
   const num = parseFloat(n)||0;
   return '฿' + num.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
+// v15.47 — quantity formatter with comma separators (no currency, trims trailing zeros)
+function fmtNum(n, dec) {
+  const num = parseFloat(String(n == null ? '' : n).replace(/,/g, '')) || 0;
+  return num.toLocaleString('en-US', { minimumFractionDigits: dec || 0, maximumFractionDigits: (dec != null ? dec : 2) });
+}
 function fmtDate(d) {
   if (!d) return '-';
   try {
@@ -12217,7 +12222,7 @@ function renderVehicleList(items) {
       v.brand || v.model ? `${escHtml(v.brand||'')} ${escHtml(v.model||'')}`.trim() : '',
       v.year ? `ปี ${+v.year+543}` : '',
       v.color ? `🎨 ${escHtml(v.color)}` : '',
-      v.loadCapacity ? `🏋️ ${escHtml(v.loadCapacity)} ตัน` : ''
+      v.loadCapacity ? `🏋️ ${fmtNum(v.loadCapacity)} ตัน` : ''
     ].filter(Boolean).map(s => `<span>${s}</span>`).join('');
     const chassisLine = v.chassisNo
       ? `<div class="rc-sub" style="margin-top:3px;color:#64748b"><span>🔧 เลขตัวถัง: ${escHtml(v.chassisNo)}</span></div>` : '';
@@ -12359,7 +12364,7 @@ function renderMaintenanceList(items) {
   return [...items].reverse().map(m=>`
     <div class="record-card" style="border-left-color:#E65100">
       <div class="rc-title">🔧 ${m.maintenanceType||'ซ่อมบำรุง'} — ${m.plateNumber||'-'}</div>
-      <div class="rc-sub"><span>📅 ${fmtDate(m.maintenanceDate)}</span><span>${fmtBaht(m.cost)}</span><span>${m.vendor||''}</span>${m.odometerKm?`<span>🛣 ${m.odometerKm} กม.</span>`:''}</div>
+      <div class="rc-sub"><span>📅 ${fmtDate(m.maintenanceDate)}</span><span>${fmtBaht(m.cost)}</span><span>${m.vendor||''}</span>${m.odometerKm?`<span>🛣 ${fmtNum(m.odometerKm)} กม.</span>`:''}</div>
       ${m.nextDueDate?`<div class="rc-sub" style="margin-top:3px">🔔 นัดต่อไป: ${fmtDate(m.nextDueDate)}</div>`:''}
       ${renderImgThumbs(m.imageUrls)}
       ${renderRecActions('maintenance', m.rowId || m.timestamp,`${m.maintenanceType||''} - ${m.plateNumber||''}`)}
@@ -12393,7 +12398,7 @@ function renderFuelList(items) {
   return [...items].reverse().map(f=>`
     <div class="record-card" style="border-left-color:#F57F17">
       <div class="rc-title">⛽ ${f.plateNumber||'-'} — ${fmtDate(f.fuelDate)}</div>
-      <div class="rc-sub"><span>${parseFloat(f.liters)||0} ลิตร</span><span>฿${parseFloat(f.pricePerLiter)||0}/ลิตร</span><span>${fmtBaht(f.totalCost)}</span><span>${f.fuelStation||''}</span></div>
+      <div class="rc-sub"><span>${fmtNum(f.liters)} ลิตร</span><span>฿${fmtNum(f.pricePerLiter,2)}/ลิตร</span><span>${fmtBaht(f.totalCost)}</span><span>${f.fuelStation||''}</span></div>
       ${renderRecActions('fuel', f.rowId || f.timestamp,`${f.plateNumber||''} - ${fmtDate(f.fuelDate)}`)}
     </div>`).join('');
 }
@@ -13335,7 +13340,7 @@ function renderTruckList(items) {
       detailRows.push(`<div><span class="ico">👤</span><span class="priv-data">${escHtml(r.driverName||'-')}${r.driverPhone ? ' · ' + escHtml(r.driverPhone) : ''}</span></div>`);
     }
     if (r.cargoList || r.cargoWeight) {
-      detailRows.push(`<div><span class="ico">📦</span><span class="priv-data">${escHtml(r.cargoList||'-')}${r.cargoWeight ? ' · ' + escHtml(r.cargoWeight) + ' กก.' : ''}</span></div>`);
+      detailRows.push(`<div><span class="ico">📦</span><span class="priv-data">${escHtml(r.cargoList||'-')}${r.cargoWeight ? ' · ' + fmtNum(r.cargoWeight) + ' กก.' : ''}</span></div>`);
     }
     detailRows.push(`<div><span class="ico">📅</span><span>${dateLabel}</span></div>`);
 
@@ -14155,7 +14160,7 @@ function openCalDay(dateKey, focusRowId) {
           ${(trip.originCustomer || trip.customerName) ? `<div class="cal-trip-row">🏢 <b>ลูกค้า:</b> ${trip.originCustomer && trip.customerName && trip.originCustomer !== trip.customerName ? escHtml(trip.originCustomer) + ' → ' + escHtml(trip.customerName) : escHtml(trip.customerName || trip.originCustomer)}</div>` : ''}
           ${trip.driverName   ? `<div class="cal-trip-row">👤 <b>คนขับ:</b> ${escHtml(trip.driverName)}${trip.driverPhone ? ' · ☎️ ' + escHtml(trip.driverPhone) : ''}</div>` : ''}
           ${(trip.origin || trip.destination) ? `<div class="cal-trip-row">📍 <b>เส้นทาง:</b> ${escHtml(trip.origin||'-')} → ${escHtml(trip.destination||'-')}</div>` : ''}
-          ${trip.cargoList    ? `<div class="cal-trip-row">📦 <b>สินค้า:</b> ${escHtml(trip.cargoList)}${trip.cargoWeight ? ' · ' + escHtml(trip.cargoWeight) + ' กก.' : ''}</div>` : ''}
+          ${trip.cargoList    ? `<div class="cal-trip-row">📦 <b>สินค้า:</b> ${escHtml(trip.cargoList)}${trip.cargoWeight ? ' · ' + fmtNum(trip.cargoWeight) + ' กก.' : ''}</div>` : ''}
           ${trip.freightCost  ? `<div class="cal-trip-row">💰 <b>ค่าขนส่ง:</b> ${fmtBaht(trip.freightCost)}</div>` : ''}
           ${trip.remark       ? `<div class="cal-trip-row" style="color:#94a3b8;font-size:.78rem">📝 ${escHtml(trip.remark)}</div>` : ''}
           ${actionBar}
@@ -15198,7 +15203,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.46';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.47';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
