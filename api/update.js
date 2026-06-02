@@ -62,6 +62,7 @@ const CONFIGS = {
       color: d.color||'', chassisNo: d.chassisNo||'',
       regExpiry: d.regExpiry||'', prbExpiry: d.prbExpiry||'',
       insuranceExpiry: d.insuranceExpiry||'', inspectionExpiry: d.inspectionExpiry||'',
+      cargoInsuranceExpiry: d.cargoInsuranceExpiry||'',  // v15.21
       notes: d.notes||'', rowId: id,
       assignedDriver: d.assignedDriver||'', assignedDriverPhone: d.assignedDriverPhone||'',
       vehicleValue: +d.vehicleValue||0,

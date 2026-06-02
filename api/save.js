@@ -93,11 +93,12 @@ const CONFIGS = {
   },
   vehicle: {
     name: 'Vehicles', color: '#0D47A1', prefix: 'VEH',
+    // v15.21 — added cargoInsuranceExpiry (ประกันภัยสินค้า)
     headers: ['timestamp','plateNumber','vehicleType','brand','model','year',
       'loadCapacity','color','chassisNo','regExpiry','prbExpiry',
       'insuranceExpiry','inspectionExpiry','notes','rowId',
       'assignedDriver','assignedDriverPhone',
-      'vehicleValue','purchaseDate'],
+      'vehicleValue','purchaseDate','cargoInsuranceExpiry'],
     data: (d, now, id) => ({
       timestamp: now,
       plateNumber: d.plateNumber||'', vehicleType: d.vehicleType||'',
@@ -106,6 +107,7 @@ const CONFIGS = {
       color: d.color||'', chassisNo: d.chassisNo||'',
       regExpiry: d.regExpiry||'', prbExpiry: d.prbExpiry||'',
       insuranceExpiry: d.insuranceExpiry||'', inspectionExpiry: d.inspectionExpiry||'',
+      cargoInsuranceExpiry: d.cargoInsuranceExpiry||'',  // v15.21
       notes: d.notes||'', rowId: id,
       assignedDriver: d.assignedDriver||'', assignedDriverPhone: d.assignedDriverPhone||'',
       vehicleValue: +d.vehicleValue||0,

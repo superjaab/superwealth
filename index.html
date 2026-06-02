@@ -5064,7 +5064,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.20 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.21 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -7019,10 +7019,12 @@
         <div class="form-row"><label>ประกันภัยรถ</label><input type="date" id="v-ins"></div>
         <div class="form-row"><label>ต่ออายุพาสปอร์ตรถ</label><input type="date" id="v-inspect"></div>
       </div>
+      <!-- v15.21 — ประกันภัยสินค้า (cargo insurance) -->
+      <div class="form-row"><label>📦 ประกันภัยสินค้า</label><input type="date" id="v-cargo-ins"></div>
       <div class="form-row"><label>หมายเหตุ</label><textarea id="v-notes" rows="2" placeholder="หมายเหตุ..."></textarea></div>
     </div>
     <div class="submit-row"><button type="button" class="btn btn-primary btn-block" onclick="submitVehicle()" style="padding:15px;background:#0D47A1">💾 บันทึกข้อมูลรถ</button></div>
-    <div style="margin-top:8px"><button type="button" class="btn btn-secondary btn-block btn-small" onclick="resetFields(['v-plate','v-type','v-brand','v-model','v-year','v-load','v-color','v-chassis','v-reg','v-prb','v-ins','v-inspect','v-value','v-purchaseDate','v-notes'])">🗑 ล้างข้อมูล</button></div>
+    <div style="margin-top:8px"><button type="button" class="btn btn-secondary btn-block btn-small" onclick="resetFields(['v-plate','v-type','v-brand','v-model','v-year','v-load','v-color','v-chassis','v-reg','v-prb','v-ins','v-inspect','v-cargo-ins','v-value','v-purchaseDate','v-notes'])">🗑 ล้างข้อมูล</button></div>
   </div>
   <div id="vehicle-list-view" style="display:none"><div id="veh-list" class="list-loading">กด "รายการรถ" เพื่อโหลด</div></div>
 </div>
@@ -9980,6 +9982,7 @@ async function loadBellAlerts() {
       checkDate(x.prbExpiry,        `🚛 ${p} - พ.ร.บ.`);
       checkDate(x.insuranceExpiry,  `🚛 ${p} - ประกันภัย`);
       checkDate(x.inspectionExpiry, `🚛 ${p} - พาสปอร์ตรถ`);
+      checkDate(x.cargoInsuranceExpiry, `📦 ${p} - ประกันภัยสินค้า`);
     });
     ((d.data||{}).driver||[]).forEach(x => {
       if (x.licExpiry || x['lic-exp']) checkDate(x.licExpiry || x['lic-exp'], `👤 ${x.name||'?'} - ใบขับขี่`);
@@ -11121,6 +11124,7 @@ const _PREFILL_MAP = {
     plateNumber:'v-plate', vehicleType:'v-type', brand:'v-brand', model:'v-model',
     year:'v-year', loadCapacity:'v-load', color:'v-color', chassisNo:'v-chassis',
     regExpiry:'v-reg', prbExpiry:'v-prb', insuranceExpiry:'v-ins', inspectionExpiry:'v-inspect',
+    cargoInsuranceExpiry:'v-cargo-ins',  // v15.21
     assignedDriver:'v-driver', assignedDriverPhone:'v-driver-phone',
     notes:'v-notes',
     vehicleValue:'v-value', purchaseDate:'v-purchaseDate'
@@ -11946,10 +11950,11 @@ function submitVehicle() {
     plateNumber:gv('v-plate'), vehicleType:gv('v-type'), brand:gv('v-brand'), model:gv('v-model'),
     year:gv('v-year'), loadCapacity:gv('v-load'), color:gv('v-color'), chassisNo:gv('v-chassis'),
     regExpiry:gv('v-reg'), prbExpiry:gv('v-prb'), insuranceExpiry:gv('v-ins'), inspectionExpiry:gv('v-inspect'),
+    cargoInsuranceExpiry:gv('v-cargo-ins'),  // v15.21
     assignedDriver:gv('v-driver'), assignedDriverPhone:gv('v-driver-phone'),
     vehicleValue:gv('v-value'), purchaseDate:gv('v-purchaseDate'),
     notes:gv('v-notes')
-  }, ()=>resetFields(['v-plate','v-type','v-brand','v-model','v-year','v-load','v-color','v-chassis','v-reg','v-prb','v-ins','v-inspect','v-value','v-purchaseDate','v-notes']));
+  }, ()=>resetFields(['v-plate','v-type','v-brand','v-model','v-year','v-load','v-color','v-chassis','v-reg','v-prb','v-ins','v-inspect','v-cargo-ins','v-value','v-purchaseDate','v-notes']));
 }
 function renderVehicleList(items) {
   // v14.90 — Show ALL captured fields (was missing loadCapacity, color, chassisNo, driver, notes, expiry dates)
@@ -11968,8 +11973,9 @@ function renderVehicleList(items) {
     const expDetail = `<div class="rc-sub" style="margin-top:6px;padding:8px;background:#f8fafc;border-radius:6px;font-size:.74rem;color:#475569;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px">
         <span>📋 ภาษี: <b>${fmtExp(v.regExpiry)}</b></span>
         <span>🛡 พ.ร.บ.: <b>${fmtExp(v.prbExpiry)}</b></span>
-        <span>🔒 ประกัน: <b>${fmtExp(v.insuranceExpiry)}</b></span>
+        <span>🔒 ประกันรถ: <b>${fmtExp(v.insuranceExpiry)}</b></span>
         <span>📕 พาสปอร์ตรถ: <b>${fmtExp(v.inspectionExpiry)}</b></span>
+        ${v.cargoInsuranceExpiry ? `<span>📦 ประกันสินค้า: <b>${fmtExp(v.cargoInsuranceExpiry)}</b></span>` : ''}
       </div>`;
     const notesLine = v.notes
       ? `<div class="rc-sub" style="margin-top:6px;color:#94a3b8;font-size:.78rem">📝 ${escHtml(v.notes)}</div>` : '';
@@ -11986,7 +11992,7 @@ function renderVehicleList(items) {
       ${subLine1 ? `<div class="rc-sub">${subLine1}</div>` : ''}
       ${chassisLine}
       ${driverLine}
-      <div class="rc-badges">${expiryBadge(v.regExpiry,'ภาษี')}${expiryBadge(v.prbExpiry,'พ.ร.บ.')}${expiryBadge(v.insuranceExpiry,'ประกัน')}${expiryBadge(v.inspectionExpiry,'พาสปอร์ต')}</div>
+      <div class="rc-badges">${expiryBadge(v.regExpiry,'ภาษี')}${expiryBadge(v.prbExpiry,'พ.ร.บ.')}${expiryBadge(v.insuranceExpiry,'ประกันรถ')}${expiryBadge(v.inspectionExpiry,'พาสปอร์ต')}${expiryBadge(v.cargoInsuranceExpiry,'ประกันสินค้า')}</div>
       ${expDetail}
       ${valueLine}
       ${notesLine}
@@ -12593,7 +12599,7 @@ async function loadAlerts(force) {
 function renderAlerts(el, vehicles, drivers, invoices) {
   const alerts = [];
   vehicles.forEach(v => {
-    [[v.regExpiry,'ภาษีรถยนต์'],[v.prbExpiry,'พ.ร.บ.'],[v.insuranceExpiry,'ประกันภัย'],[v.inspectionExpiry,'พาสปอร์ตรถ']]
+    [[v.regExpiry,'ภาษีรถยนต์'],[v.prbExpiry,'พ.ร.บ.'],[v.insuranceExpiry,'ประกันภัยรถ'],[v.inspectionExpiry,'พาสปอร์ตรถ'],[v.cargoInsuranceExpiry,'ประกันภัยสินค้า']]
       .forEach(([d,label]) => {
         if (!d) return;
         const days = daysUntil(d);
@@ -14614,7 +14620,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.20';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.21';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
