@@ -4941,7 +4941,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.06 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.07 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -5375,19 +5375,21 @@
 <!-- ══ TAB: ปฏิทินเที่ยวรถ ══ -->
 <div class="tab-panel" id="tab-calendar">
   <style>
-    /* v15.06 — Let calendar grow with viewport (was capped at 1100px) */
-    #cal-wrap { max-width:1600px; width:96%; margin:0 auto; padding:16px 12px 32px }
+    /* v15.07 — Override the global .tab-panel max-width (760px) สำหรับปฏิทินโดยเฉพาะ */
+    #tab-calendar.tab-panel { max-width: 100% !important; padding: 14px 24px 32px !important; }
+    #cal-wrap { max-width: none; width: 100%; margin: 0 auto; padding: 0 }
     @media (min-width: 1400px) {
-      .cal-daycell { min-height: 42px !important; padding: 10px 8px 4px !important; }
-      .cal-week-events { grid-auto-rows: 24px !important; min-height: 80px !important; padding: 4px 5px 8px 5px !important; }
-      .cal-evt-bar { font-size: .72rem !important; padding: 4px 9px !important; }
-      .cal-day-num { font-size: .9rem !important; }
-      .cal-weekday { padding: 14px 8px !important; font-size: .82rem !important; }
+      .cal-daycell { min-height: 48px !important; padding: 12px 10px 6px !important; }
+      .cal-week-events { grid-auto-rows: 26px !important; min-height: 96px !important; padding: 5px 6px 10px 6px !important; }
+      .cal-evt-bar { font-size: .76rem !important; padding: 5px 10px !important; }
+      .cal-day-num { font-size: .95rem !important; }
+      .cal-weekday { padding: 16px 10px !important; font-size: .85rem !important; }
     }
     @media (min-width: 1700px) {
-      .cal-daycell { min-height: 56px !important; }
-      .cal-week-events { grid-auto-rows: 26px !important; min-height: 100px !important; }
-      .cal-evt-bar { font-size: .76rem !important; padding: 5px 10px !important; }
+      .cal-daycell { min-height: 64px !important; padding: 14px 12px 8px !important; }
+      .cal-week-events { grid-auto-rows: 30px !important; min-height: 120px !important; }
+      .cal-evt-bar { font-size: .82rem !important; padding: 6px 12px !important; }
+      .cal-day-num { font-size: 1rem !important; }
     }
     .cal-toolbar { display:flex; align-items:center; gap:8px; margin-bottom:14px; flex-wrap:wrap }
     .cal-month-nav { display:flex; align-items:center; gap:6px; background:white; border:1px solid #e2e8f0; border-radius:10px; padding:4px }
@@ -14375,7 +14377,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.06';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.07';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
