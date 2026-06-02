@@ -5079,7 +5079,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.27 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.28 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -10471,6 +10471,11 @@ function zoomPreview(formKey, idx) {
 async function rotateImage(idx, formKey) {
   const item = state[formKey] && state[formKey].images[idx];
   if (!item || !item.previewUrl) return;
+  // v15.28 — can't rotate already-uploaded image (no local file + CORS-tainted canvas)
+  if (item.uploadedUrl && !item.file) {
+    showToast('หมุนได้เฉพาะรูปที่เพิ่งแนบใหม่ — ลบแล้วแนบใหม่เพื่อหมุน', 'info');
+    return;
+  }
   try {
     const img = new Image();
     await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = item.previewUrl; });
@@ -10497,6 +10502,11 @@ async function rotateImage(idx, formKey) {
 async function runOCR(idx, formKey) {
   const item = state[formKey].images[idx];
   if (!item) return;
+  // v15.28 — OCR needs the local file; already-uploaded images don't have one
+  if (item.uploadedUrl && !item.file) {
+    showToast('OCR ได้เฉพาะรูปที่เพิ่งแนบใหม่', 'info');
+    return;
+  }
   showLoading('กำลังอ่านข้อความจากภาพ...');
   try {
     const { base64, mimeType } = await fileToJpegBase64(item.file);
@@ -10670,6 +10680,8 @@ async function uploadAllImages(formKey) {
   // อัพทีละรูป — เลี่ยง Vercel 4.5MB body limit + บีบอัดก่อนส่ง
   for (let i = 0; i < imgs.length; i++) {
     const item = imgs[i];
+    // v15.28 — already-uploaded image (loaded during edit) → keep its URL, skip re-upload
+    if (item.uploadedUrl && !item.file) { urls.push(item.uploadedUrl); continue; }
     setLoadingText(`📤 กำลังอัพโหลดรูปที่ ${i+1}/${imgs.length}...`);
     try {
       // 1) บีบอัด/แปลงเป็น JPEG (max 1920px, quality 85%)
@@ -11252,6 +11264,18 @@ function startEdit(type, rowId, record) {
     if (type === 'expense') populateExpenseLinkedTripsDropdown(record);
     // 5) Prefill form (after dropdown has options)
     _prefillForm(type, record);
+    // v15.28 — load existing attached images into preview so user sees + keeps them
+    if (state[type]) {
+      let existing = [];
+      try {
+        const raw = record.imageUrls;
+        if (Array.isArray(raw)) existing = raw;
+        else if (typeof raw === 'string' && raw.trim().startsWith('[')) existing = JSON.parse(raw);
+      } catch {}
+      existing = (existing || []).filter(u => typeof u === 'string' && /^https?:\/\//.test(u));
+      state[type].images = existing.map(u => ({ previewUrl: u, file: null, uploadedUrl: u }));
+      try { renderPreview(type); } catch(e) {}
+    }
     // 6) UI feedback
     updateSubmitLabel(type, true);
     _showEditBanner(type, record);
@@ -11346,10 +11370,11 @@ async function performEditUpdate(type, data) {
   const rowId = _editingMode[type];
   showLoading('กำลังอัปเดต...');
   try {
-    // Upload new images if any (preserve old if no new uploads)
-    if (state[type]) {
-      const newImgs = await uploadAllImages(type);
-      if (newImgs && newImgs.length > 0) data.imageUrls = newImgs;
+    // v15.28 — Always set imageUrls from current preview (preserved old + new).
+    // uploadAllImages keeps already-uploaded URLs and uploads new files.
+    // Previously only set when newImgs>0 → editing without new upload WIPED images.
+    if (state[type] && Array.isArray(state[type].images)) {
+      data.imageUrls = await uploadAllImages(type);
     }
     data.userAgent = navigator.userAgent;
     const result = await api('/api/update', { type, rowId, data });
@@ -14682,7 +14707,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.27';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.28';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
