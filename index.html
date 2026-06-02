@@ -5079,7 +5079,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.24 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.25 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -10442,10 +10442,10 @@ function renderPreview(formKey) {
     const div = document.createElement('div');
     div.className = 'preview-item';
     div.innerHTML = `
-      <img src="${item.previewUrl}" alt="ภาพ ${idx+1}" loading="lazy">
-      <button type="button" class="remove-btn" onclick="removeImage(${idx},'${formKey}')" title="ลบภาพ">✕</button>
-      <button type="button" class="rotate-btn" onclick="rotateImage(${idx},'${formKey}')" title="หมุนภาพ 90°">↻</button>
-      <button type="button" class="ocr-btn-img" onclick="runOCR(${idx},'${formKey}')">OCR</button>`;
+      <img src="${item.previewUrl}" alt="ภาพ ${idx+1}" loading="lazy" style="cursor:zoom-in" onclick="zoomPreview('${formKey}',${idx})" title="กดเพื่อดูเต็มจอ">
+      <button type="button" class="remove-btn" onclick="event.stopPropagation();removeImage(${idx},'${formKey}')" title="ลบภาพ">✕</button>
+      <button type="button" class="rotate-btn" onclick="event.stopPropagation();rotateImage(${idx},'${formKey}')" title="หมุนภาพ 90°">↻</button>
+      <button type="button" class="ocr-btn-img" onclick="event.stopPropagation();runOCR(${idx},'${formKey}')">OCR</button>`;
     grid.appendChild(div);
   });
   const status = document.getElementById(formKey+'-upload-status');
@@ -10453,6 +10453,19 @@ function renderPreview(formKey) {
 }
 
 function removeImage(idx, formKey) { state[formKey].images.splice(idx, 1); renderPreview(formKey); }
+
+// v15.25 — Click an attached preview image → open full-screen zoom (uses existing openImgZoom)
+function zoomPreview(formKey, idx) {
+  const imgs = (state[formKey] && state[formKey].images) || [];
+  const urls = [];
+  let startAt = 0;
+  imgs.forEach((it, i) => {
+    if (!it.previewUrl) return;
+    if (i === idx) startAt = urls.length;   // map full-array idx → loaded-list idx
+    urls.push(it.previewUrl);
+  });
+  if (urls.length && typeof openImgZoom === 'function') openImgZoom(urls, startAt);
+}
 
 // v15.24 — Rotate an attached image 90° clockwise (re-encodes so upload + OCR use rotated version)
 async function rotateImage(idx, formKey) {
@@ -14669,7 +14682,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.24';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.25';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
