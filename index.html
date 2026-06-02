@@ -5190,7 +5190,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.52 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.53 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -10586,7 +10586,7 @@ function autoFillFields(formKey, parsed) {
     set('t-customerName', parsed.customerName);
     set('t-cargoList',    parsed.cargoList);
   } else if (formKey === 'income') {
-    set('i-docNumber',    parsed.docNumber);
+    // v15.53 — ไม่ดึงเลขอ้างอิงจากสลิปมาทับเลข RV ที่ระบบรันให้ (รายรับใช้เลข RV เสมอ)
     set('i-customerName', parsed.customerName);
     // รายการรายรับ: ใช้ incomeItem (smart detect) หรือ cargoList
     set('i-incomeItem',   parsed.incomeItem || parsed.cargoList);
@@ -10743,7 +10743,7 @@ function fillFormFromOCR(formKey) {
     set('t-customerName', parsed.customerName);
     set('t-cargoList',    parsed.cargoList);
   } else if (formKey === 'income') {
-    set('i-docNumber',    parsed.docNumber);
+    // v15.53 — ไม่ดึงเลขอ้างอิงจากสลิปมาทับเลข RV ที่ระบบรันให้ (รายรับใช้เลข RV เสมอ)
     set('i-customerName', parsed.customerName);
     set('i-incomeItem',   parsed.incomeItem || parsed.cargoList);
     setSelect('i-paymentMethod', parsed.paymentMethod);
@@ -10980,9 +10980,12 @@ function collectFormData(formKey) {
     const linkedSel  = document.getElementById('i-linkedTrip');
     const linkedOpt  = linkedSel && linkedSel.options[linkedSel.selectedIndex];
     const linkedRound = (linkedOpt && linkedOpt.dataset.round) ? +linkedOpt.dataset.round : 0;
+    // v15.53 — รายรับต้องมีเลข RV เสมอ แม้สร้างจากสลิป (เลขอ้างอิงสลิป ≠ เลข RV) → รันใหม่ให้
+    let iDoc = g('i-docNumber');
+    if (!/^RV-\d/.test(iDoc)) { try { genIncNum(true); } catch(e){} iDoc = g('i-docNumber'); }
     return {
       incomeDate: g('i-incomeDate'), incomeTime: g('i-incomeTime'),
-      docNumber: g('i-docNumber'),
+      docNumber: iDoc,
       customerName: g('i-customerName'), incomeItem: g('i-incomeItem'),
       amount: g('i-amount'), paymentMethod: g('i-paymentMethod'), remark: g('i-remark'),
       linkedTripRowId: g('i-linkedTrip'),
@@ -11000,9 +11003,12 @@ function collectFormData(formKey) {
     const eLinkedSel = document.getElementById('e-linkedTrip');
     const eLinkedOpt = eLinkedSel && eLinkedSel.options[eLinkedSel.selectedIndex];
     const eLinkedRound = (eLinkedOpt && eLinkedOpt.dataset.round) ? +eLinkedOpt.dataset.round : 0;
+    // v15.53 — รายจ่ายต้องมีเลข PV เสมอ แม้สร้างจากสลิป → รันใหม่ให้ถ้าไม่ใช่รูปแบบ PV
+    let eDoc = g('e-docNumber');
+    if (!/^PV-\d/.test(eDoc)) { try { genExpNum(true); } catch(e){} eDoc = g('e-docNumber'); }
     return {
       expenseDate: g('e-expenseDate'), expenseTime: g('e-expenseTime'),
-      docNumber: g('e-docNumber'),     // v14.70 — auto-generated
+      docNumber: eDoc,     // v14.70 — auto-generated (v15.53 — บังคับเลข PV)
       category: catNames,
       expenseItems: JSON.stringify(rows),   // v15.50 — per-category breakdown
       plateNumber: g('e-plateNumber'), vendor: g('e-vendor'),
@@ -11497,6 +11503,14 @@ function _prefillForm(type, record) {
   // v15.50 — expense multi-category+amount → rebuild rows from expenseItems
   if (type === 'expense' && typeof _prefillExpenseItems === 'function') {
     _prefillExpenseItems(record);
+  }
+  // v15.53 — ซ่อมเลขเอกสารเก่าที่เป็นเลขอ้างอิงสลิป (ไม่ใช่ RV/PV) → รันเลขที่ถูกต้องให้เห็นทันที
+  if (type === 'income') {
+    const el = document.getElementById('i-docNumber');
+    if (el && !/^RV-\d/.test(el.value)) { try { genIncNum(true); } catch(e){} }
+  } else if (type === 'expense') {
+    const el = document.getElementById('e-docNumber');
+    if (el && !/^PV-\d/.test(el.value)) { try { genExpNum(true); } catch(e){} }
   }
 }
 
@@ -15326,7 +15340,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.52';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.53';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
