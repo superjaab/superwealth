@@ -5032,7 +5032,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.09 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.10 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -6959,7 +6959,7 @@
       <div class="form-row"><label>หมายเหตุ</label><textarea id="v-notes" rows="2" placeholder="หมายเหตุ..."></textarea></div>
     </div>
     <div class="submit-row"><button type="button" class="btn btn-primary btn-block" onclick="submitVehicle()" style="padding:15px;background:#0D47A1">💾 บันทึกข้อมูลรถ</button></div>
-    <div style="margin-top:8px"><button type="button" class="btn btn-secondary btn-block btn-small" onclick="resetFields(['v-plate','v-type','v-brand','v-model','v-year','v-load','v-color','v-chassis','v-reg','v-prb','v-ins','v-inspect','v-notes'])">🗑 ล้างข้อมูล</button></div>
+    <div style="margin-top:8px"><button type="button" class="btn btn-secondary btn-block btn-small" onclick="resetFields(['v-plate','v-type','v-brand','v-model','v-year','v-load','v-color','v-chassis','v-reg','v-prb','v-ins','v-inspect','v-value','v-purchaseDate','v-notes'])">🗑 ล้างข้อมูล</button></div>
   </div>
   <div id="vehicle-list-view" style="display:none"><div id="veh-list" class="list-loading">กด "รายการรถ" เพื่อโหลด</div></div>
 </div>
@@ -11871,13 +11871,15 @@ const gv = id => {
 function submitVehicle() {
   if (!gv('v-plate')) { showToast('กรุณากรอกทะเบียนรถ','warning'); return; }
   if (!gv('v-type'))  { showToast('กรุณาเลือกประเภทรถ','warning'); return; }
+  // v15.10 — Previously dropped vehicleValue + purchaseDate (form had inputs but submit didn't read them)
   submitData('vehicle', {
     plateNumber:gv('v-plate'), vehicleType:gv('v-type'), brand:gv('v-brand'), model:gv('v-model'),
     year:gv('v-year'), loadCapacity:gv('v-load'), color:gv('v-color'), chassisNo:gv('v-chassis'),
     regExpiry:gv('v-reg'), prbExpiry:gv('v-prb'), insuranceExpiry:gv('v-ins'), inspectionExpiry:gv('v-inspect'),
     assignedDriver:gv('v-driver'), assignedDriverPhone:gv('v-driver-phone'),
+    vehicleValue:gv('v-value'), purchaseDate:gv('v-purchaseDate'),
     notes:gv('v-notes')
-  }, ()=>resetFields(['v-plate','v-type','v-brand','v-model','v-year','v-load','v-color','v-chassis','v-reg','v-prb','v-ins','v-inspect','v-notes']));
+  }, ()=>resetFields(['v-plate','v-type','v-brand','v-model','v-year','v-load','v-color','v-chassis','v-reg','v-prb','v-ins','v-inspect','v-value','v-purchaseDate','v-notes']));
 }
 function renderVehicleList(items) {
   // v14.90 — Show ALL captured fields (was missing loadCapacity, color, chassisNo, driver, notes, expiry dates)
@@ -11901,6 +11903,13 @@ function renderVehicleList(items) {
       </div>`;
     const notesLine = v.notes
       ? `<div class="rc-sub" style="margin-top:6px;color:#94a3b8;font-size:.78rem">📝 ${escHtml(v.notes)}</div>` : '';
+    // v15.10 — Show vehicleValue + purchaseDate (ROI info, was missing from card)
+    const valueNum = parseFloat(v.vehicleValue) || 0;
+    const valueLine = (valueNum > 0 || v.purchaseDate)
+      ? `<div class="rc-sub" style="margin-top:6px;padding:8px 10px;background:linear-gradient(135deg,#f5f3ff,#ede9fe);border:1px solid #ddd6fe;border-radius:8px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:.78rem">
+          <span style="color:#5b21b6;font-weight:700">💰 มูลค่ารถ: <b class="priv-amt" style="color:#6d28d9">${valueNum > 0 ? fmtBaht(valueNum) : '-'}</b></span>
+          ${v.purchaseDate ? `<span style="color:#5b21b6">📅 ซื้อ ${fmtDate(v.purchaseDate)}</span>` : ''}
+        </div>` : '';
     return `
     <div class="record-card" style="border-left-color:#0D47A1">
       <div class="rc-title">🚛 ${escHtml(v.plateNumber||'')} <span style="font-size:.78rem;font-weight:400;color:var(--gray3)">${escHtml(v.vehicleType||'')}</span></div>
@@ -11909,6 +11918,7 @@ function renderVehicleList(items) {
       ${driverLine}
       <div class="rc-badges">${expiryBadge(v.regExpiry,'ภาษี')}${expiryBadge(v.prbExpiry,'พ.ร.บ.')}${expiryBadge(v.insuranceExpiry,'ประกัน')}${expiryBadge(v.inspectionExpiry,'ตรวจสภาพ')}</div>
       ${expDetail}
+      ${valueLine}
       ${notesLine}
       ${renderRecActions('vehicle', v.rowId || v.timestamp, v.plateNumber||'')}
     </div>`;
@@ -14496,7 +14506,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.09';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.10';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
