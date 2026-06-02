@@ -136,41 +136,50 @@ function parseOCR(text) {
     if (plate) r.plateNumber = plate[0].replace(/\s+/g, '').trim();
   }
 
-  // วันที่ — รองรับหลายรูปแบบ
-  const thaiMonths = {
-    'ม.ค.':1,'ก.พ.':2,'มี.ค.':3,'เม.ย.':4,'พ.ค.':5,'มิ.ย.':6,
-    'ก.ค.':7,'ส.ค.':8,'ก.ย.':9,'ต.ค.':10,'พ.ย.':11,'ธ.ค.':12,
+  // ── วันที่ — รองรับหลายรูปแบบ (สลิปธนาคาร / ใบเสร็จ / ใบกำกับ) ──
+  // v15.51: เพิ่ม (1) ปี พ.ศ. 2 หลัก "พ.ค. 68"  (2) OCR ตัดจุดทิ้ง "พค 68"
+  //         (3) เดือนภาษาอังกฤษ "14 May 2025" / "May 14, 2025"
+  const TH_MON_NUM = {
     'มกราคม':1,'กุมภาพันธ์':2,'มีนาคม':3,'เมษายน':4,'พฤษภาคม':5,'มิถุนายน':6,
-    'กรกฎาคม':7,'สิงหาคม':8,'กันยายน':9,'ตุลาคม':10,'พฤศจิกายน':11,'ธันวาคม':12
+    'กรกฎาคม':7,'สิงหาคม':8,'กันยายน':9,'ตุลาคม':10,'พฤศจิกายน':11,'ธันวาคม':12,
+    'มค':1,'กพ':2,'มีค':3,'เมย':4,'พค':5,'มิย':6,'กค':7,'สค':8,'กย':9,'ตค':10,'พย':11,'ธค':12
   };
-  // รูปแบบไทย: "14 พ.ค. 2569" หรือ "14 พฤษภาคม 2569"
-  const thDt = text.match(/(\d{1,2})\s+(ม\.ค\.|ก\.พ\.|มี\.ค\.|เม\.ย\.|พ\.ค\.|มิ\.ย\.|ก\.ค\.|ส\.ค\.|ก\.ย\.|ต\.ค\.|พ\.ย\.|ธ\.ค\.|มกราคม|กุมภาพันธ์|มีนาคม|เมษายน|พฤษภาคม|มิถุนายน|กรกฎาคม|สิงหาคม|กันยายน|ตุลาคม|พฤศจิกายน|ธันวาคม)\s+(\d{4})/);
+  const EN_MON_NUM = { jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12 };
+  // ปี 2 หลัก: ภาษาไทย→พ.ศ. 25xx, อังกฤษ→ค.ศ. 20xx | ปี >2400 = พ.ศ. → ลบ 543
+  const _toAD = (yrStr, buddhist) => {
+    let num = parseInt(yrStr, 10);
+    if (String(yrStr).length <= 2) num = (buddhist ? 2500 : 2000) + num;
+    return num > 2400 ? num - 543 : num;
+  };
+  // (1) ชื่อเดือนไทย — เต็ม/ย่อ, มี/ไม่มีจุด (เรียงเฉพาะเจาะจงก่อน), ปี 2 หรือ 4 หลัก
+  const TH_MON_RE = '(มกราคม|กุมภาพันธ์|มีนาคม|เมษายน|พฤษภาคม|มิถุนายน|กรกฎาคม|สิงหาคม|กันยายน|ตุลาคม|พฤศจิกายน|ธันวาคม|มี\\.?ค\\.?|เม\\.?ย\\.?|มิ\\.?ย\\.?|ม\\.?ค\\.?|ก\\.?พ\\.?|พ\\.?ค\\.?|ก\\.?ค\\.?|ส\\.?ค\\.?|ก\\.?ย\\.?|ต\\.?ค\\.?|พ\\.?ย\\.?|ธ\\.?ค\\.?)';
+  const thDt = text.match(new RegExp('(\\d{1,2})\\s*' + TH_MON_RE + '\\s*\\.?\\s*(\\d{2,4})'));
+  // (3) ชื่อเดือนอังกฤษ
+  const EN_MON_RE = '(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\.?';
+  const enDt1 = text.match(new RegExp('(\\d{1,2})[\\s-]+' + EN_MON_RE + '[\\s,-]+(\\d{2,4})', 'i'));   // 14 May 2025
+  const enDt2 = enDt1 ? null : text.match(new RegExp(EN_MON_RE + '[\\s.]+(\\d{1,2})(?:st|nd|rd|th)?[\\s,]+(\\d{2,4})', 'i')); // May 14, 2025
+  // (2) รูปแบบกล่อง "วันที่ 6 เดือน 5 พ.ศ. 69"
+  const boxDt = text.match(/วันที่\s*(\d{1,2})\s*เดือน\s*(\d{1,2})\s*(?:พ\.ศ\.)?\s*(\d{2,4})/);
+  // (4) ตัวเลขล้วน dd/mm/yy(yy)
+  const numDt = text.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})(?:\s+\d{1,2}:\d{2})?/);
+
   if (thDt) {
-    const mm   = String(thaiMonths[thDt[2]] || 1).padStart(2, '0');
-    const yr   = parseInt(thDt[3]);
-    const adYr = yr > 2400 ? yr - 543 : yr;
-    r.date = `${adYr}-${mm}-${String(thDt[1]).padStart(2, '0')}`;
-  } else {
-    // รูปแบบ "วันที่ 6 เดือน 5 พ.ศ. 69" (ใบชมพู Premier)
-    const boxDt = text.match(/วันที่\s*(\d{1,2})\s*เดือน\s*(\d{1,2})\s*(?:พ\.ศ\.)?\s*(\d{2,4})/);
-    if (boxDt) {
-      let yr = boxDt[3];
-      yr = yr.length === 2 ? (parseInt(yr) < 70 ? '20'+yr : '25'+yr) : yr;
-      const num = parseInt(yr);
-      const adYear = num > 2400 ? num - 543 : num;
-      r.date = adYear + '-' + String(boxDt[2]).padStart(2,'0') + '-' + String(boxDt[1]).padStart(2,'0');
-    } else {
-      // รูปแบบตัวเลข: dd/mm/yyyy หรือ dd-mm-yy (เช่น 01-05-26 ของ KLN)
-      const dt = text.match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})(?:\s+\d{1,2}:\d{2})?/);
-      if (dt) {
-        let yr = dt[3];
-        // 2-digit year: 00-69 → 20xx (AD), 70-99 → ตรวจว่า Buddhist หรือ AD
-        if (yr.length === 2) yr = parseInt(yr) < 70 ? '20'+yr : '25'+yr;
-        const num = parseInt(yr);
-        const adYear = num > 2400 ? num - 543 : num;
-        r.date = adYear + '-' + String(dt[2]).padStart(2,'0') + '-' + String(dt[1]).padStart(2,'0');
-      }
-    }
+    const mm = TH_MON_NUM[thDt[2].replace(/[.\s]/g, '')] || TH_MON_NUM[thDt[2]] || 1;
+    r.date = `${_toAD(thDt[3], true)}-${String(mm).padStart(2,'0')}-${String(thDt[1]).padStart(2,'0')}`;
+  } else if (enDt1 || enDt2) {
+    const m = enDt1 || enDt2;
+    const day = enDt1 ? m[1] : m[2];
+    const mm  = EN_MON_NUM[(enDt1 ? m[2] : m[1]).slice(0,3).toLowerCase()] || 1;
+    r.date = `${_toAD(m[3], false)}-${String(mm).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  } else if (boxDt) {
+    r.date = `${_toAD(boxDt[3], true)}-${String(boxDt[2]).padStart(2,'0')}-${String(boxDt[1]).padStart(2,'0')}`;
+  } else if (numDt) {
+    // ปี 2 หลัก: <70 → ค.ศ. 20xx, ≥70 → พ.ศ. 25xx
+    let yr = numDt[3];
+    if (yr.length === 2) yr = parseInt(yr,10) < 70 ? '20'+yr : '25'+yr;
+    const num = parseInt(yr,10);
+    const adYear = num > 2400 ? num - 543 : num;
+    r.date = `${adYear}-${String(numDt[2]).padStart(2,'0')}-${String(numDt[1]).padStart(2,'0')}`;
   }
 
   // เวลา — รองรับ HH:MM และ HH.MM (รูปแบบไทย "22.43 น." ก็รับ)

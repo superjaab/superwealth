@@ -5184,7 +5184,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.50 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.51 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -10542,6 +10542,13 @@ function autoFillFields(formKey, parsed) {
       el.value = val; filled++;
     }
   };
+  // v15.51 — date/time จากสลิปเป็นข้อมูลจริง → เขียนทับค่า default (วันนี้) ได้
+  const setOver = (id, val) => {
+    const el = document.getElementById(id);
+    if (el && val !== undefined && val !== null && val !== '' && el.value !== val) {
+      el.value = val; filled++;
+    }
+  };
   // setSelect — เติม select ถ้า option นั้นมีอยู่จริง (แม้ว่าจะมีค่า default อยู่แล้ว)
   const setSelect = (id, val) => {
     if (!val) return;
@@ -10558,8 +10565,8 @@ function autoFillFields(formKey, parsed) {
   const timeMap  = { truck:'t-jobTime',     income:'i-incomeTime',  expense:'e-expenseTime' };
   const amtMap   = { truck:'t-freightCost', income:'i-amount',      expense:'e-amount'      };
   const plateMap = { truck:'t-plateNumber', income:null,            expense:'e-plateNumber' };
-  set(dateMap[formKey],  parsed.date);
-  set(timeMap[formKey],  parsed.time);
+  setOver(dateMap[formKey], parsed.date);   // v15.51 — สลิปเป็นแหล่งวันที่จริง → เขียนทับ default (วันนี้)
+  setOver(timeMap[formKey], parsed.time);
   set(amtMap[formKey],   parsed.amount);
   set(plateMap[formKey], parsed.plateNumber);
 
@@ -15304,7 +15311,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.50';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.51';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
