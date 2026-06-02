@@ -5170,7 +5170,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.45 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.46 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -11550,6 +11550,37 @@ function closeDelModal() {
   _delTarget = null;
   document.getElementById('del-modal').classList.remove('open');
 }
+// v15.46 — optimistic delete: remove the row from the UI immediately (under loading),
+// THEN show success, THEN sync with server in the background. No more "success but
+// the row is still there for 3s".
+function _optimisticRemove(type, rowId) {
+  // List-based types (truck/income/expense/vehicle/driver/customer/maintenance/fuel/invoice)
+  if (Array.isArray(_listCache[type])) {
+    _listCache[type] = _listCache[type].filter(r => (r.rowId || r.timestamp) !== rowId);
+    const cid = _LIST_CONTAINER[type], rn = _LIST_RENDERER[type];
+    const el = cid && document.getElementById(cid);
+    const fn = rn && window[rn];
+    if (el && fn) {
+      el.innerHTML = _listCache[type].length ? fn(_listCache[type])
+        : (typeof emptyStateHtml === 'function' ? emptyStateHtml(type) : '');
+      if (typeof applyListFilter === 'function') applyListFilter(type, cid);
+    }
+  }
+  // Capital types
+  if ((type === 'capital' || type === 'capitalMovement') && Array.isArray(_capitalAccounts)) {
+    _capitalAccounts = _capitalAccounts.filter(a => a.rowId !== rowId);
+    try { renderCapitalKPIs(); renderCapitalList(); renderCapitalMovements(); } catch(e) {}
+  }
+  // Truck calendar (close the day-modal so it doesn't show a stale trip)
+  if (type === 'truck') {
+    const calMod = document.getElementById('cal-day-modal');
+    if (calMod && calMod.classList.contains('show')) { try { closeCalDay(); } catch(e) {} }
+    if (Array.isArray(_calTrips)) {
+      _calTrips = _calTrips.filter(t => (t.rowId || t.timestamp) !== rowId);
+      try { renderCalendar(); } catch(e) {}
+    }
+  }
+}
 async function confirmDel() {
   if (!_delTarget) return;
   const { type, rowId } = _delTarget;
@@ -11557,25 +11588,23 @@ async function confirmDel() {
   showLoading('กำลังลบ...');
   try {
     const result = await api('/api/delete', { type, rowId });
-    hideLoading();
     if (result.success) {
-      showToast('🗑 ลบสำเร็จ', 'success');
-      // v15.14 — If the deleted record was currently being edited, exit edit mode
-      // (otherwise next "บันทึก" tries to update a non-existent rowId)
+      // 1) Remove from UI right away (still under loading)
+      _optimisticRemove(type, rowId);
+      // 2) Exit edit mode if the deleted record was being edited
       if (_editingMode[type] === rowId) {
         try { cancelEdit(type, true); } catch(e) { _editingMode[type] = null; }
       }
+      // 3) Now hide loading + confirm — the row is already gone
+      hideLoading();
+      showToast('🗑 ลบสำเร็จ', 'success');
+      // 4) Background sync with server (no overlay; UI already correct)
       reloadList(type);
       loadMasterData();
-      // v14.88 — refresh calendar if truck row was deleted (so cal-day-modal stays consistent)
-      if (type === 'truck' && typeof loadCalTrips === 'function') {
-        loadCalTrips();
-        const calMod = document.getElementById('cal-day-modal');
-        if (calMod && calMod.classList.contains('show')) closeCalDay();
-      }
-      // v15.38 — refresh capital views after deleting a capital account
+      if (type === 'truck' && typeof loadCalTrips === 'function') loadCalTrips();
       if ((type === 'capital' || type === 'capitalMovement') && typeof loadCapital === 'function') loadCapital();
     } else {
+      hideLoading();
       showToast(result.error || 'ลบไม่สำเร็จ', 'error');
     }
   } catch (e) {
@@ -15169,7 +15198,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.45';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.46';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
