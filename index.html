@@ -5079,7 +5079,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.30 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.31 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -10907,17 +10907,11 @@ function quickFill(formKey) {
       filled++;
     }
   });
-  // Today's date (user can change)
-  const dEl = document.getElementById(QUICK_DATE_FIELD[formKey]);
-  if (dEl) {
-    const today = new Date().toISOString().slice(0,10);
-    if (dEl._flatpickr) dEl._flatpickr.setDate(today, false);
-    else dEl.value = today;
-  }
+  // v15.31 — ไม่ตั้งวันที่ให้อัตโนมัติ (ผู้ใช้กรอกเอง) ตามคำขอ
   // Trip round runs normally (next number)
   if (formKey === 'truck' && typeof setTripRoundField === 'function') setTripRoundField();
   showToast(filled
-    ? `⚡ "${tpl.name}" เติม ${filled} ช่องแล้ว — เช็กวันที่แล้วกดบันทึก`
+    ? `⚡ "${tpl.name}" เติม ${filled} ช่องแล้ว — กรอกวันที่แล้วกดบันทึก`
     : '⚠️ เทมเพลตนี้ว่าง — ลองเลือกเทมเพลตอื่น', filled ? 'success' : 'warning');
 }
 
@@ -14707,7 +14701,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.30';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.31';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
