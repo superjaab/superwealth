@@ -5198,7 +5198,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.54 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.55 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -6702,6 +6702,16 @@
 
   <!-- v14.16 — UNIFIED CHARTS GRID: bar full-width on top, 2 donuts side-by-side below -->
   <div id="sum-charts-row" style="display:none">
+    <!-- v15.55 — NEW: trip income/expense by ORIGIN month (วันเข้ารับ) + profit per bar group -->
+    <div class="dash-card" style="margin-bottom:14px">
+      <div class="dash-card-head">
+        <div>
+          <div class="dash-card-title">🚚 กำไรเที่ยวรถ รายเดือน <span style="font-size:.7rem;font-weight:600;color:#94a3b8">(ตามเดือนต้นทาง · วันเข้ารับ)</span></div>
+          <div class="dash-card-sub" id="sum-trip-chart-range">—</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:300px"><canvas id="sum-chart-trip"></canvas></div>
+    </div>
     <!-- Top row: bar chart full width -->
     <div class="dash-card" style="margin-bottom:14px">
       <div class="dash-card-head">
@@ -14345,6 +14355,7 @@ function _calEditTrip(identifier) {
 
 // ─── SUMMARY TAB ──────────────────────────────────────────────────────────────
 let _barChart = null;
+let _tripBarChart = null;   // v15.55 — กำไรเที่ยวรถรายเดือน (ตามเดือนต้นทาง)
 let _doughnutChart = null;
 let _summaryInited = false;
 
@@ -14493,6 +14504,7 @@ function renderSummary(data, dateFrom, dateTo) {
 
   // ── Charts ──
   document.getElementById('sum-charts-row').style.display = '';
+  renderTripBarChart(income, expense, truck, dateFrom, dateTo);  // v15.55 — เที่ยวรถตามเดือนต้นทาง
   renderBarChart(income, expense, dateFrom, dateTo);
   // Status donut (trip status + payment status combined)
   renderStatusDonut(truck);
@@ -14749,6 +14761,135 @@ function renderTopVehicles(truck) {
       <div class="dash-cust-amount dash-cust-amount--count">${v.count} <span class="dc-unit">เที่ยว</span></div>
     </div>`;
   }).join('');
+}
+
+// v15.55 — กำไรเที่ยวรถ รายเดือน: รายรับ/รายจ่าย "ของเที่ยวรถ" จัดเข้าเดือน
+// ตาม "วันต้นทาง (วันเข้ารับ/pickupDate)" ของรอบที่ลิงก์ไว้ + แสดงตัวเลขกำไรต่อเดือน
+function renderTripBarChart(income, expense, truck, dateFrom, dateTo) {
+  // เดือนในช่วง
+  const months = [];
+  const d = new Date(dateFrom.slice(0,7) + '-01');
+  const end = new Date(dateTo.slice(0,7) + '-01');
+  while (d <= end) { months.push(d.toISOString().slice(0,7)); d.setMonth(d.getMonth() + 1); }
+
+  // เที่ยวรถ → เดือนต้นทาง (วันเข้ารับ)
+  const moByRow = {}, moByRound = {};
+  (truck || []).forEach(t => {
+    const mo = String(t.pickupDate || t.jobDate || '').slice(0, 7);
+    if (!/^\d{4}-\d{2}$/.test(mo)) return;
+    if (t.rowId) moByRow[t.rowId] = mo;
+    const rd = parseInt(t.tripRound); if (rd) moByRound[rd] = mo;
+  });
+  // หาเดือนต้นทางจากรายรับ/รายจ่ายที่ลิงก์รอบไว้
+  const linkedMonth = r => {
+    if (r.linkedTripRowId && moByRow[r.linkedTripRowId]) return moByRow[r.linkedTripRowId];
+    const rd = parseInt(r.linkedTripRound); if (rd && moByRound[rd]) return moByRound[rd];
+    return null;
+  };
+
+  const incByMonth = {}, expByMonth = {};
+  months.forEach(m => { incByMonth[m] = 0; expByMonth[m] = 0; });
+  (income  || []).forEach(r => { const m = linkedMonth(r); if (m && incByMonth[m] !== undefined) incByMonth[m] += _detectAmount(r); });
+  (expense || []).forEach(r => { const m = linkedMonth(r); if (m && expByMonth[m] !== undefined) expByMonth[m] += _detectAmount(r); });
+
+  const moNames = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const thMonths = months.map(m => { const [y, mo] = m.split('-'); return moNames[parseInt(mo)-1] + ' ' + (parseInt(y)+543); });
+
+  // กำไรรวมทั้งช่วง → subtitle
+  const totInc = months.reduce((s,m)=>s+incByMonth[m],0);
+  const totExp = months.reduce((s,m)=>s+expByMonth[m],0);
+  const totPf  = totInc - totExp;
+  const subEl = document.getElementById('sum-trip-chart-range');
+  if (subEl) subEl.textContent = `กำไรรวม ${totPf>=0?'+':'−'}฿${Math.abs(Math.round(totPf)).toLocaleString('th-TH')} · รายรับ ฿${Math.round(totInc).toLocaleString('th-TH')} · รายจ่าย ฿${Math.round(totExp).toLocaleString('th-TH')}`;
+
+  if (_tripBarChart) { _tripBarChart.destroy(); _tripBarChart = null; }
+  const ctx = document.getElementById('sum-chart-trip').getContext('2d');
+  const canvas = ctx.canvas;
+  const H = canvas.offsetHeight || 300;
+  const gG = ctx.createLinearGradient(0,0,0,H); gG.addColorStop(0,'rgba(34,197,94,0.95)'); gG.addColorStop(1,'rgba(21,128,61,0.85)');
+  const gGh = ctx.createLinearGradient(0,0,0,H); gGh.addColorStop(0,'#22c55e'); gGh.addColorStop(1,'#15803d');
+  const rG = ctx.createLinearGradient(0,0,0,H); rG.addColorStop(0,'rgba(239,68,68,0.95)'); rG.addColorStop(1,'rgba(185,28,28,0.85)');
+  const rGh = ctx.createLinearGradient(0,0,0,H); rGh.addColorStop(0,'#ef4444'); rGh.addColorStop(1,'#b91c1c');
+
+  // plugin: ตัวเลขในแท่ง (ถ้าพอ) + กำไรของเดือนนั้นเหนือกลุ่มแท่ง
+  const tripLabelsPlugin = {
+    id: 'tripProfitLabels',
+    afterDatasetsDraw(chart) {
+      const { ctx } = chart;
+      ctx.save();
+      // 1) ค่าในแต่ละแท่ง (วางในแท่งถ้าสูงพอ)
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = '700 10.5px Inter, "Noto Sans Thai", sans-serif';
+      chart.data.datasets.forEach((ds, di) => {
+        const meta = chart.getDatasetMeta(di);
+        meta.data.forEach((bar, idx) => {
+          const v = ds.data[idx]; if (!v) return;
+          const txt = '฿' + Math.round(v).toLocaleString('th-TH');
+          const h = Math.abs(bar.base - bar.y), w = bar.width || 30;
+          if (h >= 24 && ctx.measureText(txt).width + 10 <= w) {
+            ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 5; ctx.fillStyle = '#fff';
+            ctx.fillText(txt, bar.x, (bar.y + bar.base) / 2); ctx.shadowBlur = 0;
+          }
+        });
+      });
+      // 2) กำไรของเดือน เหนือกลุ่มแท่ง
+      ctx.textBaseline = 'alphabetic';
+      ctx.font = '800 12px Inter, "Noto Sans Thai", sans-serif';
+      (chart.data.labels || []).forEach((lab, idx) => {
+        const inc = chart.data.datasets[0].data[idx] || 0;
+        const exp = chart.data.datasets[1].data[idx] || 0;
+        if (!inc && !exp) return;
+        const b0 = chart.getDatasetMeta(0).data[idx], b1 = chart.getDatasetMeta(1).data[idx];
+        if (!b0 || !b1) return;
+        const cx = (b0.x + b1.x) / 2;
+        const topY = Math.min(b0.y, b1.y) - 8;
+        const pf = inc - exp;
+        const txt = (pf >= 0 ? '▲ +฿' : '▼ −฿') + Math.abs(Math.round(pf)).toLocaleString('th-TH');
+        ctx.fillStyle = pf >= 0 ? '#15803d' : '#dc2626';
+        ctx.shadowColor = 'rgba(255,255,255,0.96)'; ctx.shadowBlur = 7;
+        ctx.fillText(txt, cx, topY); ctx.fillText(txt, cx, topY);
+        ctx.shadowBlur = 0;
+      });
+      ctx.restore();
+    }
+  };
+
+  _tripBarChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: thMonths,
+      datasets: [
+        { label: '💰 รายรับเที่ยว', data: months.map(m => incByMonth[m]), backgroundColor: gG, hoverBackgroundColor: gGh, borderRadius: { topLeft:10, topRight:10, bottomLeft:2, bottomRight:2 }, borderSkipped:false, borderWidth:0, maxBarThickness:110, categoryPercentage:0.8, barPercentage:0.85 },
+        { label: '💸 รายจ่ายเที่ยว', data: months.map(m => expByMonth[m]), backgroundColor: rG, hoverBackgroundColor: rGh, borderRadius: { topLeft:10, topRight:10, bottomLeft:2, bottomRight:2 }, borderSkipped:false, borderWidth:0, maxBarThickness:110, categoryPercentage:0.8, barPercentage:0.85 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 30, bottom: 6, left: 6, right: 6 } },
+      animation: { duration: 900, easing: 'easeOutCubic' },
+      hover: { mode: 'index', intersect: false },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top', align: 'end', labels: { font: { size: 12, weight: '700', family: 'Noto Sans Thai, Inter, sans-serif' }, usePointStyle: true, pointStyle: 'rectRounded', padding: 16, boxWidth: 14, boxHeight: 14 } },
+        tooltip: {
+          backgroundColor: 'rgba(15,23,42,0.95)', titleFont: { size: 12, weight: '700', family: 'Noto Sans Thai, sans-serif' }, bodyFont: { size: 13, weight: '600', family: 'Noto Sans Thai, sans-serif' }, padding: 12, cornerRadius: 10, boxPadding: 6, borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, displayColors: true,
+          callbacks: {
+            label: ctx => ' ' + ctx.dataset.label + ': ฿' + ctx.raw.toLocaleString('th-TH', { maximumFractionDigits: 0 }),
+            afterBody: items => {
+              const i = items[0].dataIndex;
+              const pf = (incByMonth[months[i]]||0) - (expByMonth[months[i]]||0);
+              return '\nกำไรเดือนนี้: ' + (pf>=0?'+':'−') + '฿' + Math.abs(Math.round(pf)).toLocaleString('th-TH');
+            }
+          }
+        }
+      },
+      scales: {
+        y: { beginAtZero: true, grid: { color: 'rgba(148,163,184,0.18)', drawBorder: false, drawTicks: false }, border: { display: false }, ticks: { callback: v => v >= 1000 ? '฿' + (v/1000).toFixed(0) + 'K' : '฿' + v, font: { size: 11, weight: '600', family: 'Inter, sans-serif' }, color: '#64748b', padding: 8 } },
+        x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 12, weight: '700', family: 'Noto Sans Thai, sans-serif' }, color: '#475569', padding: 8 } }
+      }
+    },
+    plugins: [tripLabelsPlugin]
+  });
 }
 
 function renderBarChart(income, expense, dateFrom, dateTo) {
@@ -15381,7 +15522,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.54';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.55';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
