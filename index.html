@@ -5203,7 +5203,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.58 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.59 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -9899,7 +9899,7 @@ function populateLinkedTripsDropdown(editingRecord) {
     const cust = t.customerName ? ` • ${t.customerName}` : '';
     const amt  = t.freightCost ? ` (฿${(+t.freightCost).toLocaleString('en-US')})` : '';
     const paid = (t.paymentStatus === 'จ่ายแล้ว') ? ' ✅ (ลิงก์ปัจจุบัน)' : '';
-    return `<option value="${escAttr(t.rowId)}" data-round="${t.tripRound}" data-amount="${t.freightCost||''}" data-customer="${escAttr(t.customerName||'')}">รอบ #${t.tripRound}${paid} • ${escAttr(t.plateNumber||'')} • ${escAttr(dates)}${escAttr(cust)}${amt}</option>`;
+    return `<option value="${escAttr(t.rowId)}" data-round="${t.tripRound}" data-amount="${t.freightCost||''}" data-customer="${escAttr(t.customerName||'')}" data-origin="${escAttr(t.originCustomer||'')}">รอบ #${t.tripRound}${paid} • ${escAttr(t.plateNumber||'')} • ${escAttr(dates)}${escAttr(cust)}${amt}</option>`;
   }).join('');
   if (editingLinkId) sel.value = editingLinkId;
   else if (currentVal) sel.value = currentVal;
@@ -9964,14 +9964,16 @@ function onLinkedTripChange() {
   const sel = document.getElementById('i-linkedTrip');
   if (!sel) return;
   const opt = sel.options[sel.selectedIndex];
-  if (!opt || !opt.value) return;
-  const amount = opt.dataset.amount;
-  const customer = opt.dataset.customer;
   const amtField = document.getElementById('i-amount');
   const custField = document.getElementById('i-customerName');
+  if (!opt || !opt.value) return;
+  const amount = opt.dataset.amount;
+  // v15.59 — รายรับ: ลิงก์รอบเที่ยว → กรอก "ลูกค้าต้นทาง" (ผู้ว่าจ้าง/ผู้โอนเงิน) ให้เลย
+  // (เดิมใช้ปลายทาง customerName) — เขียนทับเพื่อให้สลับรอบแล้วอัปเดตชื่อตาม
+  const origin = opt.dataset.origin || opt.dataset.customer || '';
   if (amtField && !amtField.value && amount)  amtField.value = amount;
-  if (custField && !custField.value && customer) custField.value = customer;
-  showToast(`📋 ลิงก์รอบ #${opt.dataset.round} แล้ว → กดบันทึก จะอัปเดตเป็น "จ่ายแล้ว" อัตโนมัติ`, 'info');
+  if (custField && origin) custField.value = origin;
+  showToast(`📋 ลิงก์รอบ #${opt.dataset.round}${origin ? ' • ต้นทาง: ' + origin : ''} → กดบันทึก จะอัปเดตเป็น "จ่ายแล้ว" อัตโนมัติ`, 'info');
 }
 
 // Auto-fill driver name + phone when plate selected.
@@ -15605,7 +15607,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.58';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.59';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
