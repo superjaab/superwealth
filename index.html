@@ -5141,7 +5141,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.36 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.37 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -8625,6 +8625,16 @@ function renderCapitalMovements() {
     detailRows.push(`<div><span class="ico">💰</span><span class="priv-data">ทุนที่บันทึก: <b>${fmtBaht(initial)}</b></span></div>`);
     detailRows.push(`<div><span class="ico">📊</span><span class="priv-data">ยอดปัจจุบัน: <b>${fmtBaht(current)}</b>${diff !== 0 ? ` <span style="color:${diffColor};font-weight:700">(${diffSign}${fmtBaht(diff)})</span>` : ''}</span></div>`);
     detailRows.push(`<div><span class="ico">📅</span><span>${dateLabel}</span></div>`);
+    // v15.37 — Edit (ปรับยอด) + Delete buttons (เดิมหน้านี้ไม่มี)
+    const rid = a.rowId || '';
+    const nm  = a.accountName || '(ไม่ระบุชื่อ)';
+    const actionBar = rid ? `
+      <div style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed #e2e8f0;justify-content:flex-end;flex-wrap:wrap">
+        <button type="button" onclick="capEditBalance('${escAttr(rid)}','${escAttr(nm)}',${current})"
+                style="background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;border-radius:8px;padding:7px 14px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit">✏️ ปรับยอด</button>
+        <button type="button" onclick="capDeleteAccount('${escAttr(rid)}','${escAttr(nm)}')"
+                style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;border-radius:8px;padding:7px 14px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit">🗑 ลบ</button>
+      </div>` : '';
     return `
     <div class="record-card" style="border-left:4px solid ${meta.color}">
       <div class="sw-record-head">
@@ -8637,6 +8647,7 @@ function renderCapitalMovements() {
       </div>
       <div class="sw-record-details">${detailRows.join('')}</div>
       ${a.notes ? `<div class="sw-record-sub priv-data" style="color:#94a3b8;font-style:italic;margin-top:6px">📝 ${escHtml(a.notes)}</div>` : ''}
+      ${actionBar}
     </div>`;
   }).join('');
 }
@@ -8845,6 +8856,7 @@ async function loadCapital() {
       _capitalAccounts = cached.accounts;
       renderCapitalKPIs();
       renderCapitalList();
+      renderCapitalMovements();   // v15.37 — keep รายการเงินทุน in sync
     } else {
       list.innerHTML = skeletonList(3);
     }
@@ -8856,6 +8868,7 @@ async function loadCapital() {
     _capitalAccounts = ((json.data || {}).capital || []).filter(a => a.active !== 'false');
     renderCapitalKPIs();
     renderCapitalList();
+    renderCapitalMovements();   // v15.37 — refresh รายการเงินทุน after edit/delete
     // 3. Update cache
     try {
       localStorage.setItem(_CAP_CACHE_KEY, JSON.stringify({ accounts: _capitalAccounts, ts: Date.now() }));
@@ -15049,7 +15062,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.36';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.37';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
