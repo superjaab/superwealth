@@ -30,6 +30,24 @@ function _safeImageUrlsJson(v) {
   return '[]';
 }
 
+// v15.26 — Column that renders the uploaded image as a clickable thumbnail in the sheet.
+const IMG_COL = '🖼 รูปภาพ';
+// Build a Google-Sheets formula that shows the first image + links to full size.
+function _imagePreviewFormula(imageUrls) {
+  let arr = [];
+  try {
+    if (Array.isArray(imageUrls)) arr = imageUrls;
+    else if (typeof imageUrls === 'string' && imageUrls.trim().startsWith('[')) arr = JSON.parse(imageUrls);
+  } catch {}
+  const first = (Array.isArray(arr) ? arr : []).find(u => typeof u === 'string' && /^https?:\/\//.test(u));
+  if (!first) return '';
+  // strip any existing size suffix (=w800 etc.) → base Drive/lh3 URL
+  const base  = String(first).replace(/=[swh]\d+(-[a-z0-9]+)*$/i, '');
+  const thumb = base + '=w400';
+  // HYPERLINK(viewFull, IMAGE(thumb, mode 4 = explicit size, height, width))
+  return `=HYPERLINK("${base}", IMAGE("${thumb}", 4, 96, 130))`;
+}
+
 // ─── Sheet configs ──────────────────────────────────────────
 // Each config returns a data OBJECT (key = column name). The save handler
 // maps it to a row aligned with the sheet's ACTUAL header order.
@@ -40,7 +58,7 @@ const CONFIGS = {
     headers: ['timestamp','jobDate','jobTime','plateNumber','driverName','driverPhone',
       'origin','destination','originCustomer','customerName','cargoList','cargoWeight','tripCount',
       'freightCost','jobStatus','remark','imageUrls','ocrText','userAgent','rowId',
-      'pickupDate','deliveryDate','tripRound','paymentStatus'],
+      'pickupDate','deliveryDate','tripRound','paymentStatus','🖼 รูปภาพ'],
     data: (d, now, id) => ({
       timestamp: now,
       jobDate: d.jobDate||'', jobTime: d.jobTime||'',
@@ -60,7 +78,7 @@ const CONFIGS = {
     name: 'Income', color: '#2E7D32', prefix: 'INC',
     headers: ['timestamp','incomeDate','incomeTime','docNumber','customerName',
       'incomeItem','amount','paymentMethod','remark','imageUrls','ocrText','userAgent','rowId',
-      'linkedTripRowId','linkedTripRound'],
+      'linkedTripRowId','linkedTripRound','🖼 รูปภาพ'],
     data: (d, now, id) => ({
       timestamp: now,
       incomeDate: d.incomeDate||'', incomeTime: d.incomeTime||'',
@@ -77,7 +95,7 @@ const CONFIGS = {
     headers: ['timestamp','expenseDate','expenseTime','docNumber','category','plateNumber',
       'vendor','expenseDetail','amount','paymentMethod','remark',
       'imageUrls','ocrText','userAgent','rowId',
-      'linkedTripRowId','linkedTripRound'],
+      'linkedTripRowId','linkedTripRound','🖼 รูปภาพ'],
     data: (d, now, id) => ({
       timestamp: now,
       expenseDate: d.expenseDate||'', expenseTime: d.expenseTime||'',
@@ -148,7 +166,7 @@ const CONFIGS = {
     name: 'Maintenance', color: '#E65100', prefix: 'MNT',
     headers: ['timestamp','maintenanceDate','plateNumber','maintenanceType',
       'description','cost','vendor','odometerKm','nextDueDate',
-      'notes','imageUrls','userAgent','rowId'],
+      'notes','imageUrls','userAgent','rowId','🖼 รูปภาพ'],
     data: (d, now, id) => ({
       timestamp: now,
       maintenanceDate: d.maintenanceDate||'', plateNumber: d.plateNumber||'',
@@ -284,6 +302,10 @@ module.exports = async function handler(req, res) {
     const actualHeaders = await syncHeaders(sheets, sheetId, cfg.name, cfg.headers);
     // 2) Build data OBJECT (key = column name)
     const dataObj = cfg.data(data, now, rowId);
+    // v15.26 — inject clickable image-thumbnail formula if this sheet has the column
+    if (actualHeaders.includes(IMG_COL)) {
+      dataObj[IMG_COL] = _imagePreviewFormula(data.imageUrls);
+    }
     // 3) Build row aligned with ACTUAL headers in the sheet
     const row = actualHeaders.map(h => {
       const v = dataObj[h];

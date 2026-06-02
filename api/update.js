@@ -5,6 +5,21 @@
  */
 const { google } = require('googleapis');
 
+// v15.26 — image-thumbnail column (mirror of save.js) so edits refresh the preview
+const IMG_COL = '🖼 รูปภาพ';
+function _imagePreviewFormula(imageUrls) {
+  let arr = [];
+  try {
+    if (Array.isArray(imageUrls)) arr = imageUrls;
+    else if (typeof imageUrls === 'string' && imageUrls.trim().startsWith('[')) arr = JSON.parse(imageUrls);
+  } catch {}
+  const first = (Array.isArray(arr) ? arr : []).find(u => typeof u === 'string' && /^https?:\/\//.test(u));
+  if (!first) return '';
+  const base  = String(first).replace(/=[swh]\d+(-[a-z0-9]+)*$/i, '');
+  const thumb = base + '=w400';
+  return `=HYPERLINK("${base}", IMAGE("${thumb}", 4, 96, 130))`;
+}
+
 // Same as save.js — each type has a `data` function returning {column: value} object.
 const CONFIGS = {
   truck: {
@@ -233,6 +248,10 @@ module.exports = async function handler(req, res) {
 
     // Build new row by HEADER NAME (so any column order works)
     const dataObj = cfg.data(data, origTimestamp, rowId);
+    // v15.26 — refresh image-thumbnail formula if this sheet has the column + new images provided
+    if (headers.includes(IMG_COL) && data.imageUrls !== undefined) {
+      dataObj[IMG_COL] = _imagePreviewFormula(data.imageUrls);
+    }
     const newRow = headers.map(h => {
       const v = dataObj[h];
       // If field is missing from dataObj, preserve original value to avoid wiping
