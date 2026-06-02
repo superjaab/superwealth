@@ -223,6 +223,9 @@ module.exports = async function handler(req, res) {
     // Without this, NEW fields (e.g. province, originCustomer) silently disappear on update.
     const sampleObj = cfg.data(data, '', '');
     const expectedKeys = Object.keys(sampleObj);
+    // v15.29 — IMG_COL is injected after cfg.data(), so add it here too for image types
+    // (otherwise the column is never created on update → thumbnail never written)
+    if ('imageUrls' in sampleObj && !expectedKeys.includes(IMG_COL)) expectedKeys.push(IMG_COL);
     let headers = rows[0];
     const missing = expectedKeys.filter(k => !headers.includes(k));
     if (missing.length > 0) {
