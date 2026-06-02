@@ -533,6 +533,97 @@
     .sw-status--income     { background: var(--sw-success-soft, #dcfce7); color: var(--sw-success-hover, #15803d); }
     .sw-status--expense    { background: var(--sw-danger-soft, #fee2e2);  color: var(--sw-danger-hover, #b91c1c); }
 
+    /* ════════════════════════════════════════════════
+       v15.09 — TRIP LIST SUMMARY STATS (รายการเที่ยวรถ)
+       4 cards: รายรับ / รายจ่าย / กำไรสุทธิ / เที่ยว+รอบ
+       ════════════════════════════════════════════════ */
+    .sw-trip-stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .sw-stat {
+      position: relative;
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px;
+      background: #ffffff;
+      border-radius: 14px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 1px 2px rgba(15,23,42,.04);
+      overflow: hidden;
+      transition: transform .18s cubic-bezier(.2,.7,.3,1), box-shadow .18s ease, border-color .18s ease;
+    }
+    .sw-stat:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(15,23,42,.08);
+    }
+    /* Colored accent stripe on the left */
+    .sw-stat::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    }
+    .sw-stat-icon {
+      width: 42px; height: 42px; border-radius: 12px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; flex-shrink: 0;
+    }
+    .sw-stat-body { min-width: 0; flex: 1; }
+    .sw-stat-label {
+      font-size: .72rem; font-weight: 700; color: #64748b;
+      text-transform: uppercase; letter-spacing: .4px; margin-bottom: 3px;
+    }
+    .sw-stat-value {
+      font-size: 1.2rem; font-weight: 900; line-height: 1.15;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .sw-stat-unit { font-size: .68rem; font-weight: 600; color: #94a3b8; margin: 0 3px 0 3px; }
+    .sw-stat-dot  { font-size: .9rem; font-weight: 800; color: #cbd5e1; margin: 0 2px; }
+
+    /* Variant accents */
+    .sw-stat--income::before  { background: linear-gradient(180deg, #10b981, #059669); }
+    .sw-stat--income .sw-stat-icon  { background: #ecfdf5; color: #059669; }
+    .sw-stat--income .sw-stat-value { color: #059669; }
+
+    .sw-stat--expense::before { background: linear-gradient(180deg, #ef4444, #dc2626); }
+    .sw-stat--expense .sw-stat-icon { background: #fef2f2; color: #dc2626; }
+    .sw-stat--expense .sw-stat-value { color: #dc2626; }
+
+    .sw-stat--profit::before { background: linear-gradient(180deg, #8b5cf6, #6d28d9); }
+    .sw-stat--profit .sw-stat-icon { background: #f5f3ff; color: #7c3aed; }
+    .sw-stat--profit .sw-stat-value { color: #6d28d9; }
+
+    .sw-stat--loss::before { background: linear-gradient(180deg, #f97316, #c2410c); }
+    .sw-stat--loss .sw-stat-icon { background: #fff7ed; color: #ea580c; }
+    .sw-stat--loss .sw-stat-value { color: #c2410c; }
+
+    .sw-stat--trips::before { background: linear-gradient(180deg, #3b82f6, #1d4ed8); }
+    .sw-stat--trips .sw-stat-icon { background: #eff6ff; color: #1d4ed8; }
+    .sw-stat--trips .sw-stat-value { color: #1d4ed8; }
+
+    /* Dark mode */
+    body.dark .sw-stat { background: #1e293b; border-color: #334155; }
+    body.dark .sw-stat-label { color: #94a3b8; }
+    body.dark .sw-stat--income .sw-stat-icon  { background: #064e3b; color: #6ee7b7; }
+    body.dark .sw-stat--income .sw-stat-value { color: #6ee7b7; }
+    body.dark .sw-stat--expense .sw-stat-icon { background: #5b1d1d; color: #fca5a5; }
+    body.dark .sw-stat--expense .sw-stat-value { color: #fca5a5; }
+    body.dark .sw-stat--profit .sw-stat-icon  { background: #3b1773; color: #c4b5fd; }
+    body.dark .sw-stat--profit .sw-stat-value { color: #c4b5fd; }
+    body.dark .sw-stat--loss .sw-stat-icon    { background: #5c2a09; color: #fdba74; }
+    body.dark .sw-stat--loss .sw-stat-value   { color: #fdba74; }
+    body.dark .sw-stat--trips .sw-stat-icon   { background: #1e3a5f; color: #93c5fd; }
+    body.dark .sw-stat--trips .sw-stat-value  { color: #93c5fd; }
+
+    /* Responsive: 2×2 on tablet, 1col on phone */
+    @media (max-width: 900px) {
+      .sw-trip-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 480px) {
+      .sw-trip-stats { grid-template-columns: 1fr; gap: 10px; }
+      .sw-stat-value { font-size: 1.05rem; }
+    }
+
     /* ── RECORD CARDS — Claude Design layout ── */
     .sw-record-head {
       display: flex;
@@ -4941,7 +5032,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.08 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.09 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -12499,19 +12590,38 @@ function renderTruckList(items) {
     sumExpense += expenseByTrip[r.rowId] || 0;
     if (r.tripRound) roundSet.add(r.tripRound);
   });
+  // v15.09 — Redesigned summary header (4 cards: รายรับ / รายจ่าย / กำไรสุทธิ / เที่ยว)
+  const profit = sumIncome - sumExpense;
+  const profitPositive = profit >= 0;
   const headerHtml = `
-    <div class="sw-trip-header" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
-      <div style="padding:12px 14px;border-radius:12px;background:linear-gradient(135deg,#dcfce7,#bbf7d0);border:1.5px solid #86efac">
-        <div style="font-size:.7rem;font-weight:700;color:#166534">💰 รายรับรวม</div>
-        <div class="priv-amt" style="font-size:1.15rem;font-weight:900;color:#15803d;margin-top:2px;font-variant-numeric:tabular-nums">${fmtBaht(sumIncome)}</div>
+    <div class="sw-trip-stats">
+      <div class="sw-stat sw-stat--income">
+        <div class="sw-stat-icon">💰</div>
+        <div class="sw-stat-body">
+          <div class="sw-stat-label">รายรับรวม</div>
+          <div class="sw-stat-value priv-amt">${fmtBaht(sumIncome)}</div>
+        </div>
       </div>
-      <div style="padding:12px 14px;border-radius:12px;background:linear-gradient(135deg,#fee2e2,#fecaca);border:1.5px solid #fca5a5">
-        <div style="font-size:.7rem;font-weight:700;color:#991b1b">💸 รายจ่ายรวม</div>
-        <div class="priv-amt" style="font-size:1.15rem;font-weight:900;color:#b91c1c;margin-top:2px;font-variant-numeric:tabular-nums">${fmtBaht(sumExpense)}</div>
+      <div class="sw-stat sw-stat--expense">
+        <div class="sw-stat-icon">💸</div>
+        <div class="sw-stat-body">
+          <div class="sw-stat-label">รายจ่ายรวม</div>
+          <div class="sw-stat-value priv-amt">${fmtBaht(sumExpense)}</div>
+        </div>
       </div>
-      <div style="padding:12px 14px;border-radius:12px;background:linear-gradient(135deg,#dbeafe,#bfdbfe);border:1.5px solid #93c5fd">
-        <div style="font-size:.7rem;font-weight:700;color:#1e40af">🔄 รอบเที่ยว</div>
-        <div style="font-size:1.15rem;font-weight:900;color:#1d4ed8;margin-top:2px;font-variant-numeric:tabular-nums">${sorted.length} เที่ยว · ${roundSet.size} รอบ</div>
+      <div class="sw-stat sw-stat--${profitPositive ? 'profit' : 'loss'}">
+        <div class="sw-stat-icon">${profitPositive ? '📈' : '📉'}</div>
+        <div class="sw-stat-body">
+          <div class="sw-stat-label">${profitPositive ? 'กำไรสุทธิ' : 'ขาดทุนสุทธิ'}</div>
+          <div class="sw-stat-value priv-amt">${profitPositive ? '+' : ''}${fmtBaht(profit)}</div>
+        </div>
+      </div>
+      <div class="sw-stat sw-stat--trips">
+        <div class="sw-stat-icon">🚛</div>
+        <div class="sw-stat-body">
+          <div class="sw-stat-label">เที่ยว · รอบ</div>
+          <div class="sw-stat-value">${sorted.length}<span class="sw-stat-unit">เที่ยว</span><span class="sw-stat-dot">·</span>${roundSet.size}<span class="sw-stat-unit">รอบ</span></div>
+        </div>
       </div>
     </div>`;
   return headerHtml + sorted.map(r=>{
@@ -14386,7 +14496,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.08';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.09';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
