@@ -2467,11 +2467,13 @@
     /* Mini calendar grid for export */
     .exp-cal { width:100%; border-collapse:collapse; margin-bottom:18px; table-layout:fixed; }
     .exp-cal th { background:#eef2f7; color:#475569; font-size:11px; padding:6px 2px; text-align:center; border:1px solid #d1d9e2; font-weight:800; }
-    .exp-cal td { border:1px solid #d1d9e2; vertical-align:top; height:74px; padding:3px 4px; font-size:10px; }
+    .exp-cal td { border:1px solid #d1d9e2; vertical-align:top; height:96px; padding:3px 4px; font-size:10px; }
     .exp-cal td .d { font-weight:800; color:#334155; font-size:11px; }
     .exp-cal td.other .d { color:#cbd5e1; }
-    .exp-cal-evt { display:block; background:#dbeafe; color:#1e40af; border-radius:3px; padding:1px 4px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:700; }
-    .exp-cal-evt.done { background:#dcfce7; color:#166534; }
+    /* v15.39 — web-style pastel trip pill */
+    .exp-cal-evt { display:block; border-radius:5px; padding:2px 4px; margin-top:3px; line-height:1.3; font-weight:700; overflow:hidden; }
+    .exp-cal-round { display:inline-block; background:#fff; border:1px solid currentColor; border-radius:4px; padding:0 4px; font-weight:900; font-size:9.5px; margin-right:3px; }
+    .exp-cal-route { display:block; font-size:8.5px; font-weight:600; opacity:.9; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .exp-empty { text-align:center; color:#94a3b8; padding:40px 16px; }
 
     /* ─── REDUCED MOTION ─── */
@@ -5130,7 +5132,7 @@
     <div class="sb-section">ปฏิบัติการ</div>
     <button class="tab-btn" onclick="switchTab('maintenance',this)"><span class="icon">🔧</span>ซ่อมบำรุง</button>
     <button class="tab-btn" onclick="switchTab('invoice',this)"><span class="icon">🧾</span>ใบเสร็จรับเงิน</button>
-    <button class="tab-btn" onclick="switchTab('export',this);initExportTab()"><span class="icon">📤</span>ส่งออกรายงาน</button>
+    <button class="tab-btn" onclick="switchTab('export',this);initExportTab()"><span class="icon">📤</span>Report</button>
     <div class="sb-section">เครื่องมือ</div>
     <button class="tab-btn admin-only" onclick="switchTab('admin',this);initAdminTab()"><span class="icon">⚙️</span>Admin</button>
     <button class="tab-btn" onclick="switchTab('gps',this);initGPS()"><span class="icon">📡</span>GPS</button>
@@ -5141,7 +5143,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.38 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.39 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -10161,7 +10163,7 @@ const PAGE_NAMES = {
   capital:'💼 เงินทุน — Working Capital',
   vehicle:'ทะเบียนรถ', driver:'คนขับ', customer:'ลูกค้า',
   maintenance:'ซ่อมบำรุง', fuel:'น้ำมัน', invoice:'ใบเสร็จรับเงิน',
-  export:'📤 ส่งออกรายงาน',
+  export:'📤 Report — ส่งออกรายงาน',
   summary:'สรุปผล', calendar:'ปฏิทินเที่ยวรถ', alert:'แจ้งเตือน', gps:'GPS', ocr:'อ่านภาพ',
   admin:'⚙️ Admin — จัดการระบบ'
 };
@@ -12931,7 +12933,12 @@ function _expCalendarDoc() {
   if (!months.length) return _expDocWrap('ปฏิทินเที่ยวรถ', '', '<div class="exp-empty">⚠️ กรุณาเลือกอย่างน้อย 1 เดือน</div>');
   const trips = _master.truckHistory || [];
   const dow = ['อา','จ','อ','พ','พฤ','ศ','ส'];
-  let body = '';
+  // v15.39 — status legend (matches web colors)
+  let body = `<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:11px;font-weight:700;margin-bottom:10px">
+    <span><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:#dbeafe;border:1px solid #1d4ed8;vertical-align:middle;margin-right:4px"></span>🚚 กำลังขนส่ง</span>
+    <span><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:#fef3c7;border:1px solid #b45309;vertical-align:middle;margin-right:4px"></span>⏰ ค้างจ่าย</span>
+    <span><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:#d1fae5;border:1px solid #047857;vertical-align:middle;margin-right:4px"></span>✅ จ่ายแล้ว</span>
+  </div>`;
   months.forEach(ym => {
     const [y,m] = ym.split('-').map(Number);
     body += `<div class="exp-sec-title">📅 ${_expMonthLabel(ym)}</div>`;
@@ -12949,8 +12956,17 @@ function _expCalendarDoc() {
     for (let i = 0; i < startDow; i++) cells.push('<td class="other"></td>');
     for (let d = 1; d <= daysIn; d++) {
       const ts = dayTrips[d] || [];
-      const evts = ts.slice(0,3).map(t => { const done = _autoTripStatus(t)==='ส่งแล้ว'; return `<span class="exp-cal-evt ${done?'done':''}">${escHtml(t.plateNumber||'')}${t.tripRound?' #'+escHtml(t.tripRound):''}</span>`; }).join('');
-      const more = ts.length > 3 ? `<span style="color:#94a3b8;font-size:9px">+${ts.length-3} เที่ยว</span>` : '';
+      // v15.39 — match web calendar: pastel by status (3 colors) + รอบ chip + route
+      const evts = ts.slice(0,4).map(t => {
+        const pal = _calStatusPal(t);
+        const icon = _autoTripStatus(t) === 'ส่งแล้ว' ? '✅' : '🚚';
+        const route = (t.origin || t.destination) ? `${escHtml(t.origin||'-')} → ${escHtml(t.destination||'-')}` : '';
+        return `<span class="exp-cal-evt" style="background:${pal.bg};color:${pal.fg};border:1px solid ${pal.fg}33">`
+          + `<b class="exp-cal-round" style="border-color:${pal.fg}">รอบ ${escHtml(t.tripRound||'-')}</b> ${icon} ${escHtml(t.plateNumber||'')}`
+          + (route ? `<span class="exp-cal-route">${route}</span>` : '')
+          + `</span>`;
+      }).join('');
+      const more = ts.length > 4 ? `<span style="color:#94a3b8;font-size:9px">+${ts.length-4} เที่ยว</span>` : '';
       cells.push(`<td><span class="d">${d}</span>${evts}${more}</td>`);
     }
     while (cells.length % 7 !== 0) cells.push('<td class="other"></td>');
@@ -15055,7 +15071,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.38';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.39';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
