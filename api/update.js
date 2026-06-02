@@ -86,7 +86,8 @@ const CONFIGS = {
       remark: d.remark||'',
       imageUrls: _safeImgs(d.imageUrls), ocrText: d.ocrText||'', userAgent: d.userAgent||'',
       rowId: id,
-      linkedTripRowId: d.linkedTripRowId||'', linkedTripRound: +d.linkedTripRound||0
+      linkedTripRowId: d.linkedTripRowId||'', linkedTripRound: +d.linkedTripRound||0,
+      expenseItems: typeof d.expenseItems==='string' ? d.expenseItems : JSON.stringify(d.expenseItems||[])  // v15.50
     })
   },
   vehicle: {

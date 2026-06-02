@@ -58,7 +58,12 @@
       "WebFetch(domain:devapi.hinoultimate.com)",
       "PowerShell(Invoke-RestMethod -Uri \"https://superwealth.vercel.app/api/line-webhook\" -Method Get)",
       "WebFetch(domain:superwealth.vercel.app)",
-      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\super\\\\Desktop\\\\web super wealth\" | Where-Object { $_.PSIsContainer -eq $false } | Select-Object Name, @{Name=\"Size\";Expression={$_.Length}} | Sort-Object Name)"
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\super\\\\Desktop\\\\web super wealth\" | Where-Object { $_.PSIsContainer -eq $false } | Select-Object Name, @{Name=\"Size\";Expression={$_.Length}} | Sort-Object Name)",
+      "PowerShell(node -c \"api/save.js\")",
+      "PowerShell(node -c \"api/update.js\")",
+      "PowerShell(node -c \"api/delete.js\")",
+      "PowerShell(node -c \"api/_logger.js\")",
+      "PowerShell(node -c \"api/get-data.js\")"
     ]
   }
 }

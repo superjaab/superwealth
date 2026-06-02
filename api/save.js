@@ -111,7 +111,7 @@ const CONFIGS = {
     headers: ['timestamp','expenseDate','expenseTime','docNumber','category','plateNumber',
       'vendor','expenseDetail','amount','paymentMethod','remark',
       'imageUrls','ocrText','userAgent','rowId',
-      'linkedTripRowId','linkedTripRound','🖼 รูป1','🖼 รูป2','🖼 รูป3','🖼 รูป4'],
+      'linkedTripRowId','linkedTripRound','expenseItems','🖼 รูป1','🖼 รูป2','🖼 รูป3','🖼 รูป4'],
     data: (d, now, id) => ({
       timestamp: now,
       expenseDate: d.expenseDate||'', expenseTime: d.expenseTime||'',
@@ -122,7 +122,8 @@ const CONFIGS = {
       remark: d.remark||'',
       imageUrls: _safeImageUrlsJson(d.imageUrls), ocrText: d.ocrText||'', userAgent: d.userAgent||'',
       rowId: id,
-      linkedTripRowId: d.linkedTripRowId||'', linkedTripRound: +d.linkedTripRound||0
+      linkedTripRowId: d.linkedTripRowId||'', linkedTripRound: +d.linkedTripRound||0,
+      expenseItems: typeof d.expenseItems==='string' ? d.expenseItems : JSON.stringify(d.expenseItems||[])  // v15.50
     })
   },
   vehicle: {

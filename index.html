@@ -693,6 +693,20 @@
     body.dark .sw-record-details { color: #cbd5e1; }
     body.dark .sw-record-details b { color: #f1f5f9; }
 
+    /* v15.50 — per-category expense breakdown in record card */
+    .sw-record-details .exp-cat-list { align-items: flex-start; }
+    .exp-cat-items { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+    .exp-cat-item {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      background: #fef2f2; border: 1px solid #fecaca; border-radius: 7px;
+      padding: 3px 9px;
+    }
+    .exp-cat-item b { color: #991b1b; font-weight: 700; }
+    .exp-cat-amt { color: #dc2626; font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    body.dark .exp-cat-item { background: rgba(220,38,38,.12); border-color: rgba(248,113,113,.35); }
+    body.dark .exp-cat-item b { color: #fca5a5; }
+    body.dark .exp-cat-amt { color: #f87171; }
+
     /* ── 3-column bottom analysis cards layout ── */
     .sum-analysis-grid {
       display: grid;
@@ -5170,7 +5184,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.49 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.50 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -5509,32 +5523,7 @@
                  class="sw-doc-auto" title="ใบสำคัญจ่าย — ระบบรันให้อัตโนมัติ (แก้ไม่ได้)">
         </div>
       </div>
-      <div class="form-row">
-        <label>หมวดรายจ่าย <span class="req">*</span> <span style="font-size:.7rem;color:#94a3b8;font-weight:400">— เลือกได้หลายหมวด กด ➕ เพื่อเพิ่ม</span></label>
-        <!-- v15.49 — multi-category: 1 required + ➕ to add more -->
-        <div id="e-cat-list">
-          <select id="e-category" class="e-cat-sel" required>
-            <option value="ค่าเดินทาง" selected>🚗 ค่าเดินทาง</option>
-            <option value="ค่าน้ำมัน">⛽ ค่าน้ำมัน</option>
-            <option value="เงินเดือน">💼 เงินเดือน</option>
-            <option value="ซ่อมบำรุง">🔧 ซ่อมบำรุง</option>
-            <option value="ค่าซ่อม">🔩 ค่าซ่อม</option>
-            <option value="ค่าอะไหล่">⚙️ ค่าอะไหล่</option>
-            <option value="ค่ายาง">🔄 ค่ายาง</option>
-            <option value="ค่าแรง">👷 ค่าแรง</option>
-            <option value="ค่าทางด่วน">🛣 ค่าทางด่วน</option>
-            <option value="ประกันภัยรถ">🛡 ประกันภัยรถ</option>
-            <option value="ประกันสินค้า">📦 ประกันสินค้า</option>
-            <option value="ค่าบริการ GPS">📡 ค่าบริการ GPS</option>
-            <option value="ค่าตรวจสภาพ">🔍 ค่าตรวจสภาพ</option>
-            <option value="ค่าพ.ร.บ.">📋 ค่าพ.ร.บ.</option>
-            <option value="ค่าภาษีรถ">🏛 ค่าภาษีรถ</option>
-            <option value="ค่าอาหาร">🍱 ค่าอาหาร</option>
-            <option value="อื่นๆ">📌 อื่นๆ</option>
-          </select>
-        </div>
-        <button type="button" onclick="addExpenseCategory()" style="margin-top:8px;background:#ecfdf5;color:#047857;border:1.5px solid #86efac;border-radius:8px;padding:8px 14px;font-weight:700;font-size:.82rem;cursor:pointer;font-family:inherit">➕ เพิ่มหมวด</button>
-      </div>
+      <!-- v15.50 — moved up: linked trip + plate + payee right under the date -->
       <div class="form-row">
         <label>📋 ลิงก์รอบเที่ยวรถ <span style="font-size:.7rem;color:#94a3b8;font-weight:400">(ถ้ารายจ่ายนี้เกี่ยวกับรอบเที่ยว)</span></label>
         <div style="display:flex;gap:6px;align-items:stretch">
@@ -5555,27 +5544,56 @@
           <input type="text" id="e-vendor" placeholder="พิมพ์เพื่อค้นหา (คนขับ/ร้านค้า)..." maxlength="150" autocomplete="off">
         </div>
       </div>
+
+      <!-- v15.50 — multi-category, each with its own amount on the same line -->
+      <div class="form-row">
+        <label>หมวดรายจ่าย & จำนวนเงิน <span class="req">*</span> <span style="font-size:.7rem;color:#94a3b8;font-weight:400">— กด ➕ เพื่อเพิ่มหมวด</span></label>
+        <div id="e-cat-list">
+          <div class="e-cat-line" style="display:flex;gap:6px;margin-bottom:6px">
+            <select id="e-category" class="e-cat-sel" required style="flex:1;min-width:0">
+              <option value="ค่าเดินทาง" selected>🚗 ค่าเดินทาง</option>
+              <option value="ค่าน้ำมัน">⛽ ค่าน้ำมัน</option>
+              <option value="เงินเดือน">💼 เงินเดือน</option>
+              <option value="ซ่อมบำรุง">🔧 ซ่อมบำรุง</option>
+              <option value="ค่าซ่อม">🔩 ค่าซ่อม</option>
+              <option value="ค่าอะไหล่">⚙️ ค่าอะไหล่</option>
+              <option value="ค่ายาง">🔄 ค่ายาง</option>
+              <option value="ค่าแรง">👷 ค่าแรง</option>
+              <option value="ค่าทางด่วน">🛣 ค่าทางด่วน</option>
+              <option value="ประกันภัยรถ">🛡 ประกันภัยรถ</option>
+              <option value="ประกันสินค้า">📦 ประกันสินค้า</option>
+              <option value="ค่าบริการ GPS">📡 ค่าบริการ GPS</option>
+              <option value="ค่าตรวจสภาพ">🔍 ค่าตรวจสภาพ</option>
+              <option value="ค่าพ.ร.บ.">📋 ค่าพ.ร.บ.</option>
+              <option value="ค่าภาษีรถ">🏛 ค่าภาษีรถ</option>
+              <option value="ค่าอาหาร">🍱 ค่าอาหาร</option>
+              <option value="อื่นๆ">📌 อื่นๆ</option>
+            </select>
+            <input type="text" inputmode="decimal" id="e-amount" class="e-cat-amt" data-money="1" placeholder="0.00" required
+                   oninput="this.value=formatMoneyDisplay(this.value);_updateExpTotal()"
+                   style="width:130px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums;font-weight:700">
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;flex-wrap:wrap;gap:8px">
+          <button type="button" onclick="addExpenseCategory()" style="background:#ecfdf5;color:#047857;border:1.5px solid #86efac;border-radius:8px;padding:8px 14px;font-weight:700;font-size:.82rem;cursor:pointer;font-family:inherit">➕ เพิ่มหมวด</button>
+          <div style="font-size:.85rem;font-weight:800;color:#b91c1c">รวม: <span id="e-total">฿0.00</span></div>
+        </div>
+      </div>
+
       <div class="form-row">
         <label>รายละเอียดรายจ่าย</label>
         <textarea id="e-expenseDetail" placeholder="รายละเอียด..." rows="2"></textarea>
       </div>
-      <div class="form-row-2">
-        <div class="form-row">
-          <label>จำนวนเงิน (บาท) <span class="req">*</span></label>
-          <input type="text" inputmode="decimal" id="e-amount" placeholder="0.00" data-money="1" required
-                 style="text-align:right;font-variant-numeric:tabular-nums;font-weight:700">
-        </div>
-        <div class="form-row">
-          <label>วิธีจ่ายเงิน</label>
-          <select id="e-paymentMethod">
-            <option value="เงินโอน" selected>📲 เงินโอน</option>
-            <option value="เงินสด">💵 เงินสด</option>
-            <option value="โอน QR">📱 โอน QR</option>
-            <option value="เช็ค">📝 เช็ค</option>
-            <option value="บัตรเครดิต">💳 บัตรเครดิต</option>
-            <option value="อื่นๆ">🔄 อื่นๆ</option>
-          </select>
-        </div>
+      <div class="form-row">
+        <label>วิธีจ่ายเงิน</label>
+        <select id="e-paymentMethod">
+          <option value="เงินโอน" selected>📲 เงินโอน</option>
+          <option value="เงินสด">💵 เงินสด</option>
+          <option value="โอน QR">📱 โอน QR</option>
+          <option value="เช็ค">📝 เช็ค</option>
+          <option value="บัตรเครดิต">💳 บัตรเครดิต</option>
+          <option value="อื่นๆ">🔄 อื่นๆ</option>
+        </select>
       </div>
       <div class="form-row">
         <label>หมายเหตุ</label>
@@ -10957,17 +10975,22 @@ function collectFormData(formKey) {
   }
   if (formKey === 'expense') {
     if (!g('e-expenseDate')) { showToast('กรุณาเลือกวันที่', 'warning');        return null; }
-    if (!g('e-category'))    { showToast('กรุณาเลือกหมวดรายจ่าย', 'warning'); return null; }
-    if (!g('e-amount'))      { showToast('กรุณากรอกจำนวนเงิน', 'warning');     return null; }
+    // v15.50 — multi-category rows, each with amount
+    const rows = _expRows();
+    if (!rows.length)            { showToast('กรุณาเลือกหมวดรายจ่าย', 'warning'); return null; }
+    const total = rows.reduce((s, r) => s + r.amount, 0);
+    if (total <= 0)              { showToast('กรุณากรอกจำนวนเงิน', 'warning');    return null; }
+    const catNames = [...new Set(rows.map(r => r.category))].join(' + ');
     const eLinkedSel = document.getElementById('e-linkedTrip');
     const eLinkedOpt = eLinkedSel && eLinkedSel.options[eLinkedSel.selectedIndex];
     const eLinkedRound = (eLinkedOpt && eLinkedOpt.dataset.round) ? +eLinkedOpt.dataset.round : 0;
     return {
       expenseDate: g('e-expenseDate'), expenseTime: g('e-expenseTime'),
       docNumber: g('e-docNumber'),     // v14.70 — auto-generated
-      category: _collectExpenseCategories(),   // v15.49 — multi-category joined with " + "
+      category: catNames,
+      expenseItems: JSON.stringify(rows),   // v15.50 — per-category breakdown
       plateNumber: g('e-plateNumber'), vendor: g('e-vendor'),
-      expenseDetail: g('e-expenseDetail'), amount: g('e-amount'),
+      expenseDetail: g('e-expenseDetail'), amount: total,
       paymentMethod: g('e-paymentMethod'), remark: g('e-remark'),
       linkedTripRowId: g('e-linkedTrip'),
       linkedTripRound: eLinkedRound
@@ -11455,9 +11478,9 @@ function _prefillForm(type, record) {
     const sSel = document.getElementById('t-paymentStatus');
     if (sSel) onFreightStatusChange(sSel);
   }
-  // v15.49 — expense may have multiple categories ("A + B") → rebuild category selects
-  if (type === 'expense' && typeof _prefillExpenseCategories === 'function') {
-    _prefillExpenseCategories(record.category);
+  // v15.50 — expense multi-category+amount → rebuild rows from expenseItems
+  if (type === 'expense' && typeof _prefillExpenseItems === 'function') {
+    _prefillExpenseItems(record);
   }
 }
 
@@ -11539,53 +11562,76 @@ async function performEditUpdate(type, data) {
   }
 }
 
-// ─── v15.49 — Expense multi-category ───────────────────────────────
-function addExpenseCategory() {
+// ─── v15.50 — Expense multi-category, each with its own amount ───────
+function addExpenseCategory(catVal, amtVal) {
   const list = document.getElementById('e-cat-list');
   if (!list) return;
-  const first = list.querySelector('select.e-cat-sel');
-  if (!first) return;
-  const row = document.createElement('div');
-  row.className = 'e-cat-row';
-  row.style.cssText = 'display:flex;gap:6px;margin-top:6px';
+  const firstSel = list.querySelector('select.e-cat-sel');
+  if (!firstSel) return;
+  const line = document.createElement('div');
+  line.className = 'e-cat-line';
+  line.style.cssText = 'display:flex;gap:6px;margin-bottom:6px';
   const sel = document.createElement('select');
   sel.className = 'e-cat-sel';
-  sel.style.flex = '1';
-  sel.innerHTML = first.innerHTML;        // same options
-  sel.selectedIndex = 0;
+  sel.style.cssText = 'flex:1;min-width:0';
+  sel.innerHTML = firstSel.innerHTML;
+  if (catVal) sel.value = catVal; else sel.selectedIndex = 0;
+  const amt = document.createElement('input');
+  amt.type = 'text'; amt.inputMode = 'decimal'; amt.className = 'e-cat-amt';
+  amt.placeholder = '0.00';
+  amt.style.cssText = 'width:130px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums;font-weight:700';
+  if (amtVal != null && amtVal !== '') amt.value = formatMoneyDisplay(String(amtVal));
+  amt.oninput = function(){ this.value = formatMoneyDisplay(this.value); _updateExpTotal(); };
   const rm = document.createElement('button');
   rm.type = 'button'; rm.textContent = '✕'; rm.title = 'ลบหมวดนี้';
   rm.style.cssText = 'background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;border-radius:8px;width:44px;flex-shrink:0;cursor:pointer;font-family:inherit;font-weight:700';
-  rm.onclick = () => row.remove();
-  row.appendChild(sel); row.appendChild(rm);
-  list.appendChild(row);
+  rm.onclick = () => { line.remove(); _updateExpTotal(); };
+  line.appendChild(sel); line.appendChild(amt); line.appendChild(rm);
+  list.appendChild(line);
+  _updateExpTotal();
 }
-function _collectExpenseCategories() {
-  const sels = document.querySelectorAll('#e-cat-list select.e-cat-sel');
-  const cats = [];
-  sels.forEach(s => { const v = (s.value || '').trim(); if (v && !cats.includes(v)) cats.push(v); });
-  return cats.join(' + ');
+function _expRows() {
+  // [{category, amount}] for every line that has a category
+  const out = [];
+  document.querySelectorAll('#e-cat-list .e-cat-line').forEach(line => {
+    const c = (line.querySelector('.e-cat-sel')?.value || '').trim();
+    const a = parseFloat((line.querySelector('.e-cat-amt')?.value || '').replace(/,/g, '')) || 0;
+    if (c) out.push({ category: c, amount: a });
+  });
+  return out;
+}
+function _updateExpTotal() {
+  const total = _expRows().reduce((s, r) => s + r.amount, 0);
+  const el = document.getElementById('e-total');
+  if (el) el.textContent = fmtBaht(total);
 }
 function _resetExpenseCategories() {
   const list = document.getElementById('e-cat-list');
   if (!list) return;
-  list.querySelectorAll('.e-cat-row').forEach(r => r.remove());   // remove extras
-  const first = document.getElementById('e-category');
-  if (first) first.selectedIndex = 0;
+  list.querySelectorAll('.e-cat-line:not(:first-child)').forEach(r => r.remove()); // keep row 1
+  const first = document.getElementById('e-category'); if (first) first.selectedIndex = 0;
+  const amt0 = document.getElementById('e-amount'); if (amt0) amt0.value = '';
+  _updateExpTotal();
 }
-// Prefill multi-category on edit: "A + B" → first select = A, add rows for the rest
-function _prefillExpenseCategories(catStr) {
+// Rebuild rows on edit from saved data (expenseItems JSON, else single category+amount)
+function _prefillExpenseItems(record) {
   _resetExpenseCategories();
-  const cats = String(catStr || '').split(/\s*\+\s*/).map(c => c.trim()).filter(Boolean);
-  if (!cats.length) return;
-  const first = document.getElementById('e-category');
-  if (first) first.value = cats[0];
-  for (let i = 1; i < cats.length; i++) {
-    addExpenseCategory();
-    const rows = document.querySelectorAll('#e-cat-list .e-cat-row select.e-cat-sel');
-    const sel = rows[rows.length - 1];
-    if (sel) sel.value = cats[i];
+  let items = [];
+  try { if (record.expenseItems) items = JSON.parse(record.expenseItems); } catch(e) {}
+  if (!Array.isArray(items) || !items.length) {
+    // fallback: split "A + B" names, put whole amount on first
+    const cats = String(record.category || '').split(/\s*\+\s*/).map(c => c.trim()).filter(Boolean);
+    items = cats.map((c, i) => ({ category: c, amount: i === 0 ? (parseFloat(record.amount) || 0) : 0 }));
+    if (!items.length) items = [{ category: '', amount: parseFloat(record.amount) || 0 }];
   }
+  // first row
+  const first = document.getElementById('e-category');
+  const amt0  = document.getElementById('e-amount');
+  if (first && items[0]?.category) first.value = items[0].category;
+  if (amt0) amt0.value = items[0]?.amount ? formatMoneyDisplay(String(items[0].amount)) : '';
+  // extra rows
+  for (let i = 1; i < items.length; i++) addExpenseCategory(items[i].category, items[i].amount);
+  _updateExpTotal();
 }
 
 function reloadList(type) {
@@ -13514,9 +13560,20 @@ function renderExpenseList(items) {
       }
     }
     if (/^[\d,.฿\s]+$/.test(paymentMethodE) && paymentMethodE) paymentMethodE = '';
+    // v15.50 — per-category breakdown from expenseItems (each "หมวด · ฿จำนวน")
+    let expItems = [];
+    if (r.expenseItems) {
+      try { const p = JSON.parse(r.expenseItems); if (Array.isArray(p)) expItems = p; } catch {}
+    }
     // v15.11 — Vertical detail rows
     const detailRows = [];
-    if (r.category)      detailRows.push(`<div><span class="ico">🏷</span><b>${escHtml(r.category)}</b></div>`);
+    if (expItems.length > 1) {
+      detailRows.push(`<div class="exp-cat-list"><span class="ico">🏷</span><div class="exp-cat-items">${
+        expItems.map(it => `<div class="exp-cat-item"><b>${escHtml(it.category||'')}</b><span class="exp-cat-amt">฿${fmtBaht(parseFloat(it.amount)||0).replace(/^฿/,'')}</span></div>`).join('')
+      }</div></div>`);
+    } else if (r.category) {
+      detailRows.push(`<div><span class="ico">🏷</span><b>${escHtml(r.category)}</b></div>`);
+    }
     if (r.plateNumber)   detailRows.push(`<div><span class="ico">🚛</span><span>${escHtml(r.plateNumber)}</span></div>`);
     if (r.vendor)        detailRows.push(`<div><span class="ico">👤</span><span class="priv-data">${escHtml(r.vendor)}</span></div>`);
     if (r.expenseDetail) detailRows.push(`<div><span class="ico">📋</span><span class="priv-data">${escHtml(r.expenseDetail)}</span></div>`);
@@ -15247,7 +15304,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.49';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.50';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
