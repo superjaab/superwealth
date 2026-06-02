@@ -2454,8 +2454,9 @@
     .exp-doc-title { font-size:22px; font-weight:900; color:#1d4ed8; text-align:right; }
     .exp-doc-range { font-size:12px; color:#64748b; text-align:right; margin-top:2px; }
     .exp-tbl { width:100%; border-collapse:collapse; font-size:12.5px; margin-bottom:8px; }
-    .exp-tbl th { background:#1e293b; color:#fff; padding:9px 10px; text-align:left; font-weight:700; }
-    .exp-tbl th.num, .exp-tbl td.num { text-align:right; font-variant-numeric:tabular-nums; }
+    .exp-tbl th { background:#1e293b; color:#fff; padding:9px 10px; text-align:left; font-weight:700; white-space:nowrap; vertical-align:middle; }
+    .exp-tbl td.num { text-align:right; font-variant-numeric:tabular-nums; }
+    .exp-tbl th.num { text-align:center; font-variant-numeric:tabular-nums; }
     .exp-tbl td { padding:8px 10px; border-bottom:1px solid #e8edf3; }
     .exp-tbl tr:nth-child(even) td { background:#f8fafc; }
     .exp-sec-title { font-size:15px; font-weight:900; color:#0f172a; margin:18px 0 8px; padding-left:8px; border-left:4px solid #2563eb; }
@@ -2484,6 +2485,22 @@
     .exp-cal td.other .d { color:#cbd5e1; }
     /* v15.40 — calendar shows only compact "รอบ N" chips (pastel by status) */
     .exp-cal-evt { display:inline-block; border-radius:4px; padding:1px 6px; margin:1px 2px 1px 0; line-height:1.4; font-weight:800; font-size:9.5px; }
+    /* v15.41 — Gantt-style spanning-bar calendar (แท็บสียาวๆ พาดข้ามวัน) */
+    .exp-cal2 { border:1px solid #cbd5e1; border-radius:8px; overflow:hidden; margin-bottom:8px; }
+    .exp-cal2-dow { display:grid; grid-template-columns:repeat(7,1fr); background:#1e293b; }
+    .exp-cal2-dow > div { padding:6px 2px; text-align:center; color:#fff; font-size:11px; font-weight:800; border-right:1px solid #334155; }
+    .exp-cal2-dow > div:last-child { border-right:none; }
+    .exp-cal2-week { border-top:1px solid #cbd5e1; }
+    .exp-cal2-nums { display:grid; grid-template-columns:repeat(7,1fr); }
+    .exp-cal2-num { padding:3px 6px; font-size:11px; font-weight:800; color:#334155; border-right:1px solid #eef2f7; }
+    .exp-cal2-num:last-child { border-right:none; }
+    .exp-cal2-num.other { color:#cbd5e1; }
+    .exp-cal2-evts { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; padding:1px 3px 5px; }
+    .exp-cal2-bar {
+      border-radius:5px; padding:2px 7px; font-size:9.5px; font-weight:800; line-height:1.5;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      border:1px solid; box-shadow:0 1px 1px rgba(0,0,0,.05);
+    }
     .exp-empty { text-align:center; color:#94a3b8; padding:40px 16px; }
 
     /* ─── REDUCED MOTION ─── */
@@ -5153,7 +5170,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.40 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.41 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -12962,32 +12979,54 @@ function _expCalendarDoc() {
   months.forEach(ym => {
     const [y,m] = ym.split('-').map(Number);
     body += `<div class="exp-sec-title">📅 ${_expMonthLabel(ym)}</div>`;
+    // v15.41 — Gantt-style spanning bars (multi-day trips = one long bar across days)
     const startDow = new Date(y, m-1, 1).getDay();
-    const daysIn = new Date(y, m, 0).getDate();
-    const dayTrips = {};
-    trips.forEach(t => {
-      const span = _getTripSpan(t); if (!span) return;
-      for (let d = 1; d <= daysIn; d++) {
-        const num = _calDateNum(`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
-        if (num >= span.startNum && num <= span.endNum) (dayTrips[d] = dayTrips[d] || []).push(t);
+    const daysIn   = new Date(y, m, 0).getDate();
+    const totalCells = Math.ceil((startDow + daysIn) / 7) * 7;
+    const firstNum = _calDateNum(`${y}-${String(m).padStart(2,'0')}-01`);
+    const cellDateNum = i => firstNum + (i - startDow);
+    const cellDayOfMonth = i => { const dt = new Date(cellDateNum(i) * 86400000); return { day: dt.getUTCDate(), other: (dt.getUTCMonth()+1) !== m }; };
+
+    let calHtml = `<div class="exp-cal2"><div class="exp-cal2-dow">${dow.map(d=>`<div>${d}</div>`).join('')}</div>`;
+    for (let w = 0; w * 7 < totalCells; w++) {
+      const base = w * 7;
+      const weekStartNum = cellDateNum(base);
+      const weekEndNum   = cellDateNum(base + 6);
+      // day-number row
+      let numsRow = '';
+      for (let i = base; i < base + 7; i++) {
+        const c = cellDayOfMonth(i);
+        numsRow += `<div class="exp-cal2-num${c.other ? ' other' : ''}">${c.day}</div>`;
       }
-    });
-    const cells = [];
-    for (let i = 0; i < startDow; i++) cells.push('<td class="other"></td>');
-    for (let d = 1; d <= daysIn; d++) {
-      const ts = dayTrips[d] || [];
-      // v15.40 — ปฏิทินโชว์แค่ "รอบ N" (พาสเทลตามสถานะ) เพื่อความกระชับ/ทางการ
-      const evts = ts.slice(0,5).map(t => {
-        const pal = _calStatusPal(t);
-        return `<span class="exp-cal-evt" style="background:${pal.bg};color:${pal.fg};border:1px solid ${pal.fg}">รอบ ${escHtml(t.tripRound || '-')}</span>`;
+      // trips overlapping this week → segments + greedy row assignment
+      const segs = [];
+      trips.forEach(t => {
+        const span = _getTripSpan(t); if (!span) return;
+        if (span.endNum < weekStartNum || span.startNum > weekEndNum) return;
+        const s = Math.max(span.startNum, weekStartNum);
+        const e = Math.min(span.endNum, weekEndNum);
+        segs.push({ t, colStart: s - weekStartNum + 1, colSpan: e - s + 1, segStart: s });
+      });
+      segs.sort((a,b) => a.segStart - b.segStart || b.colSpan - a.colSpan);
+      const rowsUsed = []; // rowsUsed[r] = last occupied end col
+      segs.forEach(sg => {
+        let r = 0;
+        while (rowsUsed[r] !== undefined && rowsUsed[r] >= sg.colStart) r++;
+        sg.row = r; rowsUsed[r] = sg.colStart + sg.colSpan - 1;
+      });
+      const maxRow = rowsUsed.length || 1;
+      const bars = segs.map(sg => {
+        const pal = _calStatusPal(sg.t);
+        const plate = sg.t.plateNumber ? ' · ' + escHtml(sg.t.plateNumber) : '';
+        return `<div class="exp-cal2-bar" style="grid-column:${sg.colStart}/span ${sg.colSpan};grid-row:${sg.row+1};background:${pal.bg};color:${pal.fg};border-color:${pal.fg}">รอบ ${escHtml(sg.t.tripRound||'-')}${plate}</div>`;
       }).join('');
-      const more = ts.length > 5 ? `<span style="color:#94a3b8;font-size:9px">+${ts.length-5}</span>` : '';
-      cells.push(`<td><span class="d">${d}</span>${evts}${more}</td>`);
+      calHtml += `<div class="exp-cal2-week">
+        <div class="exp-cal2-nums">${numsRow}</div>
+        <div class="exp-cal2-evts" style="grid-template-rows:repeat(${maxRow},18px);min-height:${maxRow*20+4}px">${bars}</div>
+      </div>`;
     }
-    while (cells.length % 7 !== 0) cells.push('<td class="other"></td>');
-    const rowsHtml = [];
-    for (let i = 0; i < cells.length; i += 7) rowsHtml.push('<tr>' + cells.slice(i, i+7).join('') + '</tr>');
-    body += `<table class="exp-cal"><thead><tr>${dow.map(d=>`<th>${d}</th>`).join('')}</tr></thead><tbody>${rowsHtml.join('')}</tbody></table>`;
+    calHtml += `</div>`;
+    body += calHtml;
 
     // v15.40 — Trip summary table for THIS month, right after its calendar
     const monthTrips = trips.filter(t => {
@@ -15118,7 +15157,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.40';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.41';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
