@@ -5170,7 +5170,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.41 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.42 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -12891,21 +12891,25 @@ function _expDocWrap(title, range, bodyHtml) {
   // v15.40 — formal/official report layout: centered letterhead, doc number, signature block
   const docNo = `RPT-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
   return `<div class="exp-doc exp-doc--formal" id="exp-report-doc">
-    <div class="exp-letterhead">
-      <div class="exp-lh-brand">SuperWealth Transport</div>
-      <div class="exp-lh-sub">บริษัท ซูเปอร์เวลธ์ ทรานสปอร์ต · ระบบบริหารงานขนส่งรถบรรทุก</div>
+    <div class="exp-pg-block">
+      <div class="exp-letterhead">
+        <div class="exp-lh-brand">SuperWealth Transport</div>
+        <div class="exp-lh-sub">บริษัท ซูเปอร์เวลธ์ ทรานสปอร์ต · ระบบบริหารงานขนส่งรถบรรทุก</div>
+      </div>
+      <div class="exp-doc-title-row">
+        <div class="exp-doc-title2">${title}</div>
+        ${range ? `<div class="exp-doc-range2">${range}</div>` : ''}
+      </div>
+      <div class="exp-doc-meta"><span>เลขที่เอกสาร: <b>${docNo}</b></span><span>วันที่ออกรายงาน: <b>${stamp} น.</b></span></div>
     </div>
-    <div class="exp-doc-title-row">
-      <div class="exp-doc-title2">${title}</div>
-      ${range ? `<div class="exp-doc-range2">${range}</div>` : ''}
-    </div>
-    <div class="exp-doc-meta"><span>เลขที่เอกสาร: <b>${docNo}</b></span><span>วันที่ออกรายงาน: <b>${stamp} น.</b></span></div>
     ${bodyHtml}
-    <div class="exp-sign-row">
-      <div class="exp-sign"><div class="exp-sign-line"></div>ผู้จัดทำรายงาน</div>
-      <div class="exp-sign"><div class="exp-sign-line"></div>ผู้ตรวจสอบ / อนุมัติ</div>
+    <div class="exp-pg-block">
+      <div class="exp-sign-row">
+        <div class="exp-sign"><div class="exp-sign-line"></div>ผู้จัดทำรายงาน</div>
+        <div class="exp-sign"><div class="exp-sign-line"></div>ผู้ตรวจสอบ / อนุมัติ</div>
+      </div>
+      <div class="exp-doc-foot"><span>เอกสารนี้ออกโดยระบบอัตโนมัติ · SuperWealth Transport</span><span>${docNo}</span></div>
     </div>
-    <div class="exp-doc-foot"><span>เอกสารนี้ออกโดยระบบอัตโนมัติ · SuperWealth Transport</span><span>${docNo}</span></div>
   </div>`;
 }
 function _expFinanceDoc() {
@@ -12916,9 +12920,9 @@ function _expFinanceDoc() {
   if (EXPORT_STATE.incExp) (_master.expenseHistory||[]).forEach(r => { if (!inRange(r.expenseDate)) return; const cat=(r.category||'').trim(); if (EXPORT_STATE.cats.size && !EXPORT_STATE.cats.has(cat)) return; const amt = _detectAmount(r); sumExp += amt; rows.push({ date:r.expenseDate, type:'รายจ่าย', doc:r.docNumber||'', item:cat||r.expenseDetail||'', party:r.vendor||'', amt, sign:'−' }); });
   rows.sort((a,b) => String(a.date).localeCompare(String(b.date)));
   const body = rows.length ? `
-    <table class="exp-tbl"><thead><tr><th>วันที่</th><th>ประเภท</th><th>เลขที่</th><th>รายการ</th><th>คู่ค้า</th><th class="num">จำนวนเงิน</th></tr></thead>
-    <tbody>${rows.map(r => `<tr><td>${fmtDate(r.date)}</td><td>${r.type}</td><td>${escHtml(r.doc)}</td><td>${escHtml(r.item)}</td><td>${escHtml(r.party)}</td><td class="num" style="color:${r.sign==='+'?'#059669':'#dc2626'};font-weight:700">${r.sign}${fmtBaht(r.amt)}</td></tr>`).join('')}</tbody></table>
-    <div class="exp-kpi-row" style="grid-template-columns:repeat(3,1fr)">
+    <div class="exp-pg-block"><table class="exp-tbl"><thead><tr><th>วันที่</th><th>ประเภท</th><th>เลขที่</th><th>รายการ</th><th>คู่ค้า</th><th class="num">จำนวนเงิน</th></tr></thead>
+    <tbody>${rows.map(r => `<tr><td>${fmtDate(r.date)}</td><td>${r.type}</td><td>${escHtml(r.doc)}</td><td>${escHtml(r.item)}</td><td>${escHtml(r.party)}</td><td class="num" style="color:${r.sign==='+'?'#059669':'#dc2626'};font-weight:700">${r.sign}${fmtBaht(r.amt)}</td></tr>`).join('')}</tbody></table></div>
+    <div class="exp-pg-block exp-kpi-row" style="grid-template-columns:repeat(3,1fr)">
       <div class="exp-kpi" style="border-color:#86efac;background:#f0fdf4"><div class="exp-kpi-label">💰 รายรับรวม</div><div class="exp-kpi-val" style="color:#059669">${fmtBaht(sumInc)}</div></div>
       <div class="exp-kpi" style="border-color:#fca5a5;background:#fef2f2"><div class="exp-kpi-label">💸 รายจ่ายรวม</div><div class="exp-kpi-val" style="color:#dc2626">${fmtBaht(sumExp)}</div></div>
       <div class="exp-kpi" style="border-color:#93c5fd;background:#eff6ff"><div class="exp-kpi-label">📈 คงเหลือ</div><div class="exp-kpi-val" style="color:${sumInc-sumExp>=0?'#1d4ed8':'#dc2626'}">${fmtBaht(sumInc-sumExp)}</div></div>
@@ -12953,16 +12957,16 @@ function _expDashboardDoc() {
   const custMap = {}; inc.forEach(r => { const c=(r.customerName||'(ไม่ระบุ)'); custMap[c]=(custMap[c]||0)+_detectAmount(r); });
   const topCust = Object.entries(custMap).sort((a,b)=>b[1]-a[1]).slice(0,6);
   const body = `
-    <div class="exp-kpi-row">
+    <div class="exp-pg-block exp-kpi-row">
       <div class="exp-kpi" style="border-color:#86efac;background:#f0fdf4"><div class="exp-kpi-label">💰 รายรับรวม</div><div class="exp-kpi-val" style="color:#059669">${fmtBaht(sumInc)}</div></div>
       <div class="exp-kpi" style="border-color:#fca5a5;background:#fef2f2"><div class="exp-kpi-label">💸 รายจ่ายรวม</div><div class="exp-kpi-val" style="color:#dc2626">${fmtBaht(sumExp)}</div></div>
       <div class="exp-kpi" style="border-color:#c4b5fd;background:#f5f3ff"><div class="exp-kpi-label">📈 กำไรสุทธิ</div><div class="exp-kpi-val" style="color:${profit>=0?'#7c3aed':'#dc2626'}">${profit>=0?'+':''}${fmtBaht(profit)}</div></div>
       <div class="exp-kpi" style="border-color:#93c5fd;background:#eff6ff"><div class="exp-kpi-label">🚚 เที่ยวรถ</div><div class="exp-kpi-val" style="color:#1d4ed8">${trips.length} เที่ยว</div></div>
     </div>
-    <div class="exp-sec-title">💸 หมวดรายจ่ายสูงสุด</div>
-    ${topCats.length ? `<table class="exp-tbl"><thead><tr><th>หมวด</th><th class="num">ยอดรวม</th></tr></thead><tbody>${topCats.map(([c,a])=>`<tr><td>${escHtml(c)}</td><td class="num">${fmtBaht(a)}</td></tr>`).join('')}</tbody></table>` : '<div class="exp-empty">— ไม่มีรายจ่าย —</div>'}
-    <div class="exp-sec-title">🏢 ลูกค้ารายได้สูงสุด</div>
-    ${topCust.length ? `<table class="exp-tbl"><thead><tr><th>ลูกค้า</th><th class="num">ยอดรวม</th></tr></thead><tbody>${topCust.map(([c,a])=>`<tr><td>${escHtml(c)}</td><td class="num">${fmtBaht(a)}</td></tr>`).join('')}</tbody></table>` : '<div class="exp-empty">— ไม่มีรายรับ —</div>'}`;
+    <div class="exp-pg-block"><div class="exp-sec-title">💸 หมวดรายจ่ายสูงสุด</div>
+    ${topCats.length ? `<table class="exp-tbl"><thead><tr><th>หมวด</th><th class="num">ยอดรวม</th></tr></thead><tbody>${topCats.map(([c,a])=>`<tr><td>${escHtml(c)}</td><td class="num">${fmtBaht(a)}</td></tr>`).join('')}</tbody></table>` : '<div class="exp-empty">— ไม่มีรายจ่าย —</div>'}</div>
+    <div class="exp-pg-block"><div class="exp-sec-title">🏢 ลูกค้ารายได้สูงสุด</div>
+    ${topCust.length ? `<table class="exp-tbl"><thead><tr><th>ลูกค้า</th><th class="num">ยอดรวม</th></tr></thead><tbody>${topCust.map(([c,a])=>`<tr><td>${escHtml(c)}</td><td class="num">${fmtBaht(a)}</td></tr>`).join('')}</tbody></table>` : '<div class="exp-empty">— ไม่มีรายรับ —</div>'}</div>`;
   return _expDocWrap('สรุปผลรวม (Dashboard)', `${fmtDate(from)} – ${fmtDate(to)}`, body);
 }
 function _expCalendarDoc() {
@@ -12971,14 +12975,14 @@ function _expCalendarDoc() {
   const trips = _master.truckHistory || [];
   const dow = ['อา','จ','อ','พ','พฤ','ศ','ส'];
   // v15.39 — status legend (matches web colors)
-  let body = `<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:11px;font-weight:700;margin-bottom:10px">
+  let body = `<div class="exp-pg-block" style="display:flex;gap:16px;flex-wrap:wrap;font-size:11px;font-weight:700;margin-bottom:10px">
     <span><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:#dbeafe;border:1px solid #1d4ed8;vertical-align:middle;margin-right:4px"></span>🚚 กำลังขนส่ง</span>
     <span><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:#fef3c7;border:1px solid #b45309;vertical-align:middle;margin-right:4px"></span>⏰ ค้างจ่าย</span>
     <span><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:#d1fae5;border:1px solid #047857;vertical-align:middle;margin-right:4px"></span>✅ จ่ายแล้ว</span>
   </div>`;
   months.forEach(ym => {
     const [y,m] = ym.split('-').map(Number);
-    body += `<div class="exp-sec-title">📅 ${_expMonthLabel(ym)}</div>`;
+    body += `<div class="exp-pg-block"><div class="exp-sec-title">📅 ${_expMonthLabel(ym)}</div>`;
     // v15.41 — Gantt-style spanning bars (multi-day trips = one long bar across days)
     const startDow = new Date(y, m-1, 1).getDay();
     const daysIn   = new Date(y, m, 0).getDate();
@@ -13017,8 +13021,10 @@ function _expCalendarDoc() {
       const maxRow = rowsUsed.length || 1;
       const bars = segs.map(sg => {
         const pal = _calStatusPal(sg.t);
-        const plate = sg.t.plateNumber ? ' · ' + escHtml(sg.t.plateNumber) : '';
-        return `<div class="exp-cal2-bar" style="grid-column:${sg.colStart}/span ${sg.colSpan};grid-row:${sg.row+1};background:${pal.bg};color:${pal.fg};border-color:${pal.fg}">รอบ ${escHtml(sg.t.tripRound||'-')}${plate}</div>`;
+        // v15.42 — รอบ · จังหวัดต้นทาง → ปลายทาง · สถานะ (เอาทะเบียนออก)
+        const route = (sg.t.origin || sg.t.destination) ? ' · ' + escHtml(sg.t.origin||'-') + ' → ' + escHtml(sg.t.destination||'-') : '';
+        const stTxt = ' · ' + _calStatusText(sg.t);
+        return `<div class="exp-cal2-bar" style="grid-column:${sg.colStart}/span ${sg.colSpan};grid-row:${sg.row+1};background:${pal.bg};color:${pal.fg};border-color:${pal.fg}">รอบ ${escHtml(sg.t.tripRound||'-')}${route}${stTxt}</div>`;
       }).join('');
       calHtml += `<div class="exp-cal2-week">
         <div class="exp-cal2-nums">${numsRow}</div>
@@ -13026,7 +13032,7 @@ function _expCalendarDoc() {
       </div>`;
     }
     calHtml += `</div>`;
-    body += calHtml;
+    body += calHtml + `</div>`;   // close month calendar block
 
     // v15.40 — Trip summary table for THIS month, right after its calendar
     const monthTrips = trips.filter(t => {
@@ -13053,11 +13059,11 @@ function _expCalendarDoc() {
           <td style="text-align:center;color:${stColor};font-weight:700">${st}</td>
         </tr>`;
       }).join('');
-      body += `<div style="font-size:12px;font-weight:800;color:#475569;margin:6px 0 6px;padding-left:8px;border-left:3px solid #94a3b8">📋 สรุปเที่ยวรถ ${_expMonthLabel(ym)} · ${monthTrips.length} เที่ยว</div>
-        <table class="exp-tbl" style="margin-bottom:18px"><thead><tr><th style="text-align:center">รอบ</th><th>วันที่</th><th>ทะเบียน</th><th>ลูกค้า</th><th>เส้นทาง</th><th class="num">ค่าขนส่ง</th><th style="text-align:center">สถานะ</th></tr></thead>
+      body += `<div class="exp-pg-block"><div style="font-size:12px;font-weight:800;color:#475569;margin:6px 0 6px;padding-left:8px;border-left:3px solid #94a3b8">📋 สรุปเที่ยวรถ ${_expMonthLabel(ym)} · ${monthTrips.length} เที่ยว</div>
+        <table class="exp-tbl" style="margin-bottom:18px"><thead><tr><th class="num">รอบ</th><th>วันที่</th><th>ทะเบียน</th><th>ลูกค้า</th><th>เส้นทาง</th><th class="num">ค่าขนส่ง</th><th class="num">สถานะ</th></tr></thead>
         <tbody>${trows}</tbody>
         <tfoot><tr style="background:#f1f5f9;font-weight:800"><td colspan="5" style="text-align:right;padding:8px 10px">รวมค่าขนส่ง</td><td class="num" style="padding:8px 10px">${fmtBaht(sumFreight)}</td><td></td></tr></tfoot>
-        </table>`;
+        </table></div>`;
     }
   });
   return _expDocWrap('ปฏิทินเที่ยวรถ', months.map(_expMonthLabel).join(' · '), body);
@@ -13091,23 +13097,37 @@ async function exportReportPDF() {
   if (!node) { showToast('กรุณากดดูตัวอย่างก่อน', 'warning'); return; }
   showLoading('กำลังสร้าง PDF...');
   try {
-    const canvas = await html2canvas(node, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const scale = 2;
+    const canvas = await html2canvas(node, { scale, backgroundColor: '#ffffff', useCORS: true });
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ unit:'mm', format:'a4', orientation:'portrait' });
     const pageW = pdf.internal.pageSize.getWidth();
     const pageH = pdf.internal.pageSize.getHeight();
-    const imgW = pageW - 16;
-    const imgH = canvas.height * imgW / canvas.width;
-    if (imgH <= pageH - 16) {
-      pdf.addImage(imgData, 'JPEG', 8, 8, imgW, imgH);
-    } else {
-      let remaining = imgH, srcY = 0; const pageImgH = pageH - 16;
-      while (remaining > 0) {
-        pdf.addImage(imgData, 'JPEG', 8, 8 - srcY, imgW, imgH);
-        remaining -= pageImgH;
-        if (remaining > 0) { pdf.addPage(); srcY += pageImgH; }
-      }
+    const margin = 8;
+    const usableW = pageW - margin * 2;
+    const pxPerMm = canvas.width / usableW;
+    const pageContentPx = (pageH - margin * 2) * pxPerMm;
+
+    // v15.42 — cut pages ONLY at .exp-pg-block boundaries (never split a table/section)
+    const docTop = node.getBoundingClientRect().top;
+    const blocks = [...node.querySelectorAll('.exp-pg-block')];
+    const cuts = blocks.map(b => (b.getBoundingClientRect().bottom - docTop) * scale)
+                       .filter(c => c > 0 && c < canvas.height);
+    cuts.push(canvas.height);
+
+    let startPx = 0, first = true, guard = 0;
+    while (startPx < canvas.height - 1 && guard++ < 100) {
+      let endPx = startPx + pageContentPx;
+      const fit = cuts.filter(c => c > startPx + 10 && c <= endPx);
+      if (fit.length) endPx = fit[fit.length - 1];          // last block boundary that fits
+      else endPx = Math.min(endPx, canvas.height);          // a block taller than page → hard cut
+      const sliceH = Math.min(endPx, canvas.height) - startPx;
+      const tmp = document.createElement('canvas');
+      tmp.width = canvas.width; tmp.height = sliceH;
+      tmp.getContext('2d').drawImage(canvas, 0, startPx, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+      if (!first) pdf.addPage(); first = false;
+      pdf.addImage(tmp.toDataURL('image/jpeg', 0.95), 'JPEG', margin, margin, usableW, sliceH / pxPerMm);
+      startPx = endPx;
     }
     pdf.save(_expFileName() + '.pdf');
     hideLoading(); showToast('✅ ดาวน์โหลด PDF สำเร็จ', 'success');
@@ -13743,6 +13763,11 @@ function _calStatusPal(t) {
   if (!delivered) return CAL_PAL_TRANSIT;
   const paid = (t.paymentStatus || 'ค้างจ่าย') === 'จ่ายแล้ว';
   return paid ? CAL_PAL_PAID : CAL_PAL_UNPAID;
+}
+// v15.42 — status text matching the 3-color logic
+function _calStatusText(t) {
+  if (_autoTripStatus(t) !== 'ส่งแล้ว') return 'กำลังขนส่ง';
+  return (t.paymentStatus || 'ค้างจ่าย') === 'จ่ายแล้ว' ? 'จ่ายแล้ว' : 'ค้างจ่าย';
 }
 function _statusDot(s) {
   return s === 'ส่งแล้ว' ? '🟢' : '🔵';
@@ -15157,7 +15182,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.41';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.42';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
