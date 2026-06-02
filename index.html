@@ -4720,6 +4720,30 @@
       font-family: inherit;
     }
     .sw-round-auto:hover { background: #f4f4f5; border-color: #d4d4d8; }
+    /* v15.03 — Trip-date row: 2 columns (dates 1fr each) + auto-sized round chip */
+    .sw-trip-date-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 10px;
+      margin-bottom: 12px;
+      align-items: end;
+    }
+    .sw-round-auto--inline {
+      /* compact chip ที่นั่งบนแถวเดียวกับช่องวันที่ — สูงเท่า input (~44px) */
+      height: 44px; padding: 0 8px 0 12px; box-sizing: border-box;
+      border-radius: 10px;
+    }
+    .sw-round-auto--inline .sw-round-auto-input { height: 28px; width: 52px; font-size: .92rem; }
+    .sw-round-auto--inline .sw-round-auto-btn   { width: 26px; height: 26px; font-size: .9rem; }
+    @media (max-width: 640px) {
+      .sw-trip-date-row {
+        grid-template-columns: 1fr 1fr;
+      }
+      .sw-trip-date-row > .form-row:last-child {
+        grid-column: 1 / -1;
+      }
+      .sw-round-auto--inline { width: 100%; justify-content: center; }
+    }
     .sw-round-auto-label {
       font-size: .7rem; font-weight: 700; color: #6b7280;
       letter-spacing: .2px; line-height: 1;
@@ -4896,7 +4920,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.02 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.03 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -4961,16 +4985,9 @@
     </div>
 
     <div class="card">
-      <!-- v15.02 — รอบเที่ยว วางมุมขวาบนเป็น compact chip; วันที่กลับเป็น 2 คอลัมน์ปกติ -->
-      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
-        <span>📅 วันที่และรอบเที่ยว</span>
-        <span class="sw-round-auto">
-          <span class="sw-round-auto-label">รอบ</span>
-          <input type="number" id="t-tripRound" min="1" class="sw-round-auto-input">
-          <button type="button" onclick="autoFillTripRound()" title="ใช้เลขถัดไปอัตโนมัติ" class="sw-round-auto-btn">↻</button>
-        </span>
-      </div>
-      <div class="form-row-2">
+      <div class="card-title">📅 วันที่และรอบเที่ยว</div>
+      <!-- v15.03 — วันที่ 2 คอลัมน์ + รอบเที่ยว auto width (กระชับพอดี) -->
+      <div class="sw-trip-date-row">
         <div class="form-row">
           <label>📥 วันเข้ารับสินค้า <span class="req">*</span></label>
           <input type="date" id="t-pickupDate" required>
@@ -4978,6 +4995,13 @@
         <div class="form-row">
           <label>📤 วันส่งสินค้า</label>
           <input type="date" id="t-deliveryDate">
+        </div>
+        <div class="form-row">
+          <label>🔄 รอบ</label>
+          <span class="sw-round-auto sw-round-auto--inline">
+            <input type="number" id="t-tripRound" min="1" class="sw-round-auto-input">
+            <button type="button" onclick="autoFillTripRound()" title="ใช้เลขถัดไปอัตโนมัติ" class="sw-round-auto-btn">↻</button>
+          </span>
         </div>
       </div>
       <input type="hidden" id="t-status" value="รอโหลด">
@@ -14294,7 +14318,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.02';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.03';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
@@ -14557,7 +14581,7 @@ function _swdpAttach(input) {
   const display = document.createElement('input');
   display.type = 'text';
   display.className = 'swdp-display';
-  display.placeholder = 'เลือกวันที่ หรือ พิมพ์ 28 พ.ค. 2569';
+  display.placeholder = 'เลือกวันที่';
   display.inputMode = 'numeric';
   if (input.required) display.required = true;
 
