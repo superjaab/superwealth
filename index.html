@@ -5064,7 +5064,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.15 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.16 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -13376,13 +13376,13 @@ function _buildMonthGridWeeks(_calYear, _calMonth, trips) {
       if (!_calPlate && t.plateNumber) labelParts.push(t.plateNumber);
       if (t.origin || t.destination) labelParts.push((t.origin||'-') + ' → ' + (t.destination||'-'));
       const label = `${datePart} · ${labelParts.join(' · ')}`;
-      // v15.15 — Second line: origin customer → destination customer
+      // v15.15 / v15.16 — Second line: origin customer → destination customer (with labels)
       const oc = (t.originCustomer || '').trim();
       const dc = (t.customerName   || '').trim();
       let custLine = '';
-      if (oc && dc && oc !== dc) custLine = oc + ' → ' + dc;
-      else if (dc) custLine = dc;
-      else if (oc) custLine = oc;
+      if (oc && dc && oc !== dc) custLine = 'ต้นทาง: ' + oc + ' → ปลายทาง: ' + dc;
+      else if (dc) custLine = 'ปลายทาง: ' + dc;
+      else if (oc) custLine = 'ต้นทาง: ' + oc;
       // Payment badge (ค้างจ่าย = red, จ่ายแล้ว = subtle ✓)
       const isPaid = (t.paymentStatus || 'ค้างจ่าย') === 'จ่ายแล้ว';
       const payBadge = isPaid
@@ -14568,7 +14568,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.15';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.16';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
