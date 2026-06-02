@@ -5170,7 +5170,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.44 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.45 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -12842,11 +12842,12 @@ function _expRenderOpts() {
   const t = EXPORT_STATE.type;
   if (t === 'calendar') {
     const months = _expAvailableMonths();
+    // v15.45 — keep previously-selected months (prune ones no longer available)
+    EXPORT_STATE.months = new Set([...EXPORT_STATE.months].filter(ym => months.includes(ym)));
     box.innerHTML = `<div class="exp-opt-box">
       <div class="exp-opt-label">📅 เลือกเดือน (เลือกได้หลายเดือน)</div>
-      <div>${months.length ? months.map(ym => `<button type="button" class="exp-month-chip" data-ym="${ym}" onclick="_expToggleMonth(this)">${_expMonthLabel(ym)}</button>`).join('') : '<span style="color:#94a3b8">— ยังไม่มีข้อมูลเที่ยวรถ —</span>'}</div>
+      <div>${months.length ? months.map(ym => `<button type="button" class="exp-month-chip${EXPORT_STATE.months.has(ym)?' on':''}" data-ym="${ym}" onclick="_expToggleMonth(this)">${_expMonthLabel(ym)}</button>`).join('') : '<span style="color:#94a3b8">— ยังไม่มีข้อมูลเที่ยวรถ —</span>'}</div>
     </div>`;
-    EXPORT_STATE.months.clear();
   } else {
     const today = new Date().toISOString().slice(0,10);
     const monthAgo = new Date(Date.now() - 30*86400000).toISOString().slice(0,10);
@@ -12859,7 +12860,9 @@ function _expRenderOpts() {
         <label style="margin-right:16px;font-size:.85rem;font-weight:700"><input type="checkbox" checked onchange="EXPORT_STATE.incInc=this.checked"> 💰 รายรับ</label>
         <label style="font-size:.85rem;font-weight:700"><input type="checkbox" checked onchange="EXPORT_STATE.incExp=this.checked"> 💸 รายจ่าย</label>
         ${cats.length ? `<div class="exp-opt-label" style="margin-top:12px">หมวดรายจ่าย <span style="font-weight:400;color:#94a3b8">(ไม่เลือก = ทุกหมวด)</span></div>
-        <div>${cats.map(c => `<button type="button" class="exp-month-chip" data-cat="${escAttr(c)}" onclick="_expToggleCat(this)">${escHtml(c)}</button>`).join('')}</div>` : ''}`;
+        <div>${cats.map(c => `<button type="button" class="exp-month-chip${EXPORT_STATE.cats.has(c)?' on':''}" data-cat="${escAttr(c)}" onclick="_expToggleCat(this)">${escHtml(c)}</button>`).join('')}</div>` : ''}`;
+      // v15.45 — prune cats no longer available
+      EXPORT_STATE.cats = new Set([...EXPORT_STATE.cats].filter(c => cats.includes(c)));
     }
     box.innerHTML = `<div class="exp-opt-box">
       <div class="exp-opt-label">📆 ช่วงวันที่</div>
@@ -12869,7 +12872,6 @@ function _expRenderOpts() {
         <input type="date" value="${EXPORT_STATE.dateTo}" onchange="EXPORT_STATE.dateTo=this.value" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-family:inherit">
       </div>${extra}
     </div>`;
-    EXPORT_STATE.cats.clear();
   }
 }
 function buildReport() {
@@ -12879,7 +12881,6 @@ function buildReport() {
   try {
     if (t === 'calendar')       html = _expCalendarDoc();
     else if (t === 'finance')   html = _expFinanceDoc();
-    else if (t === 'trips')     html = _expTripsDoc();
     else if (t === 'dashboard') html = _expDashboardDoc();
   } catch (e) { html = `<div class="exp-doc" id="exp-report-doc"><div class="exp-empty">❌ ${escHtml(e.message)}</div></div>`; }
   pv.innerHTML = html;
@@ -12928,20 +12929,7 @@ function _expFinanceDoc() {
     </div>` : '<div class="exp-empty">📭 ไม่มีข้อมูลในช่วงที่เลือก</div>';
   return _expDocWrap('รายงานรายรับ-รายจ่าย', `${fmtDate(from)} – ${fmtDate(to)} · ${rows.length} รายการ`, body);
 }
-function _expTripsDoc() {
-  const from = EXPORT_STATE.dateFrom, to = EXPORT_STATE.dateTo;
-  const inRange = d => { const s = String(d||'').slice(0,10); return s && s >= from && s <= to; };
-  const rows = (_master.truckHistory||[]).filter(t => inRange(t.pickupDate||t.jobDate)).sort((a,b)=>(parseInt(b.tripRound)||0)-(parseInt(a.tripRound)||0));
-  let sumFreight = 0; rows.forEach(r => sumFreight += parseFloat(r.freightCost)||0);
-  const body = rows.length ? `
-    <table class="exp-tbl"><thead><tr><th>รอบ</th><th>วันที่</th><th>ทะเบียน</th><th>ลูกค้า</th><th>เส้นทาง</th><th>สินค้า</th><th class="num">ค่าขนส่ง</th><th>สถานะ</th></tr></thead>
-    <tbody>${rows.map(r => { const paid=(r.paymentStatus||'ค้างจ่าย')==='จ่ายแล้ว'; return `<tr><td>${r.tripRound?'#'+escHtml(r.tripRound):'-'}</td><td>${fmtDate(r.pickupDate||r.jobDate)}</td><td>${escHtml(r.plateNumber||'-')}</td><td>${escHtml(r.customerName||r.originCustomer||'-')}</td><td>${escHtml((r.origin||'-')+' → '+(r.destination||'-'))}</td><td>${escHtml(r.cargoList||'-')}</td><td class="num">${r.freightCost?fmtBaht(r.freightCost):'-'}</td><td style="color:${paid?'#059669':'#d97706'};font-weight:700">${paid?'✓ จ่ายแล้ว':'⏰ ค้างจ่าย'}</td></tr>`; }).join('')}</tbody></table>
-    <div class="exp-kpi-row" style="grid-template-columns:repeat(2,1fr)">
-      <div class="exp-kpi" style="border-color:#93c5fd;background:#eff6ff"><div class="exp-kpi-label">🚚 จำนวนเที่ยว</div><div class="exp-kpi-val" style="color:#1d4ed8">${rows.length} เที่ยว</div></div>
-      <div class="exp-kpi" style="border-color:#86efac;background:#f0fdf4"><div class="exp-kpi-label">💰 ค่าขนส่งรวม</div><div class="exp-kpi-val" style="color:#059669">${fmtBaht(sumFreight)}</div></div>
-    </div>` : '<div class="exp-empty">📭 ไม่มีเที่ยวรถในช่วงที่เลือก</div>';
-  return _expDocWrap('รายงานสรุปเที่ยวรถ', `${fmtDate(from)} – ${fmtDate(to)}`, body);
-}
+// v15.45 — removed _expTripsDoc (merged into calendar report; chip removed)
 function _expDashboardDoc() {
   const from = EXPORT_STATE.dateFrom, to = EXPORT_STATE.dateTo;
   const inRange = d => { const s = String(d||'').slice(0,10); return s && s >= from && s <= to; };
@@ -15181,7 +15169,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.44';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.45';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
