@@ -2292,12 +2292,17 @@
       transition: transform .18s cubic-bezier(.2,.7,.3,1),
                   box-shadow .18s ease,
                   border-color .18s ease;
-      will-change: transform;
+      /* v15.22 — removed will-change:transform (created stacking context that
+         trapped the kebab dropdown behind the next card → couldn't click ลบ) */
     }
     .record-card:hover {
       transform: translateY(-1px);
       box-shadow: 0 6px 18px rgba(15,23,42,.07), 0 2px 4px rgba(15,23,42,.04);
     }
+    /* v15.22 — when its kebab menu is open, lift card above siblings + kill
+       transform so the dropdown isn't clipped/covered */
+    .record-card.rc-elevated { z-index: 200 !important; }
+    .record-card.rc-elevated, .record-card.rc-elevated:hover { transform: none !important; }
     body.dark .record-card:hover {
       box-shadow: 0 6px 18px rgba(0,0,0,.35), 0 2px 4px rgba(0,0,0,.2);
     }
@@ -5064,7 +5069,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.21 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.22 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -11384,10 +11389,17 @@ function toggleKebab(e, btn) {
   if (!menu || !menu.classList.contains('rc-menu')) return;
   const isOpen = menu.classList.contains('open');
   closeAllKebabs();
-  if (!isOpen) menu.classList.add('open');
+  if (!isOpen) {
+    menu.classList.add('open');
+    // v15.22 — elevate the parent card so the dropdown isn't covered by next card
+    const card = btn.closest('.record-card');
+    if (card) card.classList.add('rc-elevated');
+  }
 }
 function closeAllKebabs() {
   document.querySelectorAll('.rc-menu.open').forEach(m => m.classList.remove('open'));
+  // v15.22 — drop elevation from any previously-open card
+  document.querySelectorAll('.record-card.rc-elevated').forEach(c => c.classList.remove('rc-elevated'));
 }
 // Close menu on outside click (registered once)
 document.addEventListener('click', e => {
@@ -14620,7 +14632,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.21';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.22';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
