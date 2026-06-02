@@ -2414,7 +2414,7 @@
     }
 
     /* ════ v15.32 — EXPORT REPORT TAB ════ */
-    .exp-type-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+    .exp-type-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
     @media (max-width:640px){ .exp-type-grid{ grid-template-columns:repeat(2,1fr);} }
     .exp-type-chip {
       display:flex; flex-direction:column; align-items:center; gap:6px;
@@ -2464,16 +2464,26 @@
     .exp-kpi-label { font-size:11px; font-weight:700; color:#64748b; }
     .exp-kpi-val { font-size:18px; font-weight:900; margin-top:3px; font-variant-numeric:tabular-nums; }
     .exp-doc-foot { margin-top:20px; padding-top:12px; border-top:1px dashed #cbd5e1; font-size:10.5px; color:#94a3b8; display:flex; justify-content:space-between; }
+    /* v15.40 — formal/official report styling */
+    .exp-doc--formal { padding:40px 44px; }
+    .exp-letterhead { text-align:center; border-bottom:3px double #0f172a; padding-bottom:14px; margin-bottom:16px; }
+    .exp-lh-brand { font-size:24px; font-weight:900; color:#0f172a; letter-spacing:.5px; }
+    .exp-lh-sub { font-size:12px; color:#475569; margin-top:3px; }
+    .exp-doc-title-row { text-align:center; margin-bottom:10px; }
+    .exp-doc-title2 { font-size:19px; font-weight:900; color:#1d4ed8; }
+    .exp-doc-range2 { font-size:13px; color:#475569; margin-top:2px; font-weight:600; }
+    .exp-doc-meta { display:flex; justify-content:space-between; font-size:11.5px; color:#64748b; border:1px solid #e2e8f0; background:#f8fafc; border-radius:8px; padding:7px 12px; margin-bottom:18px; }
+    .exp-sign-row { display:flex; justify-content:space-around; gap:40px; margin-top:38px; }
+    .exp-sign { flex:1; text-align:center; font-size:12px; color:#475569; font-weight:600; max-width:240px; }
+    .exp-sign-line { border-bottom:1.5px dotted #475569; height:34px; margin-bottom:6px; }
     /* Mini calendar grid for export */
     .exp-cal { width:100%; border-collapse:collapse; margin-bottom:18px; table-layout:fixed; }
     .exp-cal th { background:#eef2f7; color:#475569; font-size:11px; padding:6px 2px; text-align:center; border:1px solid #d1d9e2; font-weight:800; }
-    .exp-cal td { border:1px solid #d1d9e2; vertical-align:top; height:96px; padding:3px 4px; font-size:10px; }
-    .exp-cal td .d { font-weight:800; color:#334155; font-size:11px; }
+    .exp-cal td { border:1px solid #d1d9e2; vertical-align:top; height:64px; padding:3px 4px; font-size:10px; }
+    .exp-cal td .d { font-weight:800; color:#334155; font-size:11px; display:block; margin-bottom:2px; }
     .exp-cal td.other .d { color:#cbd5e1; }
-    /* v15.39 — web-style pastel trip pill */
-    .exp-cal-evt { display:block; border-radius:5px; padding:2px 4px; margin-top:3px; line-height:1.3; font-weight:700; overflow:hidden; }
-    .exp-cal-round { display:inline-block; background:#fff; border:1px solid currentColor; border-radius:4px; padding:0 4px; font-weight:900; font-size:9.5px; margin-right:3px; }
-    .exp-cal-route { display:block; font-size:8.5px; font-weight:600; opacity:.9; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    /* v15.40 — calendar shows only compact "รอบ N" chips (pastel by status) */
+    .exp-cal-evt { display:inline-block; border-radius:4px; padding:1px 6px; margin:1px 2px 1px 0; line-height:1.4; font-weight:800; font-size:9.5px; }
     .exp-empty { text-align:center; color:#94a3b8; padding:40px 16px; }
 
     /* ─── REDUCED MOTION ─── */
@@ -5143,7 +5153,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.39 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.40 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -7430,7 +7440,6 @@
       <div class="exp-type-grid" id="exp-type-grid">
         <button type="button" class="exp-type-chip active" data-type="calendar" onclick="exportSetType('calendar',this)">📅<span>ปฏิทินเที่ยวรถ</span></button>
         <button type="button" class="exp-type-chip" data-type="finance" onclick="exportSetType('finance',this)">💰<span>รายรับ-รายจ่าย</span></button>
-        <button type="button" class="exp-type-chip" data-type="trips" onclick="exportSetType('trips',this)">🚚<span>สรุปเที่ยวรถ</span></button>
         <button type="button" class="exp-type-chip" data-type="dashboard" onclick="exportSetType('dashboard',this)">📊<span>สรุปผลรวม</span></button>
       </div>
 
@@ -12862,13 +12871,24 @@ function buildReport() {
 function _expDocWrap(title, range, bodyHtml) {
   const now = new Date();
   const stamp = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()+543} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  return `<div class="exp-doc" id="exp-report-doc">
-    <div class="exp-doc-head">
-      <div><div class="exp-doc-brand">🚛 SuperWealth Transport</div><div class="exp-doc-sub">ระบบขนส่งรถบรรทุก · รายงาน</div></div>
-      <div><div class="exp-doc-title">${title}</div>${range ? `<div class="exp-doc-range">${range}</div>` : ''}</div>
+  // v15.40 — formal/official report layout: centered letterhead, doc number, signature block
+  const docNo = `RPT-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+  return `<div class="exp-doc exp-doc--formal" id="exp-report-doc">
+    <div class="exp-letterhead">
+      <div class="exp-lh-brand">SuperWealth Transport</div>
+      <div class="exp-lh-sub">บริษัท ซูเปอร์เวลธ์ ทรานสปอร์ต · ระบบบริหารงานขนส่งรถบรรทุก</div>
     </div>
+    <div class="exp-doc-title-row">
+      <div class="exp-doc-title2">${title}</div>
+      ${range ? `<div class="exp-doc-range2">${range}</div>` : ''}
+    </div>
+    <div class="exp-doc-meta"><span>เลขที่เอกสาร: <b>${docNo}</b></span><span>วันที่ออกรายงาน: <b>${stamp} น.</b></span></div>
     ${bodyHtml}
-    <div class="exp-doc-foot"><span>ออกรายงานเมื่อ ${stamp} น.</span><span>SuperWealth Transport</span></div>
+    <div class="exp-sign-row">
+      <div class="exp-sign"><div class="exp-sign-line"></div>ผู้จัดทำรายงาน</div>
+      <div class="exp-sign"><div class="exp-sign-line"></div>ผู้ตรวจสอบ / อนุมัติ</div>
+    </div>
+    <div class="exp-doc-foot"><span>เอกสารนี้ออกโดยระบบอัตโนมัติ · SuperWealth Transport</span><span>${docNo}</span></div>
   </div>`;
 }
 function _expFinanceDoc() {
@@ -12956,23 +12976,50 @@ function _expCalendarDoc() {
     for (let i = 0; i < startDow; i++) cells.push('<td class="other"></td>');
     for (let d = 1; d <= daysIn; d++) {
       const ts = dayTrips[d] || [];
-      // v15.39 — match web calendar: pastel by status (3 colors) + รอบ chip + route
-      const evts = ts.slice(0,4).map(t => {
+      // v15.40 — ปฏิทินโชว์แค่ "รอบ N" (พาสเทลตามสถานะ) เพื่อความกระชับ/ทางการ
+      const evts = ts.slice(0,5).map(t => {
         const pal = _calStatusPal(t);
-        const icon = _autoTripStatus(t) === 'ส่งแล้ว' ? '✅' : '🚚';
-        const route = (t.origin || t.destination) ? `${escHtml(t.origin||'-')} → ${escHtml(t.destination||'-')}` : '';
-        return `<span class="exp-cal-evt" style="background:${pal.bg};color:${pal.fg};border:1px solid ${pal.fg}33">`
-          + `<b class="exp-cal-round" style="border-color:${pal.fg}">รอบ ${escHtml(t.tripRound||'-')}</b> ${icon} ${escHtml(t.plateNumber||'')}`
-          + (route ? `<span class="exp-cal-route">${route}</span>` : '')
-          + `</span>`;
+        return `<span class="exp-cal-evt" style="background:${pal.bg};color:${pal.fg};border:1px solid ${pal.fg}">รอบ ${escHtml(t.tripRound || '-')}</span>`;
       }).join('');
-      const more = ts.length > 4 ? `<span style="color:#94a3b8;font-size:9px">+${ts.length-4} เที่ยว</span>` : '';
+      const more = ts.length > 5 ? `<span style="color:#94a3b8;font-size:9px">+${ts.length-5}</span>` : '';
       cells.push(`<td><span class="d">${d}</span>${evts}${more}</td>`);
     }
     while (cells.length % 7 !== 0) cells.push('<td class="other"></td>');
     const rowsHtml = [];
     for (let i = 0; i < cells.length; i += 7) rowsHtml.push('<tr>' + cells.slice(i, i+7).join('') + '</tr>');
     body += `<table class="exp-cal"><thead><tr>${dow.map(d=>`<th>${d}</th>`).join('')}</tr></thead><tbody>${rowsHtml.join('')}</tbody></table>`;
+
+    // v15.40 — Trip summary table for THIS month, right after its calendar
+    const monthTrips = trips.filter(t => {
+      const s = (t.pickupDate || t.jobDate || '').slice(0,7);
+      return s === ym;
+    }).sort((a,b) => (parseInt(a.tripRound)||0) - (parseInt(b.tripRound)||0));
+    if (monthTrips.length) {
+      let sumFreight = 0;
+      const trows = monthTrips.map(t => {
+        const fr = parseFloat(t.freightCost) || 0; sumFreight += fr;
+        const paid = (t.paymentStatus||'ค้างจ่าย') === 'จ่ายแล้ว';
+        const st = _autoTripStatus(t) !== 'ส่งแล้ว' ? 'กำลังขนส่ง' : (paid ? 'จ่ายแล้ว' : 'ค้างจ่าย');
+        const stColor = st === 'กำลังขนส่ง' ? '#1d4ed8' : (paid ? '#047857' : '#b45309');
+        const cust = (t.originCustomer && t.customerName && t.originCustomer !== t.customerName)
+          ? `${escHtml(t.originCustomer)} → ${escHtml(t.customerName)}`
+          : escHtml(t.customerName || t.originCustomer || '-');
+        return `<tr>
+          <td style="text-align:center;font-weight:800">${escHtml(t.tripRound||'-')}</td>
+          <td>${fmtDate(t.pickupDate||t.jobDate)}</td>
+          <td>${escHtml(t.plateNumber||'-')}</td>
+          <td>${cust}</td>
+          <td>${escHtml(t.origin||'-')} → ${escHtml(t.destination||'-')}</td>
+          <td class="num">${fr ? fmtBaht(fr) : '-'}</td>
+          <td style="text-align:center;color:${stColor};font-weight:700">${st}</td>
+        </tr>`;
+      }).join('');
+      body += `<div style="font-size:12px;font-weight:800;color:#475569;margin:6px 0 6px;padding-left:8px;border-left:3px solid #94a3b8">📋 สรุปเที่ยวรถ ${_expMonthLabel(ym)} · ${monthTrips.length} เที่ยว</div>
+        <table class="exp-tbl" style="margin-bottom:18px"><thead><tr><th style="text-align:center">รอบ</th><th>วันที่</th><th>ทะเบียน</th><th>ลูกค้า</th><th>เส้นทาง</th><th class="num">ค่าขนส่ง</th><th style="text-align:center">สถานะ</th></tr></thead>
+        <tbody>${trows}</tbody>
+        <tfoot><tr style="background:#f1f5f9;font-weight:800"><td colspan="5" style="text-align:right;padding:8px 10px">รวมค่าขนส่ง</td><td class="num" style="padding:8px 10px">${fmtBaht(sumFreight)}</td><td></td></tr></tfoot>
+        </table>`;
+    }
   });
   return _expDocWrap('ปฏิทินเที่ยวรถ', months.map(_expMonthLabel).join(' · '), body);
 }
@@ -15071,7 +15118,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.39';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.40';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
