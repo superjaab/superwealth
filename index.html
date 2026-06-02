@@ -4990,6 +4990,13 @@
     .sw-time-pick select { flex: 1; min-width: 0; text-align: center; font-variant-numeric: tabular-nums; cursor: pointer; }
     .sw-time-colon { font-weight: 800; color: #94a3b8; }
 
+    /* v15.68 — ลากจัดลำดับลูกค้า */
+    #cust-list .record-card.cust-drag { cursor: grab; }
+    #cust-list .record-card.cust-drag:active { cursor: grabbing; }
+    #cust-list .record-card.rc-dragging { opacity: .4; }
+    #cust-list .record-card.rc-dragover { outline: 2px dashed #7c3aed; outline-offset: 2px; background: #faf5ff; }
+    .rc-grip { cursor: grab; color: #c4b5fd; font-size: 1.05rem; margin-right: 6px; user-select: none; vertical-align: middle; }
+
     /* v15.02 — Trip round chip: compact pill ที่มุมขวาบนของ card-title
        สไตล์ off-white minimal เหมือน sw-doc-auto แต่แก้ตัวเลขได้ + ปุ่ม refresh */
     .sw-round-auto {
@@ -5203,7 +5210,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.67 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.68 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -9823,7 +9830,13 @@ function getCustomerOpts() {
     if (n) set.set(n, c);
   });
   _master.truckHistory.forEach(t => { if (t.customerName && !set.has(t.customerName)) set.set(t.customerName, null); });
-  return Array.from(set.entries()).sort().map(([name, c]) => {
+  // v15.68 — เรียงตามลำดับที่ผู้ใช้ลากไว้ (ลูกค้าที่จัดลำดับมาก่อน) แล้วที่เหลือเรียงตามตัวอักษร
+  const order = (typeof _getCustOrder === 'function') ? _getCustOrder() : [];
+  return Array.from(set.entries()).sort((a, b) => {
+    const ia = order.indexOf(a[0]), ib = order.indexOf(b[0]);
+    if (ia < 0 && ib < 0) return String(a[0]).localeCompare(String(b[0]), 'th');
+    return (ia < 0 ? 1e9 : ia) - (ib < 0 ? 1e9 : ib);
+  }).map(([name, c]) => {
     const sub = c ? [c.contactName, c.phone].filter(x => x).join(' • ') : '';
     return { value: name, label: name, sub };
   });
@@ -12568,9 +12581,57 @@ function submitCustomer() {
     paymentTerms:gv('c-terms')||'เงินสด', cargoItems:gv('c-cargo'), notes:gv('c-notes')
   }, ()=>resetFields(['c-name','c-contact','c-phone','c-email','c-province','c-address','c-taxid','c-terms','c-cargo','c-notes']));
 }
+// ─── v15.68 — ลากจัดลำดับลูกค้า (เก็บใน localStorage, มีผลกับ dropdown) ───
+function _getCustOrder() {
+  try { const a = JSON.parse(localStorage.getItem('sw_cust_order') || '[]'); return Array.isArray(a) ? a : []; }
+  catch { return []; }
+}
+function _setCustOrder(names) { try { localStorage.setItem('sw_cust_order', JSON.stringify(names)); } catch {} }
+let _custDragEl = null;
+function custDragStart(e, el) {
+  _custDragEl = el;
+  try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', el.dataset.cust || ''); } catch {}
+  setTimeout(() => el.classList.add('rc-dragging'), 0);
+}
+function custDragOver(e, el) {
+  e.preventDefault();
+  try { e.dataTransfer.dropEffect = 'move'; } catch {}
+  if (el && el !== _custDragEl) el.classList.add('rc-dragover');
+}
+function custDragLeave(e, el) { if (el) el.classList.remove('rc-dragover'); }
+function custDrop(e, el) {
+  e.preventDefault();
+  if (el) el.classList.remove('rc-dragover');
+  if (!_custDragEl || !el || _custDragEl === el) return;
+  const parent = el.parentNode;
+  const r = el.getBoundingClientRect();
+  const after = e.clientY > r.top + r.height / 2;   // วางก่อน/หลังตามตำแหน่งเมาส์
+  parent.insertBefore(_custDragEl, after ? el.nextSibling : el);
+  const names = Array.from(parent.querySelectorAll('[data-cust]')).map(c => c.dataset.cust).filter(Boolean);
+  _setCustOrder(names);
+  showToast('✅ บันทึกลำดับลูกค้าแล้ว — มีผลกับ dropdown', 'success');
+}
+function custDragEnd() {
+  document.querySelectorAll('#cust-list .rc-dragover').forEach(x => x.classList.remove('rc-dragover'));
+  if (_custDragEl) _custDragEl.classList.remove('rc-dragging');
+  _custDragEl = null;
+}
+
 function renderCustomerList(items) {
+  // v15.68 — เรียงตามลำดับที่ลากไว้ (ถ้ามี) ไม่งั้นใหม่สุดก่อน
+  const order = _getCustOrder();
+  let list = [...items];
+  if (order.length) {
+    const ix = n => { const i = order.indexOf(n); return i < 0 ? 1e9 : i; };
+    list.sort((a, b) => ix(a.customerName || '') - ix(b.customerName || ''));
+  } else {
+    list.reverse();
+  }
+  const hint = list.length > 1
+    ? `<div style="font-size:.74rem;color:#94a3b8;margin:0 2px 10px;display:flex;align-items:center;gap:6px"><span style="color:#c4b5fd;font-size:1rem">⠿</span> ลากการ์ดขึ้น-ลงเพื่อจัดลำดับ — ลำดับนี้จะใช้ใน dropdown เลือกลูกค้าด้วย</div>`
+    : '';
   // v14.90 — Show ALL captured fields (was missing email, address, cargoItems, notes)
-  return [...items].reverse().map(c => {
+  return hint + list.map(c => {
     const subFields = [
       c.contactName ? escHtml(c.contactName) : '',
       c.phone ? `📞 ${escHtml(c.phone)}` : '',
@@ -12582,9 +12643,13 @@ function renderCustomerList(items) {
     const addrLine = c.address ? `<div class="rc-sub" style="color:#64748b"><span>🏠 ${escHtml(c.address)}</span></div>` : '';
     const cargoLine = c.cargoItems ? `<div class="rc-sub" style="margin-top:6px;padding:6px 8px;background:#f3e8ff;border-radius:6px;color:#581c87;font-size:.78rem"><span>📦 สินค้าที่ขนส่ง: ${escHtml(c.cargoItems)}</span></div>` : '';
     const notesLine = c.notes ? `<div class="rc-sub" style="margin-top:6px;color:#94a3b8;font-size:.78rem">📝 ${escHtml(c.notes)}</div>` : '';
+    const _cn = c.customerName || '';
     return `
-    <div class="record-card" style="border-left-color:#4A148C">
-      <div class="rc-title">🏢 ${escHtml(c.customerName||'')}</div>
+    <div class="record-card cust-drag" draggable="true" data-cust="${escAttr(_cn)}"
+         ondragstart="custDragStart(event,this)" ondragover="custDragOver(event,this)"
+         ondragleave="custDragLeave(event,this)" ondrop="custDrop(event,this)" ondragend="custDragEnd(event,this)"
+         style="border-left-color:#4A148C">
+      <div class="rc-title"><span class="rc-grip" title="ลากเพื่อจัดลำดับ">⠿</span>🏢 ${escHtml(_cn)}</div>
       ${subFields ? `<div class="rc-sub">${subFields}</div>` : ''}
       ${taxLine}
       ${provLine}
@@ -15741,7 +15806,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.67';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.68';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
