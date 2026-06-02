@@ -51,14 +51,12 @@ module.exports = async function handler(req, res) {
     if (rowIdIdx < 0) return res.status(400).json({ success:false, error:'Sheet has no rowId column' });
 
     const target = String(rowId || '').trim();
+    // v15.14 — Strict lookup only by rowId column.
+    // Previous fallback scanned ALL cells → could match same string in remark/notes
+    // and delete the wrong row (e.g. user typed rowId-like text in remark).
     let foundIdx = -1;
     for (let i = 1; i < rows.length; i++) {
       if (String(rows[i][rowIdIdx] || '').trim() === target) { foundIdx = i; break; }
-    }
-    if (foundIdx < 0) {
-      for (let i = 1; i < rows.length; i++) {
-        if ((rows[i] || []).some(v => String(v||'').trim() === target)) { foundIdx = i; break; }
-      }
     }
     if (foundIdx < 0) return res.status(404).json({ success:false, error:'rowId not found: ' + target });
 

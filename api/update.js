@@ -152,6 +152,21 @@ const CONFIGS = {
       active: d.active === false ? 'false' : 'true',
       rowId: id
     })
+  },
+  // v15.14 — was missing → edit on capital movement returned "Invalid type"
+  capitalMovement: {
+    name: 'CapitalMovements',
+    data: (d, ts, id) => ({
+      timestamp: ts,
+      docNumber: d.docNumber || '',
+      movementDate: d.movementDate || '',
+      accountRowId: d.accountRowId || '',
+      accountName: d.accountName || '',
+      movementType: d.movementType || 'deposit',
+      amount: +d.amount || 0,
+      note: d.note || '',
+      rowId: id
+    })
   }
 };
 

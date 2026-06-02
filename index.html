@@ -5064,7 +5064,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.13 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.14 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -11189,6 +11189,10 @@ function _prefillForm(type, record) {
     } else if (el._flatpickr && v !== '') {
       // v14.17 — use Flatpickr API so altInput display stays in sync
       el._flatpickr.setDate(String(v), false);
+    } else if (el._flatpickr) {
+      // v15.14 — Clear Flatpickr (incl. altInput display) when source value is empty
+      // (previously left stale date showing from a prior edit)
+      el._flatpickr.clear();
     } else {
       el.value = String(v);
     }
@@ -11306,6 +11310,11 @@ async function confirmDel() {
     hideLoading();
     if (result.success) {
       showToast('🗑 ลบสำเร็จ', 'success');
+      // v15.14 — If the deleted record was currently being edited, exit edit mode
+      // (otherwise next "บันทึก" tries to update a non-existent rowId)
+      if (_editingMode[type] === rowId) {
+        try { cancelEdit(type, true); } catch(e) { _editingMode[type] = null; }
+      }
       reloadList(type);
       loadMasterData();
       // v14.88 — refresh calendar if truck row was deleted (so cal-day-modal stays consistent)
@@ -14539,7 +14548,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.13';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.14';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
