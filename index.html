@@ -5210,7 +5210,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.68 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.69 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -12589,6 +12589,9 @@ function _getCustOrder() {
 function _setCustOrder(names) { try { localStorage.setItem('sw_cust_order', JSON.stringify(names)); } catch {} }
 let _custDragEl = null;
 function custDragStart(e, el) {
+  // v15.69 — ห้ามลากจัดลำดับขณะค้นหา (การ์ดที่ถูกซ่อนยังอยู่ใน DOM → ลำดับจะเพี้ยน)
+  const q = (document.getElementById('lt-input-customer')?.value || '').trim();
+  if (q) { e.preventDefault(); showToast('ล้างช่องค้นหาก่อน แล้วค่อยลากจัดลำดับ', 'warning'); return; }
   _custDragEl = el;
   try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', el.dataset.cust || ''); } catch {}
   setTimeout(() => el.classList.add('rc-dragging'), 0);
@@ -13569,14 +13572,10 @@ function renderTruckList(items) {
     // Tiebreak by timestamp DESC
     return (b.timestamp || '').localeCompare(a.timestamp || '');
   });
-  // Pre-build a lookup: tripRowId → sum of linked income amounts
-  const incomeByTrip = {};
-  (_master.incomeHistory || []).forEach(inc => {
-    const tripId = inc.linkedTripRowId;
-    if (!tripId) return;
-    const amt = parseFloat(inc.amount) || _detectAmount(inc) || 0;
-    incomeByTrip[tripId] = (incomeByTrip[tripId] || 0) + amt;
-  });
+  // v15.69 — ใช้ map กลาง (byRow + byRound) ให้ตรงกับตารางสรุป/คาดการณ์/ลูกค้าสูงสุด
+  //   เดิมใช้แค่ linkedTripRowId → รอบที่ลิงก์ด้วยเลขรอบล้วน แสดงสถานะจ่าย/ยอดไม่ตรงกับตารางสรุป
+  const _incMaps = _incomeByTripMaps();
+  const _linkedInc = t => (t.rowId && _incMaps.byRow[t.rowId]) || _incMaps.byRound[parseInt(t.tripRound)] || 0;
   // v14.16 — build expense lookup for header
   const expenseByTrip = {};
   (_master.expenseHistory || []).forEach(ex => {
@@ -13590,7 +13589,7 @@ function renderTruckList(items) {
   const roundSet = new Set();
   sorted.forEach(r => {
     const freight = parseFloat(r.freightCost) || 0;
-    const linkedInc = incomeByTrip[r.rowId] || 0;
+    const linkedInc = _linkedInc(r);
     sumIncome += freight > 0 ? freight : linkedInc;
     sumExpense += expenseByTrip[r.rowId] || 0;
     if (r.tripRound) roundSet.add(r.tripRound);
@@ -13639,9 +13638,9 @@ function renderTruckList(items) {
       : (r.pickupDate ? `📥 ${fmtDate(r.pickupDate)}` :
          r.deliveryDate ? `📤 ${fmtDate(r.deliveryDate)}` :
          `📅 ${fmtDate(r.jobDate)}${r.jobTime?' '+r.jobTime:''}`);
-    // ── ค่าขนส่ง: ใช้ freightCost ก่อน → ถ้า 0 ใช้รายรับที่ link มา ──
+    // ── ค่าขนส่ง: ใช้ freightCost ก่อน → ถ้า 0 ใช้รายรับที่ link มา (v15.69 byRow+byRound) ──
     const freight = parseFloat(r.freightCost) || 0;
-    const linkedIncome = incomeByTrip[r.rowId] || 0;
+    const linkedIncome = _linkedInc(r);
     const showAmount = freight > 0 ? freight : linkedIncome;
     const amountSource = freight > 0
       ? '' // ค่าเที่ยวจากฟอร์มเอง — ไม่ต้องระบุ
@@ -15806,7 +15805,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.68';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.69';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
