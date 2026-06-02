@@ -4941,7 +4941,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.07 | 02/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.08 | 02/06/2026</span>
   </div>
 </aside>
 
@@ -5375,9 +5375,18 @@
 <!-- ══ TAB: ปฏิทินเที่ยวรถ ══ -->
 <div class="tab-panel" id="tab-calendar">
   <style>
-    /* v15.07 — Override the global .tab-panel max-width (760px) สำหรับปฏิทินโดยเฉพาะ */
-    #tab-calendar.tab-panel { max-width: 100% !important; padding: 14px 24px 32px !important; }
+    /* v15.08 — Override the global .tab-panel max-width (760px) สำหรับปฏิทินโดยเฉพาะ
+       + เพิ่ม padding ข้างซ้าย-ขวาให้ปฏิทินไม่ติดขอบ + cap ความกว้าง plate filter */
+    #tab-calendar.tab-panel { max-width: 100% !important; padding: 18px 40px 32px !important; }
     #cal-wrap { max-width: none; width: 100%; margin: 0 auto; padding: 0 }
+    .cal-plate-filter { max-width: 280px; width: auto; flex: 0 0 auto; }
+    @media (min-width: 1700px) {
+      #tab-calendar.tab-panel { padding: 22px 64px 40px !important; }
+    }
+    @media (max-width: 640px) {
+      #tab-calendar.tab-panel { padding: 14px 12px 32px !important; }
+      .cal-plate-filter { max-width: none; width: 100%; }
+    }
     @media (min-width: 1400px) {
       .cal-daycell { min-height: 48px !important; padding: 12px 10px 6px !important; }
       .cal-week-events { grid-auto-rows: 26px !important; min-height: 96px !important; padding: 5px 6px 10px 6px !important; }
@@ -14377,7 +14386,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.07';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.08';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
