@@ -221,14 +221,13 @@
     search.addEventListener('input', render);      // แตะช่องค้นหา → แป้นพิมพ์ขึ้น (ตั้งใจพิมพ์)
     const pick = e => {
       const opt = e.target.closest('.ac-opt'); if (!opt) return;
-      e.preventDefault();
       input.value = opt.classList.contains('ac-opt-new') ? search.value.trim() : opt.textContent;
       closePanel();
       input.dispatchEvent(new Event('change', { bubbles: true }));
       input.blur();
     };
-    list.addEventListener('mousedown', pick);
-    list.addEventListener('touchstart', pick, { passive: false });
+    // v16.01 — เลือกตอน "click" (แตะแล้วปล่อย) เท่านั้น → เลื่อนรายการได้ ไม่เผลอเลือก
+    list.addEventListener('click', pick);
     document.addEventListener('click', e => { if (!wrap.contains(e.target)) closePanel(); });
   }
 
