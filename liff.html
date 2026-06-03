@@ -119,16 +119,22 @@
         {id:'customerName', label:'ลูกค้าปลายทาง', type:'customer', placeholder:'ผู้รับ / ปลายทาง'},
         {id:'origin', label:'จังหวัดต้นทาง', type:'province', half:true},
         {id:'destination', label:'จังหวัดปลายทาง', type:'province', half:true},
+        {id:'cargoList', label:'รายการสินค้า', type:'cargo', placeholder:'เลือกหรือพิมพ์สินค้า'},
+        {id:'cargoWeight', label:'น้ำหนัก (กก.)', type:'number', half:true},
         {id:'freightCost', label:'ค่าขนส่ง (บาท)', type:'number', half:true},
-        {id:'paymentStatus', label:'สถานะ', type:'select', options:['ค้างจ่าย','จ่ายแล้ว'], half:true},
+        {id:'paymentStatus', label:'สถานะการชำระเงิน', type:'select', options:['ค้างจ่าย','จ่ายแล้ว']},
+        {id:'remark', label:'หมายเหตุ', type:'textarea', placeholder:'หมายเหตุ…'},
       ]},
     income: { title:'💰 บันทึกรายรับ', color:'#2E7D32', sub:'เงินเข้า',
       fields:[
-        {id:'incomeDate', label:'วันที่รับเงิน', type:'date', required:true},
-        {id:'incomeItem', label:'ประเภทรายรับ', type:'select', options:['ค่าขนส่ง','ค่ามัดจำ','อื่นๆ']},
+        {id:'incomeDate', label:'วันที่รับเงิน', type:'date', required:true, half:true},
+        {id:'docNumber', label:'เลขที่เอกสาร 🔒', type:'text', readonly:true, half:true},
+        {id:'linkedTrip', label:'📋 ลิงก์รอบเที่ยวรถ (ถ้ารายรับนี้คือค่าเที่ยวรถ)', type:'linkedtrip'},
+        {id:'customerName', label:'ลูกค้า', type:'customer', required:true, placeholder:'ชื่อลูกค้า / บริษัท'},
+        {id:'incomeItem', label:'รายการรายรับ', type:'incitem', required:true, placeholder:'เลือกหรือพิมพ์รายการ…'},
         {id:'amount', label:'จำนวนเงิน (บาท)', type:'number', required:true, half:true},
-        {id:'paymentMethod', label:'ช่องทาง', type:'select', options:['เงินสด','โอน','เช็ค'], half:true},
-        {id:'customerName', label:'ลูกค้า (ถ้ามี)', type:'customer'},
+        {id:'paymentMethod', label:'วิธีรับเงิน', type:'select', options:['เงินโอน','เงินสด','โอน QR','เช็ค','บัตรเครดิต','อื่นๆ'], half:true},
+        {id:'remark', label:'หมายเหตุ', type:'textarea', placeholder:'หมายเหตุ…'},
       ]},
     expense: { title:'💸 บันทึกรายจ่าย', color:'#C62828', sub:'เงินออก',
       fields:[
@@ -144,11 +150,16 @@
       ]},
     maintenance: { title:'🔧 บันทึกซ่อมบำรุง', color:'#E65100', sub:'การซ่อม / ดูแลรถ',
       fields:[
-        {id:'maintenanceDate', label:'วันที่ซ่อม', type:'date', required:true},
-        {id:'plateNumber', label:'ทะเบียนรถ', type:'plate', required:true},
-        {id:'maintenanceType', label:'ประเภทการซ่อม', type:'select',
-          options:['เปลี่ยนยาง','น้ำมันเครื่อง','เบรค','ช่วงล่าง','แอร์','ไฟฟ้า','ตรวจสภาพ','ล้างรถ','อื่นๆ']},
-        {id:'cost', label:'ค่าซ่อม (บาท)', type:'number', required:true},
+        {id:'maintenanceDate', label:'วันที่ซ่อม', type:'date', required:true, half:true},
+        {id:'plateNumber', label:'ทะเบียนรถ', type:'plate', required:true, half:true},
+        {id:'maintenanceType', label:'ประเภทการซ่อม', type:'select', required:true,
+          options:['เปลี่ยนน้ำมันเครื่อง','เปลี่ยนยาง','ซ่อมเครื่องยนต์','ซ่อมระบบเกียร์','ซ่อมระบบเบรก','ซ่อมระบบไฟฟ้า','เปลี่ยนแบตเตอรี่','ตรวจสภาพทั่วไป','ล้างรถ/อัดฉีด','เปลี่ยนอะไหล่','ประกันภัย','ต่อภาษีรถ','อื่นๆ']},
+        {id:'description', label:'รายละเอียด', type:'textarea', placeholder:'อธิบายรายละเอียดการซ่อม…'},
+        {id:'cost', label:'ค่าใช้จ่าย (บาท)', type:'number', half:true},
+        {id:'odometerKm', label:'เลขไมล์ตอนซ่อม', type:'number', half:true},
+        {id:'vendor', label:'อู่/ร้านซ่อม', type:'text', placeholder:'ชื่ออู่ / ร้านซ่อม'},
+        {id:'nextDueDate', label:'นัดซ่อมครั้งต่อไป', type:'date', noDefault:true},
+        {id:'notes', label:'หมายเหตุ', type:'text', placeholder:'หมายเหตุ'},
       ]},
   };
 
@@ -222,9 +233,13 @@
     } else if (fl.type === 'province') {
       input = `<input id="${fl.id}" data-ac="province" autocomplete="off" placeholder="เลือกหรือพิมพ์จังหวัด">`;
     } else if (fl.type === 'customer') {
-      input = `<input id="${fl.id}" data-ac="customer" autocomplete="off" placeholder="${fl.placeholder||'เลือกหรือพิมพ์ชื่อลูกค้า'}">`;
+      input = `<input id="${fl.id}" data-ac="customer" autocomplete="off" ${fl.required?'required':''} placeholder="${fl.placeholder||'เลือกหรือพิมพ์ชื่อลูกค้า'}">`;
     } else if (fl.type === 'vendor') {
-      input = `<input id="${fl.id}" data-ac="vendor" autocomplete="off" placeholder="${fl.placeholder||'พิมพ์เพื่อค้นหา (คนขับ/ร้านค้า)…'}">`;
+      input = `<input id="${fl.id}" data-ac="vendor" autocomplete="off" ${fl.required?'required':''} placeholder="${fl.placeholder||'พิมพ์เพื่อค้นหา (คนขับ/ร้านค้า)…'}">`;
+    } else if (fl.type === 'incitem') {
+      input = `<input id="${fl.id}" data-ac="incitem" autocomplete="off" ${fl.required?'required':''} placeholder="${fl.placeholder||'เลือกหรือพิมพ์รายการ'}">`;
+    } else if (fl.type === 'cargo') {
+      input = `<input id="${fl.id}" data-ac="cargo" autocomplete="off" ${fl.required?'required':''} placeholder="${fl.placeholder||'เลือกหรือพิมพ์สินค้า'}">`;
     } else if (fl.type === 'linkedtrip') {
       input = `<select id="${fl.id}"><option value="">— ไม่ลิงก์รอบเที่ยว —</option></select>`;
     } else if (fl.type === 'date') {
@@ -274,24 +289,35 @@
   form.innerHTML = html;
 
   // v15.86 — dropdown แบบเดียวกับเว็บ (แตะ→เห็นรายการทั้งหมด · พิมพ์→กรอง · แตะเลือก)
-  let custList = [], custMap = {}, vendorList = [];   // custMap[ชื่อ] = ข้อมูลลูกค้า (มี province) · vendorList = ผู้รับเงินเดิม
+  let custList = [], custMap = {}, vendorList = [], cargoOpts = [];   // custMap[ชื่อ]=ลูกค้า(มี province) · vendorList=ผู้รับเงินเดิม · cargoOpts=รายการสินค้า
+  const INC_ITEMS = ['ค่าขนส่ง','ค่าบริการ','ค่าเที่ยวรถ','ค่าปรับ','รายได้พิเศษ','ค่ามัดจำ','รายรับอื่นๆ'];   // รายการรายรับ (เหมือนเว็บ)
   document.querySelectorAll('input[data-ac="province"]').forEach(el => _liffAC(el, () => PROVINCES));
   document.querySelectorAll('input[data-ac="plate"]').forEach(el => _liffAC(el, () => Object.keys(vehMap).sort((a,b)=>a.localeCompare(b,'th'))));
   document.querySelectorAll('input[data-ac="customer"]').forEach(el => _liffAC(el, () => custList));
+  document.querySelectorAll('input[data-ac="incitem"]').forEach(el => _liffAC(el, () => INC_ITEMS));
+  document.querySelectorAll('input[data-ac="cargo"]').forEach(el => _liffAC(el, () => cargoOpts));
   // v15.90 — ผู้รับเงิน: รวมคนขับ (จากรถ) + ร้านค้า/ผู้รับเงินที่เคยกรอก
   document.querySelectorAll('input[data-ac="vendor"]').forEach(el => _liffAC(el, () => {
     const drivers = Object.values(vehMap).map(v => v.assignedDriver).filter(Boolean);
     return [...new Set([...vendorList, ...drivers])].sort((a,b)=>a.localeCompare(b,'th'));
   }));
   // โหลดรายชื่อลูกค้าจากเมนูลูกค้า (มีจังหวัด) + ต้นทาง/ปลายทางในเที่ยวรถ (เหมือน dropdown เว็บ)
+  const _addCargo = (cargoSet, ci) => {   // cargoItems อาจเป็น array, JSON string หรือคั่นด้วย , / ขึ้นบรรทัด
+    if (Array.isArray(ci)) ci.forEach(x => { const v=String(x).trim(); if (v) cargoSet.add(v); });
+    else if (typeof ci === 'string' && ci.trim()) {
+      let arr = null; try { const p = JSON.parse(ci); if (Array.isArray(p)) arr = p; } catch {}
+      (arr || ci.split(/[,\n]/)).forEach(x => { const v=String(x).trim(); if (v) cargoSet.add(v); });
+    }
+  };
   (async () => {
     try {
-      const set = new Set();
+      const set = new Set(), cargoSet = new Set();
       const rc = await (await fetch(`${API}/api/get-data?type=customer`)).json();
-      ((rc.data && rc.data.customer) || []).forEach(c => { const n=(c.customerName||'').trim(); if (n) { set.add(n); custMap[n] = c; } });
+      ((rc.data && rc.data.customer) || []).forEach(c => { const n=(c.customerName||'').trim(); if (n) { set.add(n); custMap[n] = c; } _addCargo(cargoSet, c.cargoItems); });
       const rt = await (await fetch(`${API}/api/get-data?type=truck`)).json();
-      ((rt.data && rt.data.truck) || []).forEach(t => { [t.originCustomer, t.customerName].forEach(x => { const n=(x||'').trim(); if (n) set.add(n); }); });
+      ((rt.data && rt.data.truck) || []).forEach(t => { [t.originCustomer, t.customerName].forEach(x => { const n=(x||'').trim(); if (n) set.add(n); }); const cg=(t.cargoList||'').trim(); if (cg) cargoSet.add(cg); });
       custList = [...set].sort((a,b)=>a.localeCompare(b,'th'));
+      cargoOpts = [...cargoSet].sort((a,b)=>a.localeCompare(b,'th'));
     } catch (e) { console.warn('load customers failed:', e); }
   })();
   // v15.87 — เลือกลูกค้า → เติมจังหวัดให้ (ต้นทาง→จังหวัดต้นทาง, ปลายทาง→จังหวัดปลายทาง) เหมือนเว็บ
@@ -299,7 +325,16 @@
     const _fillProv = (custId, provId) => {
       const ce = document.getElementById(custId), pe = document.getElementById(provId);
       if (!ce || !pe) return;
-      ce.addEventListener('change', () => { const c = custMap[ce.value.trim()]; if (c && c.province) pe.value = c.province; });
+      ce.addEventListener('change', () => {
+        const c = custMap[ce.value.trim()];
+        if (c && c.province) pe.value = c.province;
+        // v15.91 — เลือกลูกค้า → เติมรายการสินค้าให้ (ถ้ายังว่าง) เหมือนเว็บ
+        const cargoEl = document.getElementById('cargoList');
+        if (c && cargoEl && !cargoEl.value) {
+          const tmp = new Set(); _addCargo(tmp, c.cargoItems);
+          const first = [...tmp][0]; if (first) cargoEl.value = first;
+        }
+      });
     };
     _fillProv('originCustomer', 'origin');
     _fillProv('customerName', 'destination');
@@ -377,6 +412,54 @@
     })();
   }
 
+  // ── v15.91 — รายรับ: ลิงก์รอบเที่ยว + เลขเอกสาร RV อัตโนมัติ (เหมือนเว็บ) ──
+  if (type === 'income') {
+    window._incomeTrips = [];
+    // เลือกรอบ → เติมจำนวนเงิน (ถ้าว่าง) + ชื่อลูกค้าต้นทาง (ทับค่าเดิม) เหมือนเว็บ
+    const ltEl = document.getElementById('linkedTrip');
+    if (ltEl) ltEl.addEventListener('change', () => {
+      const o = ltEl.options[ltEl.selectedIndex]; if (!o) return;
+      const amtEl = document.getElementById('amount');
+      if (amtEl && !amtEl.value && o.dataset.amount) amtEl.value = o.dataset.amount;
+      const custEl = document.getElementById('customerName');
+      const who = o.dataset.origin || o.dataset.customer || '';
+      if (custEl && who) custEl.value = who;
+    });
+    (async () => {
+      const used = new Set();
+      try {
+        const j = await (await fetch(`${API}/api/get-data?type=income`)).json();
+        const incs = (j.data && j.data.income) || [];
+        let maxSeq = 0;
+        incs.forEach(e => {
+          const m = String(e.docNumber||'').match(/RV-(\d+)/); if (m) maxSeq = Math.max(maxSeq, parseInt(m[1]));
+          if (e.linkedTripRowId) used.add(String(e.linkedTripRowId));
+        });
+        const dn = document.getElementById('docNumber');
+        if (dn && !dn.value) dn.value = 'RV-' + String(maxSeq+1).padStart(6,'0');
+      } catch(e){ console.warn('load incomes failed:', e); }
+      try {
+        const j = await (await fetch(`${API}/api/get-data?type=truck`)).json();
+        const trucks = ((j.data && j.data.truck) || []).filter(t => String(t.tripRound||'').trim());
+        window._incomeTrips = trucks;          // เก็บไว้ใช้ตอน mark "จ่ายแล้ว" หลังบันทึก
+        trucks.sort((a,b)=>(parseInt(b.tripRound)||0)-(parseInt(a.tripRound)||0));
+        const sel = document.getElementById('linkedTrip');
+        if (sel) trucks.forEach(t => {
+          const o = document.createElement('option');
+          o.value = t.rowId || '';
+          o.dataset.round = t.tripRound || '';
+          o.dataset.amount = t.freightCost || '';
+          o.dataset.origin = t.originCustomer || '';
+          o.dataset.customer = t.customerName || '';
+          const u = used.has(String(t.rowId)) ? ' 🔒(ลงรายรับแล้ว)' : '';
+          const who = (t.originCustomer || t.customerName || '').trim();
+          o.textContent = `รอบ #${t.tripRound}${u} • ${t.plateNumber||'-'}${who?' • '+who:''}`;
+          sel.appendChild(o);
+        });
+      } catch(e){ console.warn('load trucks failed:', e); }
+    })();
+  }
+
   // ── v15.84 — image attach logic (compress → base64 → /api/upload-images) ──
   const _imgFiles = [];
   const imgInput = document.getElementById('imgInput');
@@ -424,9 +507,9 @@
   }
   window._liffUploadImages = uploadImages;   // ใช้ตอน submit
 
-  // default date = today
-  cfg.fields.filter(f=>f.type==='date').forEach(f=>{
-    document.getElementById(f.id).value = new Date().toISOString().slice(0,10);
+  // default date = today (ยกเว้นช่องที่ตั้ง noDefault เช่น นัดซ่อมครั้งต่อไป)
+  cfg.fields.filter(f=>f.type==='date' && !f.noDefault).forEach(f=>{
+    const el = document.getElementById(f.id); if (el) el.value = new Date().toISOString().slice(0,10);
   });
 
   // ── Fetch real vehicles → plate dropdown + driver auto-fill ────
@@ -504,7 +587,7 @@
     const val = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
     const d = {}; cfg.fields.forEach(f => d[f.id] = val(f.id));
     d.userAgent = liffReady ? 'LINE LIFF' : 'LINE Form';
-    if (type === 'truck') { d.jobDate = d.pickupDate; d.jobStatus = 'กำลังดำเนินการ'; d.tripCount = 1;
+    if (type === 'truck') { d.jobDate = d.pickupDate; d.jobStatus = 'รอโหลด'; d.tripCount = 1;   // v15.91 — default ตรงกับเว็บ
       if (!d.tripRound && _nextRound) d.tripRound = _nextRound;   // v15.84 — ค่าที่พิมพ์เองชนะ, ไม่งั้นใช้อัตโนมัติ
       const v = vehMap[d.plateNumber]; if (v && v.assignedDriverPhone) d.driverPhone = v.assignedDriverPhone; }
     if (type === 'expense') {
@@ -517,7 +600,12 @@
       if (!d.expenseTime) { const n = new Date(); d.expenseTime = String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0'); }
       delete d.linkedTrip; delete d.__expcats;                          // ไม่ใช่คอลัมน์จริง
     }
-    if (type === 'maintenance') d.description = d.maintenanceType;
+    if (type === 'income') {
+      const lt = document.getElementById('linkedTrip');                 // ลิงก์รอบเที่ยว → rowId + เลขรอบ
+      if (lt) { d.linkedTripRowId = lt.value || ''; const o = lt.options[lt.selectedIndex]; d.linkedTripRound = (o && o.dataset.round) ? o.dataset.round : ''; }
+      if (!d.incomeTime) { const n = new Date(); d.incomeTime = String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0'); }
+      delete d.linkedTrip;
+    }
     return d;
   }
 
@@ -531,6 +619,10 @@
     if (!form.reportValidity()) return;
     if (type === 'expense' && window._expcatRows && window._expcatRows().reduce((s,r)=>s+r.amount,0) <= 0) {
       alert('⚠️ กรุณากรอกจำนวนเงินอย่างน้อย 1 หมวด'); return;
+    }
+    if (type === 'income') {
+      const amtEl = document.getElementById('amount');
+      if ((parseFloat(amtEl && amtEl.value) || 0) <= 0) { alert('⚠️ กรุณากรอกจำนวนเงินให้มากกว่า 0'); return; }
     }
     document.getElementById('saveBtn').disabled = true;
     show('loading');
@@ -547,6 +639,11 @@
       });
       const j = await r.json();
       if (!j.success) throw new Error(j.error || 'save failed');
+      // v15.91 — รายรับที่ลิงก์รอบเที่ยว → อัปเดตรอบนั้นเป็น "จ่ายแล้ว" (เหมือนเว็บ)
+      if (type === 'income' && data.linkedTripRowId && Array.isArray(window._incomeTrips)) {
+        const trip = window._incomeTrips.find(t => String(t.rowId) === String(data.linkedTripRowId));
+        if (trip) { try { await fetch(`${API}/api/update`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ type:'truck', rowId: trip.rowId, data: { ...trip, paymentStatus:'จ่ายแล้ว' } }) }); } catch(_){} }
+      }
       document.getElementById('okMsg').textContent = j.message || 'บันทึกสำเร็จ';
       document.getElementById('okId').textContent = 'รหัส: ' + (j.rowId||'');
       show('done');
