@@ -25,8 +25,20 @@
   /* v15.85 — 3-คอลัมน์ (รอบเที่ยว + วันเข้ารับ + วันส่ง) */
   .row3{ display:grid; gap:8px; }
   .row3 .field input{ padding-left:9px; padding-right:6px; font-size:15px; min-width:0; }
-  /* v15.89 — ช่องอ่านอย่างเดียว (รอบเที่ยว) — กรอบล็อก กดไม่ได้ */
+  /* v15.89 — ช่องอ่านอย่างเดียว (รอบเที่ยว / เลขที่เอกสาร) — กรอบล็อก กดไม่ได้ */
   .field input.ro{ background:#eef2f7; color:#1a1f2e; font-weight:800; cursor:not-allowed; pointer-events:none; border-color:var(--line); }
+  /* v15.90 — รายจ่ายแบบเดียวกับเว็บ: textarea + หลายหมวด */
+  .field textarea{ width:100%; padding:13px 12px; font-size:16px; font-family:inherit; border:1.5px solid var(--line);
+    border-radius:12px; background:#fff; color:var(--text); resize:vertical; min-height:62px; }
+  .field textarea:focus{ outline:none; border-color:var(--c); }
+  .expcat-row{ display:grid; grid-template-columns:1fr 104px 36px; gap:7px; align-items:center; margin-bottom:8px; }
+  .expcat-row select, .expcat-row input{ width:100%; padding:11px 9px; font-size:15px; font-family:inherit;
+    border:1.5px solid var(--line); border-radius:10px; background:#fff; color:var(--text); appearance:none; min-width:0; }
+  .expcat-row select{ background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%235A6577' stroke-width='2.5'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat:no-repeat; background-position:right 8px center; padding-right:26px; }
+  .expcat-row .rm{ width:36px; height:40px; border:none; border-radius:10px; background:#FEE2E2; color:#C62828; font-size:14px; font-weight:800; cursor:pointer; padding:0; }
+  .expcat-add{ width:100%; padding:11px; border:1.5px dashed var(--c); border-radius:11px; background:#fff; color:var(--c); font-weight:800; font-size:14px; font-family:inherit; cursor:pointer; }
+  .expcat-total{ text-align:right; font-weight:800; color:var(--danger); margin-top:9px; font-size:15px; }
   /* v15.86 — dropdown แบบเดียวกับเว็บ (แตะแล้วเห็นรายการ พิมพ์เพื่อกรอง) */
   .ac-wrap{ position:relative; }
   .ac-panel{ display:none; position:absolute; left:0; right:0; top:calc(100% + 4px); z-index:30;
@@ -120,12 +132,15 @@
       ]},
     expense: { title:'💸 บันทึกรายจ่าย', color:'#C62828', sub:'เงินออก',
       fields:[
-        {id:'expenseDate', label:'วันที่จ่ายเงิน', type:'date', required:true},
-        {id:'category', label:'ประเภทรายจ่าย', type:'select', required:true,
-          options:['น้ำมัน','ซ่อมบำรุง','ค่าทางด่วน','เบี้ยเลี้ยง','ค่าปรับ','อื่นๆ']},
-        {id:'amount', label:'จำนวนเงิน (บาท)', type:'number', required:true, half:true},
-        {id:'paymentMethod', label:'ช่องทาง', type:'select', options:['เงินสด','โอน','เช็ค'], half:true},
-        {id:'plateNumber', label:'ทะเบียนรถ (ถ้าเกี่ยวกับรถ)', type:'plate'},
+        {id:'expenseDate', label:'วันที่จ่ายเงิน', type:'date', required:true, half:true},
+        {id:'docNumber', label:'เลขที่เอกสาร 🔒', type:'text', readonly:true, half:true},
+        {id:'linkedTrip', label:'📋 ลิงก์รอบเที่ยวรถ (ถ้าเกี่ยวกับรอบเที่ยว)', type:'linkedtrip'},
+        {id:'plateNumber', label:'ทะเบียนรถ (ถ้าเกี่ยวกับรถ)', type:'plate', half:true},
+        {id:'vendor', label:'ผู้รับเงิน', type:'vendor', half:true},
+        {id:'__expcats', label:'หมวดรายจ่าย & จำนวนเงิน', type:'expcats', required:true},
+        {id:'paymentMethod', label:'วิธีจ่ายเงิน', type:'select', options:['เงินโอน','เงินสด','โอน QR','เช็ค','บัตรเครดิต','อื่นๆ']},
+        {id:'expenseDetail', label:'รายละเอียดรายจ่าย', type:'textarea', placeholder:'รายละเอียด…'},
+        {id:'remark', label:'หมายเหตุ', type:'textarea', placeholder:'หมายเหตุ…'},
       ]},
     maintenance: { title:'🔧 บันทึกซ่อมบำรุง', color:'#E65100', sub:'การซ่อม / ดูแลรถ',
       fields:[
@@ -188,6 +203,15 @@
   let pendingHalf = null;
   function fieldHTML(fl){
     const reqStar = fl.required ? ' <span class="req">*</span>' : '';
+    // v15.90 — หมวดรายจ่ายหลายหมวด (กล่องเต็มความกว้าง สร้าง row เอง)
+    if (fl.type === 'expcats') {
+      return `<div class="field">
+        <label>${fl.label}${reqStar} <span style="font-weight:600;color:var(--mute)">— กด ➕ เพิ่มหมวด</span></label>
+        <div id="expcat-list"></div>
+        <button type="button" class="expcat-add" id="expcat-add">➕ เพิ่มหมวด</button>
+        <div class="expcat-total" id="expcat-total">รวม: ฿0</div>
+      </div>`;
+    }
     let input;
     if (fl.type === 'select') {
       input = `<select id="${fl.id}" ${fl.required?'required':''}>` +
@@ -199,16 +223,23 @@
       input = `<input id="${fl.id}" data-ac="province" autocomplete="off" placeholder="เลือกหรือพิมพ์จังหวัด">`;
     } else if (fl.type === 'customer') {
       input = `<input id="${fl.id}" data-ac="customer" autocomplete="off" placeholder="${fl.placeholder||'เลือกหรือพิมพ์ชื่อลูกค้า'}">`;
+    } else if (fl.type === 'vendor') {
+      input = `<input id="${fl.id}" data-ac="vendor" autocomplete="off" placeholder="${fl.placeholder||'พิมพ์เพื่อค้นหา (คนขับ/ร้านค้า)…'}">`;
+    } else if (fl.type === 'linkedtrip') {
+      input = `<select id="${fl.id}"><option value="">— ไม่ลิงก์รอบเที่ยว —</option></select>`;
     } else if (fl.type === 'date') {
       input = `<input id="${fl.id}" type="date" ${fl.required?'required':''}>`;
     } else if (fl.type === 'number') {
       input = `<input id="${fl.id}" type="number" inputmode="numeric" min="0" placeholder="${fl.placeholder||'0'}" ${fl.required?'required':''} ${fl.readonly?'readonly tabindex="-1" class="ro"':''}>`;
+    } else if (fl.type === 'textarea') {
+      input = `<textarea id="${fl.id}" rows="2" placeholder="${fl.placeholder||''}"></textarea>`;
     } else {
-      input = `<input id="${fl.id}" type="text" placeholder="${fl.placeholder||''}">`;
+      input = `<input id="${fl.id}" type="text" placeholder="${fl.placeholder||''}" ${fl.readonly?'readonly tabindex="-1" class="ro"':''}>`;
     }
     return `<div class="field">
       <label for="${fl.id}">${fl.label}${reqStar}</label>${input}
       ${fl.type==='plate'?'<div class="hint">เลือกจากรายการ หรือพิมพ์ทะเบียนใหม่ก็ได้</div>':''}
+      ${fl.type==='linkedtrip'?'<div class="hint">เลือกรอบเที่ยวที่รายจ่ายนี้เกี่ยวข้อง (ถ้ามี)</div>':''}
     </div>`;
   }
   // v15.85 — group consecutive half (2-col) / third (3-col) fields into rows
@@ -243,10 +274,15 @@
   form.innerHTML = html;
 
   // v15.86 — dropdown แบบเดียวกับเว็บ (แตะ→เห็นรายการทั้งหมด · พิมพ์→กรอง · แตะเลือก)
-  let custList = [], custMap = {};   // custMap[ชื่อ] = ข้อมูลลูกค้า (มี province) — ลิงก์จากเว็บหลัก
+  let custList = [], custMap = {}, vendorList = [];   // custMap[ชื่อ] = ข้อมูลลูกค้า (มี province) · vendorList = ผู้รับเงินเดิม
   document.querySelectorAll('input[data-ac="province"]').forEach(el => _liffAC(el, () => PROVINCES));
   document.querySelectorAll('input[data-ac="plate"]').forEach(el => _liffAC(el, () => Object.keys(vehMap).sort((a,b)=>a.localeCompare(b,'th'))));
   document.querySelectorAll('input[data-ac="customer"]').forEach(el => _liffAC(el, () => custList));
+  // v15.90 — ผู้รับเงิน: รวมคนขับ (จากรถ) + ร้านค้า/ผู้รับเงินที่เคยกรอก
+  document.querySelectorAll('input[data-ac="vendor"]').forEach(el => _liffAC(el, () => {
+    const drivers = Object.values(vehMap).map(v => v.assignedDriver).filter(Boolean);
+    return [...new Set([...vendorList, ...drivers])].sort((a,b)=>a.localeCompare(b,'th'));
+  }));
   // โหลดรายชื่อลูกค้าจากเมนูลูกค้า (มีจังหวัด) + ต้นทาง/ปลายทางในเที่ยวรถ (เหมือน dropdown เว็บ)
   (async () => {
     try {
@@ -267,6 +303,78 @@
     };
     _fillProv('originCustomer', 'origin');
     _fillProv('customerName', 'destination');
+  }
+
+  // ── v15.90 — รายจ่าย: ฟอร์มแบบเดียวกับเว็บ (หลายหมวด + ลิงก์รอบเที่ยว + เลขเอกสารอัตโนมัติ) ──
+  if (type === 'expense') {
+    const EXP_CATS = ['ค่าเดินทาง','ค่าน้ำมัน','เงินเดือน','ซ่อมบำรุง','ค่าซ่อม','ค่าอะไหล่','ค่ายาง','ค่าแรง','ค่าทางด่วน','ประกันภัยรถ','ประกันสินค้า','ค่าบริการ GPS','ค่าตรวจสภาพ','ค่าพ.ร.บ.','ค่าภาษีรถ','ค่าอาหาร','อื่นๆ'];
+    // อ่านทุกแถวหมวด → [{category, amount}] (เก็บเฉพาะแถวที่มีจำนวนเงิน)
+    window._expcatRows = () => [...document.querySelectorAll('#expcat-list .expcat-row')].map(r => ({
+      category: r.querySelector('select').value,
+      amount: parseFloat(r.querySelector('input').value) || 0
+    })).filter(x => x.category && x.amount > 0);
+    const renderTotal = () => {
+      const t = window._expcatRows().reduce((s,r)=>s+r.amount,0);
+      const el = document.getElementById('expcat-total');
+      if (el) el.textContent = 'รวม: ฿' + t.toLocaleString('en-US');
+    };
+    const addRow = (cat, amt) => {
+      const list = document.getElementById('expcat-list'); if (!list) return;
+      const row = document.createElement('div'); row.className = 'expcat-row';
+      row.innerHTML = `<select>${EXP_CATS.map(c=>`<option${c===cat?' selected':''}>${c}</option>`).join('')}</select>`
+        + `<input type="number" inputmode="numeric" min="0" placeholder="0.00"${amt?` value="${amt}"`:''}>`
+        + `<button type="button" class="rm" title="ลบหมวดนี้">✕</button>`;
+      row.querySelector('input').addEventListener('input', renderTotal);
+      row.querySelector('select').addEventListener('change', renderTotal);
+      row.querySelector('.rm').addEventListener('click', () => {
+        if (list.children.length > 1) { row.remove(); renderTotal(); }
+      });
+      list.appendChild(row);
+    };
+    addRow('ค่าเดินทาง','');                       // แถวแรกเริ่มต้น
+    const addBtn = document.getElementById('expcat-add');
+    if (addBtn) addBtn.addEventListener('click', () => addRow('ค่าน้ำมัน',''));
+    renderTotal();
+    // ลิงก์รอบเที่ยว → เติมทะเบียนรถให้ (ถ้าว่าง)
+    const ltEl = document.getElementById('linkedTrip');
+    if (ltEl) ltEl.addEventListener('change', () => {
+      const o = ltEl.options[ltEl.selectedIndex];
+      const pe = document.getElementById('plateNumber');
+      if (o && o.dataset.plate && pe && !pe.value) pe.value = o.dataset.plate;
+    });
+    // โหลดประวัติรายจ่าย (เลขเอกสารถัดไป + ผู้รับเงินเดิม + รอบที่ใช้แล้ว) และเที่ยวรถ (ตัวเลือกลิงก์รอบ)
+    (async () => {
+      const used = new Set();
+      try {
+        const j = await (await fetch(`${API}/api/get-data?type=expense`)).json();
+        const exps = (j.data && j.data.expense) || [];
+        let maxSeq = 0;
+        exps.forEach(e => {
+          const m = String(e.docNumber||'').match(/PV-(\d+)/); if (m) maxSeq = Math.max(maxSeq, parseInt(m[1]));
+          if (e.linkedTripRowId) used.add(String(e.linkedTripRowId));
+          const v = (e.vendor||'').trim(); if (v) vendorList.push(v);
+        });
+        vendorList = [...new Set(vendorList)];
+        const dn = document.getElementById('docNumber');
+        if (dn && !dn.value) dn.value = 'PV-' + String(maxSeq+1).padStart(6,'0');
+      } catch(e){ console.warn('load expenses failed:', e); }
+      try {
+        const j = await (await fetch(`${API}/api/get-data?type=truck`)).json();
+        const trucks = ((j.data && j.data.truck) || []).filter(t => String(t.tripRound||'').trim());
+        trucks.sort((a,b)=>(parseInt(b.tripRound)||0)-(parseInt(a.tripRound)||0));
+        const sel = document.getElementById('linkedTrip');
+        if (sel) trucks.forEach(t => {
+          const o = document.createElement('option');
+          o.value = t.rowId || '';
+          o.dataset.round = t.tripRound || '';
+          o.dataset.plate = t.plateNumber || '';
+          const u = used.has(String(t.rowId)) ? ' 🔒(ใช้แล้ว)' : '';
+          const cust = (t.customerName || t.originCustomer || '').trim();
+          o.textContent = `รอบ #${t.tripRound}${u} • ${t.plateNumber||'-'}${cust?' • '+cust:''}`;
+          sel.appendChild(o);
+        });
+      } catch(e){ console.warn('load trucks failed:', e); }
+    })();
   }
 
   // ── v15.84 — image attach logic (compress → base64 → /api/upload-images) ──
@@ -399,7 +507,16 @@
     if (type === 'truck') { d.jobDate = d.pickupDate; d.jobStatus = 'กำลังดำเนินการ'; d.tripCount = 1;
       if (!d.tripRound && _nextRound) d.tripRound = _nextRound;   // v15.84 — ค่าที่พิมพ์เองชนะ, ไม่งั้นใช้อัตโนมัติ
       const v = vehMap[d.plateNumber]; if (v && v.assignedDriverPhone) d.driverPhone = v.assignedDriverPhone; }
-    if (type === 'expense') d.expenseDetail = d.category;
+    if (type === 'expense') {
+      const rows = (window._expcatRows ? window._expcatRows() : []);   // [{category, amount}]
+      d.expenseItems = JSON.stringify(rows);
+      d.category = [...new Set(rows.map(r => r.category))].join(' + ');  // "ค่าน้ำมัน + ค่าทางด่วน"
+      d.amount = rows.reduce((s,r)=>s+r.amount, 0);                      // ยอดรวมทุกหมวด
+      const lt = document.getElementById('linkedTrip');                 // ลิงก์รอบเที่ยว → rowId + เลขรอบ
+      if (lt) { d.linkedTripRowId = lt.value || ''; const o = lt.options[lt.selectedIndex]; d.linkedTripRound = (o && o.dataset.round) ? o.dataset.round : ''; }
+      if (!d.expenseTime) { const n = new Date(); d.expenseTime = String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0'); }
+      delete d.linkedTrip; delete d.__expcats;                          // ไม่ใช่คอลัมน์จริง
+    }
     if (type === 'maintenance') d.description = d.maintenanceType;
     return d;
   }
@@ -412,6 +529,9 @@
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!form.reportValidity()) return;
+    if (type === 'expense' && window._expcatRows && window._expcatRows().reduce((s,r)=>s+r.amount,0) <= 0) {
+      alert('⚠️ กรุณากรอกจำนวนเงินอย่างน้อย 1 หมวด'); return;
+    }
     document.getElementById('saveBtn').disabled = true;
     show('loading');
     try {
