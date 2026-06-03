@@ -5004,6 +5004,9 @@
     .dm-l1 { font-weight: 700; color: #0f172a; font-size: .84rem; }
     .dm-round { font-size: 1rem; font-weight: 800; color: #4338ca; }
     body.dark .dm-round { color: #a5b4fc; }
+    /* v15.81 — badge: maintenance entry pulled from an expense record */
+    .mnt-from-exp { font-size: .66rem; font-weight: 800; color: #6d28d9; background: #f3e8ff; border: 1px solid #ddd6fe; padding: 1px 7px; border-radius: 8px; margin-left: 4px; white-space: nowrap; }
+    body.dark .mnt-from-exp { background: rgba(124,58,237,.2); color: #c4b5fd; border-color: rgba(124,58,237,.4); }
     .dm-l2 { font-size: .76rem; color: #64748b; margin-top: 2px; word-break: break-word; }
     .dm-amt { font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
     .dm-doc { font-size: .68rem; background: #eef2ff; color: #4338ca; padding: 1px 6px; border-radius: 6px; font-weight: 700; margin-left: 4px; }
@@ -5246,7 +5249,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.80 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.81 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -12463,7 +12466,9 @@ async function loadList(type, containerId, renderFn) {
     const json = await res.json();
     const items = (json.data||{})[type] || [];
     _listCache[type] = items;     // cache for edit/delete lookup
-    el.innerHTML = items.length ? renderFn(items) : emptyStateHtml(type);
+    // v15.81 — เรียก renderFn เสมอ (บาง list เช่นประวัติซ่อม ดึงรายการจากแหล่งอื่นมารวมด้วย)
+    const _rendered = renderFn(items);
+    el.innerHTML = _rendered || emptyStateHtml(type);
     applyListFilter(type, containerId);   // re-apply active search + refresh count
     // update registries for datalist
     if (type==='vehicle')  { REG.vehicles=items;  populateDl('plate-dl', items.map(v=>v.plateNumber)); }
@@ -12748,15 +12753,53 @@ function resetMaintenance() {
   closeOCRPanel('maintenance');
   setDefaultDates();
 }
+// v15.81 — ประวัติซ่อม = บันทึกซ่อม + รายจ่ายหมวดอื่นที่ไม่ใช่ "ค่าเดินทาง/เงินเดือน"
+//   (รวมรายจ่ายหลายหมวดในใบเดียว เช่นโอนทีเดียวมีค่าซ่อม+อะไหล่) — แก้ไขรายละเอียดได้
+const _MNT_EXCLUDE_CAT = new Set(['ค่าเดินทาง', 'เงินเดือน']);
 function renderMaintenanceList(items) {
-  return [...items].reverse().map(m=>`
-    <div class="record-card" style="border-left-color:#E65100">
-      <div class="rc-title">🔧 ${m.maintenanceType||'ซ่อมบำรุง'} — ${m.plateNumber||'-'}</div>
-      <div class="rc-sub"><span>📅 ${fmtDate(m.maintenanceDate)}</span><span>${fmtBaht(m.cost)}</span><span>${m.vendor||''}</span>${m.odometerKm?`<span>🛣 ${fmtNum(m.odometerKm)} กม.</span>`:''}</div>
+  const entries = [];
+  // 1) บันทึกซ่อมจริง
+  (items || []).forEach(m => entries.push({
+    sort: String(m.maintenanceDate || m.timestamp || ''),
+    html: `<div class="record-card" style="border-left-color:#E65100">
+      <div class="rc-title">🔧 ${escHtml(m.maintenanceType||'ซ่อมบำรุง')} — ${escHtml(m.plateNumber||'-')}</div>
+      <div class="rc-sub"><span>📅 ${fmtDate(m.maintenanceDate)}</span><span>${fmtBaht(m.cost)}</span><span>${escHtml(m.vendor||'')}</span>${m.odometerKm?`<span>🛣 ${fmtNum(m.odometerKm)} กม.</span>`:''}</div>
+      ${m.description?`<div class="rc-sub" style="margin-top:3px">📝 ${escHtml(m.description)}</div>`:''}
       ${m.nextDueDate?`<div class="rc-sub" style="margin-top:3px">🔔 นัดต่อไป: ${fmtDate(m.nextDueDate)}</div>`:''}
       ${renderImgThumbs(m.imageUrls)}
       ${renderRecActions('maintenance', m.rowId || m.timestamp,`${m.maintenanceType||''} - ${m.plateNumber||''}`)}
-    </div>`).join('');
+    </div>`
+  }));
+  // 2) รายจ่ายหมวดอื่น (ไม่ใช่ค่าเดินทาง/เงินเดือน) — แตกตามหมวดจริง
+  (_master.expenseHistory || []).forEach(r => {
+    const parts = (typeof _expCatParts === 'function') ? _expCatParts(r) : [{ category: r.category || 'อื่นๆ', amount: _detectAmount(r) }];
+    parts.forEach(p => {
+      if (_MNT_EXCLUDE_CAT.has(p.category)) return;
+      const rid = escAttr(r.rowId || '');
+      entries.push({
+        sort: String(r.expenseDate || r.timestamp || ''),
+        html: `<div class="record-card" data-row-id="${rid}" style="border-left-color:#7c3aed">
+          <div class="rc-title">🔧 ${escHtml(p.category)}${r.plateNumber?' — '+escHtml(r.plateNumber):''} <span class="mnt-from-exp">💸 จากรายจ่าย</span></div>
+          <div class="rc-sub"><span>📅 ${fmtDate(r.expenseDate)}</span><span>${fmtBaht(p.amount)}</span>${r.vendor?`<span>👤 ${escHtml(r.vendor)}</span>`:''}${r.docNumber?`<span>📄 ${escHtml(r.docNumber)}</span>`:''}</div>
+          ${r.expenseDetail?`<div class="rc-sub" style="margin-top:3px">📝 ${escHtml(r.expenseDetail)}</div>`:''}
+          ${renderImgThumbs(r.imageUrls)}
+          <div style="margin-top:8px"><button type="button" class="btn btn-secondary btn-small" onclick="editExpenseFromMaint('${rid}')" style="padding:6px 14px;font-weight:700">✏️ แก้ไขรายละเอียด</button></div>
+        </div>`
+      });
+    });
+  });
+  entries.sort((a, b) => String(b.sort).localeCompare(String(a.sort)));   // ใหม่สุดก่อน
+  if (!entries.length) return '';
+  const hint = `<div style="font-size:.74rem;color:#94a3b8;margin:0 2px 10px">💡 รวมบันทึกซ่อม + รายจ่ายหมวดอื่นที่ไม่ใช่ค่าเดินทาง/เงินเดือน — กด "แก้ไขรายละเอียด" เพื่อแก้รายการรายจ่าย</div>`;
+  return hint + entries.map(e => e.html).join('');
+}
+// แก้ไขรายการรายจ่ายจากหน้าประวัติซ่อม (ข้อมูลอยู่ในใบรายจ่าย → เปิดฟอร์มรายจ่าย)
+function editExpenseFromMaint(rowId) {
+  if (!rowId) return;
+  const rec = (_master.expenseHistory || []).find(x => (x.rowId || '') === rowId)
+           || (_listCache.expense || []).find(x => (x.rowId || '') === rowId);
+  if (!rec) { showToast('ไม่พบรายการรายจ่าย ลองรีเฟรช', 'warning'); return; }
+  if (typeof startEdit === 'function') startEdit('expense', rowId, rec);
 }
 
 // ─── FUEL ──────────────────────────────────────────────────────────────────
@@ -16039,7 +16082,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.80';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.81';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
