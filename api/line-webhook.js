@@ -555,15 +555,15 @@ async function buildWelcomeFlex(sheets, sheetId) {
           { type:'text', text:'🚛 SuperWealth Transport', color:'#BBDEFB', size:'xs', weight:'bold' },
           { type:'text', text:'ภาพรวมธุรกิจวันนี้', color: C.white, size:'xl', weight:'bold', margin:'sm' },
           { type:'box', layout:'horizontal', margin:'lg', spacing:'sm', contents: [
-            { type:'box', layout:'vertical', flex:1, backgroundColor:'rgba(255,255,255,0.13)', cornerRadius:'md', paddingAll:'sm', contents:[
+            { type:'box', layout:'vertical', flex:1, backgroundColor:'#FFFFFF22', cornerRadius:'md', paddingAll:'sm', contents:[
               { type:'text', text:'กำไรสุทธิ', size:'xxs', color:'#E3F2FD', weight:'bold' },
               { type:'text', text:`฿${num(profit)}`, color:profitColor, weight:'bold', size:'sm', margin:'xs' }
             ]},
-            { type:'box', layout:'vertical', flex:1, backgroundColor:'rgba(255,255,255,0.13)', cornerRadius:'md', paddingAll:'sm', contents:[
+            { type:'box', layout:'vertical', flex:1, backgroundColor:'#FFFFFF22', cornerRadius:'md', paddingAll:'sm', contents:[
               { type:'text', text:'รายรับ', size:'xxs', color:'#E3F2FD', weight:'bold' },
               { type:'text', text:`฿${num(income)}`, color: C.white, weight:'bold', size:'sm', margin:'xs' }
             ]},
-            { type:'box', layout:'vertical', flex:1, backgroundColor:'rgba(255,255,255,0.13)', cornerRadius:'md', paddingAll:'sm', contents:[
+            { type:'box', layout:'vertical', flex:1, backgroundColor:'#FFFFFF22', cornerRadius:'md', paddingAll:'sm', contents:[
               { type:'text', text:'เที่ยวรถ', size:'xxs', color:'#E3F2FD', weight:'bold' },
               { type:'text', text:`${trips}`,   color: C.white, weight:'bold', size:'sm', margin:'xs' }
             ]}
@@ -915,7 +915,7 @@ async function buildSummaryFlex(sheets, sheetId) {
           { type:'text', text:'📊 SuperWealth · สรุปผล', color:'#BBDEFB', size:'xs', weight:'bold' },
           { type:'text', text: `${monthName} ${thYear}`, color: C.white, weight:'bold', size:'xl', margin:'sm' },
           // Big profit number
-          { type:'box', layout:'vertical', backgroundColor:'rgba(0,0,0,0.18)', cornerRadius:'lg', paddingAll:'lg', margin:'lg', contents:[
+          { type:'box', layout:'vertical', backgroundColor:'#00000033', cornerRadius:'lg', paddingAll:'lg', margin:'lg', contents:[
             { type:'text', text:'กำไรสุทธิเดือนนี้', color:'#E3F2FD', size:'xxs', weight:'bold' },
             { type:'text', text:`฿${num(profit)}`, color: profitColor, weight:'bold', size:'xxl', margin:'xs' },
             { type:'text', text:`อัตรากำไร ${profitPct}%`, color:'#BBDEFB', size:'xxs', margin:'xs' }
