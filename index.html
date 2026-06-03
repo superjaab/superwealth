@@ -5246,7 +5246,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.79 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.80 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -14257,13 +14257,13 @@ function _buildMonthSection(year, month, trips) {
     ${titleHtml}
     <div class="cal-grid" ${showTitle?'style="border-radius:0 0 12px 12px"':''}>
       <div class="cal-weekdays">
-        <div class="cal-weekday sun">อา</div>
-        <div class="cal-weekday">จ</div>
-        <div class="cal-weekday">อ</div>
-        <div class="cal-weekday">พ</div>
-        <div class="cal-weekday">พฤ</div>
-        <div class="cal-weekday">ศ</div>
-        <div class="cal-weekday sat">ส</div>
+        <div class="cal-weekday sun">อาทิตย์</div>
+        <div class="cal-weekday">จันทร์</div>
+        <div class="cal-weekday">อังคาร</div>
+        <div class="cal-weekday">พุธ</div>
+        <div class="cal-weekday">พฤหัสบดี</div>
+        <div class="cal-weekday">ศุกร์</div>
+        <div class="cal-weekday sat">เสาร์</div>
       </div>
       <div>${_buildMonthGridWeeks(year, month, trips)}</div>
     </div>
@@ -16039,7 +16039,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.79';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.80';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
