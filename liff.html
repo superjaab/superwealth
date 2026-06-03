@@ -25,6 +25,8 @@
   /* v15.85 — 3-คอลัมน์ (รอบเที่ยว + วันเข้ารับ + วันส่ง) */
   .row3{ display:grid; gap:8px; }
   .row3 .field input{ padding-left:9px; padding-right:6px; font-size:15px; min-width:0; }
+  /* v15.89 — ช่องอ่านอย่างเดียว (รอบเที่ยว) — กรอบล็อก กดไม่ได้ */
+  .field input.ro{ background:#eef2f7; color:#1a1f2e; font-weight:800; cursor:not-allowed; pointer-events:none; border-color:var(--line); }
   /* v15.86 — dropdown แบบเดียวกับเว็บ (แตะแล้วเห็นรายการ พิมพ์เพื่อกรอง) */
   .ac-wrap{ position:relative; }
   .ac-panel{ display:none; position:absolute; left:0; right:0; top:calc(100% + 4px); z-index:30;
@@ -96,7 +98,7 @@
   const TYPES = {
     truck: { title:'🚛 บันทึกรถ', color:'#1565C0', sub:'งานเดินรถ / เที่ยววิ่ง',
       fields:[
-        {id:'tripRound', label:'รอบเที่ยว', type:'number', placeholder:'อัตโนมัติ', third:true},
+        {id:'tripRound', label:'รอบเที่ยว 🔒', type:'number', placeholder:'อัตโนมัติ', readonly:true, third:true},
         {id:'pickupDate', label:'วันที่เข้ารับ', type:'date', required:true, third:true},
         {id:'deliveryDate', label:'วันส่งสินค้า', type:'date', third:true},
         {id:'plateNumber', label:'ทะเบียนรถ', type:'plate', required:true},
@@ -200,7 +202,7 @@
     } else if (fl.type === 'date') {
       input = `<input id="${fl.id}" type="date" ${fl.required?'required':''}>`;
     } else if (fl.type === 'number') {
-      input = `<input id="${fl.id}" type="number" inputmode="numeric" min="0" placeholder="0" ${fl.required?'required':''}>`;
+      input = `<input id="${fl.id}" type="number" inputmode="numeric" min="0" placeholder="${fl.placeholder||'0'}" ${fl.required?'required':''} ${fl.readonly?'readonly tabindex="-1" class="ro"':''}>`;
     } else {
       input = `<input id="${fl.id}" type="text" placeholder="${fl.placeholder||''}">`;
     }
