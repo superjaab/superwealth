@@ -63,7 +63,17 @@
       "PowerShell(node -c \"api/update.js\")",
       "PowerShell(node -c \"api/delete.js\")",
       "PowerShell(node -c \"api/_logger.js\")",
-      "PowerShell(node -c \"api/get-data.js\")"
+      "PowerShell(node -c \"api/get-data.js\")",
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "PowerShell",
+      "Bash",
+      "Edit",
+      "Write",
+      "Read",
+      "Grep",
+      "Glob",
+      "Agent"
     ]
   }
 }

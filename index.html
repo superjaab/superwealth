@@ -5015,6 +5015,11 @@
     .dash-click:active { transform: scale(.99); }
     .sum-trip-row { transition: background .15s; }
     .sum-trip-row:hover td { background: rgba(37,99,235,.06); }
+    /* v15.73 — custom legend under status donut (lets the donut fill the canvas so center label aligns) */
+    .sw-donut-legend { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; align-items: center; }
+    .sw-dl-item { font-size: .8rem; color: #475569; display: flex; align-items: center; gap: 7px; }
+    .sw-dl-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+    body.dark .sw-dl-item { color: #cbd5e1; }
     body.dark .dash-click:hover { background: rgba(148,163,184,.12); }
     body.dark .sum-trip-row:hover td { background: rgba(148,163,184,.1); }
     /* v15.71 — flash-highlight the target card after jumping from a chart */
@@ -5239,7 +5244,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.72 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.73 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -6816,7 +6821,7 @@
       <div class="dash-card" id="sum-status-donut-card">
         <div class="dash-card-head">
           <div>
-            <div class="dash-card-title">💰 สถานะการชำระเงิน</div>
+            <div class="dash-card-title">💰 สถานะการชำระเงิน <span style="font-size:.7rem;font-weight:600;color:#94a3b8">· 👆 คลิกดูรายการ</span></div>
             <div class="dash-card-sub" id="sum-status-sub">— เที่ยว</div>
           </div>
         </div>
@@ -6827,11 +6832,12 @@
             <div style="font-size:.7rem;color:#64748b;margin-top:4px">เที่ยวทั้งหมด</div>
           </div>
         </div>
+        <div id="sum-status-legend" class="sw-donut-legend"></div>
       </div>
       <div class="dash-card" id="sum-doughnut-card">
         <div class="dash-card-head">
           <div>
-            <div class="dash-card-title">🍩 สัดส่วนรายจ่าย แยกตามหมวด</div>
+            <div class="dash-card-title">🍩 สัดส่วนรายจ่าย แยกตามหมวด <span style="font-size:.7rem;font-weight:600;color:#94a3b8">· 👆 คลิกดูรายการ</span></div>
             <div class="dash-card-sub">แบ่งตามหมวดรายจ่าย</div>
           </div>
         </div>
@@ -14958,14 +14964,19 @@ function renderStatusDonut(truck) {
   const subEl = document.getElementById('sum-status-sub');
   const totalEl = document.getElementById('sum-status-total');
   const centerEl = document.getElementById('sum-status-center');
+  const legEl = document.getElementById('sum-status-legend');
   if (subEl)    subEl.textContent = `${total} เที่ยว`;
   if (totalEl)  totalEl.textContent = total;
 
   const ctx = document.getElementById('sum-chart-status');
   if (!ctx) return;
   if (_statusChart) { _statusChart.destroy(); _statusChart = null; }
-  if (total === 0) { if (centerEl) centerEl.style.display = 'none'; return; }
+  if (total === 0) { if (centerEl) centerEl.style.display = 'none'; if (legEl) legEl.innerHTML = ''; return; }
   if (centerEl) centerEl.style.display = '';
+  // v15.73 — legend เป็น HTML ใต้กราฟ → โดนัทเต็มผืน canvas → เลข "ตรงกลาง" จริง
+  if (legEl) legEl.innerHTML =
+    `<div class="sw-dl-item"><span class="sw-dl-dot" style="background:#ef4444"></span>⚠️ ค้างจ่าย — <b>${unpaid}</b> เที่ยว (${pctUnpaid.toFixed(1)}%)</div>` +
+    `<div class="sw-dl-item"><span class="sw-dl-dot" style="background:#10b981"></span>✅ จ่ายแล้ว — <b>${paid}</b> เที่ยว (${pctPaid.toFixed(1)}%)</div>`;
 
   _statusChart = new Chart(ctx.getContext('2d'), {
     type: 'doughnut',
@@ -14983,11 +14994,16 @@ function renderStatusDonut(truck) {
     },
     options: {
       responsive: true, maintainAspectRatio: true,
+      onHover: (e, els) => { try { e.native.target.style.cursor = els.length ? 'pointer' : 'default'; } catch(_) {} },
+      onClick: (e, _els, chart) => {   // v15.73 — คลิกชิ้น → ดูเที่ยวในสถานะนั้น
+        const pts = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, true);
+        if (!pts.length) return;
+        const all = _sumData.truck || [];
+        if (pts[0].index === 0) showChartDrill('⚠️ เที่ยวที่ค้างจ่าย', all.filter(r => (r.paymentStatus||'ค้างจ่าย') === 'ค้างจ่าย'), 'truck');
+        else                    showChartDrill('✅ เที่ยวที่จ่ายแล้ว', all.filter(r => (r.paymentStatus||'ค้างจ่าย') !== 'ค้างจ่าย'), 'truck');
+      },
       plugins: {
-        legend: {
-          position: 'bottom',
-          labels: { font:{size:11.5,weight:'600'}, padding:10, usePointStyle:true, pointStyle:'circle', boxWidth:8 }
-        },
+        legend: { display: false },
         tooltip: {
           callbacks: {
             label: ctx => {
@@ -15550,6 +15566,11 @@ function renderDoughnutChart(expense) {
       maintainAspectRatio: false,
       cutout: '62%',  // doughnut hole size
       layout: { padding: 8 },
+      onHover: (e, els) => { try { e.native.target.style.cursor = els.length ? 'pointer' : 'default'; } catch(_) {} },
+      onClick: (e, _els, chart) => {   // v15.73 — คลิกชิ้น → ดูรายจ่ายในหมวดนั้น
+        const pts = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, true);
+        if (pts.length) drillExpenseCat(labels[pts[0].index]);
+      },
       animation: { animateRotate: true, animateScale: true, duration: 900, easing: 'easeOutCubic' },
       plugins: {
         legend: {
@@ -15979,7 +16000,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.72';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.73';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
