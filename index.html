@@ -4997,6 +4997,19 @@
     #cust-list .record-card.rc-dragover { outline: 2px dashed #7c3aed; outline-offset: 2px; background: #faf5ff; }
     .rc-grip { cursor: grab; color: #c4b5fd; font-size: 1.05rem; margin-right: 6px; user-select: none; vertical-align: middle; }
 
+    /* v15.70 — drill-down rows (คลิกแท่งกราฟ) */
+    .dm-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 2px; border-bottom: 1px solid #f1f5f9; }
+    .dm-row:last-child { border-bottom: none; }
+    .dm-main { min-width: 0; flex: 1; }
+    .dm-l1 { font-weight: 700; color: #0f172a; font-size: .84rem; }
+    .dm-l2 { font-size: .76rem; color: #64748b; margin-top: 2px; word-break: break-word; }
+    .dm-amt { font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .dm-doc { font-size: .68rem; background: #eef2ff; color: #4338ca; padding: 1px 6px; border-radius: 6px; font-weight: 700; margin-left: 4px; }
+    body.dark .dm-row { border-bottom-color: rgba(148,163,184,.15); }
+    body.dark .dm-l1 { color: #f1f5f9; }
+    body.dark .dm-l2 { color: #94a3b8; }
+    body.dark .dm-doc { background: rgba(99,102,241,.2); color: #c7d2fe; }
+
     /* v15.02 — Trip round chip: compact pill ที่มุมขวาบนของ card-title
        สไตล์ off-white minimal เหมือน sw-doc-auto แต่แก้ตัวเลขได้ + ปุ่ม refresh */
     .sw-round-auto {
@@ -5210,7 +5223,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.69 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.70 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -6708,6 +6721,21 @@
     </div>
   </div>
 
+  <!-- v15.70 — Chart drill-down modal: คลิกแท่ง → รายการที่รวมกันเป็นยอดนั้น -->
+  <div id="drill-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.55);backdrop-filter:blur(3px);align-items:flex-start;justify-content:center;padding:24px 12px;overflow:auto" onclick="if(event.target===this)closeDrill()">
+    <div style="background:#fff;border-radius:18px;max-width:560px;width:100%;box-shadow:0 24px 60px -12px rgba(0,0,0,.4);overflow:hidden">
+      <div style="background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div id="drill-title" style="font-weight:800;font-size:1rem">รายการ</div>
+        <button type="button" onclick="closeDrill()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:34px;height:34px;border-radius:10px;cursor:pointer;font-size:1.1rem;flex-shrink:0">✕</button>
+      </div>
+      <div id="drill-body" style="padding:6px 18px;max-height:56vh;overflow:auto"></div>
+      <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid #eef2f7;background:#fafbfc">
+        <span id="drill-total" style="font-weight:800;font-size:.95rem">รวม</span>
+        <button type="button" onclick="closeDrill()" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:10px;padding:10px 20px;font-weight:700;cursor:pointer;font-family:inherit">ปิด</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Quick Menu grid removed (v14.1) — moved to LINE Bot full menu carousel
        Reason: redundant with sidebar on web (already shows all options).
        LINE Bot has limited UI → menu grid more useful there. -->
@@ -6749,7 +6777,7 @@
     <div class="dash-card" style="margin-bottom:14px">
       <div class="dash-card-head">
         <div>
-          <div class="dash-card-title">🚚 กำไรเที่ยวรถ รายเดือน <span style="font-size:.7rem;font-weight:600;color:#94a3b8">(ตามเดือนต้นทาง · วันเข้ารับ)</span></div>
+          <div class="dash-card-title">🚚 กำไรเที่ยวรถ รายเดือน <span style="font-size:.7rem;font-weight:600;color:#94a3b8">(ตามเดือนต้นทาง · วันเข้ารับ) · 👆 คลิกแท่งดูรายการ</span></div>
           <div class="dash-card-sub" id="sum-trip-chart-range">—</div>
         </div>
       </div>
@@ -6759,7 +6787,7 @@
     <div class="dash-card" style="margin-bottom:14px">
       <div class="dash-card-head">
         <div>
-          <div class="dash-card-title">📈 รายรับ-รายจ่าย รายเดือน</div>
+          <div class="dash-card-title">📈 รายรับ-รายจ่าย รายเดือน <span style="font-size:.7rem;font-weight:600;color:#94a3b8">· 👆 คลิกแท่งดูรายการ</span></div>
           <div class="dash-card-sub" id="sum-chart-range">—</div>
         </div>
       </div>
@@ -14708,6 +14736,31 @@ function closeForecast() {
   if (m) m.style.display = 'none';
 }
 
+// ─── v15.70 — DRILL-DOWN: คลิกแท่งกราฟ → ดูรายการที่รวมกันเป็นยอดนั้น ───
+function showChartDrill(title, records, kind) {
+  records = records || [];
+  const fmt = v => '฿' + Math.round(v).toLocaleString('th-TH');
+  let total = 0;
+  // เรียงตามวันที่
+  const dateOf = r => kind === 'income' ? (r.incomeDate || '') : (r.expenseDate || '');
+  const sorted = [...records].sort((a, b) => String(dateOf(a)).localeCompare(String(dateOf(b))));
+  const rows = sorted.map(r => {
+    const amt = _detectAmount(r); total += amt;
+    const doc = r.docNumber ? `<span class="dm-doc">${escHtml(r.docNumber)}</span>` : '';
+    if (kind === 'income') {
+      const line2 = [r.customerName, r.incomeItem].filter(Boolean).map(escHtml).join(' · ');
+      return `<div class="dm-row"><div class="dm-main"><div class="dm-l1">📅 ${fmtDate(r.incomeDate)} ${doc}</div>${line2 ? `<div class="dm-l2">${line2}</div>` : ''}</div><div class="dm-amt" style="color:#16a34a">+${fmt(amt)}</div></div>`;
+    }
+    const line2 = [r.category, r.vendor, r.expenseDetail].filter(Boolean).map(escHtml).join(' · ');
+    return `<div class="dm-row"><div class="dm-main"><div class="dm-l1">📅 ${fmtDate(r.expenseDate)} ${doc}</div>${line2 ? `<div class="dm-l2">${line2}</div>` : ''}</div><div class="dm-amt" style="color:#dc2626">−${fmt(amt)}</div></div>`;
+  }).join('');
+  document.getElementById('drill-title').textContent = `${title} · ${records.length} รายการ`;
+  document.getElementById('drill-body').innerHTML = rows || '<div style="text-align:center;color:#94a3b8;padding:28px">📭 ไม่มีรายการ</div>';
+  document.getElementById('drill-total').innerHTML = `รวม <b style="color:${kind === 'income' ? '#16a34a' : '#dc2626'}">${kind === 'income' ? '+' : '−'}${fmt(total)}</b>`;
+  document.getElementById('drill-modal').style.display = 'flex';
+}
+function closeDrill() { const m = document.getElementById('drill-modal'); if (m) m.style.display = 'none'; }
+
 function renderSummary(data, dateFrom, dateTo) {
   const income  = data.income  || [];
   const expense = data.expense || [];
@@ -15124,6 +15177,14 @@ function renderTripBarChart(income, expense, truck, dateFrom, dateTo) {
       animation: { duration: 900, easing: 'easeOutCubic' },
       hover: { mode: 'index', intersect: false },
       interaction: { mode: 'index', intersect: false },
+      onHover: (e, els) => { try { e.native.target.style.cursor = els.length ? 'pointer' : 'default'; } catch(_) {} },
+      onClick: (e, _els, chart) => {   // v15.70 — คลิกแท่ง → ดูรายการที่รวมกันเป็นยอดนั้น
+        const pts = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, true);
+        if (!pts.length) return;
+        const di = pts[0].datasetIndex, mo = months[pts[0].index], lab = thMonths[pts[0].index];
+        if (di === 0) showChartDrill('💰 รายรับเที่ยว · ' + lab, (income||[]).filter(r => linkedMonth(r) === mo), 'income');
+        else          showChartDrill('💸 รายจ่ายเที่ยว · ' + lab, (expense||[]).filter(r => linkedMonth(r) === mo), 'expense');
+      },
       plugins: {
         legend: { position: 'top', align: 'end', labels: { font: { size: 12, weight: '700', family: 'Noto Sans Thai, Inter, sans-serif' }, usePointStyle: true, pointStyle: 'rectRounded', padding: 16, boxWidth: 14, boxHeight: 14 } },
         tooltip: {
@@ -15278,6 +15339,14 @@ function renderBarChart(income, expense, dateFrom, dateTo) {
       // v14.27 — Bar hover lift effect
       hover: { mode: 'index', intersect: false },
       interaction: { mode: 'index', intersect: false },
+      onHover: (e, els) => { try { e.native.target.style.cursor = els.length ? 'pointer' : 'default'; } catch(_) {} },
+      onClick: (e, _els, chart) => {   // v15.70 — คลิกแท่ง → ดูรายการที่รวมกันเป็นยอดนั้น
+        const pts = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, true);
+        if (!pts.length) return;
+        const di = pts[0].datasetIndex, mo = months[pts[0].index], lab = thMonths[pts[0].index];
+        if (di === 0) showChartDrill('💰 รายรับ · ' + lab, (income||[]).filter(r => (r.incomeDate||'').slice(0,7) === mo), 'income');
+        else          showChartDrill('💸 รายจ่าย · ' + lab, (expense||[]).filter(r => (r.expenseDate||'').slice(0,7) === mo), 'expense');
+      },
       plugins: {
         legend: {
           position: 'top',
@@ -15805,7 +15874,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.69';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.70';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
