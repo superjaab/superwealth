@@ -47,7 +47,17 @@
   .ac-opt{ padding:12px 14px; font-size:15px; color:var(--text); border-bottom:1px solid #f1f5f9; cursor:pointer; }
   .ac-opt:last-child{ border-bottom:none; }
   .ac-opt:active, .ac-opt.on{ background:#eef4ff; }
+  .ac-opt-new{ color:var(--c); font-weight:800; }
   .ac-empty{ padding:12px 14px; font-size:13px; color:var(--mute); }
+  /* v16.00 — ช่องค้นหาในกล่อง dropdown (แป้นพิมพ์ขึ้นเฉพาะตอนแตะช่องนี้) */
+  .ac-panel .ac-search{ position:sticky; top:0; z-index:2; width:100%; box-sizing:border-box; margin:0;
+    padding:11px 12px; font-size:15px; font-family:inherit; border:none; border-bottom:1px solid var(--line);
+    border-radius:12px 12px 0 0; outline:none; background:#fff; color:var(--text); }
+  .ac-panel .ac-search:focus{ border-bottom-color:var(--c); }
+  /* v16.00 — ช่อง dropdown: ลูกศร + เคอร์เซอร์มือ (ให้รู้ว่าแตะเพื่อเลือก ไม่ใช่พิมพ์) */
+  .ac-wrap > input{ cursor:pointer;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%235A6577' stroke-width='2.5'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat:no-repeat; background-position:right 12px center; padding-right:38px; }
   .btns{ position:sticky; bottom:0; background:linear-gradient(transparent,var(--bg) 28%);
     padding:14px 16px calc(18px + env(safe-area-inset-bottom)); display:flex; gap:10px; }
   button{ flex:1; padding:15px; font-size:16px; font-weight:800; font-family:inherit; border:none; border-radius:14px; cursor:pointer; }
@@ -178,35 +188,48 @@
   // ── v15.86 — autocomplete dropdown แบบเดียวกับเว็บ (แตะ→เห็นทั้งหมด, พิมพ์→กรอง, แตะเลือก) ──
   function _liffAC(input, getItems) {
     if (!input || input._ac) return; input._ac = true;
+    // v16.00 — แตะช่อง = เปิดรายการ ไม่เด้งแป้นพิมพ์ (เป็น dropdown จริง) · พิมพ์ค้นหาในกล่อง
+    input.setAttribute('inputmode', 'none');
+    input.setAttribute('autocomplete', 'off');
+    input.setAttribute('readonly', 'readonly');   // กันแป้นพิมพ์เด้ง (ค่ายังส่ง/validate ผ่าน custom ได้)
     const wrap = document.createElement('div'); wrap.className = 'ac-wrap';
     input.parentNode.insertBefore(wrap, input); wrap.appendChild(input);
     const panel = document.createElement('div'); panel.className = 'ac-panel'; wrap.appendChild(panel);
+    const search = document.createElement('input');
+    search.className = 'ac-search'; search.type = 'text'; search.autocomplete = 'off';
+    search.placeholder = '🔍 พิมพ์ค้นหา / กรอกใหม่';
+    const list = document.createElement('div'); list.className = 'ac-list';
+    panel.appendChild(search); panel.appendChild(list);
     const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-    // v15.88 — useFilter=false (ตอนแตะ) → โชว์ทั้งหมดเพื่อเปลี่ยนได้ · true (ตอนพิมพ์) → กรอง
-    const render = (useFilter) => {
-      const cur = input.value.trim();
-      const q = useFilter ? cur.toLowerCase() : '';
-      let items = (getItems() || []).filter(Boolean);
-      if (q) items = items.filter(o => String(o).toLowerCase().includes(q));
-      items = items.slice(0, 60);
-      panel.innerHTML = items.length
-        ? items.map(o => `<div class="ac-opt${o === cur ? ' on' : ''}">${esc(o)}</div>`).join('')
-        : '<div class="ac-empty">— ไม่มีในรายการ · พิมพ์เพื่อเพิ่มใหม่ได้ —</div>';
-      panel.style.display = 'block';
-      const sel = panel.querySelector('.ac-opt.on'); if (sel) sel.scrollIntoView({ block: 'nearest' });
+    const render = () => {
+      const typed = search.value.trim();
+      const q = typed.toLowerCase();
+      let items = (getItems() || []).filter(Boolean).map(String);
+      if (q) items = items.filter(o => o.toLowerCase().includes(q));
+      items = items.slice(0, 80);
+      let html = '';
+      if (typed && !items.some(o => o.toLowerCase() === q))   // ให้กรอกค่าใหม่ที่ไม่มีในรายการได้
+        html += `<div class="ac-opt ac-opt-new">➕ ใช้ “${esc(typed)}”</div>`;
+      html += items.map(o => `<div class="ac-opt${o === input.value ? ' on' : ''}">${esc(o)}</div>`).join('');
+      list.innerHTML = html || '<div class="ac-empty">— ไม่มีรายการ · พิมพ์เพื่อกรอกใหม่ —</div>';
+      const sel = list.querySelector('.ac-opt.on'); if (sel) sel.scrollIntoView({ block: 'nearest' });
     };
-    input.addEventListener('focus', () => render(false));   // แตะ → เห็นรายการทั้งหมด
-    input.addEventListener('input', () => render(true));     // พิมพ์ → กรอง
-    input.addEventListener('blur', () => setTimeout(() => { panel.style.display = 'none'; }, 160));
+    const openPanel = () => { search.value = ''; render(); panel.style.display = 'block'; };
+    const closePanel = () => { panel.style.display = 'none'; };
+    input.addEventListener('focus', openPanel);   // แตะ → เปิดรายการ (ไม่มีแป้นพิมพ์)
+    input.addEventListener('click', openPanel);
+    search.addEventListener('input', render);      // แตะช่องค้นหา → แป้นพิมพ์ขึ้น (ตั้งใจพิมพ์)
     const pick = e => {
       const opt = e.target.closest('.ac-opt'); if (!opt) return;
       e.preventDefault();
-      input.value = opt.textContent;
-      panel.style.display = 'none';
+      input.value = opt.classList.contains('ac-opt-new') ? search.value.trim() : opt.textContent;
+      closePanel();
       input.dispatchEvent(new Event('change', { bubbles: true }));
+      input.blur();
     };
-    panel.addEventListener('mousedown', pick);
-    panel.addEventListener('touchstart', pick, { passive: false });
+    list.addEventListener('mousedown', pick);
+    list.addEventListener('touchstart', pick, { passive: false });
+    document.addEventListener('click', e => { if (!wrap.contains(e.target)) closePanel(); });
   }
 
   // ── Build the form ────────────────────────────────────────────
@@ -617,6 +640,14 @@
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!form.reportValidity()) return;
+    // v16.00 — dropdown ที่จำเป็นเป็น readonly → reportValidity ข้าม จึงเช็คเอง
+    for (const el of form.querySelectorAll('input[required][readonly]')) {
+      if (!el.value.trim()) {
+        const f = cfg.fields.find(x => x.id === el.id);
+        alert('⚠️ กรุณากรอก: ' + String((f && f.label) || 'ข้อมูล').replace('🔒','').trim());
+        el.focus(); return;
+      }
+    }
     if (type === 'expense' && window._expcatRows && window._expcatRows().reduce((s,r)=>s+r.amount,0) <= 0) {
       alert('⚠️ กรุณากรอกจำนวนเงินอย่างน้อย 1 หมวด'); return;
     }
