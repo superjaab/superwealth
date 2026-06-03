@@ -5244,7 +5244,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.74 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.75 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -15241,12 +15241,18 @@ function renderTripBarChart(income, expense, truck, dateFrom, dateTo) {
   const moNames = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   const thMonths = months.map(m => { const [y, mo] = m.split('-'); return moNames[parseInt(mo)-1] + ' ' + (parseInt(y)+543); });
 
+  // v15.75 — จำนวนเที่ยวต่อเดือน (นับตามเดือนต้นทาง/วันเข้ารับ) → โชว์ใต้ชื่อเดือน
+  const tripsByMonth = {}; months.forEach(m => tripsByMonth[m] = 0);
+  (truck || []).forEach(t => { const mo = String(t.pickupDate || t.jobDate || '').slice(0,7); if (tripsByMonth[mo] !== undefined) tripsByMonth[mo]++; });
+  const xLabels = months.map((m, i) => [thMonths[i], `🚚 ${tripsByMonth[m]} เที่ยว`]);
+  const totTrips = months.reduce((s, m) => s + tripsByMonth[m], 0);
+
   // กำไรรวมทั้งช่วง → subtitle
   const totInc = months.reduce((s,m)=>s+incByMonth[m],0);
   const totExp = months.reduce((s,m)=>s+expByMonth[m],0);
   const totPf  = totInc - totExp;
   const subEl = document.getElementById('sum-trip-chart-range');
-  if (subEl) subEl.textContent = `กำไรรวม ${totPf>=0?'+':'−'}฿${Math.abs(Math.round(totPf)).toLocaleString('th-TH')} · รายรับ ฿${Math.round(totInc).toLocaleString('th-TH')} · รายจ่าย ฿${Math.round(totExp).toLocaleString('th-TH')}`;
+  if (subEl) subEl.textContent = `กำไรรวม ${totPf>=0?'+':'−'}฿${Math.abs(Math.round(totPf)).toLocaleString('th-TH')} · รายรับ ฿${Math.round(totInc).toLocaleString('th-TH')} · รายจ่าย ฿${Math.round(totExp).toLocaleString('th-TH')} · 🚚 ${totTrips} เที่ยว`;
 
   if (_tripBarChart) { _tripBarChart.destroy(); _tripBarChart = null; }
   const ctx = document.getElementById('sum-chart-trip').getContext('2d');
@@ -15303,7 +15309,7 @@ function renderTripBarChart(income, expense, truck, dateFrom, dateTo) {
   _tripBarChart = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: thMonths,
+      labels: xLabels,
       datasets: [
         { label: '💰 รายรับเที่ยว', data: months.map(m => incByMonth[m]), backgroundColor: gG, hoverBackgroundColor: gGh, borderRadius: { topLeft:10, topRight:10, bottomLeft:2, bottomRight:2 }, borderSkipped:false, borderWidth:0, maxBarThickness:110, categoryPercentage:0.8, barPercentage:0.85 },
         { label: '💸 รายจ่ายเที่ยว', data: months.map(m => expByMonth[m]), backgroundColor: rG, hoverBackgroundColor: rGh, borderRadius: { topLeft:10, topRight:10, bottomLeft:2, bottomRight:2 }, borderSkipped:false, borderWidth:0, maxBarThickness:110, categoryPercentage:0.8, barPercentage:0.85 }
@@ -15328,11 +15334,12 @@ function renderTripBarChart(income, expense, truck, dateFrom, dateTo) {
         tooltip: {
           backgroundColor: 'rgba(15,23,42,0.95)', titleFont: { size: 12, weight: '700', family: 'Noto Sans Thai, sans-serif' }, bodyFont: { size: 13, weight: '600', family: 'Noto Sans Thai, sans-serif' }, padding: 12, cornerRadius: 10, boxPadding: 6, borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, displayColors: true,
           callbacks: {
+            title: items => thMonths[items[0].dataIndex] || '',   // v15.75 — หัวทูลทิปสะอาด (ไม่เอาบรรทัดจำนวนเที่ยว)
             label: ctx => ' ' + ctx.dataset.label + ': ฿' + ctx.raw.toLocaleString('th-TH', { maximumFractionDigits: 0 }),
             afterBody: items => {
               const i = items[0].dataIndex;
               const pf = (incByMonth[months[i]]||0) - (expByMonth[months[i]]||0);
-              return '\nกำไรเดือนนี้: ' + (pf>=0?'+':'−') + '฿' + Math.abs(Math.round(pf)).toLocaleString('th-TH');
+              return '\nกำไรเดือนนี้: ' + (pf>=0?'+':'−') + '฿' + Math.abs(Math.round(pf)).toLocaleString('th-TH') + '  ·  🚚 ' + (tripsByMonth[months[i]]||0) + ' เที่ยว';
             }
           }
         }
@@ -16016,7 +16023,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.74';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.75';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
