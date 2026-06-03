@@ -5267,7 +5267,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.92 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.93 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -5923,7 +5923,7 @@
     #cal-day-modal.show { display:flex }
     .cal-modal-box { background:white; border-radius:14px; max-width:560px; width:100%; max-height:90dvh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.4) }
     .cal-modal-head { display:flex; align-items:center; justify-content:space-between; padding:16px 18px; border-bottom:1px solid #e2e8f0; position:sticky; top:0; background:white; border-radius:14px 14px 0 0 }
-    .cal-modal-title { font-weight:800; font-size:1rem; color:#1e293b }
+    .cal-modal-title { font-weight:800; font-size:1.18rem; color:#1e293b }
     .cal-modal-close { background:#f1f5f9; border:none; border-radius:6px; width:30px; height:30px; cursor:pointer; font-size:1rem; color:#64748b }
     .cal-modal-body { padding:14px 18px }
     .cal-trip-card { padding:12px; border-radius:10px; background:#f8fafc; border-left:4px solid #3b82f6; margin-bottom:10px }
@@ -5932,13 +5932,13 @@
     .cal-trip-card.s-done    { border-left-color:#10b981 }
     .cal-trip-card.s-cancel  { border-left-color:#94a3b8 }
     .cal-trip-head { display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap }
-    .cal-trip-plate { font-weight:800; color:#1e293b; font-size:.92rem }
-    .cal-trip-badge { font-size:.62rem; padding:2px 8px; border-radius:10px; color:white; font-weight:700 }
+    .cal-trip-plate { font-weight:800; color:#1e293b; font-size:1.22rem }
+    .cal-trip-badge { font-size:.8rem; padding:3px 10px; border-radius:10px; color:white; font-weight:700 }
     .cal-trip-badge.s-wait    { background:#f59e0b }
     .cal-trip-badge.s-driving { background:#3b82f6 }
     .cal-trip-badge.s-done    { background:#10b981 }
     .cal-trip-badge.s-cancel  { background:#94a3b8 }
-    .cal-trip-row { font-size:.78rem; color:#475569; line-height:1.6 }
+    .cal-trip-row { font-size:.98rem; color:#475569; line-height:1.75 }
     .cal-trip-row b { color:#1e293b; font-weight:700 }
     .cal-empty { text-align:center; padding:40px 20px; color:#94a3b8 }
   </style>
@@ -14626,11 +14626,11 @@ function openCalDay(dateKey, focusRowId) {
     };
     // v15.18 — header differs for single-trip focus vs whole-day view
     const headerHtml = focused
-      ? `<div style="font-size:.78rem;color:#64748b;padding:0 4px 10px;display:flex;justify-content:space-between;align-items:center;gap:8px">
+      ? `<div style="font-size:.92rem;color:#64748b;padding:0 4px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px">
            <span>🚛 รายละเอียดเที่ยวรถ</span>
-           <button type="button" onclick="openCalDay('${dateKey}')" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:8px;padding:4px 10px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit">📋 ดูทั้งวัน</button>
+           <button type="button" onclick="openCalDay('${dateKey}')" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:8px;padding:6px 12px;font-size:.84rem;font-weight:700;cursor:pointer;font-family:inherit">📋 ดูทั้งวัน</button>
          </div>`
-      : `<div style="font-size:.78rem;color:#64748b;padding:0 4px 10px">พบ <b style="color:#0f172a">${matches.length}</b> เที่ยวรถในวันนี้</div>`;
+      : `<div style="font-size:.92rem;color:#64748b;padding:0 4px 12px">พบ <b style="color:#0f172a">${matches.length}</b> เที่ยวรถในวันนี้</div>`;
     body.innerHTML = headerHtml +
     matches.map(({trip, kind, span}) => {
       const cls = _calStatusClass(trip);
@@ -14642,12 +14642,12 @@ function openCalDay(dateKey, focusRowId) {
                      :                       '🚚 เที่ยวรถ';
       const time = trip.jobTime ? ' · ' + trip.jobTime : '';
       const tripRoundBadge = trip.tripRound
-        ? `<span style="background:#eef2ff;color:#4338ca;padding:2px 8px;border-radius:8px;font-size:.7rem;font-weight:700">รอบ ${escHtml(trip.tripRound)}</span>`
+        ? `<span style="background:#eef2ff;color:#4338ca;padding:3px 10px;border-radius:8px;font-size:.84rem;font-weight:700">รอบ ${escHtml(trip.tripRound)}</span>`
         : '';
       const isPaid = (trip.paymentStatus || 'ค้างจ่าย') === 'จ่ายแล้ว';
       const paymentBadge = isPaid
-        ? `<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:8px;font-size:.7rem;font-weight:700">✓ ชำระแล้ว</span>`
-        : `<span style="background:#fee2e2;color:#b91c1c;padding:2px 8px;border-radius:8px;font-size:.7rem;font-weight:700">⏰ ค้างจ่าย</span>`;
+        ? `<span style="background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:8px;font-size:.84rem;font-weight:700">✓ ชำระแล้ว</span>`
+        : `<span style="background:#fee2e2;color:#b91c1c;padding:3px 10px;border-radius:8px;font-size:.84rem;font-weight:700">⏰ ค้างจ่าย</span>`;
       const spanLabel = (span.startNum !== span.endNum)
         ? `<div class="cal-trip-row" style="color:#4f46e5;font-weight:600">🗓️ <b>ช่วงเที่ยว:</b> ${fmtDM(span.startNum)} – ${fmtDM(span.endNum)} (${span.endNum - span.startNum + 1} วัน)</div>`
         : '';
@@ -14657,9 +14657,9 @@ function openCalDay(dateKey, focusRowId) {
       const actionBar = rid ? `
         <div class="cal-trip-actions" style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed #e2e8f0;justify-content:flex-end;flex-wrap:wrap">
           <button type="button" onclick="event.stopPropagation();_calEditTrip('${escAttr(rid)}')"
-                  style="background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;border-radius:8px;padding:7px 14px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px">✏️ แก้ไข</button>
+                  style="background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;border-radius:8px;padding:9px 18px;font-size:.92rem;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px">✏️ แก้ไข</button>
           <button type="button" onclick="event.stopPropagation();onDeleteClick('truck','${escAttr(rid)}','${escAttr(lbl)}')"
-                  style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;border-radius:8px;padding:7px 14px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px">🗑 ลบ</button>
+                  style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;border-radius:8px;padding:9px 18px;font-size:.92rem;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px">🗑 ลบ</button>
         </div>` : '';
       return `
         <div class="cal-trip-card ${cls}">
@@ -14669,7 +14669,7 @@ function openCalDay(dateKey, focusRowId) {
             <span class="cal-trip-badge ${cls}">${statText}</span>
             ${paymentBadge}
           </div>
-          <div class="cal-trip-row" style="color:#64748b;font-size:.75rem;margin-top:2px">${kindLabel}${time}</div>
+          <div class="cal-trip-row" style="color:#64748b;font-size:.88rem;margin-top:2px">${kindLabel}${time}</div>
           ${spanLabel}
           ${(trip.originCustomer || trip.customerName) ? `<div class="cal-trip-row">🏢 <b>ลูกค้า:</b> ${trip.originCustomer && trip.customerName && trip.originCustomer !== trip.customerName ? escHtml(trip.originCustomer) + ' → ' + escHtml(trip.customerName) : escHtml(trip.customerName || trip.originCustomer)}</div>` : ''}
           ${trip.driverName   ? `<div class="cal-trip-row">👤 <b>คนขับ:</b> ${escHtml(trip.driverName)}${trip.driverPhone ? ' · ☎️ ' + escHtml(trip.driverPhone) : ''}</div>` : ''}
@@ -14679,10 +14679,10 @@ function openCalDay(dateKey, focusRowId) {
             const fc = parseFloat(trip.freightCost) || 0;
             const rev = (typeof _tripRevenue === 'function') ? _tripRevenue(trip) : fc;
             if (rev <= 0) return '';
-            const src = fc > 0 ? '' : ' <span style="color:#94a3b8;font-size:.72rem;font-weight:600">🔗 จากรายรับ</span>';
+            const src = fc > 0 ? '' : ' <span style="color:#94a3b8;font-size:.82rem;font-weight:600">🔗 จากรายรับ</span>';
             return `<div class="cal-trip-row">💰 <b>ค่าขนส่ง:</b> ${fmtBaht(rev)}${src}</div>`;
           })()}
-          ${trip.remark       ? `<div class="cal-trip-row" style="color:#94a3b8;font-size:.78rem">📝 ${escHtml(trip.remark)}</div>` : ''}
+          ${trip.remark       ? `<div class="cal-trip-row" style="color:#94a3b8;font-size:.9rem">📝 ${escHtml(trip.remark)}</div>` : ''}
           ${actionBar}
         </div>`;
     }).join('');
@@ -16166,7 +16166,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.92';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.93';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
