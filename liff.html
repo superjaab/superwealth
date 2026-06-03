@@ -84,13 +84,17 @@
   const TYPES = {
     truck: { title:'🚛 บันทึกรถ', color:'#1565C0', sub:'งานเดินรถ / เที่ยววิ่ง',
       fields:[
-        {id:'pickupDate', label:'วันที่รับสินค้า', type:'date', required:true},
+        {id:'tripRound', label:'รอบเที่ยว', type:'number', placeholder:'อัตโนมัติ (แก้ได้)'},
+        {id:'pickupDate', label:'วันที่เข้ารับ', type:'date', required:true, half:true},
+        {id:'deliveryDate', label:'วันส่งสินค้า', type:'date', half:true},
         {id:'plateNumber', label:'ทะเบียนรถ', type:'plate', required:true},
         {id:'driverName', label:'คนขับ', type:'text', placeholder:'ชื่อคนขับ (เติมอัตโนมัติเมื่อเลือกทะเบียน)'},
-        {id:'origin', label:'ต้นทาง', type:'province', half:true},
-        {id:'destination', label:'ปลายทาง', type:'province', half:true},
+        {id:'originCustomer', label:'ลูกค้าต้นทาง', type:'text', placeholder:'ผู้ว่าจ้าง / ผู้ส่งสินค้า'},
+        {id:'customerName', label:'ลูกค้าปลายทาง', type:'text', placeholder:'ผู้รับ / ปลายทาง'},
+        {id:'origin', label:'จังหวัดต้นทาง', type:'province', half:true},
+        {id:'destination', label:'จังหวัดปลายทาง', type:'province', half:true},
         {id:'freightCost', label:'ค่าขนส่ง (บาท)', type:'number', half:true},
-        {id:'paymentStatus', label:'สถานะ', type:'select', options:['ค้างจ่าย','ชำระแล้ว'], half:true},
+        {id:'paymentStatus', label:'สถานะ', type:'select', options:['ค้างจ่าย','จ่ายแล้ว'], half:true},
       ]},
     income: { title:'💰 บันทึกรายรับ', color:'#2E7D32', sub:'เงินเข้า',
       fields:[
@@ -167,9 +171,64 @@
     else { flush(); html += fieldHTML(fl); }
   }
   flush();
+  // v15.84 — แนบรูป/ใบเสร็จ (ทุกฟอร์ม) — ถ่าย/เลือกจากเครื่อง
+  html += `<div class="field">
+    <label>📷 แนบรูป / ใบเสร็จ (ถ้ามี)</label>
+    <input type="file" id="imgInput" accept="image/*" multiple capture="environment" style="display:none">
+    <button type="button" id="imgBtn" style="width:100%;padding:13px;border:1.5px dashed var(--c);border-radius:12px;background:#fff;color:var(--c);font-weight:800;font-size:15px;font-family:inherit;cursor:pointer">📷 ถ่ายรูป / เลือกรูป</button>
+    <div id="imgThumbs" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
+    <div class="hint">แนบได้หลายรูป · ระบบย่อขนาดให้อัตโนมัติ</div>
+  </div>`;
   html += `<datalist id="provinces">${PROVINCES.map(p=>`<option>${p}</option>`).join('')}</datalist>
            <datalist id="plates"></datalist>`;
   form.innerHTML = html;
+
+  // ── v15.84 — image attach logic (compress → base64 → /api/upload-images) ──
+  const _imgFiles = [];
+  const imgInput = document.getElementById('imgInput');
+  const imgBtn = document.getElementById('imgBtn');
+  const imgThumbs = document.getElementById('imgThumbs');
+  imgBtn.addEventListener('click', () => imgInput.click());
+  imgInput.addEventListener('change', () => {
+    for (const f of imgInput.files) if (f.type.startsWith('image/')) _imgFiles.push(f);
+    imgInput.value = '';
+    _renderThumbs();
+  });
+  window._rmImg = (i) => { _imgFiles.splice(i, 1); _renderThumbs(); };
+  function _renderThumbs() {
+    imgThumbs.innerHTML = _imgFiles.map((f, i) =>
+      `<div style="position:relative;width:64px;height:64px">
+        <img src="${URL.createObjectURL(f)}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line)">
+        <button type="button" onclick="_rmImg(${i})" style="position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;border:none;background:#C62828;color:#fff;font-size:12px;line-height:1;cursor:pointer">✕</button>
+      </div>`).join('');
+  }
+  function _fileToDataURL(file) {
+    return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); });
+  }
+  async function _compress(file) {
+    const dataUrl = await _fileToDataURL(file);
+    return new Promise(res => {
+      const img = new Image();
+      img.onload = () => {
+        const max = 1600; let w = img.width, h = img.height;
+        if (w > max || h > max) { const s = max / Math.max(w, h); w = Math.round(w * s); h = Math.round(h * s); }
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        res(c.toDataURL('image/jpeg', 0.8));
+      };
+      img.onerror = () => res(dataUrl);
+      img.src = dataUrl;
+    });
+  }
+  async function uploadImages() {
+    if (!_imgFiles.length) return [];
+    const images = [];
+    for (const f of _imgFiles) images.push({ base64: await _compress(f), mimeType: 'image/jpeg', filename: (f.name || 'image').replace(/\.[^.]+$/, '') + '.jpg' });
+    const r = await fetch(`${API}/api/upload-images`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ images }) });
+    const j = await r.json();
+    return (j.urls || []).map(u => u.url).filter(Boolean);
+  }
+  window._liffUploadImages = uploadImages;   // ใช้ตอน submit
 
   // default date = today
   cfg.fields.filter(f=>f.type==='date').forEach(f=>{
@@ -223,6 +282,8 @@
         const j = await r.json();
         const jobs = (j.data && j.data.truck) || [];
         _nextRound = jobs.reduce((m,t)=>Math.max(m, parseInt(t.tripRound)||0), 0) + 1;
+        const trEl = document.getElementById('tripRound');   // v15.84 — เติมเลขรอบถัดไปให้ (แก้ได้)
+        if (trEl && !trEl.value) trEl.value = _nextRound;
       } catch(e){ _nextRound = null; }
     })();
     document.getElementById('quickBtn').addEventListener('click', () => {
@@ -255,7 +316,7 @@
     const d = {}; cfg.fields.forEach(f => d[f.id] = val(f.id));
     d.userAgent = liffReady ? 'LINE LIFF' : 'LINE Form';
     if (type === 'truck') { d.jobDate = d.pickupDate; d.jobStatus = 'กำลังดำเนินการ'; d.tripCount = 1;
-      if (_nextRound) d.tripRound = _nextRound;
+      if (!d.tripRound && _nextRound) d.tripRound = _nextRound;   // v15.84 — ค่าที่พิมพ์เองชนะ, ไม่งั้นใช้อัตโนมัติ
       const v = vehMap[d.plateNumber]; if (v && v.assignedDriverPhone) d.driverPhone = v.assignedDriverPhone; }
     if (type === 'expense') d.expenseDetail = d.category;
     if (type === 'maintenance') d.description = d.maintenanceType;
@@ -273,9 +334,15 @@
     document.getElementById('saveBtn').disabled = true;
     show('loading');
     try {
+      const data = collect();
+      // v15.84 — อัปโหลดรูปก่อน แล้วแนบ URL เข้าไปกับข้อมูล
+      try {
+        const urls = (typeof _liffUploadImages === 'function') ? await _liffUploadImages() : [];
+        if (urls.length) data.imageUrls = urls;
+      } catch (e) { console.warn('upload images failed:', e); }
       const r = await fetch(`${API}/api/save`, {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ type, data: collect() })
+        body: JSON.stringify({ type, data })
       });
       const j = await r.json();
       if (!j.success) throw new Error(j.error || 'save failed');
