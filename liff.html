@@ -22,6 +22,9 @@
     background-repeat:no-repeat; background-position:right 12px center; padding-right:38px; }
   .field input:focus, .field select:focus{ outline:none; border-color:var(--c); }
   .row2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  /* v15.85 — 3-คอลัมน์ (รอบเที่ยว + วันเข้ารับ + วันส่ง) */
+  .row3{ display:grid; gap:8px; }
+  .row3 .field input{ padding-left:9px; padding-right:6px; font-size:15px; min-width:0; }
   .btns{ position:sticky; bottom:0; background:linear-gradient(transparent,var(--bg) 28%);
     padding:14px 16px calc(18px + env(safe-area-inset-bottom)); display:flex; gap:10px; }
   button{ flex:1; padding:15px; font-size:16px; font-weight:800; font-family:inherit; border:none; border-radius:14px; cursor:pointer; }
@@ -84,9 +87,9 @@
   const TYPES = {
     truck: { title:'🚛 บันทึกรถ', color:'#1565C0', sub:'งานเดินรถ / เที่ยววิ่ง',
       fields:[
-        {id:'tripRound', label:'รอบเที่ยว', type:'number', placeholder:'อัตโนมัติ (แก้ได้)'},
-        {id:'pickupDate', label:'วันที่เข้ารับ', type:'date', required:true, half:true},
-        {id:'deliveryDate', label:'วันส่งสินค้า', type:'date', half:true},
+        {id:'tripRound', label:'รอบเที่ยว', type:'number', placeholder:'อัตโนมัติ', third:true},
+        {id:'pickupDate', label:'วันที่เข้ารับ', type:'date', required:true, third:true},
+        {id:'deliveryDate', label:'วันส่งสินค้า', type:'date', third:true},
         {id:'plateNumber', label:'ทะเบียนรถ', type:'plate', required:true},
         {id:'driverName', label:'คนขับ', type:'text', placeholder:'ชื่อคนขับ (เติมอัตโนมัติเมื่อเลือกทะเบียน)'},
         {id:'originCustomer', label:'ลูกค้าต้นทาง', type:'text', placeholder:'ผู้ว่าจ้าง / ผู้ส่งสินค้า'},
@@ -161,14 +164,25 @@
       ${fl.type==='plate'?'<div class="hint">เลือกจากรายการ หรือพิมพ์ทะเบียนใหม่ก็ได้</div>':''}
     </div>`;
   }
-  // group consecutive half fields into rows
-  let html = '', buffer = [];
-  const flush = () => { if(!buffer.length) return;
-    html += buffer.length===2 ? `<div class="row2">${buffer.join('')}</div>` : buffer.join('');
-    buffer = []; };
+  // v15.85 — group consecutive half (2-col) / third (3-col) fields into rows
+  let html = '', buf = [], bufKind = null;
+  const flush = () => {
+    if (!buf.length) return;
+    if (bufKind === 'half' && buf.length === 2) html += `<div class="row2">${buf.join('')}</div>`;
+    else if (bufKind === 'third' && buf.length >= 2) {
+      const cols = buf.length === 3 ? '0.7fr 1fr 1fr' : `repeat(${buf.length},1fr)`;
+      html += `<div class="row3" style="grid-template-columns:${cols}">${buf.join('')}</div>`;
+    } else html += buf.join('');
+    buf = []; bufKind = null;
+  };
   for (const fl of cfg.fields) {
-    if (fl.half) { buffer.push(fieldHTML(fl)); if (buffer.length===2) flush(); }
-    else { flush(); html += fieldHTML(fl); }
+    const kind = fl.third ? 'third' : (fl.half ? 'half' : null);
+    if (!kind) { flush(); html += fieldHTML(fl); continue; }
+    if (bufKind && bufKind !== kind) flush();
+    bufKind = kind;
+    buf.push(fieldHTML(fl));
+    if (kind === 'half'  && buf.length === 2) flush();
+    if (kind === 'third' && buf.length === 3) flush();
   }
   flush();
   // v15.84 — แนบรูป/ใบเสร็จ (ทุกฟอร์ม) — ถ่าย/เลือกจากเครื่อง
