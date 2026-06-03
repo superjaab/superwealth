@@ -5267,7 +5267,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.91 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.92 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -5867,11 +5867,21 @@
       max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
       letter-spacing:-.01em;
     }
+    /* v15.92 — ต้นทาง/ปลายทาง: ตาราง 2 คอลัมน์ → ป้ายชิดซ้ายตรงกัน, ค่าตรงคอลัมน์เดียวกัน */
+    .cal-evt-od {
+      display:grid; grid-template-columns:auto minmax(0,1fr);
+      column-gap:4px; row-gap:1px; width:100%; max-width:100%; text-align:left;
+    }
+    .cal-evt-cust-val {
+      font-size:.92em; font-weight:600; opacity:.98; align-self:center;
+      min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-.01em;
+    }
     /* v15.17 — ต้นทาง/ปลายทาง label chips (no emoji, high contrast) */
     .cal-evt-cust-lbl {
       background:rgba(255,255,255,.92); color:#0f172a;
-      padding:0 6px; border-radius:5px; margin-right:2px;
+      padding:0 6px; border-radius:5px;
       font-weight:800; font-size:.92em; text-shadow:none;
+      justify-self:start; align-self:center;
     }
     /* v15.17 — bigger, clearer payment badge */
     .cal-evt-pay {
@@ -5903,7 +5913,7 @@
       .cal-day-num { font-size:.7rem }
       .cal-evt-bar { font-size:.55rem; padding:1px 4px }
       .cal-week-events { grid-auto-rows:46px; min-height:40px }
-      .cal-evt-l2 { font-size:.88em }
+      .cal-evt-l2, .cal-evt-cust-val { font-size:.88em }
       .cal-month-label { font-size:.85rem; min-width:110px }
       .cal-plate-filter { min-width:130px; font-size:.75rem }
     }
@@ -14506,8 +14516,10 @@ function _buildMonthGridWeeks(_calYear, _calMonth, trips) {
       const originTxt = oc || (t.origin || '').trim();
       const destTxt   = dc || (t.destination || '').trim();
       const _lbl = txt => `<b class="cal-evt-cust-lbl">${txt}</b>`;
-      const originLine = originTxt ? `<span class="cal-evt-l2">${_lbl('ต้นทาง')} ${escHtml(originTxt)}</span>` : '';
-      const destLine   = destTxt   ? `<span class="cal-evt-l2">${_lbl('ปลายทาง')} ${escHtml(destTxt)}</span>` : '';
+      // v15.92 — ต้นทาง/ปลายทาง อยู่ใน grid เดียวกัน → ป้าย+ค่าตรงคอลัมน์เดียวกัน
+      const _odRow = (txt, val) => `${_lbl(txt)}<span class="cal-evt-cust-val">${escHtml(val)}</span>`;
+      const odRows = (originTxt ? _odRow('ต้นทาง', originTxt) : '') + (destTxt ? _odRow('ปลายทาง', destTxt) : '');
+      const odBlock = odRows ? `<span class="cal-evt-od">${odRows}</span>` : '';
       // Payment badge — v15.17 bigger & clearer
       const isPaid = (t.paymentStatus || 'ค้างจ่าย') === 'จ่ายแล้ว';
       const payBadge = isPaid
@@ -14533,7 +14545,7 @@ function _buildMonthGridWeeks(_calYear, _calMonth, trips) {
       evtsHtml += `<div class="cal-evt-bar cal-evt-bar--pastel ${cls} ${posCls}"
         style="background:${pal.bg};color:${pal.fg};--rfg:${pal.fg};grid-column:${colStart} / span ${colSpan}; grid-row:${ev.row + 1}"
         title="${escHtml(tip)}"
-        onclick="event.stopPropagation();openCalDay('${clickDate}','${escAttr(focusId)}')"><span class="cal-evt-l1">${roundChip}<span class="cal-evt-l1-text">${escHtml(label)}</span>${payBadge}</span>${originLine}${destLine}</div>`;
+        onclick="event.stopPropagation();openCalDay('${clickDate}','${escAttr(focusId)}')"><span class="cal-evt-l1">${roundChip}<span class="cal-evt-l1-text">${escHtml(label)}</span>${payBadge}</span>${odBlock}</div>`;
     });
 
     // Add overflow indicators per column
@@ -16154,7 +16166,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.91';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.92';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
