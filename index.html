@@ -5005,6 +5005,14 @@
     .dm-l2 { font-size: .76rem; color: #64748b; margin-top: 2px; word-break: break-word; }
     .dm-amt { font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
     .dm-doc { font-size: .68rem; background: #eef2ff; color: #4338ca; padding: 1px 6px; border-radius: 6px; font-weight: 700; margin-left: 4px; }
+    .dm-click { cursor: pointer; border-radius: 8px; margin: 0 -8px; padding-left: 8px; padding-right: 8px; transition: background .15s; }
+    .dm-click:hover { background: #f1f5f9; }
+    .dm-go { color: #cbd5e1; font-weight: 800; font-size: 1.15rem; flex-shrink: 0; }
+    .dm-click:hover .dm-go { color: #2563eb; }
+    /* v15.71 — flash-highlight the target card after jumping from a chart */
+    .record-card.rc-flash { background: #fef3c7 !important; outline: 2px solid #f59e0b; outline-offset: 2px; transition: background .3s, outline .3s; }
+    body.dark .dm-click:hover { background: rgba(148,163,184,.12); }
+    body.dark .record-card.rc-flash { background: rgba(245,158,11,.18) !important; }
     body.dark .dm-row { border-bottom-color: rgba(148,163,184,.15); }
     body.dark .dm-l1 { color: #f1f5f9; }
     body.dark .dm-l2 { color: #94a3b8; }
@@ -5223,7 +5231,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.70 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.71 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -13717,7 +13725,7 @@ function renderTruckList(items) {
       ? `<span class="sw-round-chip">🔄 รอบ #${r.tripRound}</span>`
       : `<span class="sw-round-chip sw-round-chip--none">🚛 ไม่ระบุรอบ</span>`;
     return `
-    <div class="record-card" style="border-left:4px solid ${s.color}">
+    <div class="record-card" data-row-id="${escAttr(r.rowId||'')}" style="border-left:4px solid ${s.color}">
       <div class="sw-record-head">
         <div class="sw-record-chips">
           ${roundChip}
@@ -13784,7 +13792,7 @@ function renderIncomeList(items) {
       ? `<span class="sw-doc-chip" title="เลขที่เอกสาร">📄 ${escHtml(r.docNumber)}</span>`
       : '';
     return `
-    <div class="record-card" style="border-left:4px solid #16a34a">
+    <div class="record-card" data-row-id="${escAttr(r.rowId||'')}" style="border-left:4px solid #16a34a">
       <div class="sw-record-head">
         <div class="sw-record-chips">
           ${roundChipI}
@@ -13853,7 +13861,7 @@ function renderExpenseList(items) {
       ? `<span class="sw-doc-chip" title="เลขที่เอกสาร">📄 ${escHtml(r.docNumber)}</span>`
       : '';
     return `
-    <div class="record-card" style="border-left:4px solid #dc2626">
+    <div class="record-card" data-row-id="${escAttr(r.rowId||'')}" style="border-left:4px solid #dc2626">
       <div class="sw-record-head">
         <div class="sw-record-chips">
           ${roundChipE}
@@ -14747,12 +14755,16 @@ function showChartDrill(title, records, kind) {
   const rows = sorted.map(r => {
     const amt = _detectAmount(r); total += amt;
     const doc = r.docNumber ? `<span class="dm-doc">${escHtml(r.docNumber)}</span>` : '';
+    const rid = escAttr(r.rowId || '');
+    // v15.71 — คลิกแถว → ไปที่รายการนั้นในลิสต์ (ถ้ามี rowId)
+    const open = rid ? ` dm-click" onclick="goToRecord('${kind}','${rid}')" title="ไปที่รายการนี้"` : '"';
+    const go = rid ? '<span class="dm-go">›</span>' : '';
     if (kind === 'income') {
       const line2 = [r.customerName, r.incomeItem].filter(Boolean).map(escHtml).join(' · ');
-      return `<div class="dm-row"><div class="dm-main"><div class="dm-l1">📅 ${fmtDate(r.incomeDate)} ${doc}</div>${line2 ? `<div class="dm-l2">${line2}</div>` : ''}</div><div class="dm-amt" style="color:#16a34a">+${fmt(amt)}</div></div>`;
+      return `<div class="dm-row${open}><div class="dm-main"><div class="dm-l1">📅 ${fmtDate(r.incomeDate)} ${doc}</div>${line2 ? `<div class="dm-l2">${line2}</div>` : ''}</div><div class="dm-amt" style="color:#16a34a">+${fmt(amt)}</div>${go}</div>`;
     }
     const line2 = [r.category, r.vendor, r.expenseDetail].filter(Boolean).map(escHtml).join(' · ');
-    return `<div class="dm-row"><div class="dm-main"><div class="dm-l1">📅 ${fmtDate(r.expenseDate)} ${doc}</div>${line2 ? `<div class="dm-l2">${line2}</div>` : ''}</div><div class="dm-amt" style="color:#dc2626">−${fmt(amt)}</div></div>`;
+    return `<div class="dm-row${open}><div class="dm-main"><div class="dm-l1">📅 ${fmtDate(r.expenseDate)} ${doc}</div>${line2 ? `<div class="dm-l2">${line2}</div>` : ''}</div><div class="dm-amt" style="color:#dc2626">−${fmt(amt)}</div>${go}</div>`;
   }).join('');
   document.getElementById('drill-title').textContent = `${title} · ${records.length} รายการ`;
   document.getElementById('drill-body').innerHTML = rows || '<div style="text-align:center;color:#94a3b8;padding:28px">📭 ไม่มีรายการ</div>';
@@ -14760,6 +14772,30 @@ function showChartDrill(title, records, kind) {
   document.getElementById('drill-modal').style.display = 'flex';
 }
 function closeDrill() { const m = document.getElementById('drill-modal'); if (m) m.style.display = 'none'; }
+// v15.71 — ไปที่รายการในลิสต์ (สลับแท็บ → list view → เลื่อนหา + ไฮไลต์) เผื่อ list ยังโหลดไม่เสร็จก็ลองซ้ำ
+function goToRecord(type, rowId) {
+  closeDrill();
+  if (!rowId) return;
+  const tabBtn = document.querySelector(`.tab-btn[onclick*="'${type}'"]`);
+  if (tabBtn) tabBtn.click();
+  setTimeout(() => {
+    const listBtn = document.querySelector(`.inner-btn[onclick*="'${type}','list'"]`);
+    if (listBtn) listBtn.click();
+    const sel = `[data-row-id="${(typeof CSS !== 'undefined' && CSS.escape) ? CSS.escape(rowId) : rowId}"]`;
+    let tries = 0;
+    const tick = () => {
+      const el = document.querySelector(sel);
+      if (el) {
+        el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        el.classList.add('rc-flash');
+        setTimeout(() => el.classList.remove('rc-flash'), 2000);
+      } else if (++tries < 14) {
+        setTimeout(tick, 220);   // ลิสต์อาจกำลังโหลด → ลองหาซ้ำ ~3 วิ
+      }
+    };
+    setTimeout(tick, 250);
+  }, 120);
+}
 
 function renderSummary(data, dateFrom, dateTo) {
   const income  = data.income  || [];
@@ -15874,7 +15910,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.70';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.71';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
