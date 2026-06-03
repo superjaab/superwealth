@@ -25,6 +25,15 @@
   /* v15.85 — 3-คอลัมน์ (รอบเที่ยว + วันเข้ารับ + วันส่ง) */
   .row3{ display:grid; gap:8px; }
   .row3 .field input{ padding-left:9px; padding-right:6px; font-size:15px; min-width:0; }
+  /* v15.86 — dropdown แบบเดียวกับเว็บ (แตะแล้วเห็นรายการ พิมพ์เพื่อกรอง) */
+  .ac-wrap{ position:relative; }
+  .ac-panel{ display:none; position:absolute; left:0; right:0; top:calc(100% + 4px); z-index:30;
+    background:#fff; border:1.5px solid var(--c); border-radius:12px; box-shadow:0 10px 28px rgba(0,0,0,.16);
+    max-height:240px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .ac-opt{ padding:12px 14px; font-size:15px; color:var(--text); border-bottom:1px solid #f1f5f9; cursor:pointer; }
+  .ac-opt:last-child{ border-bottom:none; }
+  .ac-opt:active, .ac-opt.on{ background:#eef4ff; }
+  .ac-empty{ padding:12px 14px; font-size:13px; color:var(--mute); }
   .btns{ position:sticky; bottom:0; background:linear-gradient(transparent,var(--bg) 28%);
     padding:14px 16px calc(18px + env(safe-area-inset-bottom)); display:flex; gap:10px; }
   button{ flex:1; padding:15px; font-size:16px; font-weight:800; font-family:inherit; border:none; border-radius:14px; cursor:pointer; }
@@ -92,8 +101,8 @@
         {id:'deliveryDate', label:'วันส่งสินค้า', type:'date', third:true},
         {id:'plateNumber', label:'ทะเบียนรถ', type:'plate', required:true},
         {id:'driverName', label:'คนขับ', type:'text', placeholder:'ชื่อคนขับ (เติมอัตโนมัติเมื่อเลือกทะเบียน)'},
-        {id:'originCustomer', label:'ลูกค้าต้นทาง', type:'text', placeholder:'ผู้ว่าจ้าง / ผู้ส่งสินค้า'},
-        {id:'customerName', label:'ลูกค้าปลายทาง', type:'text', placeholder:'ผู้รับ / ปลายทาง'},
+        {id:'originCustomer', label:'ลูกค้าต้นทาง', type:'customer', placeholder:'ผู้ว่าจ้าง / ผู้ส่งสินค้า'},
+        {id:'customerName', label:'ลูกค้าปลายทาง', type:'customer', placeholder:'ผู้รับ / ปลายทาง'},
         {id:'origin', label:'จังหวัดต้นทาง', type:'province', half:true},
         {id:'destination', label:'จังหวัดปลายทาง', type:'province', half:true},
         {id:'freightCost', label:'ค่าขนส่ง (บาท)', type:'number', half:true},
@@ -105,7 +114,7 @@
         {id:'incomeItem', label:'ประเภทรายรับ', type:'select', options:['ค่าขนส่ง','ค่ามัดจำ','อื่นๆ']},
         {id:'amount', label:'จำนวนเงิน (บาท)', type:'number', required:true, half:true},
         {id:'paymentMethod', label:'ช่องทาง', type:'select', options:['เงินสด','โอน','เช็ค'], half:true},
-        {id:'customerName', label:'ลูกค้า (ถ้ามี)', type:'text'},
+        {id:'customerName', label:'ลูกค้า (ถ้ามี)', type:'customer'},
       ]},
     expense: { title:'💸 บันทึกรายจ่าย', color:'#C62828', sub:'เงินออก',
       fields:[
@@ -138,6 +147,37 @@
   document.title = 'SuperWealth · ' + cfg.title;
   document.getElementById('saveBtn').style.background = cfg.color;
 
+  // ── v15.86 — autocomplete dropdown แบบเดียวกับเว็บ (แตะ→เห็นทั้งหมด, พิมพ์→กรอง, แตะเลือก) ──
+  function _liffAC(input, getItems) {
+    if (!input || input._ac) return; input._ac = true;
+    const wrap = document.createElement('div'); wrap.className = 'ac-wrap';
+    input.parentNode.insertBefore(wrap, input); wrap.appendChild(input);
+    const panel = document.createElement('div'); panel.className = 'ac-panel'; wrap.appendChild(panel);
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const render = () => {
+      const q = input.value.trim().toLowerCase();
+      let items = (getItems() || []).filter(Boolean);
+      if (q) items = items.filter(o => String(o).toLowerCase().includes(q));
+      items = items.slice(0, 50);
+      panel.innerHTML = items.length
+        ? items.map(o => `<div class="ac-opt">${esc(o)}</div>`).join('')
+        : '<div class="ac-empty">— ไม่มีในรายการ · พิมพ์เพื่อเพิ่มใหม่ได้ —</div>';
+      panel.style.display = 'block';
+    };
+    input.addEventListener('focus', render);
+    input.addEventListener('input', render);
+    input.addEventListener('blur', () => setTimeout(() => { panel.style.display = 'none'; }, 160));
+    const pick = e => {
+      const opt = e.target.closest('.ac-opt'); if (!opt) return;
+      e.preventDefault();
+      input.value = opt.textContent;
+      panel.style.display = 'none';
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+    panel.addEventListener('mousedown', pick);
+    panel.addEventListener('touchstart', pick, { passive: false });
+  }
+
   // ── Build the form ────────────────────────────────────────────
   const form = document.getElementById('f');
   let pendingHalf = null;
@@ -149,9 +189,11 @@
         (fl.required ? `<option value="" disabled selected>— เลือก —</option>` : '') +
         fl.options.map(o=>`<option>${o}</option>`).join('') + `</select>`;
     } else if (fl.type === 'plate') {
-      input = `<input id="${fl.id}" list="plates" ${fl.required?'required':''} placeholder="เลือกหรือพิมพ์ทะเบียน">`;
+      input = `<input id="${fl.id}" data-ac="plate" autocomplete="off" ${fl.required?'required':''} placeholder="เลือกหรือพิมพ์ทะเบียน">`;
     } else if (fl.type === 'province') {
-      input = `<input id="${fl.id}" list="provinces" placeholder="เลือกหรือพิมพ์จังหวัด">`;
+      input = `<input id="${fl.id}" data-ac="province" autocomplete="off" placeholder="เลือกหรือพิมพ์จังหวัด">`;
+    } else if (fl.type === 'customer') {
+      input = `<input id="${fl.id}" data-ac="customer" autocomplete="off" placeholder="${fl.placeholder||'เลือกหรือพิมพ์ชื่อลูกค้า'}">`;
     } else if (fl.type === 'date') {
       input = `<input id="${fl.id}" type="date" ${fl.required?'required':''}>`;
     } else if (fl.type === 'number') {
@@ -188,14 +230,29 @@
   // v15.84 — แนบรูป/ใบเสร็จ (ทุกฟอร์ม) — ถ่าย/เลือกจากเครื่อง
   html += `<div class="field">
     <label>📷 แนบรูป / ใบเสร็จ (ถ้ามี)</label>
-    <input type="file" id="imgInput" accept="image/*" multiple capture="environment" style="display:none">
-    <button type="button" id="imgBtn" style="width:100%;padding:13px;border:1.5px dashed var(--c);border-radius:12px;background:#fff;color:var(--c);font-weight:800;font-size:15px;font-family:inherit;cursor:pointer">📷 ถ่ายรูป / เลือกรูป</button>
+    <input type="file" id="imgInput" accept="image/*" multiple style="display:none">
+    <button type="button" id="imgBtn" style="width:100%;padding:13px;border:1.5px dashed var(--c);border-radius:12px;background:#fff;color:var(--c);font-weight:800;font-size:15px;font-family:inherit;cursor:pointer">📷 ถ่ายรูป / เลือกรูป (อัลบั้ม)</button>
     <div id="imgThumbs" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
     <div class="hint">แนบได้หลายรูป · ระบบย่อขนาดให้อัตโนมัติ</div>
   </div>`;
-  html += `<datalist id="provinces">${PROVINCES.map(p=>`<option>${p}</option>`).join('')}</datalist>
-           <datalist id="plates"></datalist>`;
   form.innerHTML = html;
+
+  // v15.86 — dropdown แบบเดียวกับเว็บ (แตะ→เห็นรายการทั้งหมด · พิมพ์→กรอง · แตะเลือก)
+  let custList = [];   // รายชื่อลูกค้า — ลิงก์จากเว็บหลัก
+  document.querySelectorAll('input[data-ac="province"]').forEach(el => _liffAC(el, () => PROVINCES));
+  document.querySelectorAll('input[data-ac="plate"]').forEach(el => _liffAC(el, () => Object.keys(vehMap).sort((a,b)=>a.localeCompare(b,'th'))));
+  document.querySelectorAll('input[data-ac="customer"]').forEach(el => _liffAC(el, () => custList));
+  // โหลดรายชื่อลูกค้าจากเมนูลูกค้า + ต้นทาง/ปลายทางในเที่ยวรถ (เหมือน dropdown เว็บ)
+  (async () => {
+    try {
+      const set = new Set();
+      const rc = await (await fetch(`${API}/api/get-data?type=customer`)).json();
+      ((rc.data && rc.data.customer) || []).forEach(c => { const n=(c.customerName||'').trim(); if (n) set.add(n); });
+      const rt = await (await fetch(`${API}/api/get-data?type=truck`)).json();
+      ((rt.data && rt.data.truck) || []).forEach(t => { [t.originCustomer, t.customerName].forEach(x => { const n=(x||'').trim(); if (n) set.add(n); }); });
+      custList = [...set].sort((a,b)=>a.localeCompare(b,'th'));
+    } catch (e) { console.warn('load customers failed:', e); }
+  })();
 
   // ── v15.84 — image attach logic (compress → base64 → /api/upload-images) ──
   const _imgFiles = [];
@@ -249,19 +306,14 @@
     document.getElementById(f.id).value = new Date().toISOString().slice(0,10);
   });
 
-  // ── Fetch real vehicles → plate datalist + driver auto-fill ────
+  // ── Fetch real vehicles → plate dropdown + driver auto-fill ────
   let vehMap = {};
   (async () => {
     try {
       const r = await fetch(`${API}/api/get-data?type=vehicle`);
       const j = await r.json();
       const list = (j.data && j.data.vehicle) || [];
-      const dl = document.getElementById('plates');
-      list.forEach(v => {
-        if (!v.plateNumber) return;
-        vehMap[v.plateNumber] = v;
-        const o = document.createElement('option'); o.value = v.plateNumber; dl.appendChild(o);
-      });
+      list.forEach(v => { if (v.plateNumber) vehMap[v.plateNumber] = v; });
     } catch(e){ console.warn('load vehicles failed:', e); }
   })();
   // driver auto-fill when a known plate is chosen (truck form)
