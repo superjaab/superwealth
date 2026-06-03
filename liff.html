@@ -154,18 +154,21 @@
     input.parentNode.insertBefore(wrap, input); wrap.appendChild(input);
     const panel = document.createElement('div'); panel.className = 'ac-panel'; wrap.appendChild(panel);
     const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-    const render = () => {
-      const q = input.value.trim().toLowerCase();
+    // v15.88 — useFilter=false (ตอนแตะ) → โชว์ทั้งหมดเพื่อเปลี่ยนได้ · true (ตอนพิมพ์) → กรอง
+    const render = (useFilter) => {
+      const cur = input.value.trim();
+      const q = useFilter ? cur.toLowerCase() : '';
       let items = (getItems() || []).filter(Boolean);
       if (q) items = items.filter(o => String(o).toLowerCase().includes(q));
-      items = items.slice(0, 50);
+      items = items.slice(0, 60);
       panel.innerHTML = items.length
-        ? items.map(o => `<div class="ac-opt">${esc(o)}</div>`).join('')
+        ? items.map(o => `<div class="ac-opt${o === cur ? ' on' : ''}">${esc(o)}</div>`).join('')
         : '<div class="ac-empty">— ไม่มีในรายการ · พิมพ์เพื่อเพิ่มใหม่ได้ —</div>';
       panel.style.display = 'block';
+      const sel = panel.querySelector('.ac-opt.on'); if (sel) sel.scrollIntoView({ block: 'nearest' });
     };
-    input.addEventListener('focus', render);
-    input.addEventListener('input', render);
+    input.addEventListener('focus', () => render(false));   // แตะ → เห็นรายการทั้งหมด
+    input.addEventListener('input', () => render(true));     // พิมพ์ → กรอง
     input.addEventListener('blur', () => setTimeout(() => { panel.style.display = 'none'; }, 160));
     const pick = e => {
       const opt = e.target.closest('.ac-opt'); if (!opt) return;
