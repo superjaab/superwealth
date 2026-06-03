@@ -5246,7 +5246,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.78 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.79 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -14548,7 +14548,13 @@ function openCalDay(dateKey, focusRowId) {
           ${trip.driverName   ? `<div class="cal-trip-row">👤 <b>คนขับ:</b> ${escHtml(trip.driverName)}${trip.driverPhone ? ' · ☎️ ' + escHtml(trip.driverPhone) : ''}</div>` : ''}
           ${(trip.origin || trip.destination) ? `<div class="cal-trip-row">📍 <b>เส้นทาง:</b> ${escHtml(trip.origin||'-')} → ${escHtml(trip.destination||'-')}</div>` : ''}
           ${trip.cargoList    ? `<div class="cal-trip-row">📦 <b>สินค้า:</b> ${escHtml(trip.cargoList)}${trip.cargoWeight ? ' · ' + fmtNum(trip.cargoWeight) + ' กก.' : ''}</div>` : ''}
-          ${trip.freightCost  ? `<div class="cal-trip-row">💰 <b>ค่าขนส่ง:</b> ${fmtBaht(trip.freightCost)}</div>` : ''}
+          ${(() => {   // v15.79 — ค่าขนส่ง: ใช้ freightCost ถ้ามี, ถ้าไม่มีดึงรายรับที่ลิงก์รอบมา
+            const fc = parseFloat(trip.freightCost) || 0;
+            const rev = (typeof _tripRevenue === 'function') ? _tripRevenue(trip) : fc;
+            if (rev <= 0) return '';
+            const src = fc > 0 ? '' : ' <span style="color:#94a3b8;font-size:.72rem;font-weight:600">🔗 จากรายรับ</span>';
+            return `<div class="cal-trip-row">💰 <b>ค่าขนส่ง:</b> ${fmtBaht(rev)}${src}</div>`;
+          })()}
           ${trip.remark       ? `<div class="cal-trip-row" style="color:#94a3b8;font-size:.78rem">📝 ${escHtml(trip.remark)}</div>` : ''}
           ${actionBar}
         </div>`;
@@ -16033,7 +16039,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.78';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.79';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
