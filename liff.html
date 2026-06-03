@@ -238,21 +238,31 @@
   form.innerHTML = html;
 
   // v15.86 — dropdown แบบเดียวกับเว็บ (แตะ→เห็นรายการทั้งหมด · พิมพ์→กรอง · แตะเลือก)
-  let custList = [];   // รายชื่อลูกค้า — ลิงก์จากเว็บหลัก
+  let custList = [], custMap = {};   // custMap[ชื่อ] = ข้อมูลลูกค้า (มี province) — ลิงก์จากเว็บหลัก
   document.querySelectorAll('input[data-ac="province"]').forEach(el => _liffAC(el, () => PROVINCES));
   document.querySelectorAll('input[data-ac="plate"]').forEach(el => _liffAC(el, () => Object.keys(vehMap).sort((a,b)=>a.localeCompare(b,'th'))));
   document.querySelectorAll('input[data-ac="customer"]').forEach(el => _liffAC(el, () => custList));
-  // โหลดรายชื่อลูกค้าจากเมนูลูกค้า + ต้นทาง/ปลายทางในเที่ยวรถ (เหมือน dropdown เว็บ)
+  // โหลดรายชื่อลูกค้าจากเมนูลูกค้า (มีจังหวัด) + ต้นทาง/ปลายทางในเที่ยวรถ (เหมือน dropdown เว็บ)
   (async () => {
     try {
       const set = new Set();
       const rc = await (await fetch(`${API}/api/get-data?type=customer`)).json();
-      ((rc.data && rc.data.customer) || []).forEach(c => { const n=(c.customerName||'').trim(); if (n) set.add(n); });
+      ((rc.data && rc.data.customer) || []).forEach(c => { const n=(c.customerName||'').trim(); if (n) { set.add(n); custMap[n] = c; } });
       const rt = await (await fetch(`${API}/api/get-data?type=truck`)).json();
       ((rt.data && rt.data.truck) || []).forEach(t => { [t.originCustomer, t.customerName].forEach(x => { const n=(x||'').trim(); if (n) set.add(n); }); });
       custList = [...set].sort((a,b)=>a.localeCompare(b,'th'));
     } catch (e) { console.warn('load customers failed:', e); }
   })();
+  // v15.87 — เลือกลูกค้า → เติมจังหวัดให้ (ต้นทาง→จังหวัดต้นทาง, ปลายทาง→จังหวัดปลายทาง) เหมือนเว็บ
+  if (type === 'truck') {
+    const _fillProv = (custId, provId) => {
+      const ce = document.getElementById(custId), pe = document.getElementById(provId);
+      if (!ce || !pe) return;
+      ce.addEventListener('change', () => { const c = custMap[ce.value.trim()]; if (c && c.province) pe.value = c.province; });
+    };
+    _fillProv('originCustomer', 'origin');
+    _fillProv('customerName', 'destination');
+  }
 
   // ── v15.84 — image attach logic (compress → base64 → /api/upload-images) ──
   const _imgFiles = [];
