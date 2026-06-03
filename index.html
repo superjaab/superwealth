@@ -5009,6 +5009,14 @@
     .dm-click:hover { background: #f1f5f9; }
     .dm-go { color: #cbd5e1; font-weight: 800; font-size: 1.15rem; flex-shrink: 0; }
     .dm-click:hover .dm-go { color: #2563eb; }
+    /* v15.72 — clickable insight rows + summary trip rows */
+    .dash-click { cursor: pointer; border-radius: 10px; transition: background .15s, transform .15s; }
+    .dash-click:hover { background: rgba(37,99,235,.06); }
+    .dash-click:active { transform: scale(.99); }
+    .sum-trip-row { transition: background .15s; }
+    .sum-trip-row:hover td { background: rgba(37,99,235,.06); }
+    body.dark .dash-click:hover { background: rgba(148,163,184,.12); }
+    body.dark .sum-trip-row:hover td { background: rgba(148,163,184,.1); }
     /* v15.71 — flash-highlight the target card after jumping from a chart */
     .record-card.rc-flash { background: #fef3c7 !important; outline: 2px solid #f59e0b; outline-offset: 2px; transition: background .3s, outline .3s; }
     body.dark .dm-click:hover { background: rgba(148,163,184,.12); }
@@ -5231,7 +5239,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.71 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.72 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -6750,28 +6758,30 @@
 
   <!-- TOP STAT CARDS (6 cards, gradient) -->
   <div class="summary-grid">
-    <div class="dash-stat green dash-stat--link" role="button" tabindex="0" title="ดูรายการรายรับทั้งหมด →"
-         onclick="goToTabList('income')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();goToTabList('income')}">
+    <!-- v15.72 — คลิกการ์ด → ดูรายการที่รวมกัน + ลิงก์ไปแต่ละรายการ -->
+    <div class="dash-stat green dash-stat--link" role="button" tabindex="0" title="ดูรายรับที่รวมกันเป็นยอดนี้"
+         onclick="drillStat('income')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();drillStat('income')}">
       <div class="dash-stat-icon">💰</div>
       <div class="dash-stat-label">รายรับรวม <span class="dash-stat-go">›</span></div>
       <div class="dash-stat-value" id="sum-total-income">฿0</div>
       <div class="dash-stat-sub" id="sum-income-count">📥 — รายการ</div>
     </div>
-    <div class="dash-stat red dash-stat--link" role="button" tabindex="0" title="ดูรายการรายจ่ายทั้งหมด →"
-         onclick="goToTabList('expense')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();goToTabList('expense')}">
+    <div class="dash-stat red dash-stat--link" role="button" tabindex="0" title="ดูรายจ่ายที่รวมกันเป็นยอดนี้"
+         onclick="drillStat('expense')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();drillStat('expense')}">
       <div class="dash-stat-icon">💸</div>
       <div class="dash-stat-label">รายจ่ายรวม <span class="dash-stat-go">›</span></div>
       <div class="dash-stat-value" id="sum-total-expense">฿0</div>
       <div class="dash-stat-sub" id="sum-expense-count">📤 — รายการ</div>
     </div>
-    <div class="dash-stat blue">
+    <div class="dash-stat blue dash-stat--link" role="button" tabindex="0" title="ดูรายการที่ทำให้เกิดกำไร/ขาดทุน"
+         onclick="drillStat('profit')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();drillStat('profit')}">
       <div class="dash-stat-icon">📊</div>
-      <div class="dash-stat-label">กำไรสุทธิ</div>
+      <div class="dash-stat-label">กำไรสุทธิ <span class="dash-stat-go">›</span></div>
       <div class="dash-stat-value" id="sum-profit">฿0</div>
       <div class="dash-stat-sub" id="sum-profit-sub">—</div>
     </div>
-    <div class="dash-stat orange dash-stat--link" role="button" tabindex="0" title="ดูบันทึกเที่ยวรถทั้งหมด →"
-         onclick="goToTabList('truck')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();goToTabList('truck')}">
+    <div class="dash-stat orange dash-stat--link" role="button" tabindex="0" title="ดูเที่ยวรถที่รวมกันเป็นยอดนี้"
+         onclick="drillStat('truck')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();drillStat('truck')}">
       <div class="dash-stat-icon">🚚</div>
       <div class="dash-stat-label">เที่ยวรถทั้งหมด <span class="dash-stat-go">›</span></div>
       <div class="dash-stat-value" id="sum-truck-count">0</div>
@@ -14568,6 +14578,7 @@ function _calEditTrip(identifier) {
 let _barChart = null;
 let _tripBarChart = null;   // v15.55 — กำไรเที่ยวรถรายเดือน (ตามเดือนต้นทาง)
 let _fcSnapshot = null;     // v15.65 — snapshot สำหรับฟีเจอร์คาดการณ์ (ไม่บันทึก, หายเมื่อรีเฟรช)
+let _sumData = { income: [], expense: [], truck: [] };  // v15.72 — เก็บ record arrays ไว้ drill-down ทุกการ์ด
 let _doughnutChart = null;
 let _summaryInited = false;
 
@@ -14744,32 +14755,89 @@ function closeForecast() {
   if (m) m.style.display = 'none';
 }
 
-// ─── v15.70 — DRILL-DOWN: คลิกแท่งกราฟ → ดูรายการที่รวมกันเป็นยอดนั้น ───
+// ─── v15.70/72 — DRILL-DOWN: ดูรายการที่รวมกันเป็นยอด + ลิงก์ไปแต่ละรายการ ───
+//   kind: 'income' | 'expense' | 'truck' | 'mixed' (กำไร = รายรับ+รายจ่าย)
 function showChartDrill(title, records, kind) {
   records = records || [];
   const fmt = v => '฿' + Math.round(v).toLocaleString('th-TH');
-  let total = 0;
-  // เรียงตามวันที่
-  const dateOf = r => kind === 'income' ? (r.incomeDate || '') : (r.expenseDate || '');
+  const dateOf = r => {
+    const k = r.__t || kind;
+    if (k === 'income') return r.incomeDate || '';
+    if (k === 'expense') return r.expenseDate || '';
+    return r.pickupDate || r.jobDate || '';
+  };
   const sorted = [...records].sort((a, b) => String(dateOf(a)).localeCompare(String(dateOf(b))));
+  let total = 0;
   const rows = sorted.map(r => {
-    const amt = _detectAmount(r); total += amt;
-    const doc = r.docNumber ? `<span class="dm-doc">${escHtml(r.docNumber)}</span>` : '';
+    const k = r.__t || kind;
     const rid = escAttr(r.rowId || '');
-    // v15.71 — คลิกแถว → ไปที่รายการนั้นในลิสต์ (ถ้ามี rowId)
-    const open = rid ? ` dm-click" onclick="goToRecord('${kind}','${rid}')" title="ไปที่รายการนี้"` : '"';
+    const open = rid ? ` dm-click" onclick="goToRecord('${k}','${rid}')" title="ไปที่รายการนี้"` : '"';
     const go = rid ? '<span class="dm-go">›</span>' : '';
-    if (kind === 'income') {
-      const line2 = [r.customerName, r.incomeItem].filter(Boolean).map(escHtml).join(' · ');
-      return `<div class="dm-row${open}><div class="dm-main"><div class="dm-l1">📅 ${fmtDate(r.incomeDate)} ${doc}</div>${line2 ? `<div class="dm-l2">${line2}</div>` : ''}</div><div class="dm-amt" style="color:#16a34a">+${fmt(amt)}</div>${go}</div>`;
+    const doc = r.docNumber ? `<span class="dm-doc">${escHtml(r.docNumber)}</span>` : '';
+    if (k === 'truck') {
+      const rev = _tripRevenue(r); total += rev;
+      const who = r.originCustomer || r.customerName || '';
+      const route = (r.origin || r.destination) ? `${escHtml(r.origin || '-')}→${escHtml(r.destination || '-')}` : '';
+      const l2 = [escHtml(who), route].filter(Boolean).join(' · ');
+      return `<div class="dm-row${open}><div class="dm-main"><div class="dm-l1">🔄 รอบ #${escHtml(String(r.tripRound || '-'))} · ${escHtml(r.plateNumber || '')}</div>${l2 ? `<div class="dm-l2">${l2}</div>` : ''}</div><div class="dm-amt" style="color:#16a34a">${fmt(rev)}</div>${go}</div>`;
     }
-    const line2 = [r.category, r.vendor, r.expenseDetail].filter(Boolean).map(escHtml).join(' · ');
-    return `<div class="dm-row${open}><div class="dm-main"><div class="dm-l1">📅 ${fmtDate(r.expenseDate)} ${doc}</div>${line2 ? `<div class="dm-l2">${line2}</div>` : ''}</div><div class="dm-amt" style="color:#dc2626">−${fmt(amt)}</div>${go}</div>`;
+    if (k === 'income') {
+      const amt = _detectAmount(r); total += amt;
+      const l2 = [r.customerName, r.incomeItem].filter(Boolean).map(escHtml).join(' · ');
+      return `<div class="dm-row${open}><div class="dm-main"><div class="dm-l1">📅 ${fmtDate(r.incomeDate)} ${doc}</div>${l2 ? `<div class="dm-l2">${l2}</div>` : ''}</div><div class="dm-amt" style="color:#16a34a">+${fmt(amt)}</div>${go}</div>`;
+    }
+    const amt = _detectAmount(r); total += (kind === 'mixed' ? -amt : amt);
+    const l2 = [r.category, r.vendor, r.expenseDetail].filter(Boolean).map(escHtml).join(' · ');
+    return `<div class="dm-row${open}><div class="dm-main"><div class="dm-l1">📅 ${fmtDate(r.expenseDate)} ${doc}</div>${l2 ? `<div class="dm-l2">${l2}</div>` : ''}</div><div class="dm-amt" style="color:#dc2626">−${fmt(amt)}</div>${go}</div>`;
   }).join('');
+  let lbl = 'รวม', col = '#16a34a', sign = '+';
+  if (kind === 'expense') { col = '#dc2626'; sign = '−'; }
+  else if (kind === 'truck') { sign = ''; }
+  else if (kind === 'mixed') { lbl = 'กำไรสุทธิ'; col = total >= 0 ? '#16a34a' : '#dc2626'; sign = total >= 0 ? '+' : '−'; }
   document.getElementById('drill-title').textContent = `${title} · ${records.length} รายการ`;
   document.getElementById('drill-body').innerHTML = rows || '<div style="text-align:center;color:#94a3b8;padding:28px">📭 ไม่มีรายการ</div>';
-  document.getElementById('drill-total').innerHTML = `รวม <b style="color:${kind === 'income' ? '#16a34a' : '#dc2626'}">${kind === 'income' ? '+' : '−'}${fmt(total)}</b>`;
+  document.getElementById('drill-total').innerHTML = `${lbl} <b style="color:${col}">${sign}${fmt(Math.abs(total))}</b>`;
   document.getElementById('drill-modal').style.display = 'flex';
+}
+// v15.72 — drill helpers สำหรับการ์ด/insight บนหน้าสรุปผล (อ่านจาก _sumData)
+function drillStat(which) {
+  if (which === 'income')  return showChartDrill('💰 รายรับทั้งหมด', _sumData.income, 'income');
+  if (which === 'expense') return showChartDrill('💸 รายจ่ายทั้งหมด', _sumData.expense, 'expense');
+  if (which === 'truck')   return showChartDrill('🚚 เที่ยวรถทั้งหมด', _sumData.truck, 'truck');
+  if (which === 'profit') {
+    const mixed = [
+      ...(_sumData.income || []).map(r => Object.assign({}, r, { __t: 'income' })),
+      ...(_sumData.expense || []).map(r => Object.assign({}, r, { __t: 'expense' }))
+    ];
+    return showChartDrill('📊 กำไรสุทธิ (รายรับ − รายจ่าย)', mixed, 'mixed');
+  }
+}
+let _tripLkCache = null, _tripLkSrc = null;
+function _tripLookup() {
+  const src = _master.truckHistory || [];
+  if (_tripLkCache && _tripLkSrc === src) return _tripLkCache;
+  const byRow = {}, byRound = {};
+  src.forEach(t => { if (t.rowId) byRow[t.rowId] = t; const rd = parseInt(t.tripRound); if (rd) byRound[rd] = t; });
+  _tripLkCache = { byRow, byRound }; _tripLkSrc = src;
+  return _tripLkCache;
+}
+function _attributedCustomer(r) {   // ลูกค้าต้นทางของรอบที่ลิงก์ (เหมือน renderTopCustomers)
+  const { byRow, byRound } = _tripLookup();
+  const t = (r.linkedTripRowId && byRow[r.linkedTripRowId]) || byRound[parseInt(r.linkedTripRound)] || null;
+  const o = t && String(t.originCustomer || '').trim();
+  if (o) return o;
+  const d = t && String(t.customerName || '').trim();
+  if (d) return d;
+  return String(r.customerName || '').trim() || '(ไม่ระบุ)';
+}
+function drillExpenseCat(cat) {
+  showChartDrill('🏷 ' + cat, (_sumData.expense || []).filter(r => (r.category || 'อื่นๆ') === cat), 'expense');
+}
+function drillCustomer(name) {
+  showChartDrill('🏢 ' + name, (_sumData.income || []).filter(r => _attributedCustomer(r) === name), 'income');
+}
+function drillVehicle(plate) {
+  showChartDrill('🚛 ' + plate, (_sumData.truck || []).filter(t => (t.plateNumber || '') === plate), 'truck');
 }
 function closeDrill() { const m = document.getElementById('drill-modal'); if (m) m.style.display = 'none'; }
 // v15.71 — ไปที่รายการในลิสต์ (สลับแท็บ → list view → เลื่อนหา + ไฮไลต์) เผื่อ list ยังโหลดไม่เสร็จก็ลองซ้ำ
@@ -14809,6 +14877,7 @@ function renderSummary(data, dateFrom, dateTo) {
   const profitMargin = totalIncome > 0 ? (profit / totalIncome * 100) : 0;
   // v15.65 — เก็บ snapshot ไว้ให้ฟีเจอร์ "คาดการณ์" (ไม่บันทึก, หายเมื่อรีเฟรช)
   _fcSnapshot = { income: totalIncome, expense: totalExpense, trucks: truck };
+  _sumData = { income, expense, truck };   // v15.72 — สำหรับ drill-down การ์ด/insight
 
   const fmt = n => n.toLocaleString('th-TH', { maximumFractionDigits: 0 });
 
@@ -14961,7 +15030,7 @@ function renderTopCategories(expense) {
     const pct = (o.amt / max) * 100;
     const c = colors[i % colors.length];
     const avg = o.count > 0 ? o.amt / o.count : 0;
-    return `<div class="dash-list-item">
+    return `<div class="dash-list-item dash-click" data-cat="${escAttr(cat)}" onclick="drillExpenseCat(this.dataset.cat)" title="ดูรายจ่ายในหมวดนี้">
       <div class="dash-list-row">
         <div class="dash-list-name">
           <span class="dash-list-dot" style="background:${c}"></span>${escHtml(cat)}
@@ -15059,7 +15128,7 @@ function renderTopCustomers(income, truck) {
     if (o.trips > 0)    chips.push(`<span class="dc-chip dc-chip--trip">📦 ${o.trips} เที่ยว</span>`);
     if (o.incCount > 0) chips.push(`<span class="dc-chip dc-chip--inc">📥 ${o.incCount} รายการ</span>`);
     if (!chips.length)  chips.push(`<span class="dc-chip">—</span>`);
-    return `<div class="dash-cust">
+    return `<div class="dash-cust dash-click" data-name="${escAttr(name)}" onclick="drillCustomer(this.dataset.name)" title="ดูรายรับของลูกค้านี้">
       <div class="dash-cust-avatar" style="background:${c}">${escHtml(initials)}</div>
       <div class="dash-cust-info">
         <div class="dash-cust-name">${escHtml(name)}</div>
@@ -15096,7 +15165,7 @@ function renderTopVehicles(truck) {
     const subParts = [];
     if (v.paid > 0)   subParts.push(`<span class="dc-chip dc-chip--inc">✅ ส่งแล้ว ${v.paid}</span>`);
     if (v.unpaid > 0) subParts.push(`<span class="dc-chip dc-chip--trip">🚚 กำลังขนส่ง ${v.unpaid}</span>`);
-    return `<div class="dash-cust">
+    return `<div class="dash-cust dash-click" data-plate="${escAttr(plate)}" onclick="drillVehicle(this.dataset.plate)" title="ดูเที่ยวของทะเบียนนี้">
       <div class="dash-cust-avatar" style="background:${c}">🚛</div>
       <div class="dash-cust-info">
         <div class="dash-cust-name">${escHtml(plate)}</div>
@@ -15572,7 +15641,7 @@ function renderTruckTable(truck) {
     const payBadge = paid
       ? '<span style="font-size:.65rem;padding:1px 6px;border-radius:8px;background:#E8F5E9;color:#2E7D32;font-weight:700">จ่ายแล้ว</span>'
       : '<span style="font-size:.65rem;padding:1px 6px;border-radius:8px;background:#FEE2E2;color:#B91C1C;font-weight:700">ค้างจ่าย</span>';
-    return `<tr>
+    return `<tr class="sum-trip-row"${r.rowId ? ` onclick="goToRecord('truck','${escAttr(r.rowId)}')" style="cursor:pointer" title="ไปที่เที่ยวรถนี้"` : ''}>
       <td>
         <div style="font-weight:800;color:#0f172a">รอบ ${round}</div>
         <div style="font-size:.72rem;color:#64748b;margin-top:2px">${dates}</div>
@@ -15910,7 +15979,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.71';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.72';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
