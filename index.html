@@ -5282,7 +5282,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.94 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.95 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -9923,34 +9923,24 @@ function refreshKpiChips() {
   const box = document.getElementById('kpi-chips');
   if (!box) return;
   if (!_master || !_master._loaded) { box.innerHTML = ''; return; }
-  const trucks  = _master.truckHistory  || [];
-  const incomes = _master.incomeHistory || [];
-  const today = new Date().toISOString().slice(0, 10);
-  const ym    = today.slice(0, 7);
-  // เที่ยววันนี้ (ตามวันเข้ารับ/jobDate)
-  const tripsToday = trucks.filter(t => String(t.pickupDate || t.jobDate || '').slice(0,10) === today).length;
-  // ค้างจ่าย — derive paid จากรายรับที่ลิงก์รอบ (ตามตรรกะหลักของระบบ)
+  const trucks = _master.truckHistory || [];
+  // เที่ยวทั้งหมด
+  const totalTrips = trucks.length;
+  // ค้างจ่าย กี่เที่ยว — derive paid จากรายรับที่ลิงก์รอบ (ตามตรรกะหลักของระบบ)
   const maps = (typeof _incomeByTripMaps === 'function') ? _incomeByTripMaps() : { byRow:{}, byRound:{} };
-  let unpaidAmt = 0, unpaidCnt = 0;
+  let unpaidCnt = 0;
   trucks.forEach(t => {
     const linked  = (t.rowId && maps.byRow[t.rowId]) || maps.byRound[parseInt(t.tripRound)] || 0;
     const freight = parseFloat(t.freightCost) || 0;
     const paid = linked > 0 || (freight > 0 && t.paymentStatus === 'จ่ายแล้ว');
-    if (!paid) {
-      const rev = (typeof _tripRevenue === 'function') ? _tripRevenue(t) : freight;
-      if (rev > 0) { unpaidAmt += rev; unpaidCnt++; }
-    }
+    const rev = (typeof _tripRevenue === 'function') ? _tripRevenue(t) : freight;
+    if (!paid && rev > 0) unpaidCnt++;
   });
-  // รายรับเดือนนี้
-  const incMonth = incomes.reduce((s,i) => (String(i.incomeDate||'').slice(0,7) === ym ? s + (parseFloat(i.amount)||0) : s), 0);
-  const baht0 = n => '฿' + Math.round(n).toLocaleString('en-US');
   box.innerHTML =
       `<button type="button" class="kpi-chip" onclick="switchTab('truck')" title="ไปหน้าเที่ยวรถ">`
-    +   `<span class="kpi-ico">🚚</span><span class="kpi-label">เที่ยววันนี้</span><span class="kpi-val">${tripsToday}</span></button>`
+    +   `<span class="kpi-ico">🚚</span><span class="kpi-label">เที่ยวทั้งหมด</span><span class="kpi-val">${totalTrips}</span></button>`
     + `<button type="button" class="kpi-chip kpi-warn" onclick="switchTab('truck')" title="ดูเที่ยวที่ยังค้างจ่าย">`
-    +   `<span class="kpi-ico">⏰</span><span class="kpi-label">ค้างจ่าย</span><span class="kpi-val">${baht0(unpaidAmt)}${unpaidCnt ? ' ('+unpaidCnt+')' : ''}</span></button>`
-    + `<button type="button" class="kpi-chip kpi-good" onclick="switchTab('income')" title="ไปหน้ารายรับ">`
-    +   `<span class="kpi-ico">💰</span><span class="kpi-label">เดือนนี้</span><span class="kpi-val">${baht0(incMonth)}</span></button>`;
+    +   `<span class="kpi-ico">⏰</span><span class="kpi-label">ค้างจ่าย</span><span class="kpi-val">${unpaidCnt} เที่ยว</span></button>`;
 }
 
 function getProvinceOpts() { return TH_PROVINCES_LIST; }
@@ -16219,7 +16209,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.94';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.95';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
