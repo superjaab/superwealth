@@ -5246,7 +5246,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.77 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.78 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -5710,14 +5710,14 @@
     }
     @media (min-width: 1400px) {
       .cal-daycell { min-height: 48px !important; padding: 12px 10px 6px !important; }
-      .cal-week-events { grid-auto-rows: 40px !important; min-height: 96px !important; padding: 5px 6px 10px 6px !important; }
+      .cal-week-events { grid-auto-rows: 58px !important; min-height: 96px !important; padding: 5px 6px 10px 6px !important; }
       .cal-evt-bar { font-size: .76rem !important; padding: 4px 10px !important; }
       .cal-day-num { font-size: .95rem !important; }
       .cal-weekday { padding: 16px 10px !important; font-size: .85rem !important; }
     }
     @media (min-width: 1700px) {
       .cal-daycell { min-height: 64px !important; padding: 14px 12px 8px !important; }
-      .cal-week-events { grid-auto-rows: 46px !important; min-height: 120px !important; }
+      .cal-week-events { grid-auto-rows: 64px !important; min-height: 120px !important; }
       .cal-evt-bar { font-size: .82rem !important; padding: 5px 12px !important; }
       .cal-day-num { font-size: 1rem !important; }
     }
@@ -5786,19 +5786,19 @@
     .cal-leg-item { display:flex; align-items:center; gap:5px }
     .cal-leg-dot { width:10px; height:10px; border-radius:50% }
 
-    /* v15.19 — stronger grid border for visibility */
-    .cal-grid { background:white; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,.08); overflow:hidden; border:1.5px solid #cbd5e1 }
-    .cal-weekdays { display:grid; grid-template-columns:repeat(7,1fr); background:#eef2f7; border-bottom:2px solid #cbd5e1 }
-    .cal-weekday { padding:10px 6px; text-align:center; font-size:.72rem; font-weight:800; color:#475569; border-right:1px solid #d1d9e2 }
+    /* v15.78 — เส้นตารางเข้มขึ้น อ่านง่าย */
+    .cal-grid { background:white; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,.08); overflow:hidden; border:2px solid #94a3b8 }
+    .cal-weekdays { display:grid; grid-template-columns:repeat(7,1fr); background:#e2e8f0; border-bottom:2px solid #94a3b8 }
+    .cal-weekday { padding:10px 6px; text-align:center; font-size:.72rem; font-weight:800; color:#475569; border-right:1px solid #b6c2cf }
     .cal-weekday:last-child { border-right:none }
     .cal-weekday.sun { color:#dc2626 } .cal-weekday.sat { color:#3b82f6 }
 
     /* Week row container */
-    .cal-week { border-bottom:1.5px solid #cbd5e1; position:relative }
+    .cal-week { border-bottom:2px solid #94a3b8; position:relative }
     .cal-week:last-child { border-bottom:none }
     /* Day-number row */
     .cal-week-nums { display:grid; grid-template-columns:repeat(7,1fr) }
-    .cal-daycell { border-right:1px solid #d1d9e2; padding:6px 5px 2px; cursor:pointer; min-height:28px; transition:background .12s }
+    .cal-daycell { border-right:1px solid #b6c2cf; padding:6px 5px 2px; cursor:pointer; min-height:28px; transition:background .12s }
     .cal-daycell:nth-child(7n) { border-right:none }
     .cal-daycell:hover { background:#f8fafc }
     .cal-daycell.other-month .cal-day-num { color:#cbd5e1 }
@@ -5808,10 +5808,12 @@
     .cal-daycell.sun .cal-day-num { color:#dc2626 } .cal-daycell.sat .cal-day-num { color:#3b82f6 }
 
     /* Event rows (grid same 7 cols, multiple rows) */
-    .cal-week-events { display:grid; grid-template-columns:repeat(7,1fr); grid-auto-rows:34px; gap:2px; padding:2px 3px 6px 3px; min-height:60px; position:relative }
+    .cal-week-events { display:grid; grid-template-columns:repeat(7,1fr); grid-auto-rows:52px; gap:2px; padding:2px 3px 6px 3px; min-height:60px; position:relative }
     /* v15.19 — invisible per-column click layer behind event bars (click empty → open whole day) */
-    .cal-evt-backdrop-layer { position:absolute; inset:0; display:grid; grid-template-columns:repeat(7,1fr); gap:2px; padding:2px 3px 6px 3px; z-index:0 }
-    .cal-evt-backdrop { cursor:pointer; border-radius:6px; transition:background .12s }
+    /* v15.78 — เส้นแบ่งคอลัมน์แนวตั้งในส่วนเหตุการณ์ (ให้เป็นตารางเต็ม) */
+    .cal-evt-backdrop-layer { position:absolute; inset:0; display:grid; grid-template-columns:repeat(7,1fr); gap:0; padding:0; z-index:0 }
+    .cal-evt-backdrop { cursor:pointer; transition:background .12s; border-right:1px solid #cdd6e0 }
+    .cal-evt-backdrop:nth-child(7n) { border-right:none }
     .cal-evt-backdrop:hover { background:rgba(59,130,246,.07) }
     .cal-evt-bar, .cal-evt-more { position:relative; z-index:1 }
     .cal-evt-bar {
@@ -5879,7 +5881,7 @@
       .cal-daycell { padding:4px 3px 2px; min-height:24px }
       .cal-day-num { font-size:.7rem }
       .cal-evt-bar { font-size:.55rem; padding:1px 4px }
-      .cal-week-events { grid-auto-rows:28px; min-height:40px }
+      .cal-week-events { grid-auto-rows:46px; min-height:40px }
       .cal-evt-l2 { font-size:.88em }
       .cal-month-label { font-size:.85rem; min-width:110px }
       .cal-plate-filter { min-width:130px; font-size:.75rem }
@@ -14382,19 +14384,15 @@ function _buildMonthGridWeeks(_calYear, _calMonth, trips) {
       // v15.34/35 — รอบ = chip กรอบตัวใหญ่ขึ้นต้น, ตัดข้อความวันที่ออก, สถานะเป็นไอคอน
       const statusIcon = tripStat === 'ส่งแล้ว' ? '✅' : '🚚';
       const roundChip = `<span class="cal-evt-round">${t.tripRound ? 'รอบ ' + escHtml(t.tripRound) : 'ไม่ระบุรอบ'}</span>`;
-      let labelParts = [];
-      if (!_calPlate && t.plateNumber) labelParts.push(t.plateNumber);
-      if (t.origin || t.destination) labelParts.push((t.origin||'-') + ' → ' + (t.destination||'-'));
-      const label = `${statusIcon} ${labelParts.join(' · ')}`;
-      // v15.15 / v15.16 / v15.17 — Second line: origin customer → destination customer
-      // Labels rendered as highlighted chips (no emoji). Customer names escaped.
+      const label = `${statusIcon}${(!_calPlate && t.plateNumber) ? ' ' + t.plateNumber : ''}`;
+      // v15.78 — 3 บรรทัด: (รอบ) / ต้นทาง / ปลายทาง — อ่านง่ายขึ้น
       const oc = (t.originCustomer || '').trim();
       const dc = (t.customerName   || '').trim();
+      const originTxt = oc || (t.origin || '').trim();
+      const destTxt   = dc || (t.destination || '').trim();
       const _lbl = txt => `<b class="cal-evt-cust-lbl">${txt}</b>`;
-      let custHtml = '';
-      if (oc && dc && oc !== dc) custHtml = _lbl('ต้นทาง') + ' ' + escHtml(oc) + '  →  ' + _lbl('ปลายทาง') + ' ' + escHtml(dc);
-      else if (dc) custHtml = _lbl('ปลายทาง') + ' ' + escHtml(dc);
-      else if (oc) custHtml = _lbl('ต้นทาง') + ' ' + escHtml(oc);
+      const originLine = originTxt ? `<span class="cal-evt-l2">${_lbl('ต้นทาง')} ${escHtml(originTxt)}</span>` : '';
+      const destLine   = destTxt   ? `<span class="cal-evt-l2">${_lbl('ปลายทาง')} ${escHtml(destTxt)}</span>` : '';
       // Payment badge — v15.17 bigger & clearer
       const isPaid = (t.paymentStatus || 'ค้างจ่าย') === 'จ่ายแล้ว';
       const payBadge = isPaid
@@ -14416,14 +14414,11 @@ function _buildMonthGridWeeks(_calYear, _calMonth, trips) {
       // Click → open day modal of the segment's start day
       const clickDate = _numToDateKey(ev.segStart);
       const pal = _calStatusPal(t);   // v15.36 — pastel {bg,fg} by status (3 colors)
-      const line2 = custHtml
-        ? `<span class="cal-evt-l2">${custHtml}</span>`
-        : '';
       const focusId = (t.rowId || t.timestamp || '');
       evtsHtml += `<div class="cal-evt-bar cal-evt-bar--pastel ${cls} ${posCls}"
         style="background:${pal.bg};color:${pal.fg};--rfg:${pal.fg};grid-column:${colStart} / span ${colSpan}; grid-row:${ev.row + 1}"
         title="${escHtml(tip)}"
-        onclick="event.stopPropagation();openCalDay('${clickDate}','${escAttr(focusId)}')"><span class="cal-evt-l1">${roundChip}<span class="cal-evt-l1-text">${escHtml(label)}</span>${payBadge}</span>${line2}</div>`;
+        onclick="event.stopPropagation();openCalDay('${clickDate}','${escAttr(focusId)}')"><span class="cal-evt-l1">${roundChip}<span class="cal-evt-l1-text">${escHtml(label)}</span>${payBadge}</span>${originLine}${destLine}</div>`;
     });
 
     // Add overflow indicators per column
@@ -14439,8 +14434,8 @@ function _buildMonthGridWeeks(_calYear, _calMonth, trips) {
     const usedRows = Math.min(rows.length, CAL_MAX_ROWS_PER_WEEK);
     const hasOverflow = overflowByCol.some(n => n > 0);
     const totalRows = usedRows + (hasOverflow ? 1 : 0);
-    // v15.15 — 36px per row (2-line bars) + gap
-    const minHeight = Math.max(40, totalRows * 36 + 8);
+    // v15.78 — 52px per row (3-line bars: รอบ / ต้นทาง / ปลายทาง) + gap
+    const minHeight = Math.max(54, totalRows * 52 + 8);
 
     html += `<div class="cal-week">
       <div class="cal-week-nums">${numsHtml}</div>
@@ -16038,7 +16033,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.77';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.78';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
