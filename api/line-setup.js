@@ -47,13 +47,13 @@ function richMenuBody() {
     name: 'SuperWealth Menu v2',
     chatBarText: '📋 เมนู',
     areas: [
-      // Row 1 — open the in-chat form card (which itself has a "เปิดฟอร์มเต็ม" button)
-      { bounds: { x: 0,      y: 0,  width: CW, height: RH }, action: { type:'postback', label:'🚛 บันทึกรถ',  data:'MENU_TRUCK',       displayText:'🚛 บันทึกรถ' } },
-      { bounds: { x: CW,     y: 0,  width: CW, height: RH }, action: { type:'postback', label:'💰 รายรับ',   data:'MENU_INCOME',      displayText:'💰 รายรับ' } },
-      { bounds: { x: CW*2,   y: 0,  width: W-CW*2, height: RH }, action: { type:'postback', label:'💸 รายจ่าย', data:'MENU_EXPENSE',  displayText:'💸 รายจ่าย' } },
+      // Row 1 — เปิดลิงก์ฟอร์มเต็มหน้าโดยตรง (เหมือนกดบันทึกรถ/รายรับ/รายจ่าย)
+      { bounds: { x: 0,      y: 0,  width: CW, height: RH }, action: { type:'uri', label:'🚛 บันทึกรถ',  uri:`${WEB_URL}/liff.html?type=truck` } },
+      { bounds: { x: CW,     y: 0,  width: CW, height: RH }, action: { type:'uri', label:'💰 รายรับ',   uri:`${WEB_URL}/liff.html?type=income` } },
+      { bounds: { x: CW*2,   y: 0,  width: W-CW*2, height: RH }, action: { type:'uri', label:'💸 รายจ่าย', uri:`${WEB_URL}/liff.html?type=expense` } },
       // Row 2
-      { bounds: { x: 0,      y: RH, width: CW, height: H-RH }, action: { type:'postback', label:'📅 ปฏิทิน',   data:'MENU_CALENDAR',    displayText:'📅 ปฏิทิน' } },
-      { bounds: { x: CW,     y: RH, width: CW, height: H-RH }, action: { type:'postback', label:'🔧 ซ่อมบำรุง', data:'MENU_MAINTENANCE', displayText:'🔧 ซ่อมบำรุง' } },
+      { bounds: { x: 0,      y: RH, width: CW, height: H-RH }, action: { type:'uri', label:'📅 ปฏิทิน',   uri:`${WEB_URL}/calendar` } },
+      { bounds: { x: CW,     y: RH, width: CW, height: H-RH }, action: { type:'uri', label:'🔧 ซ่อมบำรุง', uri:`${WEB_URL}/liff.html?type=maintenance` } },
       { bounds: { x: CW*2,   y: RH, width: W-CW*2, height: H-RH }, action: { type:'postback', label:'⚡ เมนูทั้งหมด', data:'/เมนูเต็ม', displayText:'⚡ เมนูทั้งหมด' } }
     ]
   };

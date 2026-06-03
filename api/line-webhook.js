@@ -576,19 +576,19 @@ async function buildWelcomeFlex(sheets, sheetId) {
           { type:'text', text:'⚡ เมนูลัด', size:'xs', color: C.textMute, weight:'bold' },
           { type:'box', layout:'horizontal', spacing:'sm', margin:'sm', contents:[
             { type:'button', height:'sm', style:'primary', color: C.primary,
-              action:{ type:'postback', label:'🚛 บันทึกรถ', data:'MENU_TRUCK', displayText:'🚛 บันทึกรถ' } },
+              action:{ type:'uri', label:'🚛 บันทึกรถ', uri:`${WEB_URL}/liff.html?type=truck` } },
             { type:'button', height:'sm', style:'primary', color: C.info,
-              action:{ type:'postback', label:'📅 ปฏิทิน',   data:'MENU_CALENDAR', displayText:'📅 ปฏิทิน' } }
+              action:{ type:'uri', label:'📅 ปฏิทิน',   uri:`${WEB_URL}/calendar` } }
           ]},
           { type:'box', layout:'horizontal', spacing:'sm', contents:[
             { type:'button', height:'sm', style:'primary', color: C.success,
-              action:{ type:'postback', label:'💰 รายรับ',   data:'MENU_INCOME', displayText:'💰 รายรับ' } },
+              action:{ type:'uri', label:'💰 รายรับ',   uri:`${WEB_URL}/liff.html?type=income` } },
             { type:'button', height:'sm', style:'primary', color: C.danger,
-              action:{ type:'postback', label:'💸 รายจ่าย',  data:'MENU_EXPENSE', displayText:'💸 รายจ่าย' } }
+              action:{ type:'uri', label:'💸 รายจ่าย',  uri:`${WEB_URL}/liff.html?type=expense` } }
           ]},
           { type:'box', layout:'horizontal', spacing:'sm', contents:[
             { type:'button', height:'sm', style:'primary', color: C.warningDark,
-              action:{ type:'postback', label:'🔧 ซ่อมบำรุง', data:'MENU_MAINTENANCE', displayText:'🔧 ซ่อมบำรุง' } }
+              action:{ type:'uri', label:'🔧 ซ่อมบำรุง', uri:`${WEB_URL}/liff.html?type=maintenance` } }
           ]}
         ]
       },
@@ -792,10 +792,10 @@ function buildSuccessFlex(type, rowId, f) {
 // ── FULL MENU CAROUSEL (KTB-style 4-column icons, 3 categories) ──
 function buildFullMenuFlex() {
   // Each bubble: 2×2 grid of colored icon buttons (4 items per category)
-  const item = (icon, label, color, postback, displayText) => ({
+  const item = (icon, label, color, uri) => ({
     type:'box', layout:'vertical', flex:1, spacing:'sm', paddingAll:'md',
     cornerRadius:'lg', backgroundColor:'#FFFFFF',
-    action:{ type:'postback', label, data:postback, displayText: displayText || label },
+    action:{ type:'uri', label, uri },
     contents:[
       { type:'box', layout:'vertical', width:'56px', height:'56px', cornerRadius:'lg',
         backgroundColor: color, justifyContent:'center',
@@ -818,16 +818,16 @@ function buildFullMenuFlex() {
     body: { type:'box', layout:'vertical', paddingAll:'md', backgroundColor:'#F5F7FB', spacing:'none',
       contents:[
         row(
-          item('🚛', 'บันทึกรถ', '#2563EB', 'MENU_TRUCK'),
-          item('💰', 'รายรับ',   '#16A34A', 'MENU_INCOME')
+          item('🚛', 'บันทึกรถ', '#2563EB', `${WEB_URL}/liff.html?type=truck`),
+          item('💰', 'รายรับ',   '#16A34A', `${WEB_URL}/liff.html?type=income`)
         ),
         row(
-          item('💸', 'รายจ่าย',  '#DC2626', 'MENU_EXPENSE'),
-          item('📅', 'ปฏิทิน',  '#0D9488', 'MENU_CALENDAR')
+          item('💸', 'รายจ่าย',  '#DC2626', `${WEB_URL}/liff.html?type=expense`),
+          item('📅', 'ปฏิทิน',  '#0D9488', `${WEB_URL}/calendar`)
         ),
         row(
-          item('🔧', 'ซ่อมบำรุง', '#E65100', 'MENU_MAINTENANCE'),
-          item('📊', 'สรุปเดือนนี้', '#6A1B9A', '/สรุป', 'สรุปผล')
+          item('🔧', 'ซ่อมบำรุง', '#E65100', `${WEB_URL}/liff.html?type=maintenance`),
+          item('📊', 'สรุปเดือนนี้', '#6A1B9A', `${WEB_URL}/summary`)
         )
       ] }
   };
@@ -843,12 +843,12 @@ function buildFullMenuFlex() {
     body: { type:'box', layout:'vertical', paddingAll:'md', backgroundColor:'#F5F7FB', spacing:'none',
       contents:[
         row(
-          item('🚗', 'ยานพาหนะ', '#6366F1', 'MENU_VEHICLE',  'ยานพาหนะ — ดูในเว็บ'),
-          item('👤', 'คนขับ',    '#F97316', 'MENU_DRIVER',   'คนขับ — ดูในเว็บ')
+          item('🚗', 'ยานพาหนะ', '#6366F1', `${WEB_URL}/vehicle`),
+          item('👤', 'คนขับ',    '#F97316', `${WEB_URL}/driver`)
         ),
         row(
-          item('🏢', 'ลูกค้า',   '#A855F7', 'MENU_CUSTOMER', 'ลูกค้า — ดูในเว็บ'),
-          item('💼', 'เงินทุน',  '#0EA5E9', 'MENU_CAPITAL',  'เงินทุน — ดูในเว็บ')
+          item('🏢', 'ลูกค้า',   '#A855F7', `${WEB_URL}/customer`),
+          item('💼', 'เงินทุน',  '#0EA5E9', `${WEB_URL}/capital`)
         )
       ] }
   };
@@ -864,12 +864,12 @@ function buildFullMenuFlex() {
     body: { type:'box', layout:'vertical', paddingAll:'md', backgroundColor:'#F5F7FB', spacing:'none',
       contents:[
         row(
-          item('⛽', 'น้ำมัน',      '#EAB308', 'MENU_FUEL',        'น้ำมัน — ดูในเว็บ'),
-          item('🚗', 'ยานพาหนะ', '#6366F1', 'MENU_VEHICLE',  'ยานพาหนะ — ดูในเว็บ')
+          item('⛽', 'น้ำมัน',      '#EAB308', `${WEB_URL}/fuel`),
+          item('🧾', 'ใบเสร็จ',     '#06B6D4', `${WEB_URL}/invoice`)
         ),
         row(
-          item('🧾', 'ใบเสร็จ',     '#06B6D4', 'MENU_INVOICE',     'ใบเสร็จ — ดูในเว็บ'),
-          item('🌐', 'เปิดเว็บ',    '#10B981', 'OPEN_WEB',         'เปิดเว็บ')
+          item('🚗', 'ยานพาหนะ', '#6366F1', `${WEB_URL}/vehicle`),
+          item('🌐', 'เปิดเว็บ',    '#10B981', `${WEB_URL}`)
         )
       ] }
   };
