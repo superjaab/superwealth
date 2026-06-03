@@ -5282,7 +5282,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.96 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.97 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -6795,19 +6795,8 @@
   </div>
 
   <!-- v15.70 — Chart drill-down modal: คลิกแท่ง → รายการที่รวมกันเป็นยอดนั้น -->
-  <div id="drill-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.55);backdrop-filter:blur(3px);align-items:flex-start;justify-content:center;padding:24px 12px;overflow:auto" onclick="if(event.target===this)closeDrill()">
-    <div style="background:#fff;border-radius:18px;max-width:560px;width:100%;box-shadow:0 24px 60px -12px rgba(0,0,0,.4);overflow:hidden">
-      <div style="background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px">
-        <div id="drill-title" style="font-weight:800;font-size:1rem">รายการ</div>
-        <button type="button" onclick="closeDrill()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:34px;height:34px;border-radius:10px;cursor:pointer;font-size:1.1rem;flex-shrink:0">✕</button>
-      </div>
-      <div id="drill-body" style="padding:6px 18px;max-height:56vh;overflow:auto"></div>
-      <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid #eef2f7;background:#fafbfc">
-        <span id="drill-total" style="font-weight:800;font-size:.95rem">รวม</span>
-        <button type="button" onclick="closeDrill()" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:10px;padding:10px 20px;font-weight:700;cursor:pointer;font-family:inherit">ปิด</button>
-      </div>
-    </div>
-  </div>
+  <!-- v15.97 — #drill-modal ย้ายไปไว้ระดับ <body> (ท้ายไฟล์) เพื่อให้กรอบอยู่กลางจอจริง
+       (เดิมอยู่ใน .tab-panel ที่ max-width:760px + animation fadeIn → กลายเป็น containing block ของ position:fixed ทำให้กรอบเบี้ยวซ้าย) -->
 
   <!-- Quick Menu grid removed (v14.1) — moved to LINE Bot full menu carousel
        Reason: redundant with sidebar on web (already shows all options).
@@ -16208,7 +16197,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.96';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.97';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
@@ -16858,6 +16847,21 @@ document.addEventListener('click', e => {
   }
 });
 </script>
+
+<!-- v15.97 — Drill-down modal (ระดับ body → position:fixed อิงกับ viewport, กรอบอยู่กลางจอ) -->
+<div id="drill-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.55);backdrop-filter:blur(3px);align-items:flex-start;justify-content:center;padding:24px 12px;overflow:auto" onclick="if(event.target===this)closeDrill()">
+  <div style="background:#fff;border-radius:18px;max-width:560px;width:100%;box-shadow:0 24px 60px -12px rgba(0,0,0,.4);overflow:hidden">
+    <div style="background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <div id="drill-title" style="font-weight:800;font-size:1rem">รายการ</div>
+      <button type="button" onclick="closeDrill()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:34px;height:34px;border-radius:10px;cursor:pointer;font-size:1.1rem;flex-shrink:0">✕</button>
+    </div>
+    <div id="drill-body" style="padding:6px 18px;max-height:56vh;overflow:auto"></div>
+    <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid #eef2f7;background:#fafbfc">
+      <span id="drill-total" style="font-weight:800;font-size:.95rem">รวม</span>
+      <button type="button" onclick="closeDrill()" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:10px;padding:10px 20px;font-weight:700;cursor:pointer;font-family:inherit">ปิด</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
