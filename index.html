@@ -5002,6 +5002,8 @@
     .dm-row:last-child { border-bottom: none; }
     .dm-main { min-width: 0; flex: 1; }
     .dm-l1 { font-weight: 700; color: #0f172a; font-size: .84rem; }
+    .dm-round { font-size: 1rem; font-weight: 800; color: #4338ca; }
+    body.dark .dm-round { color: #a5b4fc; }
     .dm-l2 { font-size: .76rem; color: #64748b; margin-top: 2px; word-break: break-word; }
     .dm-amt { font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
     .dm-doc { font-size: .68rem; background: #eef2ff; color: #4338ca; padding: 1px 6px; border-radius: 6px; font-weight: 700; margin-left: 4px; }
@@ -5244,7 +5246,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.76 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.77 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -14787,15 +14789,21 @@ function showChartDrill(title, records, kind) {
       const l2 = [escHtml(who), route].filter(Boolean).join(' · ');
       return `<div class="dm-row${open}><div class="dm-main"><div class="dm-l1">🔄 รอบ #${escHtml(String(r.tripRound || '-'))} · ${escHtml(r.plateNumber || '')}</div>${l2 ? `<div class="dm-l2">${l2}</div>` : ''}</div><div class="dm-amt" style="color:#16a34a">${fmt(rev)}</div>${go}</div>`;
     }
-    const rnd = _linkedRoundLabel(r);   // v15.76 — โชว์รอบที่ลิงก์ + วันเข้ารับ เพื่อตรวจสอบ
+    // v15.77 — เลขรอบขึ้นเป็นหัวข้อตัวใหญ่ (ถ้ามีรอบที่ลิงก์)
+    const _lk = _tripLookup();
+    const _lt = (r.linkedTripRowId && _lk.byRow[r.linkedTripRowId]) || _lk.byRound[parseInt(r.linkedTripRound)] || null;
+    const roundNo = (_lt && _lt.tripRound) || parseInt(r.linkedTripRound) || null;
+    const pickup  = _lt ? (_lt.pickupDate || _lt.jobDate || '') : '';
     if (k === 'income') {
       const amt = (r.__amt != null) ? r.__amt : _detectAmount(r); total += amt;   // v15.74 — รองรับยอดต่อหมวด
-      const l2 = [rnd, r.customerName, r.incomeItem].filter(Boolean).map(escHtml).join(' · ');
-      return `<div class="dm-row${open}><div class="dm-main"><div class="dm-l1">📅 ${fmtDate(r.incomeDate)} ${doc}</div>${l2 ? `<div class="dm-l2">${l2}</div>` : ''}</div><div class="dm-amt" style="color:#16a34a">+${fmt(amt)}</div>${go}</div>`;
+      const head = roundNo ? `<span class="dm-round">🔄 รอบ #${escHtml(String(roundNo))}</span>` : `📅 ${fmtDate(r.incomeDate)}`;
+      const sub = [ roundNo ? `📅 ${fmtDate(r.incomeDate)}` : '', pickup ? `เข้ารับ ${fmtDate(pickup)}` : '', r.customerName ? escHtml(r.customerName) : '', r.incomeItem ? escHtml(r.incomeItem) : '' ].filter(Boolean).join(' · ');
+      return `<div class="dm-row${open}><div class="dm-main"><div class="dm-l1">${head} ${doc}</div>${sub ? `<div class="dm-l2">${sub}</div>` : ''}</div><div class="dm-amt" style="color:#16a34a">+${fmt(amt)}</div>${go}</div>`;
     }
     const amt = (r.__amt != null) ? r.__amt : _detectAmount(r); total += (kind === 'mixed' ? -amt : amt);   // v15.74
-    const l2 = [rnd, r.category, r.vendor, r.expenseDetail].filter(Boolean).map(escHtml).join(' · ');
-    return `<div class="dm-row${open}><div class="dm-main"><div class="dm-l1">📅 ${fmtDate(r.expenseDate)} ${doc}</div>${l2 ? `<div class="dm-l2">${l2}</div>` : ''}</div><div class="dm-amt" style="color:#dc2626">−${fmt(amt)}</div>${go}</div>`;
+    const head = roundNo ? `<span class="dm-round">🔄 รอบ #${escHtml(String(roundNo))}</span>` : `📅 ${fmtDate(r.expenseDate)}`;
+    const sub = [ roundNo ? `📅 ${fmtDate(r.expenseDate)}` : '', pickup ? `เข้ารับ ${fmtDate(pickup)}` : '', r.category ? escHtml(r.category) : '', r.vendor ? escHtml(r.vendor) : '', r.expenseDetail ? escHtml(r.expenseDetail) : '' ].filter(Boolean).join(' · ');
+    return `<div class="dm-row${open}><div class="dm-main"><div class="dm-l1">${head} ${doc}</div>${sub ? `<div class="dm-l2">${sub}</div>` : ''}</div><div class="dm-amt" style="color:#dc2626">−${fmt(amt)}</div>${go}</div>`;
   }).join('');
   let lbl = 'รวม', col = '#16a34a', sign = '+';
   if (kind === 'expense') { col = '#dc2626'; sign = '−'; }
@@ -16030,7 +16038,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.76';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.77';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
