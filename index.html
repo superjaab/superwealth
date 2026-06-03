@@ -2496,6 +2496,15 @@
     .exp-tbl th.num { text-align:center; font-variant-numeric:tabular-nums; }
     .exp-tbl td { padding:8px 10px; border-bottom:1px solid #e8edf3; }
     .exp-tbl tr:nth-child(even) td { background:#f8fafc; }
+    /* v15.83 — ตารางทางการ: เว้นวรรค/บรรทัดเรียบร้อย หัวตารางชัด ไม่ขาด */
+    .exp-tbl--formal { font-size:12px; border:1px solid #cbd5e1; margin-bottom:20px; }
+    .exp-tbl--formal th { background:#1e3a8a; padding:10px 12px; font-size:11.5px; letter-spacing:.02em; border-right:1px solid rgba(255,255,255,.18); }
+    .exp-tbl--formal th:last-child { border-right:none; }
+    .exp-tbl--formal td { padding:9px 12px; line-height:1.55; vertical-align:top; border-bottom:1px solid #e6ebf2; border-right:1px solid #eef2f7; }
+    .exp-tbl--formal td:last-child { border-right:none; }
+    .exp-tbl--formal tbody tr:nth-child(even) td { background:#f7f9fc; }
+    .exp-tbl--formal tfoot td { border-top:2px solid #cbd5e1; }
+    .exp-sec-title2 { font-size:13px; font-weight:800; color:#1e293b; margin:18px 0 8px; padding:7px 12px; background:#f1f5f9; border-left:4px solid #2563eb; border-radius:0 6px 6px 0; }
     .exp-sec-title { font-size:15px; font-weight:900; color:#0f172a; margin:18px 0 8px; padding-left:8px; border-left:4px solid #2563eb; }
     .exp-kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:16px; }
     .exp-kpi { padding:14px; border-radius:12px; border:1.5px solid #e2e8f0; }
@@ -5258,7 +5267,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v15.82 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v15.83 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -13366,22 +13375,52 @@ function buildReport() {
   requestAnimationFrame(() => { try { _expPaginatePreview(); } catch(e) {} });
   if (wrap) wrap.scrollIntoView({ behavior:'smooth', block:'start' });
 }
-// v15.82 — วางเส้นแบ่งหน้า A4 ลงในตัวอย่าง (อิงอัตราส่วน A4 = 210:297 ของความกว้างกระดาษ)
+// v15.83 — วางเส้นแบ่งหน้าตามขอบ .exp-pg-block จริง (ตรงกับจุดตัดของ PDF → หัวตารางไม่ขาด)
 function _expPaginatePreview() {
   const doc = document.getElementById('exp-report-doc');
   if (!doc) return;
   doc.querySelectorAll('.exp-pagebreak').forEach(e => e.remove());
   const w = doc.offsetWidth || 794;
   const pageH = w * 297 / 210;            // ความสูง 1 หน้า A4 ที่ความกว้างนี้
-  const total = doc.scrollHeight;
-  const pages = Math.max(1, Math.ceil(total / pageH));
-  for (let i = 1; i < pages; i++) {
+  const blocks = [...doc.querySelectorAll('.exp-pg-block')];
+  if (!blocks.length) return;
+  const docTop = doc.getBoundingClientRect().top;
+  let pageStart = 0;          // ตำแหน่งบนสุดของหน้าปัจจุบัน (px จาก top ของ doc)
+  const marks = [];
+  blocks.forEach(b => {
+    const rb = b.getBoundingClientRect();
+    const top = rb.top - docTop, bottom = rb.bottom - docTop;
+    // บล็อกนี้ทำให้เกินหน้า → ขึ้นหน้าใหม่ก่อนบล็อกนี้ (ไม่ผ่ากลาง section/ตาราง)
+    if (bottom - pageStart > pageH && top > pageStart + 4) {
+      marks.push(top);
+      pageStart = top;
+    }
+  });
+  const total = marks.length + 1;
+  marks.forEach((y, i) => {
     const mk = document.createElement('div');
     mk.className = 'exp-pagebreak';
-    mk.style.top = (i * pageH) + 'px';
-    mk.innerHTML = `<span class="exp-pb-lbl">— จบหน้า ${i} / ${pages} —</span>`;
+    mk.style.top = y + 'px';
+    mk.innerHTML = `<span class="exp-pb-lbl">— ขึ้นหน้า ${i + 2} / ${total} —</span>`;
     doc.appendChild(mk);
+  });
+}
+// v15.83 — แบ่งตารางยาวเป็นบล็อกต่อหน้า (แต่ละบล็อกมีหัวตารางของตัวเอง → PDF ตัดหน้าแล้วหัวไม่ขาด)
+//   headRow = '<tr>...</tr>', rowsArr = [row strings], footRow = '<tfoot>...</tfoot>' (เฉพาะบล็อกสุดท้าย)
+//   titleFn(isFirst) → HTML หัวข้อเหนือตาราง (โชว์ "(ต่อ)" ในบล็อกถัดไป)
+function _expPagedTable(headRow, rowsArr, footRow, titleFn, chunk) {
+  rowsArr = rowsArr || [];
+  chunk = chunk || 14;
+  if (!rowsArr.length) return '';
+  let out = '';
+  for (let i = 0; i < rowsArr.length; i += chunk) {
+    const part = rowsArr.slice(i, i + chunk);
+    const isFirst = i === 0, isLast = i + chunk >= rowsArr.length;
+    const title = titleFn ? titleFn(isFirst) : '';
+    out += `<div class="exp-pg-block">${title}<table class="exp-tbl exp-tbl--formal">`
+         + `<thead>${headRow}</thead><tbody>${part.join('')}</tbody>${(isLast && footRow) ? footRow : ''}</table></div>`;
   }
+  return out;
 }
 function _expDocWrap(title, range, bodyHtml) {
   const now = new Date();
@@ -13416,9 +13455,12 @@ function _expFinanceDoc() {
   if (EXPORT_STATE.incInc) (_master.incomeHistory||[]).forEach(r => { if (!inRange(r.incomeDate)) return; const amt = _detectAmount(r); sumInc += amt; rows.push({ date:r.incomeDate, type:'รายรับ', doc:r.docNumber||'', item:r.incomeItem||'', party:r.customerName||'', amt, sign:'+' }); });
   if (EXPORT_STATE.incExp) (_master.expenseHistory||[]).forEach(r => { if (!inRange(r.expenseDate)) return; const cat=(r.category||'').trim(); if (EXPORT_STATE.cats.size && !EXPORT_STATE.cats.has(cat)) return; const amt = _detectAmount(r); sumExp += amt; rows.push({ date:r.expenseDate, type:'รายจ่าย', doc:r.docNumber||'', item:cat||r.expenseDetail||'', party:r.vendor||'', amt, sign:'−' }); });
   rows.sort((a,b) => String(a.date).localeCompare(String(b.date)));
+  // v15.83 — แบ่งตารางต่อหน้า หัวตารางซ้ำทุกหน้า
+  const _fHead = `<tr><th>วันที่</th><th>ประเภท</th><th>เลขที่</th><th>รายการ</th><th>คู่ค้า</th><th class="num">จำนวนเงิน</th></tr>`;
+  const _fRows = rows.map(r => `<tr><td>${fmtDate(r.date)}</td><td>${r.type}</td><td>${escHtml(r.doc)}</td><td>${escHtml(r.item)}</td><td>${escHtml(r.party)}</td><td class="num" style="color:${r.sign==='+'?'#059669':'#dc2626'};font-weight:700">${r.sign}${fmtBaht(r.amt)}</td></tr>`);
+  const _fTable = _expPagedTable(_fHead, _fRows, '', (first) => `<div class="exp-sec-title2">📋 รายการรายรับ-รายจ่าย${first ? ' · ' + rows.length + ' รายการ' : ' (ต่อ)'}</div>`, 18);
   const body = rows.length ? `
-    <div class="exp-pg-block"><table class="exp-tbl"><thead><tr><th>วันที่</th><th>ประเภท</th><th>เลขที่</th><th>รายการ</th><th>คู่ค้า</th><th class="num">จำนวนเงิน</th></tr></thead>
-    <tbody>${rows.map(r => `<tr><td>${fmtDate(r.date)}</td><td>${r.type}</td><td>${escHtml(r.doc)}</td><td>${escHtml(r.item)}</td><td>${escHtml(r.party)}</td><td class="num" style="color:${r.sign==='+'?'#059669':'#dc2626'};font-weight:700">${r.sign}${fmtBaht(r.amt)}</td></tr>`).join('')}</tbody></table></div>
+    ${_fTable}
     <div class="exp-pg-block exp-kpi-row" style="grid-template-columns:repeat(3,1fr)">
       <div class="exp-kpi" style="border-color:#86efac;background:#f0fdf4"><div class="exp-kpi-label">💰 รายรับรวม</div><div class="exp-kpi-val" style="color:#059669">${fmtBaht(sumInc)}</div></div>
       <div class="exp-kpi" style="border-color:#fca5a5;background:#fef2f2"><div class="exp-kpi-label">💸 รายจ่ายรวม</div><div class="exp-kpi-val" style="color:#dc2626">${fmtBaht(sumExp)}</div></div>
@@ -13553,12 +13595,10 @@ function _expCalendarDoc() {
           <td class="num">${fr ? fmtBaht(fr) : '-'}</td>
           <td style="text-align:center;color:${stColor};font-weight:700">${st}</td>
         </tr>`;
-      }).join('');
-      body += `<div class="exp-pg-block"><div style="font-size:12px;font-weight:800;color:#475569;margin:6px 0 6px;padding-left:8px;border-left:3px solid #94a3b8">📋 สรุปเที่ยวรถ ${_expMonthLabel(ym)} · ${monthTrips.length} เที่ยว</div>
-        <table class="exp-tbl" style="margin-bottom:18px"><thead><tr><th class="num">รอบ</th><th>วันที่</th><th>ทะเบียน</th><th>ลูกค้า</th><th>เส้นทาง</th><th class="num">ค่าขนส่ง</th><th class="num">สถานะ</th></tr></thead>
-        <tbody>${trows}</tbody>
-        <tfoot><tr style="background:#f1f5f9;font-weight:800"><td colspan="5" style="text-align:right;padding:8px 10px">รวมค่าขนส่ง</td><td class="num" style="padding:8px 10px">${fmtBaht(sumFreight)}</td><td></td></tr></tfoot>
-        </table></div>`;
+      });
+      const _hRow = `<tr><th class="num">รอบ</th><th>วันที่</th><th>ทะเบียน</th><th>ลูกค้า</th><th>เส้นทาง</th><th class="num">ค่าขนส่ง</th><th class="num">สถานะ</th></tr>`;
+      const _fRow = `<tfoot><tr style="background:#eef2f7;font-weight:800"><td colspan="5" style="text-align:right;padding:9px 12px">รวมค่าขนส่ง</td><td class="num" style="padding:9px 12px">${fmtBaht(sumFreight)}</td><td></td></tr></tfoot>`;
+      body += _expPagedTable(_hRow, trows, _fRow, (first) => `<div class="exp-sec-title2">📋 สรุปเที่ยวรถ ${_expMonthLabel(ym)}${first ? ' · ' + monthTrips.length + ' เที่ยว' : ' (ต่อ)'}</div>`, 14);
     }
   });
   return _expDocWrap('ปฏิทินเที่ยวรถ', months.map(_expMonthLabel).join(' · '), body);
@@ -16114,7 +16154,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v15.82';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v15.83';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
