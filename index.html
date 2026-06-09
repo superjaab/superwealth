@@ -5282,7 +5282,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v16.08 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v16.09 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -13788,6 +13788,10 @@ function renderTruckList(items) {
   //   เดิมใช้แค่ linkedTripRowId → รอบที่ลิงก์ด้วยเลขรอบล้วน แสดงสถานะจ่าย/ยอดไม่ตรงกับตารางสรุป
   const _incMaps = _incomeByTripMaps();
   const _linkedInc = t => (t.rowId && _incMaps.byRow[t.rowId]) || _incMaps.byRound[parseInt(t.tripRound)] || 0;
+  // v16.09 — จับคู่ขาไป-ขากลับ (ใช้ที่เก็บเดียวกับหน้าสรุป: sw_trip_pairs)
+  const _pairs = (typeof _getTripPairs === 'function') ? _getTripPairs() : [];
+  const _pairOf = {}; _pairs.forEach(g => g.forEach(id => { _pairOf[id] = g.filter(x => x !== id); }));
+  const _roundByRow = {}; sorted.forEach(t => { if (t.rowId) _roundByRow[t.rowId] = t.tripRound; });
   // v14.16 — build expense lookup for header
   const expenseByTrip = {};
   (_master.expenseHistory || []).forEach(ex => {
@@ -13900,6 +13904,13 @@ function renderTruckList(items) {
     const roundChip = r.tripRound
       ? `<span class="sw-round-chip">🔄 รอบ #${r.tripRound}</span>`
       : `<span class="sw-round-chip sw-round-chip--none">🚛 ไม่ระบุรอบ</span>`;
+    const _ptn = _pairOf[r.rowId] || [];
+    const _isPaired = _ptn.length > 0;
+    const _ptnRounds = _ptn.map(id => _roundByRow[id] ? ('#' + _roundByRow[id]) : '#?').join(', ');
+    const pairBadge = _isPaired ? `<span class="sw-status" style="background:#f5f3ff;color:#6d28d9">🔗 ไป-กลับ ${escHtml(_ptnRounds)}</span>` : '';
+    const pairBtn = _isPaired
+      ? `<button type="button" onclick="_unpairTripRow('${escAttr(r.rowId||'')}')" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;border-radius:9px;padding:7px 13px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit">✂️ แยกคู่ขากลับ</button>`
+      : `<button type="button" onclick="openTripPairPicker('${escAttr(r.rowId||'')}')" style="background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe;border-radius:9px;padding:7px 13px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit">🔗 จับคู่ขาไป-ขากลับ</button>`;
     return `
     <div class="record-card" data-row-id="${escAttr(r.rowId||'')}" style="border-left:4px solid ${s.color}">
       <div class="sw-record-head">
@@ -13907,6 +13918,7 @@ function renderTruckList(items) {
           ${roundChip}
           <span class="sw-status ${statusClass}">${statusIcon} ${auto}</span>
           <span class="sw-status ${payClass}">${payIcon} ${paid ? 'จ่ายแล้ว' : 'ค้างจ่าย'}</span>
+          ${pairBadge}
         </div>
         <div class="sw-record-amount priv-amt" style="color:${amountColor}">
           ${showAmount > 0
@@ -13918,9 +13930,50 @@ function renderTruckList(items) {
       <div class="sw-record-details">${detailRows.join('')}</div>
       ${r.notes || r.remark ? `<div class="sw-record-sub" style="color:#94a3b8;font-style:italic;margin-top:6px">📝 ${escHtml(r.notes || r.remark)}</div>` : ''}
       ${renderImgThumbs(r.imageUrls)}
+      <div style="margin-top:8px">${pairBtn}</div>
       ${renderRecActions('truck', r.rowId || r.timestamp,`${r.plateNumber||''} - ${r.customerName||''}`)}
     </div>`;
   }).join('');
+}
+
+// ═══ v16.09 — จับคู่ขาไป-ขากลับ จากรายการเที่ยวรถ (เก็บใน sw_trip_pairs เดียวกับหน้าสรุป) ═══
+function openTripPairPicker(rowId) {
+  const trips = _master.truckHistory || [];
+  const me = trips.find(t => t.rowId === rowId);
+  const meRound = me ? me.tripRound : '';
+  const cands = trips.filter(t => t.rowId && t.rowId !== rowId)
+    .sort((a, b) => (parseInt(b.tripRound) || 0) - (parseInt(a.tripRound) || 0));
+  const rows = cands.map(t => {
+    const route = (t.origin || t.destination) ? `${t.origin || '-'}→${t.destination || '-'}` : '';
+    const cust = t.originCustomer || t.customerName || '';
+    const sub = [cust, route, fmtDate(t.pickupDate || t.jobDate)].filter(Boolean).join(' · ');
+    return `<div onclick="_pairTwoTrips('${escAttr(rowId)}','${escAttr(t.rowId)}')" style="padding:11px 4px;border-bottom:1px solid #f1f5f9;cursor:pointer">
+      <div style="font-weight:800;color:#1e293b;font-size:.95rem">🔄 รอบ #${escHtml(String(t.tripRound || '-'))} · ${escHtml(t.plateNumber || '')}</div>
+      ${sub ? `<div style="font-size:.8rem;color:#64748b;margin-top:1px">${escHtml(sub)}</div>` : ''}
+    </div>`;
+  }).join('');
+  document.getElementById('drill-title').textContent = `🔗 จับคู่ขากลับ — รอบ #${escHtml(String(meRound || '-'))}`;
+  document.getElementById('drill-body').innerHTML =
+    `<div style="font-size:.82rem;color:#6d28d9;padding:2px 4px 10px">เลือกเที่ยว "ขากลับ" ที่จะจับคู่กับรอบนี้ (เช่น เหมาจ่ายไป-กลับเป็นเที่ยวเดียว) — ยอดจะรวมกันในหน้าสรุปกำไรรายเที่ยว</div>`
+    + (rows || '<div style="text-align:center;color:#94a3b8;padding:24px">ไม่มีเที่ยวอื่นให้จับคู่</div>');
+  document.getElementById('drill-total').innerHTML = '';
+  document.getElementById('drill-modal').style.display = 'flex';
+}
+function _pairTwoTrips(a, b) {
+  const pairs = _getTripPairs().map(g => g.filter(id => id !== a && id !== b)).filter(g => g.length >= 2);
+  pairs.push([a, b]); _saveTripPairs(pairs);
+  if (typeof showToast === 'function') showToast('🔗 จับคู่ขาไป-ขากลับแล้ว', 'success');
+  closeDrill(); _reloadTruckList();
+}
+function _unpairTripRow(rowId) {
+  _saveTripPairs(_getTripPairs().filter(g => !g.includes(rowId)));
+  if (typeof showToast === 'function') showToast('✂️ แยกคู่แล้ว', 'info');
+  _reloadTruckList();
+}
+function _reloadTruckList() {
+  const el = document.getElementById('truck-list');
+  const items = (typeof _listCache !== 'undefined' && _listCache.truck) || _master.truckHistory || [];
+  if (el) { el.innerHTML = renderTruckList(items); if (typeof applyListFilter === 'function') applyListFilter('truck', 'truck-list'); }
 }
 
 function renderIncomeList(items) {
@@ -16352,7 +16405,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v16.08';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v16.09';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
