@@ -45,7 +45,7 @@ module.exports = async function handler(req, res) {
     const sheets = google.sheets({ version:'v4', auth });
 
     // ─── Single batchGet — ดึงทุก range พร้อมกันใน 1 API call (เร็วกว่า 3x) ───
-    const ranges = targets.map(t => `${SHEET_MAP[t].name}!A:Z`);
+    const ranges = targets.map(t => `${SHEET_MAP[t].name}!A:AB`);   // v16.24 — A:AB (28 คอลัมน์) ครอบคลุม 🖼 รูป3/รูป4 ของ TruckJobs
     const resp = await sheets.spreadsheets.values.batchGet({
       spreadsheetId: sheetId, ranges
     });

@@ -185,7 +185,7 @@ const CONFIGS = {
       accountNumber: d.accountNumber || '',
       currentBalance: +d.currentBalance || 0,
       initialBalance: +d.initialBalance || +d.currentBalance || 0,
-      startDate: d.startDate || '',
+      startDate: d.startDate || d.addedDate || new Date().toISOString().slice(0,10),   // v16.24 — กันวันเริ่มต้นหายตอนแก้ไข (ให้ตรงกับ save.js)
       color: d.color || '#3b82f6',
       notes: d.notes || '',
       active: d.active === false ? 'false' : 'true',
@@ -231,7 +231,7 @@ module.exports = async function handler(req, res) {
     const sheets = google.sheets({ version:'v4', auth });
 
     const resp = await sheets.spreadsheets.values.get({
-      spreadsheetId: sheetId, range: `${cfg.name}!A:Z`
+      spreadsheetId: sheetId, range: `${cfg.name}!A:AB`   // v16.24 — A:AB ครอบคลุม 28 คอลัมน์ (อ่าน+เขียน 🖼 รูป3/รูป4 ของ TruckJobs ได้ครบ)
     });
     const rows = resp.data.values || [];
     if (rows.length < 2) return res.status(404).json({ success:false, error:'No data in sheet' });

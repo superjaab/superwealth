@@ -5282,7 +5282,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v16.23 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v16.24 | 10/06/2026</span>
   </div>
 </aside>
 
@@ -10439,7 +10439,7 @@ function onTimePartChange(baseId) {
   const box = hidden.closest('.sw-time-pick'); if (!box) return;
   const h = box.querySelector('.sw-time-h')?.value || '00';
   const m = box.querySelector('.sw-time-m')?.value || '00';
-  hidden.value = h + ':' + m;
+  hidden.value = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');   // v16.24 — เติม 0 หน้า ให้เป็น HH:MM เสมอ
 }
 // hidden (ตั้งค่าโดยโค้ด เช่น default/OCR/prefill) → ปรับ select ให้ตรง (ปัดนาทีเป็นช่วง 5 นาที)
 function _applyTimeToSelects(baseId) {
@@ -11885,7 +11885,7 @@ function _expRows() {
   document.querySelectorAll('#e-cat-list .e-cat-line').forEach(line => {
     const c = (line.querySelector('.e-cat-sel')?.value || '').trim();
     const a = parseFloat((line.querySelector('.e-cat-amt')?.value || '').replace(/,/g, '')) || 0;
-    if (c) out.push({ category: c, amount: a });
+    if (c && a > 0) out.push({ category: c, amount: a });   // v16.24 — ตัดแถวหมวดที่ยอด 0 ออก (กันหมวดผีในรายการแยก)
   });
   return out;
 }
@@ -13312,20 +13312,25 @@ async function exportInvoicePDF() {
     const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
     const pageW = pdf.internal.pageSize.getWidth();
     const pageH = pdf.internal.pageSize.getHeight();
-    const imgW = pageW - 16; // 8mm margin each side
-    const imgH = canvas.height * imgW / canvas.width;
-    let y = 8;
-    if (imgH <= pageH - 16) {
-      pdf.addImage(imgData, 'JPEG', 8, y, imgW, imgH);
+    const margin = 8;                              // 8mm รอบด้าน
+    const usableW = pageW - margin * 2;
+    const pxPerMm = canvas.width / usableW;
+    const pageContentPx = (pageH - margin * 2) * pxPerMm;
+    const fullImgH = canvas.height / pxPerMm;      // ความสูงรูปทั้งหมด (mm)
+    if (fullImgH <= pageH - margin * 2) {
+      pdf.addImage(imgData, 'JPEG', margin, margin, usableW, fullImgH);
     } else {
-      // Multi-page split
-      let remaining = imgH;
-      let srcY = 0;
-      const pageImgH = pageH - 16;
-      while (remaining > 0) {
-        pdf.addImage(imgData, 'JPEG', 8, y - srcY, imgW, imgH);
-        remaining -= pageImgH;
-        if (remaining > 0) { pdf.addPage(); srcY += pageImgH; }
+      // v16.24 — แบ่งหน้าด้วยการครอบตัดแคนวาสจริงต่อหน้า (เหมือน exportReportPDF)
+      // ของเดิมวาดรูปเต็มที่ y ติดลบทุกหน้า → สไลซ์เหลื่อม/ขอบล่างขาด
+      let startPx = 0, first = true, guard = 0;
+      while (startPx < canvas.height - 1 && guard++ < 100) {
+        const sliceH = Math.min(pageContentPx, canvas.height - startPx);
+        const tmp = document.createElement('canvas');
+        tmp.width = canvas.width; tmp.height = sliceH;
+        tmp.getContext('2d').drawImage(canvas, 0, startPx, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+        if (!first) pdf.addPage(); first = false;
+        pdf.addImage(tmp.toDataURL('image/jpeg', 0.95), 'JPEG', margin, margin, usableW, sliceH / pxPerMm);
+        startPx += sliceH;
       }
     }
     const invNo = (document.getElementById('inv-number')||{}).value || 'invoice';
@@ -16501,7 +16506,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v16.23';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v16.24';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
