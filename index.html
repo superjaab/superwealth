@@ -5282,7 +5282,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v16.10 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v16.11 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -13908,9 +13908,8 @@ function renderTruckList(items) {
     const _isPaired = _grp.length >= 2;
     let pairBadge = '';
     if (_isPaired) {
-      const _ord = [..._grp].sort((x, y) => { const dx = _dateByRow[x] || '', dy = _dateByRow[y] || ''; if (dx !== dy) return dx.localeCompare(dy); return (parseInt(_roundByRow[x]) || 0) - (parseInt(_roundByRow[y]) || 0); });
-      const _isGo = _ord[0] === r.rowId;
-      const _others = _ord.filter(id => id !== r.rowId).map(id => '#' + (_roundByRow[id] || '?')).join(',');
+      const _isGo = _grp[0] === r.rowId;   // index0 = ขาไป (ตามที่ผู้ใช้กำหนดตอนจับคู่)
+      const _others = _grp.filter(id => id !== r.rowId).map(id => '#' + (_roundByRow[id] || '?')).join(',');
       pairBadge = `<span class="sw-status" style="background:#f5f3ff;color:${_isGo ? '#15803d' : '#1d4ed8'}">🔗 ${_isGo ? '⬇️ ขาไป' : '⬆️ ขากลับ'} · คู่ ${escHtml(_others)}</span>`;
     }
     const pairBtn = _isPaired
@@ -13942,32 +13941,45 @@ function renderTruckList(items) {
 }
 
 // ═══ v16.09 — จับคู่ขาไป-ขากลับ จากรายการเที่ยวรถ (เก็บใน sw_trip_pairs เดียวกับหน้าสรุป) ═══
-function openTripPairPicker(rowId) {
+let _pairFromId = null, _pairFromIsGo = true;
+function openTripPairPicker(rowId) { _pairFromId = rowId; _pairFromIsGo = true; _renderPairPicker(); }
+function _setPairDir(isGo) { _pairFromIsGo = isGo; _renderPairPicker(); }
+function _renderPairPicker() {
+  const rowId = _pairFromId;
   const trips = _master.truckHistory || [];
-  const me = trips.find(t => t.rowId === rowId);
-  const meRound = me ? me.tripRound : '';
-  const cands = trips.filter(t => t.rowId && t.rowId !== rowId)
+  const me = trips.find(t => t.rowId === rowId); const meRound = me ? me.tripRound : '';
+  const pairedIds = new Set(_getTripPairs().flat());   // ซ่อนเที่ยวที่จับคู่ไปแล้ว
+  const cands = trips.filter(t => t.rowId && t.rowId !== rowId && !pairedIds.has(t.rowId))
     .sort((a, b) => (parseInt(b.tripRound) || 0) - (parseInt(a.tripRound) || 0));
+  const dirToggle = `<div style="display:flex;gap:8px;padding:0 4px 8px">
+      <button type="button" onclick="_setPairDir(true)" style="flex:1;padding:10px;border-radius:9px;font-weight:800;cursor:pointer;font-family:inherit;border:1.5px solid ${_pairFromIsGo ? '#16a34a' : '#e2e8f0'};background:${_pairFromIsGo ? '#dcfce7' : '#fff'};color:${_pairFromIsGo ? '#15803d' : '#64748b'}">⬇️ รอบนี้ = ขาไป</button>
+      <button type="button" onclick="_setPairDir(false)" style="flex:1;padding:10px;border-radius:9px;font-weight:800;cursor:pointer;font-family:inherit;border:1.5px solid ${!_pairFromIsGo ? '#1d4ed8' : '#e2e8f0'};background:${!_pairFromIsGo ? '#dbeafe' : '#fff'};color:${!_pairFromIsGo ? '#1d4ed8' : '#64748b'}">⬆️ รอบนี้ = ขากลับ</button>
+    </div>`;
+  const otherRole = _pairFromIsGo ? 'ขากลับ' : 'ขาไป';
   const rows = cands.map(t => {
     const route = (t.origin || t.destination) ? `${t.origin || '-'}→${t.destination || '-'}` : '';
     const cust = t.originCustomer || t.customerName || '';
     const sub = [cust, route, fmtDate(t.pickupDate || t.jobDate)].filter(Boolean).join(' · ');
-    return `<div onclick="_pairTwoTrips('${escAttr(rowId)}','${escAttr(t.rowId)}')" style="padding:11px 4px;border-bottom:1px solid #f1f5f9;cursor:pointer">
-      <div style="font-weight:800;color:#1e293b;font-size:.95rem">🔄 รอบ #${escHtml(String(t.tripRound || '-'))} · ${escHtml(t.plateNumber || '')}</div>
+    return `<div onclick="_pairTwoTrips('${escAttr(t.rowId)}')" style="padding:11px 4px;border-bottom:1px solid #f1f5f9;cursor:pointer">
+      <div style="font-weight:800;color:#1e293b;font-size:.95rem">🔄 รอบ #${escHtml(String(t.tripRound || '-'))} · ${escHtml(t.plateNumber || '')} <span style="color:#6d28d9;font-size:.74rem;font-weight:700">→ ตั้งเป็น${escHtml(otherRole)}</span></div>
       ${sub ? `<div style="font-size:.8rem;color:#64748b;margin-top:1px">${escHtml(sub)}</div>` : ''}
     </div>`;
   }).join('');
-  document.getElementById('drill-title').textContent = `🔗 จับคู่ขากลับ — รอบ #${escHtml(String(meRound || '-'))}`;
+  document.getElementById('drill-title').textContent = `🔗 จับคู่ไป-กลับ — รอบ #${escHtml(String(meRound || '-'))}`;
   document.getElementById('drill-body').innerHTML =
-    `<div style="font-size:.82rem;color:#6d28d9;padding:2px 4px 10px">เลือกอีกเที่ยวที่จะจับคู่เป็นไป-กลับ (เช่น เหมาจ่ายไป-กลับเป็นเที่ยวเดียว) · ระบบกำหนดขาไป/ขากลับตามวันที่ให้อัตโนมัติ (เที่ยวก่อน = ขาไป) · ยอดจะรวมกันในหน้าสรุปกำไรรายเที่ยว</div>`
-    + (rows || '<div style="text-align:center;color:#94a3b8;padding:24px">ไม่มีเที่ยวอื่นให้จับคู่</div>');
+    `<div style="font-size:.82rem;color:#6d28d9;padding:2px 4px 8px">1️⃣ เลือกว่ารอบนี้เป็นขาไปหรือขากลับ &nbsp; 2️⃣ แตะอีกเที่ยวเพื่อจับคู่ (เที่ยวที่จับคู่แล้วจะไม่แสดง)</div>`
+    + dirToggle
+    + (rows || '<div style="text-align:center;color:#94a3b8;padding:24px">ไม่มีเที่ยวว่างให้จับคู่</div>');
   document.getElementById('drill-total').innerHTML = '';
   document.getElementById('drill-modal').style.display = 'flex';
 }
-function _pairTwoTrips(a, b) {
+function _pairTwoTrips(partnerId) {
+  const a = _pairFromId, b = partnerId; if (!a || !b) return;
+  const goId = _pairFromIsGo ? a : b, backId = _pairFromIsGo ? b : a;
   const pairs = _getTripPairs().map(g => g.filter(id => id !== a && id !== b)).filter(g => g.length >= 2);
-  pairs.push([a, b]); _saveTripPairs(pairs);
-  if (typeof showToast === 'function') showToast('🔗 จับคู่ขาไป-ขากลับแล้ว', 'success');
+  pairs.push([goId, backId]);   // index0 = ขาไป, index1 = ขากลับ (ตามที่ผู้ใช้กำหนด)
+  _saveTripPairs(pairs);
+  if (typeof showToast === 'function') showToast('🔗 จับคู่ไป-กลับแล้ว', 'success');
   closeDrill(); _reloadTruckList();
 }
 function _unpairTripRow(rowId) {
@@ -15164,7 +15176,8 @@ function _pnlRender() {
     const exp = u.trips.reduce((s, t) => s + expOf(t), 0);
     const pf = rev - exp; totProfit += pf;
     const isPair = u.trips.length > 1;
-    const oTrips = isPair ? [...u.trips].sort((a, b) => String(a.pickupDate || a.jobDate || '').localeCompare(String(b.pickupDate || b.jobDate || ''))) : u.trips;
+    const _g = isPair ? (pairs.find(g => u.trips.some(t => g.includes(t.rowId))) || []) : [];
+    const oTrips = isPair ? [...u.trips].sort((a, b) => _g.indexOf(a.rowId) - _g.indexOf(b.rowId)) : u.trips;
     const rounds = isPair
       ? `ขาไป #${escHtml(String(oTrips[0].tripRound || '-'))} → ขากลับ #${escHtml(String(oTrips[oTrips.length - 1].tripRound || '-'))}`
       : 'รอบ #' + escHtml(String(u.trips[0].tripRound || '-'));
@@ -15203,7 +15216,7 @@ function _pnlRender() {
 
   document.getElementById('drill-title').textContent = `🚚 กำไรรายเที่ยว · ${lab}`;
   document.getElementById('drill-body').innerHTML = controls + (rowsHtml || '<div style="text-align:center;color:#94a3b8;padding:28px">📭 ไม่มีเที่ยวในเดือนนี้</div>');
-  document.getElementById('drill-total').innerHTML = `รวมกำไร <b style="color:${totProfit >= 0 ? '#16a34a' : '#dc2626'}">${totProfit >= 0 ? '+' : '−'}${fmtB(totProfit)}</b>`;
+  document.getElementById('drill-total').innerHTML = `${units.length} รายการ (คู่ไป-กลับนับเป็น 1) · รวมกำไร <b style="color:${totProfit >= 0 ? '#16a34a' : '#dc2626'}">${totProfit >= 0 ? '+' : '−'}${fmtB(totProfit)}</b>`;
   document.getElementById('drill-modal').style.display = 'flex';
 }
 // v15.71 — ไปที่รายการในลิสต์ (สลับแท็บ → list view → เลื่อนหา + ไฮไลต์) เผื่อ list ยังโหลดไม่เสร็จก็ลองซ้ำ
@@ -16413,7 +16426,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v16.10';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v16.11';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
