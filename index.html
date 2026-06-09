@@ -5282,7 +5282,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v16.02 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v16.03 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -15623,6 +15623,22 @@ function renderBarChart(income, expense, dateFrom, dateTo) {
           }
         });
       });
+      // v16.03 — กำไร/ขาดทุนของเดือน เหนือกลุ่มแท่ง (เหมือนกราฟกำไรเที่ยวรถ)
+      ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'center';
+      ctx.font = '800 12px Inter, "Noto Sans Thai", sans-serif';
+      (chart.data.labels || []).forEach((lab, idx) => {
+        const inc = (chart.data.datasets[0].data[idx]) || 0;
+        const exp = (chart.data.datasets[1].data[idx]) || 0;
+        if (!inc && !exp) return;
+        const b0 = chart.getDatasetMeta(0).data[idx], b1 = chart.getDatasetMeta(1).data[idx];
+        if (!b0 || !b1) return;
+        const cx = (b0.x + b1.x) / 2, topY = Math.min(b0.y, b1.y) - 26, pf = inc - exp;
+        const txt = (pf >= 0 ? '▲ +฿' : '▼ −฿') + Math.abs(Math.round(pf)).toLocaleString('th-TH');
+        ctx.fillStyle = pf >= 0 ? '#15803d' : '#dc2626';
+        ctx.shadowColor = 'rgba(255,255,255,0.96)'; ctx.shadowBlur = 7;
+        ctx.fillText(txt, cx, topY); ctx.fillText(txt, cx, topY);
+        ctx.shadowBlur = 0;
+      });
       ctx.restore();
     }
   };
@@ -15662,7 +15678,7 @@ function renderBarChart(income, expense, dateFrom, dateTo) {
     options: {
       responsive: true,
       maintainAspectRatio: false,         // fill container height
-      layout: { padding: { top: 24, bottom: 6, left: 6, right: 6 } },
+      layout: { padding: { top: 44, bottom: 6, left: 6, right: 6 } },   // v16.03 — เว้นที่ให้ป้ายกำไรเหนือแท่ง
       // v14.27 — Smooth easing for entrance
       animation: { duration: 900, easing: 'easeOutCubic' },
       // v14.27 — Bar hover lift effect
@@ -16207,7 +16223,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v16.02';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v16.03';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
