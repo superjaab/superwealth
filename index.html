@@ -5282,7 +5282,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v16.15 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v16.16 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -15225,7 +15225,7 @@ function _pnlRender() {
     const a = u.trips[0], b = u.trips[u.trips.length - 1];
     const o = a.origin || a.originCustomer || '', d = b.destination || b.customerName || '';
     const route = (o || d) ? `${o || '-'} → ${d || '-'}` : '';
-    return `<div style="display:flex;align-items:center;gap:9px;padding:11px 4px;border-bottom:1px solid #f1f5f9">
+    return `<div onclick="goToRecord('truck','${escAttr(u.trips[0].rowId || '')}')" title="แตะเพื่อไปที่รายการเที่ยวรถ" style="display:flex;align-items:center;gap:9px;padding:11px 4px;border-bottom:1px solid #f1f5f9;cursor:pointer">
       <div style="flex:1;min-width:0">
         <div style="font-weight:800;color:#1e293b;font-size:.95rem">🔄 ${rounds}${isPair ? ' <span style="color:#7c3aed;font-size:.76rem">(ไป-กลับ)</span>' : ''}${crossNote} · ${escHtml(plate)}</div>
         ${route ? `<div style="font-size:.8rem;color:#64748b;margin-top:1px">📍 ${escHtml(route)}</div>` : ''}
@@ -15235,11 +15235,12 @@ function _pnlRender() {
         <div style="font-size:.66rem;color:#94a3b8">กำไร</div>
         <div style="font-weight:800;font-size:1.02rem;color:${pf >= 0 ? '#16a34a' : '#dc2626'}">${pf >= 0 ? '+' : '−'}${fmtB(pf)}</div>
       </div>
+      <span style="flex:0 0 auto;color:#cbd5e1;font-size:1.15rem">›</span>
     </div>`;
   }).join('');
 
   // v16.14 — หน้าสรุปอ่านอย่างเดียว · จับคู่ไป-กลับทำที่ "รายการเที่ยวรถ" เท่านั้น
-  const hint = `<div style="font-size:.78rem;color:#94a3b8;padding:2px 4px 10px">💡 จับคู่ขาไป-กลับได้ที่หน้า “รายการเที่ยวรถ” — คู่ที่จับไว้จะรวมยอดให้ที่นี่อัตโนมัติ</div>`;
+  const hint = `<div style="font-size:.78rem;color:#94a3b8;padding:2px 4px 10px">💡 แตะแถวเพื่อเปิดเที่ยวนั้นในรายการเที่ยวรถ · จับคู่ขาไป-กลับได้ที่หน้านั้น (คู่ที่จับไว้จะรวมยอดให้ที่นี่อัตโนมัติ)</div>`;
   document.getElementById('drill-title').textContent = `🚚 กำไรรายเที่ยว · ${lab}`;
   document.getElementById('drill-body').innerHTML = hint + (rowsHtml || '<div style="text-align:center;color:#94a3b8;padding:28px">📭 ไม่มีเที่ยวในเดือนนี้</div>');
   document.getElementById('drill-total').innerHTML = `${units.length} รายการ (คู่ไป-กลับนับเป็น 1) · รวมกำไร <b style="color:${totProfit >= 0 ? '#16a34a' : '#dc2626'}">${totProfit >= 0 ? '+' : '−'}${fmtB(totProfit)}</b>`;
@@ -16452,7 +16453,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v16.15';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v16.16';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
