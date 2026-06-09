@@ -5282,7 +5282,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v16.06 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v16.07 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -6841,7 +6841,7 @@
     <div class="dash-card" style="margin-bottom:14px">
       <div class="dash-card-head">
         <div>
-          <div class="dash-card-title">🚚 กำไรเที่ยวรถ รายเดือน <span style="font-size:.7rem;font-weight:600;color:#94a3b8">(ตามเดือนต้นทาง · วันเข้ารับ) · 👆 คลิกแท่งดูรายการ</span></div>
+          <div class="dash-card-title">🚚 กำไรเที่ยวรถ รายเดือน <span style="font-size:.7rem;font-weight:600;color:#94a3b8">(ตามเดือนต้นทาง · วันเข้ารับ) · 👆 คลิกแท่งดูรายการ · แตะชื่อเดือน = กำไรรายเที่ยว</span></div>
           <div class="dash-card-sub" id="sum-trip-chart-range">—</div>
         </div>
       </div>
@@ -15031,6 +15031,120 @@ function drillVehicle(plate) {
   showChartDrill('🚛 ' + plate, (_sumData.truck || []).filter(t => (t.plateNumber || '') === plate), 'truck');
 }
 function closeDrill() { const m = document.getElementById('drill-modal'); if (m) m.style.display = 'none'; }
+
+// ═══ v16.07 — กำไรรายเที่ยว (แตะป้ายเดือนใต้กราฟ) + จับคู่ขาไป-กลับ ═══
+// แตะใต้แท่ง (โซนชื่อเดือน) → เปิด P&L รายเที่ยวของเดือนนั้น
+function _chartLabelClick(e, chart, months, thMonths) {
+  try {
+    const area = chart.chartArea;
+    const ox = (e.x != null) ? e.x : (e.native ? e.native.offsetX : 0);
+    const oy = (e.y != null) ? e.y : (e.native ? e.native.offsetY : 0);
+    if (oy >= area.bottom) {   // คลิกใต้พื้นที่กราฟ = โซนป้ายเดือน
+      const idx = Math.round(chart.scales.x.getValueForPixel(ox));
+      if (idx >= 0 && idx < months.length) { showMonthTripPnL(months[idx], thMonths[idx]); return true; }
+    }
+  } catch(_) {}
+  return false;
+}
+
+let _pnlState = { month: '', lab: '', selectMode: false };
+let _pnlPicked = {};
+function _getTripPairs() { try { return JSON.parse(localStorage.getItem('sw_trip_pairs') || '[]').filter(g => Array.isArray(g) && g.length >= 2); } catch { return []; } }
+function _saveTripPairs(a) { try { localStorage.setItem('sw_trip_pairs', JSON.stringify(a)); } catch {} }
+
+// ค่าเดินทาง (รายจ่ายของเที่ยว) แยกตามรอบ — ใช้ตรรกะเดียวกับกราฟกำไรเที่ยวรถ
+function _tripExpenseByTrip() {
+  const byRow = {}, byRound = {};
+  (_sumData.expense || []).forEach(en => {
+    const amt = (typeof _tripExpAmount === 'function') ? _tripExpAmount(en) : 0;
+    if (amt <= 0) return;
+    if (en.linkedTripRowId) byRow[en.linkedTripRowId] = (byRow[en.linkedTripRowId] || 0) + amt;
+    const rd = parseInt(en.linkedTripRound); if (rd) byRound[rd] = (byRound[rd] || 0) + amt;
+  });
+  return { byRow, byRound };
+}
+
+function showMonthTripPnL(monthKey, lab) { _pnlState = { month: monthKey, lab: lab, selectMode: false }; _pnlPicked = {}; _pnlRender(); }
+function _pnlToggleMode() { _pnlState.selectMode = !_pnlState.selectMode; _pnlPicked = {}; _pnlRender(); }
+function _pnlPick(id) { _pnlPicked[id] = !_pnlPicked[id]; _pnlRender(); }
+function _pnlSavePair() {
+  const picked = Object.keys(_pnlPicked).filter(k => _pnlPicked[k]);
+  if (picked.length < 2) return;
+  const pairs = _getTripPairs().map(g => g.filter(id => !picked.includes(id))).filter(g => g.length >= 2);
+  pairs.push(picked); _saveTripPairs(pairs);
+  _pnlState.selectMode = false; _pnlPicked = {};
+  if (typeof showToast === 'function') showToast('🔗 จับคู่เที่ยวแล้ว', 'success');
+  _pnlRender();
+}
+function _pnlUnpair(idsCsv) {
+  const ids = idsCsv.split(',');
+  _saveTripPairs(_getTripPairs().filter(g => !g.some(id => ids.includes(id))));
+  if (typeof showToast === 'function') showToast('✂️ แยกคู่แล้ว', 'info');
+  _pnlRender();
+}
+function _pnlRender() {
+  const monthKey = _pnlState.month, lab = _pnlState.lab;
+  const fmtB = n => '฿' + Math.round(Math.abs(n)).toLocaleString('th-TH');
+  const trips = (_sumData.truck || [])
+    .filter(t => String(t.pickupDate || t.jobDate || '').slice(0, 7) === monthKey)
+    .sort((a, b) => (parseInt(a.tripRound) || 0) - (parseInt(b.tripRound) || 0));
+  const expMap = _tripExpenseByTrip();
+  const expOf = t => (t.rowId && expMap.byRow[t.rowId]) || expMap.byRound[parseInt(t.tripRound)] || 0;
+  const revOf = t => (typeof _tripRevenue === 'function') ? _tripRevenue(t) : (parseFloat(t.freightCost) || 0);
+
+  const pairs = _getTripPairs(); const groupOf = {}; pairs.forEach((g, gi) => g.forEach(id => groupOf[id] = gi));
+  const units = [], seenGi = {};
+  trips.forEach(t => {
+    const gi = groupOf[t.rowId];
+    if (gi != null) { if (seenGi[gi] == null) { seenGi[gi] = units.length; units.push({ trips: [t] }); } else units[seenGi[gi]].trips.push(t); }
+    else units.push({ trips: [t] });
+  });
+
+  let totProfit = 0;
+  const rowsHtml = units.map(u => {
+    const rev = u.trips.reduce((s, t) => s + revOf(t), 0);
+    const exp = u.trips.reduce((s, t) => s + expOf(t), 0);
+    const pf = rev - exp; totProfit += pf;
+    const rounds = u.trips.map(t => '#' + (t.tripRound || '-')).join('+');
+    const plate = u.trips[0].plateNumber || '';
+    const isPair = u.trips.length > 1;
+    const a = u.trips[0], b = u.trips[u.trips.length - 1];
+    const o = a.origin || a.originCustomer || '', d = b.destination || b.customerName || '';
+    const route = (o || d) ? `${o || '-'} → ${d || '-'}` : '';
+    const ids = u.trips.map(t => t.rowId).join(',');
+    const cb = (_pnlState.selectMode && !isPair)
+      ? `<input type="checkbox" ${_pnlPicked[a.rowId] ? 'checked' : ''} onclick="_pnlPick('${escAttr(a.rowId)}')" style="width:20px;height:20px;flex:0 0 auto">` : '';
+    const unpair = isPair
+      ? `<button onclick="event.stopPropagation();_pnlUnpair('${escAttr(ids)}')" style="flex:0 0 auto;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;border-radius:8px;padding:6px 10px;font-size:.74rem;font-weight:700;cursor:pointer;font-family:inherit">✂️ แยก</button>` : '';
+    return `<div style="display:flex;align-items:center;gap:9px;padding:11px 4px;border-bottom:1px solid #f1f5f9">
+      ${cb}
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:800;color:#1e293b;font-size:.95rem">🔄 รอบ ${escHtml(rounds)}${isPair ? ' <span style="color:#7c3aed;font-size:.76rem">(ไป-กลับ)</span>' : ''} · ${escHtml(plate)}</div>
+        ${route ? `<div style="font-size:.8rem;color:#64748b;margin-top:1px">📍 ${escHtml(route)}</div>` : ''}
+        <div style="font-size:.82rem;margin-top:3px">รับ <b style="color:#16a34a">+${fmtB(rev)}</b> · จ่าย <b style="color:#dc2626">−${fmtB(exp)}</b></div>
+      </div>
+      <div style="flex:0 0 auto;text-align:right">
+        <div style="font-size:.66rem;color:#94a3b8">กำไร</div>
+        <div style="font-weight:800;font-size:1.02rem;color:${pf >= 0 ? '#16a34a' : '#dc2626'}">${pf >= 0 ? '+' : '−'}${fmtB(pf)}</div>
+      </div>
+      ${unpair}
+    </div>`;
+  }).join('');
+
+  const picked = Object.keys(_pnlPicked).filter(k => _pnlPicked[k]).length;
+  const controls = _pnlState.selectMode
+    ? `<div style="display:flex;gap:8px;padding:2px 4px 8px">
+         <button onclick="_pnlSavePair()" ${picked < 2 ? 'disabled' : ''} style="flex:1;background:${picked < 2 ? '#cbd5e1' : '#7c3aed'};color:#fff;border:none;border-radius:9px;padding:10px;font-weight:800;cursor:pointer;font-family:inherit">✅ จับคู่ที่เลือก (${picked})</button>
+         <button onclick="_pnlToggleMode()" style="flex:0 0 auto;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:9px;padding:10px 14px;font-weight:700;cursor:pointer;font-family:inherit">ยกเลิก</button>
+       </div>
+       <div style="font-size:.76rem;color:#7c3aed;padding:0 4px 8px">✓ ติ๊กเที่ยวขาไป + ขากลับ (2 เที่ยวขึ้นไป) แล้วกดจับคู่ → ยอดจะรวมเป็นคู่เดียว</div>`
+    : `<div style="padding:2px 4px 8px"><button onclick="_pnlToggleMode()" style="width:100%;background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe;border-radius:9px;padding:10px;font-weight:800;cursor:pointer;font-family:inherit">🔗 จับคู่ขาไป-กลับ (กรณีเหมาจ่ายเที่ยวเดียว)</button></div>`;
+
+  document.getElementById('drill-title').textContent = `🚚 กำไรรายเที่ยว · ${lab}`;
+  document.getElementById('drill-body').innerHTML = controls + (rowsHtml || '<div style="text-align:center;color:#94a3b8;padding:28px">📭 ไม่มีเที่ยวในเดือนนี้</div>');
+  document.getElementById('drill-total').innerHTML = `รวมกำไร <b style="color:${totProfit >= 0 ? '#16a34a' : '#dc2626'}">${totProfit >= 0 ? '+' : '−'}${fmtB(totProfit)}</b>`;
+  document.getElementById('drill-modal').style.display = 'flex';
+}
 // v15.71 — ไปที่รายการในลิสต์ (สลับแท็บ → list view → เลื่อนหา + ไฮไลต์) เผื่อ list ยังโหลดไม่เสร็จก็ลองซ้ำ
 function goToRecord(type, rowId) {
   closeDrill();
@@ -15508,7 +15622,7 @@ function renderTripBarChart(income, expense, truck, dateFrom, dateTo) {
       onHover: (e, els) => { try { e.native.target.style.cursor = els.length ? 'pointer' : 'default'; } catch(_) {} },
       onClick: (e, _els, chart) => {   // v15.70 — คลิกแท่ง → ดูรายการที่รวมกันเป็นยอดนั้น
         const pts = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, true);
-        if (!pts.length) return;
+        if (!pts.length) { _chartLabelClick(e, chart, months, thMonths); return; }   // v16.07 — แตะชื่อเดือน = กำไรรายเที่ยว
         const di = pts[0].datasetIndex, mo = months[pts[0].index], lab = thMonths[pts[0].index];
         if (di === 0) showChartDrill('💰 รายรับเที่ยว · ' + lab, (income||[]).filter(r => linkedMonth(r) === mo), 'income');
         else          showChartDrill('💸 รายจ่ายเที่ยว (ค่าเดินทาง) · ' + lab,
@@ -15695,7 +15809,7 @@ function renderBarChart(income, expense, truck, dateFrom, dateTo) {
       onHover: (e, els) => { try { e.native.target.style.cursor = els.length ? 'pointer' : 'default'; } catch(_) {} },
       onClick: (e, _els, chart) => {   // v15.70 — คลิกแท่ง → ดูรายการที่รวมกันเป็นยอดนั้น
         const pts = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, true);
-        if (!pts.length) return;
+        if (!pts.length) { _chartLabelClick(e, chart, months, thMonths); return; }   // v16.07 — แตะชื่อเดือน = กำไรรายเที่ยว
         const di = pts[0].datasetIndex, mo = months[pts[0].index], lab = thMonths[pts[0].index];
         if (di === 0) showChartDrill('💰 รายรับ · ' + lab, (income||[]).filter(r => (r.incomeDate||'').slice(0,7) === mo), 'income');
         else          showChartDrill('💸 รายจ่าย · ' + lab, (expense||[]).filter(r => (r.expenseDate||'').slice(0,7) === mo), 'expense');
@@ -16238,7 +16352,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v16.06';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v16.07';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
