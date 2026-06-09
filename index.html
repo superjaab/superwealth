@@ -5282,7 +5282,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v16.14 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v16.15 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -15184,6 +15184,7 @@ function _pnlUnpair(idsCsv) {
 function _pnlRender() {
   const monthKey = _pnlState.month, lab = _pnlState.lab;
   const fmtB = n => '฿' + Math.round(Math.abs(n)).toLocaleString('th-TH');
+  const roundByRow = {}; (_sumData.truck || []).forEach(t => { if (t.rowId) roundByRow[t.rowId] = t.tripRound; });   // v16.15 — หาเลขรอบของคู่ที่อยู่คนละเดือน
   const trips = (_sumData.truck || [])
     .filter(t => String(t.pickupDate || t.jobDate || '').slice(0, 7) === monthKey)
     .sort((a, b) => (parseInt(a.tripRound) || 0) - (parseInt(b.tripRound) || 0));
@@ -15205,18 +15206,28 @@ function _pnlRender() {
     const exp = u.trips.reduce((s, t) => s + expOf(t), 0);
     const pf = rev - exp; totProfit += pf;
     const isPair = u.trips.length > 1;
-    const _g = isPair ? (pairs.find(g => u.trips.some(t => g.includes(t.rowId))) || []) : [];
-    const oTrips = isPair ? [...u.trips].sort((a, b) => _g.indexOf(a.rowId) - _g.indexOf(b.rowId)) : u.trips;
-    const rounds = isPair
-      ? `ขาไป #${escHtml(String(oTrips[0].tripRound || '-'))} → ขากลับ #${escHtml(String(oTrips[oTrips.length - 1].tripRound || '-'))}`
-      : 'รอบ #' + escHtml(String(u.trips[0].tripRound || '-'));
+    const _grp = pairs.find(g => u.trips.some(t => g.includes(t.rowId))) || [];
+    let rounds, crossNote = '';
+    if (isPair) {
+      const oTrips = [...u.trips].sort((a, b) => _grp.indexOf(a.rowId) - _grp.indexOf(b.rowId));
+      rounds = `ขาไป #${escHtml(String(oTrips[0].tripRound || '-'))} → ขากลับ #${escHtml(String(oTrips[oTrips.length - 1].tripRound || '-'))}`;
+    } else if (_grp.length >= 2) {
+      // v16.15 — ขาที่ตกข้ามเดือน (คู่กันอยู่คนละเดือน) → ระบุว่าเป็นขาไป/ขากลับ + คู่กับรอบไหน
+      const myId = u.trips[0].rowId;
+      const isGo = _grp[0] === myId;
+      const partner = _grp.filter(id => id !== myId).map(id => '#' + (roundByRow[id] || '?')).join(',');
+      rounds = `${isGo ? '⬇️ ขาไป' : '⬆️ ขากลับ'} #${escHtml(String(u.trips[0].tripRound || '-'))}`;
+      crossNote = ` <span style="color:#7c3aed;font-size:.72rem;font-weight:700">🔗 คู่${isGo ? 'ขากลับ' : 'ขาไป'} ${escHtml(partner)} · ข้ามเดือน</span>`;
+    } else {
+      rounds = 'รอบ #' + escHtml(String(u.trips[0].tripRound || '-'));
+    }
     const plate = u.trips[0].plateNumber || '';
     const a = u.trips[0], b = u.trips[u.trips.length - 1];
     const o = a.origin || a.originCustomer || '', d = b.destination || b.customerName || '';
     const route = (o || d) ? `${o || '-'} → ${d || '-'}` : '';
     return `<div style="display:flex;align-items:center;gap:9px;padding:11px 4px;border-bottom:1px solid #f1f5f9">
       <div style="flex:1;min-width:0">
-        <div style="font-weight:800;color:#1e293b;font-size:.95rem">🔄 ${rounds}${isPair ? ' <span style="color:#7c3aed;font-size:.76rem">(ไป-กลับ)</span>' : ''} · ${escHtml(plate)}</div>
+        <div style="font-weight:800;color:#1e293b;font-size:.95rem">🔄 ${rounds}${isPair ? ' <span style="color:#7c3aed;font-size:.76rem">(ไป-กลับ)</span>' : ''}${crossNote} · ${escHtml(plate)}</div>
         ${route ? `<div style="font-size:.8rem;color:#64748b;margin-top:1px">📍 ${escHtml(route)}</div>` : ''}
         <div style="font-size:.82rem;margin-top:3px">รับ <b style="color:#16a34a">+${fmtB(rev)}</b> · จ่าย <b style="color:#dc2626">−${fmtB(exp)}</b></div>
       </div>
@@ -16441,7 +16452,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v16.14';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v16.15';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
