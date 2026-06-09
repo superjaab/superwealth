@@ -5282,7 +5282,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v16.12 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v16.13 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -13810,6 +13810,11 @@ function renderTruckList(items) {
     sumExpense += expenseByTrip[r.rowId] || 0;
     if (r.tripRound) roundSet.add(r.tripRound);
   });
+  // v16.13 — คู่ไป-กลับนับเป็น 1 รอบ: จำนวนรอบ = กลุ่มคู่ + เที่ยวเดี่ยว
+  const _pairGroups = _pairs.filter(g => g.length >= 2);
+  const _pairedRows = new Set(_pairGroups.flat());
+  let unitRounds = _pairGroups.length;
+  sorted.forEach(r => { if (!_pairedRows.has(r.rowId)) unitRounds++; });
   // v15.09 — Redesigned summary header (4 cards: รายรับ / รายจ่าย / กำไรสุทธิ / เที่ยว)
   const profit = sumIncome - sumExpense;
   const profitPositive = profit >= 0;
@@ -13840,7 +13845,7 @@ function renderTruckList(items) {
         <div class="sw-stat-icon">🚛</div>
         <div class="sw-stat-body">
           <div class="sw-stat-label">เที่ยว · รอบ</div>
-          <div class="sw-stat-value">${sorted.length}<span class="sw-stat-unit">เที่ยว</span><span class="sw-stat-dot">·</span>${roundSet.size}<span class="sw-stat-unit">รอบ</span></div>
+          <div class="sw-stat-value">${sorted.length}<span class="sw-stat-unit">เที่ยว</span><span class="sw-stat-dot">·</span>${unitRounds}<span class="sw-stat-unit">รอบ</span></div>
         </div>
       </div>
     </div>`;
@@ -16450,7 +16455,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v16.12';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v16.13';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
