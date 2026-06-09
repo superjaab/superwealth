@@ -5282,7 +5282,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v16.20 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v16.21 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -6846,6 +6846,10 @@
         </div>
       </div>
       <div class="chart-wrap" style="height:300px"><canvas id="sum-chart-trip"></canvas></div>
+      <!-- v16.21 — ปุ่มเลือกเดือนจริง (กดชัวร์บนมือถือ) → เปิดกำไรรายเที่ยว -->
+      <div id="sum-trip-months" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center">
+        <span style="font-size:.74rem;color:#94a3b8;font-weight:700;margin-right:2px">👆 ดูกำไรรายเที่ยว:</span>
+      </div>
     </div>
     <!-- Top row: bar chart full width -->
     <div class="dash-card" style="margin-bottom:14px">
@@ -15651,6 +15655,17 @@ function renderTripBarChart(income, expense, truck, dateFrom, dateTo) {
   const subEl = document.getElementById('sum-trip-chart-range');
   if (subEl) subEl.textContent = `กำไรรวม ${totPf>=0?'+':'−'}฿${Math.abs(Math.round(totPf)).toLocaleString('th-TH')} · รายรับ ฿${Math.round(totInc).toLocaleString('th-TH')} · รายจ่าย ฿${Math.round(totExp).toLocaleString('th-TH')} · 🚚 ${totTrips} เที่ยว`;
 
+  // v16.21 — ปุ่มเลือกเดือนจริง (HTML กดชัวร์บนมือถือ) → เปิดกำไรรายเที่ยว
+  const _mc = document.getElementById('sum-trip-months');
+  if (_mc) {
+    const _btns = months.map((m, i) => ({ m, i }))
+      .filter(o => tripsByMonth[o.m] > 0)
+      .map(o => `<button type="button" onclick="showMonthTripPnL('${o.m}','${String(thMonths[o.i]).replace(/'/g,'')}')" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe;border-radius:9px;padding:6px 11px;font-size:.76rem;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">${escHtml(thMonths[o.i])} · ${tripsByMonth[o.m]} เที่ยว ›</button>`)
+      .join('');
+    _mc.innerHTML = '<span style="font-size:.74rem;color:#94a3b8;font-weight:700;margin-right:2px">👆 ดูกำไรรายเที่ยว:</span>'
+      + (_btns || '<span style="font-size:.74rem;color:#cbd5e1">— ยังไม่มีเที่ยว —</span>');
+  }
+
   if (_tripBarChart) { _tripBarChart.destroy(); _tripBarChart = null; }
   const ctx = document.getElementById('sum-chart-trip').getContext('2d');
   const canvas = ctx.canvas;
@@ -16456,7 +16471,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v16.20';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v16.21';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
