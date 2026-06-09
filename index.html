@@ -5282,7 +5282,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v16.21 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v16.22 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -13943,16 +13943,17 @@ function renderTruckList(items) {
   const _grps = _pairs.filter(g => g.length >= 2);
   const _row2grp = {}; _grps.forEach((g, gi) => g.forEach(id => _row2grp[id] = gi));
   const mergedWrap = (legs, group) => {
-    const go = legs[0], back = legs[1];
+    const go = legs[0], back = legs[legs.length - 1];   // v16.22 — รองรับกลุ่ม >2 เที่ยว (ปกติ 2)
     const totRev = legs.reduce((sum, t) => { const f = parseFloat(t.freightCost) || 0; return sum + (f > 0 ? f : _linkedInc(t)); }, 0);
     const ids = group.join(',');
+    // v16.22 — แสดงทุกขาในกลุ่ม (ยอด "รวม" จึงตรงกับที่แสดงเสมอ) · ขาแรก = ขาไป, ที่เหลือ = ขากลับ
+    const legsHtml = legs.map((t, i) => cardOf(t, { role: i === 0 ? '⬇️ ขาไป' : '⬆️ ขากลับ', hidePairUI: true })).join('');
     return `<div style="border:1.5px solid #ddd6fe;border-radius:16px;background:#faf5ff;padding:10px 10px 8px;margin-bottom:14px">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:8px;padding:0 4px">
         <span style="font-weight:800;color:#6d28d9;font-size:.95rem">🔄 เที่ยวไป-กลับ · รอบ #${escHtml(String(go.tripRound||'-'))} ⟶ #${escHtml(String(back ? back.tripRound : '?'))} <span style="font-weight:700;font-size:.72rem;background:#ede9fe;color:#6d28d9;padding:1px 8px;border-radius:7px;white-space:nowrap">นับเป็น 1 รอบ</span></span>
         <span class="priv-amt" style="font-weight:800;color:#16a34a">รวม ${fmtBaht(totRev)}</span>
       </div>
-      ${cardOf(go, { role:'⬇️ ขาไป', hidePairUI:true })}
-      ${back ? cardOf(back, { role:'⬆️ ขากลับ', hidePairUI:true }) : ''}
+      ${legsHtml}
       <div style="display:flex;gap:8px;margin-top:2px;padding:0 4px">
         <button type="button" onclick="_swapPairDir('${escAttr(ids)}')" style="background:#ede9fe;color:#6d28d9;border:1px solid #ddd6fe;border-radius:9px;padding:8px 14px;font-size:.8rem;font-weight:800;cursor:pointer;font-family:inherit">🔄 สลับขาไป-กลับ</button>
         <button type="button" onclick="_unpairTripRow('${escAttr(go.rowId||'')}')" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;border-radius:9px;padding:8px 14px;font-size:.8rem;font-weight:800;cursor:pointer;font-family:inherit">✂️ แยกคู่</button>
@@ -15152,7 +15153,21 @@ function _chartLabelClick(e, chart, months, thMonths) {
 
 let _pnlState = { month: '', lab: '', selectMode: false };
 let _pnlPicked = {};
-function _getTripPairs() { try { return JSON.parse(localStorage.getItem('sw_trip_pairs') || '[]').filter(g => Array.isArray(g) && g.length >= 2); } catch { return []; } }
+function _getTripPairs() {
+  try {
+    let groups = JSON.parse(localStorage.getItem('sw_trip_pairs') || '[]').filter(g => Array.isArray(g));
+    // v16.22 — ตัดเที่ยวที่ถูกลบออกจากคู่ + ทิ้งกลุ่มที่เหลือ < 2 (กันคู่ค้าง/นับรอบเพี้ยน)
+    const live = new Set((_master.truckHistory || []).map(t => t.rowId).filter(Boolean));
+    if (live.size) {
+      const before = JSON.stringify(groups);
+      groups = groups.map(g => g.filter(id => live.has(id))).filter(g => g.length >= 2);
+      if (JSON.stringify(groups) !== before) { try { localStorage.setItem('sw_trip_pairs', JSON.stringify(groups)); } catch {} }
+    } else {
+      groups = groups.filter(g => g.length >= 2);
+    }
+    return groups;
+  } catch { return []; }
+}
 function _saveTripPairs(a) { try { localStorage.setItem('sw_trip_pairs', JSON.stringify(a)); } catch {} }
 
 // ค่าเดินทาง (รายจ่ายของเที่ยว) แยกตามรอบ — ใช้ตรรกะเดียวกับกราฟกำไรเที่ยวรถ
@@ -15188,7 +15203,7 @@ function _pnlUnpair(idsCsv) {
 function _pnlRender() {
   const monthKey = _pnlState.month, lab = _pnlState.lab;
   const fmtB = n => '฿' + Math.round(Math.abs(n)).toLocaleString('th-TH');
-  const roundByRow = {}; (_sumData.truck || []).forEach(t => { if (t.rowId) roundByRow[t.rowId] = t.tripRound; });   // v16.15 — หาเลขรอบของคู่ที่อยู่คนละเดือน
+  const roundByRow = {}; ((_master && _master.truckHistory) || _sumData.truck || []).forEach(t => { if (t.rowId) roundByRow[t.rowId] = t.tripRound; });   // v16.22 — ใช้ประวัติทั้งหมด เพื่อหาเลขรอบของคู่ข้ามเดือน (ไม่งั้นขึ้น #?)
   const trips = (_sumData.truck || [])
     .filter(t => String(t.pickupDate || t.jobDate || '').slice(0, 7) === monthKey)
     .sort((a, b) => (parseInt(a.tripRound) || 0) - (parseInt(b.tripRound) || 0));
@@ -16471,7 +16486,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v16.21';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v16.22';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
