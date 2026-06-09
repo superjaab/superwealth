@@ -5282,7 +5282,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v16.01 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v16.02 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -15213,6 +15213,13 @@ function _expCatParts(r) {
   return [{ category: (r.category || 'อื่นๆ'), amount: _detectAmount(r) }];   // เก่า/หมวดเดียว
 }
 
+// v16.02 — รายจ่าย "ของเที่ยวรถ" นับเฉพาะหมวดค่าเดินทาง (ไม่รวมค่าอะไหล่/ค่ายาง/ซ่อมบำรุง ฯลฯ
+//   ที่เป็นค่าซ่อมบำรุงรถ ไม่ใช่ต้นทุนของเที่ยวนั้น) — ใช้ในกราฟกำไรเที่ยวรถ + ดริล "รายจ่ายเที่ยว"
+const TRIP_EXP_CATS = ['ค่าเดินทาง'];
+function _tripExpAmount(r) {
+  return _expCatParts(r).filter(p => TRIP_EXP_CATS.includes(p.category)).reduce((s, p) => s + p.amount, 0);
+}
+
 // ─── TOP CATEGORIES (expense) ──────────────────────────────────────────────
 // v15.04 — Top categories: เพิ่มจำนวนรายการต่อหมวด + ยอดรวมทั้งหมดด้านล่าง
 function renderTopCategories(expense) {
@@ -15410,7 +15417,7 @@ function renderTripBarChart(income, expense, truck, dateFrom, dateTo) {
   const incByMonth = {}, expByMonth = {};
   months.forEach(m => { incByMonth[m] = 0; expByMonth[m] = 0; });
   (income  || []).forEach(r => { const m = linkedMonth(r); if (m && incByMonth[m] !== undefined) incByMonth[m] += _detectAmount(r); });
-  (expense || []).forEach(r => { const m = linkedMonth(r); if (m && expByMonth[m] !== undefined) expByMonth[m] += _detectAmount(r); });
+  (expense || []).forEach(r => { const m = linkedMonth(r); if (m && expByMonth[m] !== undefined) expByMonth[m] += _tripExpAmount(r); });  // v16.02 — เฉพาะค่าเดินทาง
 
   const moNames = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   const thMonths = months.map(m => { const [y, mo] = m.split('-'); return moNames[parseInt(mo)-1] + ' ' + (parseInt(y)+543); });
@@ -15501,7 +15508,10 @@ function renderTripBarChart(income, expense, truck, dateFrom, dateTo) {
         if (!pts.length) return;
         const di = pts[0].datasetIndex, mo = months[pts[0].index], lab = thMonths[pts[0].index];
         if (di === 0) showChartDrill('💰 รายรับเที่ยว · ' + lab, (income||[]).filter(r => linkedMonth(r) === mo), 'income');
-        else          showChartDrill('💸 รายจ่ายเที่ยว · ' + lab, (expense||[]).filter(r => linkedMonth(r) === mo), 'expense');
+        else          showChartDrill('💸 รายจ่ายเที่ยว (ค่าเดินทาง) · ' + lab,
+                        (expense||[]).filter(r => linkedMonth(r) === mo)
+                          .map(r => Object.assign({}, r, { __amt: _tripExpAmount(r), category: 'ค่าเดินทาง' }))
+                          .filter(r => r.__amt > 0), 'expense');
       },
       plugins: {
         legend: { position: 'top', align: 'end', labels: { font: { size: 12, weight: '700', family: 'Noto Sans Thai, Inter, sans-serif' }, usePointStyle: true, pointStyle: 'rectRounded', padding: 16, boxWidth: 14, boxHeight: 14 } },
@@ -16197,7 +16207,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v16.01';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v16.02';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
