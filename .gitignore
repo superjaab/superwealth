@@ -7,3 +7,5 @@ rich-menu*.png
 
 # Local Netlify folder
 .netlify
+
+.claude/scheduled_tasks.lock
