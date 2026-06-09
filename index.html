@@ -5282,7 +5282,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v16.19 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v16.20 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -6841,7 +6841,7 @@
     <div class="dash-card" style="margin-bottom:14px">
       <div class="dash-card-head">
         <div>
-          <div class="dash-card-title">🚚 กำไรเที่ยวรถ รายเดือน <span style="font-size:.7rem;font-weight:600;color:#94a3b8">(ตามเดือนต้นทาง · วันเข้ารับ) · 👆 คลิกแท่งดูรายการ · แตะชื่อเดือน = กำไรรายเที่ยว</span></div>
+          <div class="dash-card-title">🚚 กำไรเที่ยวรถ รายเดือน <span style="font-size:.7rem;font-weight:600;color:#94a3b8">(ตามเดือนต้นทาง · วันเข้ารับ) · 👆 แตะแท่ง/ชื่อเดือน = กำไรรายเที่ยว</span></div>
           <div class="dash-card-sub" id="sum-trip-chart-range">—</div>
         </div>
       </div>
@@ -15723,16 +15723,15 @@ function renderTripBarChart(income, expense, truck, dateFrom, dateTo) {
       animation: { duration: 900, easing: 'easeOutCubic' },
       hover: { mode: 'index', intersect: false },
       interaction: { mode: 'index', intersect: false },
-      onHover: (e, els) => { try { e.native.target.style.cursor = els.length ? 'pointer' : 'default'; } catch(_) {} },
-      onClick: (e, _els, chart) => {   // v15.70 — คลิกแท่ง → ดูรายการที่รวมกันเป็นยอดนั้น
+      onHover: (e) => { try { e.native.target.style.cursor = 'pointer'; } catch(_) {} },
+      onClick: (e, _els, chart) => {   // v16.20 — แตะที่ไหนก็ได้ (แท่ง/ชื่อเดือน) → กำไรรายเที่ยวของเดือนนั้น (แตะง่ายขึ้นบนมือถือ)
         const pts = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, true);
-        if (!pts.length) { _chartLabelClick(e, chart, months, thMonths); return; }   // v16.07 — แตะชื่อเดือน = กำไรรายเที่ยว
-        const di = pts[0].datasetIndex, mo = months[pts[0].index], lab = thMonths[pts[0].index];
-        if (di === 0) showChartDrill('💰 รายรับเที่ยว · ' + lab, (income||[]).filter(r => linkedMonth(r) === mo), 'income');
-        else          showChartDrill('💸 รายจ่ายเที่ยว (ค่าเดินทาง) · ' + lab,
-                        (expense||[]).filter(r => linkedMonth(r) === mo)
-                          .map(r => Object.assign({}, r, { __amt: _tripExpAmount(r), category: 'ค่าเดินทาง' }))
-                          .filter(r => r.__amt > 0), 'expense');
+        let idx = pts.length ? pts[0].index : null;
+        if (idx == null && chart.scales && chart.scales.x) {
+          const ox = (e && e.x != null) ? e.x : (e && e.native && e.native.offsetX != null ? e.native.offsetX : null);
+          if (ox != null) idx = Math.round(chart.scales.x.getValueForPixel(ox));
+        }
+        if (idx != null && idx >= 0 && idx < months.length) showMonthTripPnL(months[idx], thMonths[idx]);
       },
       plugins: {
         legend: { position: 'top', align: 'end', labels: { font: { size: 12, weight: '700', family: 'Noto Sans Thai, Inter, sans-serif' }, usePointStyle: true, pointStyle: 'rectRounded', padding: 16, boxWidth: 14, boxHeight: 14 } },
@@ -16457,7 +16456,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v16.19';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v16.20';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
