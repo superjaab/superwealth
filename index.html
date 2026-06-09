@@ -5282,7 +5282,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v16.07 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v16.08 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -15035,15 +15035,15 @@ function closeDrill() { const m = document.getElementById('drill-modal'); if (m)
 // ═══ v16.07 — กำไรรายเที่ยว (แตะป้ายเดือนใต้กราฟ) + จับคู่ขาไป-กลับ ═══
 // แตะใต้แท่ง (โซนชื่อเดือน) → เปิด P&L รายเที่ยวของเดือนนั้น
 function _chartLabelClick(e, chart, months, thMonths) {
+  // คลิกที่ใดก็ได้ในคอลัมน์เดือน (ที่ไม่โดนแท่ง) → เปิดกำไรรายเที่ยวของเดือนนั้น
   try {
-    const area = chart.chartArea;
-    const ox = (e.x != null) ? e.x : (e.native ? e.native.offsetX : 0);
-    const oy = (e.y != null) ? e.y : (e.native ? e.native.offsetY : 0);
-    if (oy >= area.bottom) {   // คลิกใต้พื้นที่กราฟ = โซนป้ายเดือน
-      const idx = Math.round(chart.scales.x.getValueForPixel(ox));
-      if (idx >= 0 && idx < months.length) { showMonthTripPnL(months[idx], thMonths[idx]); return true; }
-    }
-  } catch(_) {}
+    if (!chart.scales || !chart.scales.x) return false;
+    const ox = (e && e.x != null) ? e.x : (e && e.native && e.native.offsetX != null ? e.native.offsetX : null);
+    if (ox == null) return false;
+    let idx = Math.round(chart.scales.x.getValueForPixel(ox));
+    if (idx < 0) idx = 0; else if (idx > months.length - 1) idx = months.length - 1;
+    if (months[idx] != null) { showMonthTripPnL(months[idx], thMonths[idx]); return true; }
+  } catch (err) { console.warn('label click failed:', err); }
   return false;
 }
 
@@ -16352,7 +16352,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v16.07';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v16.08';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
