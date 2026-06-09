@@ -5282,7 +5282,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v16.18 | 03/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v16.19 | 03/06/2026</span>
   </div>
 </aside>
 
@@ -15647,6 +15647,7 @@ function renderTripBarChart(income, expense, truck, dateFrom, dateTo) {
   const totInc = months.reduce((s,m)=>s+incByMonth[m],0);
   const totExp = months.reduce((s,m)=>s+expByMonth[m],0);
   const totPf  = totInc - totExp;
+  const _maxV = Math.max(0, ...months.map(m => Math.max(incByMonth[m] || 0, expByMonth[m] || 0)));   // v16.19 — headroom กันป้ายกำไรชนขอบบน
   const subEl = document.getElementById('sum-trip-chart-range');
   if (subEl) subEl.textContent = `กำไรรวม ${totPf>=0?'+':'−'}฿${Math.abs(Math.round(totPf)).toLocaleString('th-TH')} · รายรับ ฿${Math.round(totInc).toLocaleString('th-TH')} · รายจ่าย ฿${Math.round(totExp).toLocaleString('th-TH')} · 🚚 ${totTrips} เที่ยว`;
 
@@ -15674,13 +15675,15 @@ function renderTripBarChart(income, expense, truck, dateFrom, dateTo) {
           const v = ds.data[idx]; if (!v) return;
           const txt = '฿' + Math.round(v).toLocaleString('th-TH');
           const h = Math.abs(bar.base - bar.y), w = bar.width || 30, tw = ctx.measureText(txt).width;
-          if (h >= 14 && tw + 6 <= w) {   // v16.06 — ใส่ตัวเลขในแท่ง (จัดให้อยู่ในแท่งเสมอ)
+          if (h >= 14 && tw + 6 <= w) {   // v16.06 — ใส่ตัวเลขในแท่ง แนวนอน (กว้างพอ)
             ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 5; ctx.shadowOffsetY = 1; ctx.fillStyle = '#fff';
             ctx.fillText(txt, bar.x, bar.y + Math.min(12, h - 6)); ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
-          } else {                        // แท่งเตี้ย/แคบเกินจริงๆ → วางบนแท่ง สีเข้ม
-            ctx.shadowColor = 'rgba(255,255,255,0.98)'; ctx.shadowBlur = 6; ctx.fillStyle = '#0f172a';
-            ctx.fillText(txt, bar.x, bar.y - 10); ctx.fillText(txt, bar.x, bar.y - 10); ctx.shadowBlur = 0;
+          } else if (h >= tw + 12) {       // v16.19 — แท่งสูงแต่แคบ → หมุนตัวเลขแนวตั้งในแท่ง (กันตัวหนังสือทับบนจอเล็ก)
+            ctx.save(); ctx.translate(bar.x, (bar.y + bar.base) / 2); ctx.rotate(-Math.PI / 2);
+            ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 5; ctx.fillStyle = '#fff';
+            ctx.fillText(txt, 0, 0); ctx.restore();
           }
+          // แท่งเล็กมากทั้งกว้าง/สูง → ไม่วาด (ดูได้จากป้ายกำไรเหนือกลุ่ม + ทูลทิป) กันทับ
         });
       });
       // 2) กำไรของเดือน เหนือกลุ่มแท่ง
@@ -15747,7 +15750,7 @@ function renderTripBarChart(income, expense, truck, dateFrom, dateTo) {
         }
       },
       scales: {
-        y: { beginAtZero: true, grid: { color: 'rgba(148,163,184,0.18)', drawBorder: false, drawTicks: false }, border: { display: false }, ticks: { callback: v => v >= 1000 ? '฿' + (v/1000).toFixed(0) + 'K' : '฿' + v, font: { size: 11, weight: '600', family: 'Inter, sans-serif' }, color: '#64748b', padding: 8 } },
+        y: { beginAtZero: true, suggestedMax: (_maxV || 100) * 1.2, grid: { color: 'rgba(148,163,184,0.18)', drawBorder: false, drawTicks: false }, border: { display: false }, ticks: { callback: v => v >= 1000 ? '฿' + (v/1000).toFixed(0) + 'K' : '฿' + v, font: { size: 11, weight: '600', family: 'Inter, sans-serif' }, color: '#64748b', padding: 8 } },
         x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 12, weight: '700', family: 'Noto Sans Thai, sans-serif' }, color: '#475569', padding: 8 } }
       }
     },
@@ -15829,21 +15832,22 @@ function renderBarChart(income, expense, truck, dateFrom, dateTo) {
           const barWidth  = bar.width || 40;
           const textWidth = ctx.measureText(txt).width;
           const fitsInside = (barHeight >= 14) && (textWidth + 6 <= barWidth);
-          if (fitsInside) {   // v16.06 — ใส่ตัวเลขในแท่ง (จัดให้อยู่ในแท่งเสมอ)
+          if (fitsInside) {   // v16.06 — ใส่ตัวเลขในแท่ง แนวนอน (กว้างพอ)
             ctx.shadowColor = 'rgba(0,0,0,0.5)';
             ctx.shadowBlur = 6;
             ctx.shadowOffsetY = 1;
             ctx.fillStyle = '#ffffff';
             ctx.fillText(txt, bar.x, bar.y + Math.min(12, barHeight - 6));
             ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
-          } else {            // แท่งเล็ก/แคบเกิน → วางบนแท่ง สีเข้ม
-            ctx.shadowColor = 'rgba(255,255,255,0.98)';
-            ctx.shadowBlur = 6;
-            ctx.fillStyle = '#0f172a';
-            ctx.fillText(txt, bar.x, bar.y - 10);
-            ctx.fillText(txt, bar.x, bar.y - 10);
-            ctx.shadowBlur = 0;
+          } else if (barHeight >= textWidth + 12) {   // v16.19 — แท่งสูงแต่แคบ → หมุนแนวตั้งในแท่ง (กันตัวหนังสือทับบนจอเล็ก)
+            ctx.save();
+            ctx.translate(bar.x, (bar.y + bar.base) / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 6; ctx.fillStyle = '#ffffff';
+            ctx.fillText(txt, 0, 0);
+            ctx.restore();
           }
+          // แท่งเล็กมากทั้งกว้าง/สูง → ไม่วาด (กันทับ · ดูยอดได้จากป้ายกำไร + ทูลทิป)
         });
       });
       // v16.03 — กำไร/ขาดทุนของเดือน เหนือกลุ่มแท่ง (เหมือนกราฟกำไรเที่ยวรถ)
@@ -16453,7 +16457,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v16.18';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v16.19';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
