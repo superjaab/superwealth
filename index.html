@@ -5282,7 +5282,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v16.27 | 12/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v16.28 | 12/06/2026</span>
   </div>
 </aside>
 
@@ -13637,9 +13637,23 @@ function _expCalendarDoc() {
       return s === ym;
     }).sort((a,b) => (parseInt(a.tripRound)||0) - (parseInt(b.tripRound)||0));
     if (monthTrips.length) {
-      let sumFreight = 0;
+      // v16.28 — ค่าขนส่ง = รายได้จริงต่อเที่ยว (freightCost หรือรายรับที่ลิงก์รอบมา) + รายจ่ายต่อเที่ยว (ค่าเดินทางที่ลิงก์) + กำไรต่อเที่ยว
+      const _expByRow = {}, _expByRound = {};
+      (_master.expenseHistory || []).forEach(en => {
+        const amt = (typeof _tripExpAmount === 'function') ? _tripExpAmount(en) : 0;
+        if (amt <= 0) return;
+        if (en.linkedTripRowId) _expByRow[en.linkedTripRowId] = (_expByRow[en.linkedTripRowId] || 0) + amt;
+        const rd = parseInt(en.linkedTripRound); if (rd) _expByRound[rd] = (_expByRound[rd] || 0) + amt;
+      });
+      const _revOf = t => (typeof _tripRevenue === 'function') ? _tripRevenue(t) : (parseFloat(t.freightCost) || 0);
+      const _expOf = t => (t.rowId && _expByRow[t.rowId]) || _expByRound[parseInt(t.tripRound)] || 0;
+      const _fmtPf = n => (n < 0 ? '-' : '') + fmtBaht(Math.abs(n));   // กำไรติดลบขึ้น -฿..
+      let sumFreight = 0, sumExp = 0, sumProfit = 0;
       const trows = monthTrips.map(t => {
-        const fr = parseFloat(t.freightCost) || 0; sumFreight += fr;
+        const rev = _revOf(t); sumFreight += rev;
+        const exp = _expOf(t); sumExp += exp;
+        const pf = rev - exp; sumProfit += pf;
+        const pfColor = pf > 0 ? '#047857' : (pf < 0 ? '#b91c1c' : '#475569');
         const paid = (t.paymentStatus||'ค้างจ่าย') === 'จ่ายแล้ว';
         const st = _autoTripStatus(t) !== 'ส่งแล้ว' ? 'กำลังขนส่ง' : (paid ? 'จ่ายแล้ว' : 'ค้างจ่าย');
         const stColor = st === 'กำลังขนส่ง' ? '#1d4ed8' : (paid ? '#047857' : '#b45309');
@@ -13652,12 +13666,14 @@ function _expCalendarDoc() {
           <td>${escHtml(t.plateNumber||'-')}</td>
           <td>${cust}</td>
           <td>${escHtml(t.origin||'-')} → ${escHtml(t.destination||'-')}</td>
-          <td class="num">${fr ? fmtBaht(fr) : '-'}</td>
+          <td class="num">${rev ? fmtBaht(rev) : '-'}</td>
+          <td class="num">${exp ? fmtBaht(exp) : '-'}</td>
+          <td class="num" style="color:${pfColor};font-weight:700">${_fmtPf(pf)}</td>
           <td style="text-align:center;color:${stColor};font-weight:700">${st}</td>
         </tr>`;
       });
-      const _hRow = `<tr><th class="num">รอบ</th><th>วันที่</th><th>ทะเบียน</th><th>ลูกค้า</th><th>เส้นทาง</th><th class="num">ค่าขนส่ง</th><th class="num">สถานะ</th></tr>`;
-      const _fRow = `<tfoot><tr style="background:#eef2f7;font-weight:800"><td colspan="5" style="text-align:right;padding:9px 12px">รวมค่าขนส่ง</td><td class="num" style="padding:9px 12px">${fmtBaht(sumFreight)}</td><td></td></tr></tfoot>`;
+      const _hRow = `<tr><th class="num">รอบ</th><th>วันที่</th><th>ทะเบียน</th><th>ลูกค้า</th><th>เส้นทาง</th><th class="num">ค่าขนส่ง</th><th class="num">รายจ่าย</th><th class="num">กำไร</th><th class="num">สถานะ</th></tr>`;
+      const _fRow = `<tfoot><tr style="background:#eef2f7;font-weight:800"><td colspan="5" style="text-align:right;padding:9px 12px">รวม</td><td class="num" style="padding:9px 12px">${fmtBaht(sumFreight)}</td><td class="num" style="padding:9px 12px">${fmtBaht(sumExp)}</td><td class="num" style="padding:9px 12px;color:${sumProfit>=0?'#047857':'#b91c1c'}">${_fmtPf(sumProfit)}</td><td></td></tr></tfoot>`;
       body += _expPagedTable(_hRow, trows, _fRow, (first) => `<div class="exp-sec-title2">📋 สรุปเที่ยวรถ ${_expMonthLabel(ym)}${first ? ' · ' + monthTrips.length + ' เที่ยว' : ' (ต่อ)'}</div>`, 14);
     }
   });
@@ -16561,7 +16577,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v16.27';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v16.28';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
