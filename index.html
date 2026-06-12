@@ -5286,7 +5286,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v16.30 | 12/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v16.31 | 12/06/2026</span>
   </div>
 </aside>
 
@@ -13583,6 +13583,58 @@ function _expCalendarDoc() {
     <span><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:#fef3c7;border:1px solid #b45309;vertical-align:middle;margin-right:4px"></span>⏰ ค้างจ่าย</span>
     <span><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:#d1fae5;border:1px solid #047857;vertical-align:middle;margin-right:4px"></span>✅ จ่ายแล้ว</span>
   </div>`;
+
+  // v16.31 — สรุปกำไรต่อรอบไป-กลับ (เมื่อเปิดโหมดจับคู่) — ตอบ "ต่อเที่ยวไป-กลับ ได้กำไรเท่าไหร่"
+  // รวมข้ามเดือน: คู่ที่ขาไป/ขากลับอยู่คนละเดือน ก็รวมยอดเป็นรอบเดียว แสดงครั้งเดียว
+  if (EXPORT_STATE.pairTrips) {
+    const _monthSet = new Set(months);
+    const _eByRow = {}, _eByRound = {};
+    (_master.expenseHistory || []).forEach(en => {
+      const amt = (typeof _tripExpAmount === 'function') ? _tripExpAmount(en) : 0;
+      if (amt <= 0) return;
+      if (en.linkedTripRowId) _eByRow[en.linkedTripRowId] = (_eByRow[en.linkedTripRowId] || 0) + amt;
+      const rd = parseInt(en.linkedTripRound); if (rd) _eByRound[rd] = (_eByRound[rd] || 0) + amt;
+    });
+    const _revOf = t => (typeof _tripRevenue === 'function') ? _tripRevenue(t) : (parseFloat(t.freightCost) || 0);
+    const _expOf = t => (t.rowId && _eByRow[t.rowId]) || _eByRound[parseInt(t.tripRound)] || 0;
+    const _b0 = n => '฿' + Math.round(n).toLocaleString('en-US');
+    const _fpf = n => (n < 0 ? '-' : '') + _b0(Math.abs(n));
+    const _byRowT = {}; trips.forEach(t => { if (t.rowId) _byRowT[t.rowId] = t; });
+    const _seq = (typeof _pairSeqMap === 'function') ? _pairSeqMap() : null;
+    const _units = (typeof _getTripPairs === 'function' ? _getTripPairs() : [])
+      .map(grp => ({ grp, legs: grp.map(id => _byRowT[id]).filter(Boolean).sort((a, b) => grp.indexOf(a.rowId) - grp.indexOf(b.rowId)) }))
+      .filter(u => u.legs.length && u.legs.some(t => _monthSet.has(String(t.pickupDate || t.jobDate || '').slice(0, 7))))
+      .map(u => { const rev = u.legs.reduce((s, t) => s + _revOf(t), 0); const exp = u.legs.reduce((s, t) => s + _expOf(t), 0); return { ...u, rev, exp, pf: rev - exp, pn: (typeof _pairNoOf === 'function') ? _pairNoOf(_seq, u.grp) : 0 }; })
+      .sort((a, b) => a.pn - b.pn);
+    if (_units.length) {
+      let tF = 0, tE = 0, tP = 0;
+      const rws = _units.map(u => {
+        tF += u.rev; tE += u.exp; tP += u.pf;
+        const a = u.legs[0], b = u.legs[u.legs.length - 1];
+        const route = `${escHtml(a.origin || a.originCustomer || '-')} → ${escHtml(b.destination || b.customerName || '-')}`;
+        const cross = u.legs.length >= 2 && String(a.pickupDate||'').slice(0,7) !== String(b.pickupDate||'').slice(0,7)
+          ? ` <span style="color:#7c3aed;font-size:9px;font-weight:700">ข้ามเดือน</span>` : '';
+        const pfc = u.pf > 0 ? '#047857' : (u.pf < 0 ? '#b91c1c' : '#475569');
+        return `<tr>
+          <td style="text-align:center;font-weight:800;white-space:nowrap">🔄 #${u.pn || '–'}</td>
+          <td style="white-space:nowrap">ไป#${escHtml(String(a.tripRound||'-'))} → กลับ#${escHtml(String(b.tripRound||'-'))}${cross}</td>
+          <td>${route}</td>
+          <td class="num">${_b0(u.rev)}</td>
+          <td class="num">${_b0(u.exp)}</td>
+          <td class="num" style="color:${pfc};font-weight:800">${_fpf(u.pf)}</td>
+        </tr>`;
+      }).join('');
+      body += `<div class="exp-pg-block"><div class="exp-sec-title2">🔄 สรุปกำไรต่อรอบไป-กลับ · ${_units.length} คู่</div>`
+        + `<table class="exp-tbl exp-tbl--formal exp-tbl--trip"><thead><tr><th class="num">รอบไป-กลับ</th><th>ขาไป → ขากลับ</th><th>เส้นทาง</th><th class="num">ค่าขนส่ง</th><th class="num">รายจ่าย</th><th class="num">กำไร</th></tr></thead>`
+        + `<tbody>${rws}</tbody>`
+        + `<tfoot><tr style="background:#eef2f7;font-weight:800"><td colspan="3" style="text-align:right">รวมกำไรจากรอบไป-กลับ</td><td class="num">${_b0(tF)}</td><td class="num">${_b0(tE)}</td><td class="num" style="color:${tP>=0?'#047857':'#b91c1c'}">${_fpf(tP)}</td></tr></tfoot>`
+        + `</table></div>`;
+    } else {
+      body += `<div class="exp-pg-block"><div class="exp-sec-title2">🔄 สรุปกำไรต่อรอบไป-กลับ</div>`
+        + `<div class="exp-empty" style="padding:14px;color:#94a3b8">— ยังไม่ได้จับคู่รอบไป-กลับในเดือนที่เลือก · ไปจับคู่ขาไป-กลับในหน้า “บันทึกรถ → รายการเที่ยวรถ” ก่อน —</div></div>`;
+    }
+  }
+
   months.forEach(ym => {
     const [y,m] = ym.split('-').map(Number);
     body += `<div class="exp-pg-block"><div class="exp-sec-title">📅 ${_expMonthLabel(ym)}</div>`;
@@ -16617,7 +16669,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v16.30';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v16.31';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
