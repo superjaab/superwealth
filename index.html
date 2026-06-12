@@ -5286,7 +5286,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v16.29 | 12/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v16.30 | 12/06/2026</span>
   </div>
 </aside>
 
@@ -13360,7 +13360,7 @@ async function exportInvoicePDF() {
 // ════════════════════════════════════════════════════════════════
 // v15.32 — EXPORT REPORT MODULE (PDF / JPG, no sheet dependency)
 // ════════════════════════════════════════════════════════════════
-const EXPORT_STATE = { type:'calendar', months:new Set(), dateFrom:'', dateTo:'', incInc:true, incExp:true, cats:new Set() };
+const EXPORT_STATE = { type:'calendar', months:new Set(), dateFrom:'', dateTo:'', incInc:true, incExp:true, cats:new Set(), pairTrips:false };
 
 async function initExportTab() {
   if (!_master._loaded && typeof loadMasterData === 'function') { try { await loadMasterData(); } catch(e){} }
@@ -13396,6 +13396,8 @@ function _expRenderOpts() {
     box.innerHTML = `<div class="exp-opt-box">
       <div class="exp-opt-label">📅 เลือกเดือน (เลือกได้หลายเดือน)</div>
       <div>${months.length ? months.map(ym => `<button type="button" class="exp-month-chip${EXPORT_STATE.months.has(ym)?' on':''}" data-ym="${ym}" onclick="_expToggleMonth(this)">${_expMonthLabel(ym)}</button>`).join('') : '<span style="color:#94a3b8">— ยังไม่มีข้อมูลเที่ยวรถ —</span>'}</div>
+      <div class="exp-opt-label" style="margin-top:12px">ตัวเลือกตาราง</div>
+      <label style="font-size:.85rem;font-weight:700;display:inline-flex;align-items:center;gap:7px;cursor:pointer"><input type="checkbox" ${EXPORT_STATE.pairTrips?'checked':''} onchange="EXPORT_STATE.pairTrips=this.checked;var w=document.getElementById('exp-preview-wrap');if(w&&w.style.display!=='none')buildReport()"> 🔄 รวมรอบไป-กลับ <span style="font-weight:400;color:#94a3b8">(รวมขาไป+ขากลับเป็นแถวเดียว แสดงตัวเลขรวม)</span></label>
     </div>`;
   } else {
     const today = new Date().toISOString().slice(0,10);
@@ -13653,24 +13655,56 @@ function _expCalendarDoc() {
       const _expOf = t => (t.rowId && _expByRow[t.rowId]) || _expByRound[parseInt(t.tripRound)] || 0;
       const _b0 = n => '฿' + Math.round(n).toLocaleString('en-US');    // v16.29 — บาทเต็ม (ไม่มีทศนิยม) ให้ช่องแคบลง ไม่ตกบรรทัด
       const _fmtPf = n => (n < 0 ? '-' : '') + _b0(Math.abs(n));        // กำไรติดลบขึ้น -฿..
+
+      // v16.30 — โหมดจับคู่ไป-กลับ: รวมขาไป+ขากลับเป็นหน่วยเดียว แสดงตัวเลขรวมของรอบไป-กลับ
+      const _pairOn = !!EXPORT_STATE.pairTrips;
+      const _pairs  = (_pairOn && typeof _getTripPairs === 'function') ? _getTripPairs() : [];
+      const _pairSeq= (_pairOn && typeof _pairSeqMap  === 'function') ? _pairSeqMap()  : null;
+      const _groupOf = {}; _pairs.forEach((g, gi) => g.forEach(id => _groupOf[id] = gi));
+      const units = []; const _seenGi = {};
+      monthTrips.forEach(t => {
+        const gi = _pairOn ? _groupOf[t.rowId] : undefined;
+        if (gi != null) {
+          if (_seenGi[gi] == null) { _seenGi[gi] = units.length; units.push({ trips: [t], gi }); }
+          else units[_seenGi[gi]].trips.push(t);
+        } else units.push({ trips: [t], gi: null });
+      });
+
       let sumFreight = 0, sumExp = 0, sumProfit = 0;
-      const trows = monthTrips.map(t => {
-        const rev = _revOf(t); sumFreight += rev;
-        const exp = _expOf(t); sumExp += exp;
-        const pf = rev - exp; sumProfit += pf;
+      const trows = units.map(u => {
+        const grp  = (u.gi != null) ? _pairs[u.gi] : [];
+        const legs = (u.trips.length > 1 && grp.length) ? [...u.trips].sort((a, b) => grp.indexOf(a.rowId) - grp.indexOf(b.rowId)) : u.trips;
+        const a = legs[0], b = legs[legs.length - 1];
+        const isPair = legs.length > 1;
+        const rev = legs.reduce((s, t) => s + _revOf(t), 0); sumFreight += rev;
+        const exp = legs.reduce((s, t) => s + _expOf(t), 0); sumExp += exp;
+        const pf  = rev - exp; sumProfit += pf;
         const pfColor = pf > 0 ? '#047857' : (pf < 0 ? '#b91c1c' : '#475569');
-        const paid = (t.paymentStatus||'ค้างจ่าย') === 'จ่ายแล้ว';
-        const st = _autoTripStatus(t) !== 'ส่งแล้ว' ? 'กำลังขนส่ง' : (paid ? 'จ่ายแล้ว' : 'ค้างจ่าย');
-        const stColor = st === 'กำลังขนส่ง' ? '#1d4ed8' : (paid ? '#047857' : '#b45309');
-        const cust = (t.originCustomer && t.customerName && t.originCustomer !== t.customerName)
-          ? `${escHtml(t.originCustomer)} → ${escHtml(t.customerName)}`
-          : escHtml(t.customerName || t.originCustomer || '-');
+        const allPaid = legs.every(t => (t.paymentStatus || 'ค้างจ่าย') === 'จ่ายแล้ว');
+        const driving = legs.some(t => _autoTripStatus(t) !== 'ส่งแล้ว');
+        const st = driving ? 'กำลังขนส่ง' : (allPaid ? 'จ่ายแล้ว' : 'ค้างจ่าย');
+        const stColor = st === 'กำลังขนส่ง' ? '#1d4ed8' : (allPaid ? '#047857' : '#b45309');
+        let roundCell;
+        if (isPair) {   // ขาไป+ขากลับ อยู่เดือนเดียวกัน → แถวรวม
+          const pn = (typeof _pairNoOf === 'function') ? _pairNoOf(_pairSeq, grp) : 0;
+          roundCell = `🔄 #${pn || '–'}<div style="font-size:9px;font-weight:600;color:#7c3aed;white-space:nowrap">ไป#${escHtml(String(a.tripRound||'-'))}→กลับ#${escHtml(String(b.tripRound||'-'))}</div>`;
+        } else if (_pairOn && grp.length >= 2) {   // คู่กันแต่อีกขาตกอยู่คนละเดือน
+          const pn = (typeof _pairNoOf === 'function') ? _pairNoOf(_pairSeq, grp) : 0;
+          const isGo = grp[0] === a.rowId;
+          roundCell = `🔄 #${pn || '–'}<div style="font-size:9px;font-weight:600;color:#7c3aed;white-space:nowrap">${isGo ? 'ขาไป' : 'ขากลับ'}#${escHtml(String(a.tripRound||'-'))}</div>`;
+        } else {
+          roundCell = escHtml(String(a.tripRound || '-'));
+        }
+        const cust = isPair
+          ? `${escHtml(a.originCustomer || a.customerName || '-')} → ${escHtml(b.customerName || b.originCustomer || '-')}`
+          : ((a.originCustomer && a.customerName && a.originCustomer !== a.customerName) ? `${escHtml(a.originCustomer)} → ${escHtml(a.customerName)}` : escHtml(a.customerName || a.originCustomer || '-'));
+        const route = `${escHtml(a.origin || '-')} → ${escHtml(b.destination || '-')}`;
         return `<tr>
-          <td style="text-align:center;font-weight:800">${escHtml(t.tripRound||'-')}</td>
-          <td>${fmtDate(t.pickupDate||t.jobDate)}</td>
-          <td>${escHtml(t.plateNumber||'-')}</td>
+          <td style="text-align:center;font-weight:800">${roundCell}</td>
+          <td>${fmtDate(a.pickupDate||a.jobDate)}</td>
+          <td>${escHtml(a.plateNumber||'-')}</td>
           <td>${cust}</td>
-          <td>${escHtml(t.origin||'-')} → ${escHtml(t.destination||'-')}</td>
+          <td>${route}</td>
           <td class="num">${rev ? _b0(rev) : '-'}</td>
           <td class="num">${exp ? _b0(exp) : '-'}</td>
           <td class="num" style="color:${pfColor};font-weight:700">${_fmtPf(pf)}</td>
@@ -13679,7 +13713,8 @@ function _expCalendarDoc() {
       });
       const _hRow = `<tr><th class="num">รอบ</th><th>วันที่</th><th>ทะเบียน</th><th>ลูกค้า</th><th>เส้นทาง</th><th class="num">ค่าขนส่ง</th><th class="num">รายจ่าย</th><th class="num">กำไร</th><th class="num">สถานะ</th></tr>`;
       const _fRow = `<tfoot><tr style="background:#eef2f7;font-weight:800"><td colspan="5" style="text-align:right">รวม</td><td class="num">${_b0(sumFreight)}</td><td class="num">${_b0(sumExp)}</td><td class="num" style="color:${sumProfit>=0?'#047857':'#b91c1c'}">${_fmtPf(sumProfit)}</td><td></td></tr></tfoot>`;
-      body += _expPagedTable(_hRow, trows, _fRow, (first) => `<div class="exp-sec-title2">📋 สรุปเที่ยวรถ ${_expMonthLabel(ym)}${first ? ' · ' + monthTrips.length + ' เที่ยว' : ' (ต่อ)'}</div>`, 14, 'exp-tbl--trip');
+      const _titleSuffix = _pairOn ? ' · 🔄 จับคู่ไป-กลับ' : '';
+      body += _expPagedTable(_hRow, trows, _fRow, (first) => `<div class="exp-sec-title2">📋 สรุปเที่ยวรถ ${_expMonthLabel(ym)}${first ? ' · ' + monthTrips.length + ' เที่ยว' + _titleSuffix : ' (ต่อ)'}</div>`, 14, 'exp-tbl--trip');
     }
   });
   return _expDocWrap('ปฏิทินเที่ยวรถ', months.map(_expMonthLabel).join(' · '), body);
@@ -16582,7 +16617,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v16.29';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v16.30';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
