@@ -5286,7 +5286,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v16.31 | 12/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v16.32 | 12/06/2026</span>
   </div>
 </aside>
 
@@ -13615,14 +13615,31 @@ function _expCalendarDoc() {
         const cross = u.legs.length >= 2 && String(a.pickupDate||'').slice(0,7) !== String(b.pickupDate||'').slice(0,7)
           ? ` <span style="color:#7c3aed;font-size:9px;font-weight:700">ข้ามเดือน</span>` : '';
         const pfc = u.pf > 0 ? '#047857' : (u.pf < 0 ? '#b91c1c' : '#475569');
-        return `<tr>
+        // แถวหัว = ยอดรวมของคู่ (ตัวหนา)
+        const head = `<tr style="background:#eef4ff">
           <td style="text-align:center;font-weight:800;white-space:nowrap">🔄 #${u.pn || '–'}</td>
-          <td style="white-space:nowrap">ไป#${escHtml(String(a.tripRound||'-'))} → กลับ#${escHtml(String(b.tripRound||'-'))}${cross}</td>
+          <td style="white-space:nowrap;font-weight:700">ไป#${escHtml(String(a.tripRound||'-'))} → กลับ#${escHtml(String(b.tripRound||'-'))}${cross}</td>
           <td>${route}</td>
-          <td class="num">${_b0(u.rev)}</td>
-          <td class="num">${_b0(u.exp)}</td>
+          <td class="num" style="font-weight:800">${_b0(u.rev)}</td>
+          <td class="num" style="font-weight:800">${_b0(u.exp)}</td>
           <td class="num" style="color:${pfc};font-weight:800">${_fpf(u.pf)}</td>
         </tr>`;
+        // v16.32 — แถวรายละเอียดต่อขา (ขาไป/ขากลับ) ใต้ยอดรวม → เห็นตัวเลขแยกแต่ละขา
+        const legs = u.legs.map((t, i) => {
+          const lr = _revOf(t), le = _expOf(t), lp = lr - le;
+          const role = i === 0 ? '⬇️ ขาไป' : (i === u.legs.length - 1 ? '⬆️ ขากลับ' : '↔ ขาต่อ');
+          const lrt = `${escHtml(t.origin || t.originCustomer || '-')} → ${escHtml(t.destination || t.customerName || '-')}`;
+          const lpc = lp > 0 ? '#047857' : (lp < 0 ? '#b91c1c' : '#64748b');
+          return `<tr style="font-size:10px;color:#64748b">
+            <td style="text-align:right;padding-right:12px;white-space:nowrap;color:#7c3aed;font-weight:700">↳ ${role} #${escHtml(String(t.tripRound||'-'))}</td>
+            <td style="white-space:nowrap">${fmtDate(t.pickupDate||t.jobDate)}</td>
+            <td>${lrt}</td>
+            <td class="num">${lr ? _b0(lr) : '-'}</td>
+            <td class="num">${le ? _b0(le) : '-'}</td>
+            <td class="num" style="color:${lpc}">${_fpf(lp)}</td>
+          </tr>`;
+        }).join('');
+        return head + legs;
       }).join('');
       body += `<div class="exp-pg-block"><div class="exp-sec-title2">🔄 สรุปกำไรต่อรอบไป-กลับ · ${_units.length} คู่</div>`
         + `<table class="exp-tbl exp-tbl--formal exp-tbl--trip"><thead><tr><th class="num">รอบไป-กลับ</th><th>ขาไป → ขากลับ</th><th>เส้นทาง</th><th class="num">ค่าขนส่ง</th><th class="num">รายจ่าย</th><th class="num">กำไร</th></tr></thead>`
@@ -16669,7 +16686,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v16.31';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v16.32';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
