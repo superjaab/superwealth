@@ -5286,7 +5286,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v16.32 | 12/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v16.33 | 12/06/2026</span>
   </div>
 </aside>
 
@@ -10576,6 +10576,7 @@ window.addEventListener('popstate', () => {
   if (tab === 'summary')  { if (typeof initSummaryOnce === 'function') initSummaryOnce(); }
   if (tab === 'calendar') { if (typeof initCalendar === 'function')   initCalendar(); }
   if (tab === 'admin')    { if (typeof initAdminTab === 'function')   initAdminTab(); }
+  if (tab === 'export')   { if (typeof initExportTab === 'function')  initExportTab(); }   // v16.33 — รีโหลด/ย้อนกลับมาแท็บ Report ต้องเรนเดอร์ตัวเลือกเดือนด้วย
 });
 
 // On initial page load — read URL and switch to that tab
@@ -10588,6 +10589,7 @@ window.addEventListener('DOMContentLoaded', () => {
       if (tab === 'summary')  { if (typeof initSummaryOnce === 'function') initSummaryOnce(); }
       if (tab === 'calendar') { if (typeof initCalendar === 'function')   initCalendar(); }
       if (tab === 'admin')    { if (typeof initAdminTab === 'function')   initAdminTab(); }
+      if (tab === 'export')   { if (typeof initExportTab === 'function')  initExportTab(); }   // v16.33 — รีโหลดค้างที่แท็บ Report → เรนเดอร์ตัวเลือกเดือน
     }, 50);
   } else {
     // Still update title
@@ -16686,7 +16688,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v16.32';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v16.33';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
