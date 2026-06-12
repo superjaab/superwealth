@@ -2520,6 +2520,10 @@
     .exp-tbl--formal tbody tr:nth-child(even) td { background:#f7f9fc; }
     .exp-tbl--formal tfoot td { border-top:2px solid #cbd5e1; }
     .exp-sec-title2 { font-size:13px; font-weight:800; color:#1e293b; margin:18px 0 8px; padding:7px 12px; background:#f1f5f9; border-left:4px solid #2563eb; border-radius:0 6px 6px 0; }
+    /* v16.29 — ตารางสรุปเที่ยวรถ 9 คอลัมน์: บีบช่อง + กันตัวเลข/วันที่/สถานะ ตกบรรทัด */
+    .exp-tbl--trip th, .exp-tbl--trip td { padding:6px 7px; font-size:11px; }
+    .exp-tbl--trip td.num, .exp-tbl--trip th.num { white-space:nowrap; }
+    .exp-tbl--trip td:nth-child(2), .exp-tbl--trip td:last-child { white-space:nowrap; }
     .exp-sec-title { font-size:15px; font-weight:900; color:#0f172a; margin:18px 0 8px; padding-left:8px; border-left:4px solid #2563eb; }
     .exp-kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:16px; }
     .exp-kpi { padding:14px; border-radius:12px; border:1.5px solid #e2e8f0; }
@@ -5282,7 +5286,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v16.28 | 12/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v16.29 | 12/06/2026</span>
   </div>
 </aside>
 
@@ -13468,7 +13472,7 @@ function _expPaginatePreview() {
 // v15.83 — แบ่งตารางยาวเป็นบล็อกต่อหน้า (แต่ละบล็อกมีหัวตารางของตัวเอง → PDF ตัดหน้าแล้วหัวไม่ขาด)
 //   headRow = '<tr>...</tr>', rowsArr = [row strings], footRow = '<tfoot>...</tfoot>' (เฉพาะบล็อกสุดท้าย)
 //   titleFn(isFirst) → HTML หัวข้อเหนือตาราง (โชว์ "(ต่อ)" ในบล็อกถัดไป)
-function _expPagedTable(headRow, rowsArr, footRow, titleFn, chunk) {
+function _expPagedTable(headRow, rowsArr, footRow, titleFn, chunk, extraClass) {
   rowsArr = rowsArr || [];
   chunk = chunk || 14;
   if (!rowsArr.length) return '';
@@ -13477,7 +13481,7 @@ function _expPagedTable(headRow, rowsArr, footRow, titleFn, chunk) {
     const part = rowsArr.slice(i, i + chunk);
     const isFirst = i === 0, isLast = i + chunk >= rowsArr.length;
     const title = titleFn ? titleFn(isFirst) : '';
-    out += `<div class="exp-pg-block">${title}<table class="exp-tbl exp-tbl--formal">`
+    out += `<div class="exp-pg-block">${title}<table class="exp-tbl exp-tbl--formal${extraClass ? ' ' + extraClass : ''}">`
          + `<thead>${headRow}</thead><tbody>${part.join('')}</tbody>${(isLast && footRow) ? footRow : ''}</table></div>`;
   }
   return out;
@@ -13647,7 +13651,8 @@ function _expCalendarDoc() {
       });
       const _revOf = t => (typeof _tripRevenue === 'function') ? _tripRevenue(t) : (parseFloat(t.freightCost) || 0);
       const _expOf = t => (t.rowId && _expByRow[t.rowId]) || _expByRound[parseInt(t.tripRound)] || 0;
-      const _fmtPf = n => (n < 0 ? '-' : '') + fmtBaht(Math.abs(n));   // กำไรติดลบขึ้น -฿..
+      const _b0 = n => '฿' + Math.round(n).toLocaleString('en-US');    // v16.29 — บาทเต็ม (ไม่มีทศนิยม) ให้ช่องแคบลง ไม่ตกบรรทัด
+      const _fmtPf = n => (n < 0 ? '-' : '') + _b0(Math.abs(n));        // กำไรติดลบขึ้น -฿..
       let sumFreight = 0, sumExp = 0, sumProfit = 0;
       const trows = monthTrips.map(t => {
         const rev = _revOf(t); sumFreight += rev;
@@ -13666,15 +13671,15 @@ function _expCalendarDoc() {
           <td>${escHtml(t.plateNumber||'-')}</td>
           <td>${cust}</td>
           <td>${escHtml(t.origin||'-')} → ${escHtml(t.destination||'-')}</td>
-          <td class="num">${rev ? fmtBaht(rev) : '-'}</td>
-          <td class="num">${exp ? fmtBaht(exp) : '-'}</td>
+          <td class="num">${rev ? _b0(rev) : '-'}</td>
+          <td class="num">${exp ? _b0(exp) : '-'}</td>
           <td class="num" style="color:${pfColor};font-weight:700">${_fmtPf(pf)}</td>
           <td style="text-align:center;color:${stColor};font-weight:700">${st}</td>
         </tr>`;
       });
       const _hRow = `<tr><th class="num">รอบ</th><th>วันที่</th><th>ทะเบียน</th><th>ลูกค้า</th><th>เส้นทาง</th><th class="num">ค่าขนส่ง</th><th class="num">รายจ่าย</th><th class="num">กำไร</th><th class="num">สถานะ</th></tr>`;
-      const _fRow = `<tfoot><tr style="background:#eef2f7;font-weight:800"><td colspan="5" style="text-align:right;padding:9px 12px">รวม</td><td class="num" style="padding:9px 12px">${fmtBaht(sumFreight)}</td><td class="num" style="padding:9px 12px">${fmtBaht(sumExp)}</td><td class="num" style="padding:9px 12px;color:${sumProfit>=0?'#047857':'#b91c1c'}">${_fmtPf(sumProfit)}</td><td></td></tr></tfoot>`;
-      body += _expPagedTable(_hRow, trows, _fRow, (first) => `<div class="exp-sec-title2">📋 สรุปเที่ยวรถ ${_expMonthLabel(ym)}${first ? ' · ' + monthTrips.length + ' เที่ยว' : ' (ต่อ)'}</div>`, 14);
+      const _fRow = `<tfoot><tr style="background:#eef2f7;font-weight:800"><td colspan="5" style="text-align:right">รวม</td><td class="num">${_b0(sumFreight)}</td><td class="num">${_b0(sumExp)}</td><td class="num" style="color:${sumProfit>=0?'#047857':'#b91c1c'}">${_fmtPf(sumProfit)}</td><td></td></tr></tfoot>`;
+      body += _expPagedTable(_hRow, trows, _fRow, (first) => `<div class="exp-sec-title2">📋 สรุปเที่ยวรถ ${_expMonthLabel(ym)}${first ? ' · ' + monthTrips.length + ' เที่ยว' : ' (ต่อ)'}</div>`, 14, 'exp-tbl--trip');
     }
   });
   return _expDocWrap('ปฏิทินเที่ยวรถ', months.map(_expMonthLabel).join(' · '), body);
@@ -16577,7 +16582,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v16.28';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v16.29';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
