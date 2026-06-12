@@ -5282,7 +5282,7 @@
             style="width:100%;padding:11px 14px;border:none;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;transition:all .2s ease">
       <span id="auth-icon">🔓</span><span id="auth-label">เข้าสู่ระบบ</span>
     </button>
-    <span class="version" style="display:block;text-align:center">v16.25 | 10/06/2026</span>
+    <span class="version" style="display:block;text-align:center">v16.26 | 12/06/2026</span>
   </div>
 </aside>
 
@@ -10057,7 +10057,10 @@ function populateLinkedTripsDropdown(editingRecord) {
     const dates = (t.deliveryDate && t.deliveryDate !== t.pickupDate)
       ? `${fmtDate(t.pickupDate)} → ${fmtDate(t.deliveryDate)}`
       : fmtDate(t.pickupDate || t.jobDate);
-    const cust = t.customerName ? ` • ${t.customerName}` : '';
+    const route = (t.originCustomer && t.customerName && t.originCustomer !== t.customerName)
+      ? `${t.originCustomer} → ${t.customerName}`
+      : (t.customerName || t.originCustomer || '');   // v16.26 — แสดง ต้นทาง → ปลายทาง ใน dropdown ลิงก์รอบ
+    const cust = route ? ` • ${route}` : '';
     const amt  = t.freightCost ? ` (฿${(+t.freightCost).toLocaleString('en-US')})` : '';
     const used = usedTripIds.has(t.rowId) ? ' 🔒(ลงรายรับแล้ว)' : '';
     return `<option value="${escAttr(t.rowId)}" data-round="${t.tripRound}" data-amount="${t.freightCost||''}" data-customer="${escAttr(t.customerName||'')}" data-origin="${escAttr(t.originCustomer||'')}">รอบ #${t.tripRound}${used} • ${escAttr(t.plateNumber||'')} • ${escAttr(dates)}${escAttr(cust)}${amt}</option>`;
@@ -10103,7 +10106,10 @@ function populateExpenseLinkedTripsDropdown(editingRecord) {
     const dates = (t.deliveryDate && t.deliveryDate !== t.pickupDate)
       ? `${fmtDate(t.pickupDate)} → ${fmtDate(t.deliveryDate)}`
       : fmtDate(t.pickupDate || t.jobDate);
-    const cust = t.customerName ? ` • ${t.customerName}` : '';
+    const route = (t.originCustomer && t.customerName && t.originCustomer !== t.customerName)
+      ? `${t.originCustomer} → ${t.customerName}`
+      : (t.customerName || t.originCustomer || '');   // v16.26 — แสดง ต้นทาง → ปลายทาง ใน dropdown ลิงก์รอบ
+    const cust = route ? ` • ${route}` : '';
     const usedByOther = linkedTripIds.has(t.rowId) ? ' 🔒(ใช้แล้ว)' : '';
     return `<option value="${escAttr(t.rowId)}" data-round="${t.tripRound}" data-plate="${escAttr(t.plateNumber||'')}">รอบ #${t.tripRound}${usedByOther} • ${escAttr(t.plateNumber||'')} • ${escAttr(dates)}${escAttr(cust)}</option>`;
   }).join('');
@@ -16553,7 +16559,7 @@ document.addEventListener('keydown', e => {
 // (function-wrapping doesn't work because intra-script calls resolve
 //  via local script binding, not window property)
 // ─── AUTO-UPDATE DETECTOR — เช็คเวอร์ชันใหม่ทุก 30 วินาที ───
-const APP_VERSION = 'v16.25';  // ⚠️ ต้องตรงกับเลขใน version stamp
+const APP_VERSION = 'v16.26';  // ⚠️ ต้องตรงกับเลขใน version stamp
 let _updateBannerShown = false;
 
 // v14.25 — Parse version string like "v14.24" → [14, 24] for comparison
